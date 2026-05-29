@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env / секреты
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Сборки/кеши
+.cache/
+tmp/
+
+# Приватная стратегия — не публикуем (см. обсуждение)
+docs/152fz.md

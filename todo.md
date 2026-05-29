@@ -1,0 +1,166 @@
+# todo.md — план работ «Нормисы»
+
+> Двигаемся по фазам. Каждый пункт — `- [ ]` пока не сделан, `- [x]` когда закрыт. Новые подзадачи дописываем в свою фазу.
+
+---
+
+## Фаза 0 — Документация и фундамент (в процессе)
+
+- [x] Создать структуру `~/coding/norms2/{docs,Вдохновиться}/`
+- [x] Скопировать вдохновение: `Вдохновиться/акцент/` и `Вдохновиться/новаскил/`
+- [x] Написать `CLAUDE.md`
+- [x] Написать `Technical-assignment.md`
+- [x] Написать этот `todo.md`
+- [x] Написать `docs/README.md` (карта документации)
+- [x] Написать `docs/152fz.md` (ресёрч: как не попасть под 152-ФЗ, выводы для проекта)
+- [x] Завести `docs/decisions/` (ADR-журнал) + ADR-0001 (минимизация ПДн)
+- [x] Написать `docs/methodology.md` (метод рассуждения: CoT / ToT / Self-Consistency)
+- [x] Построить `docs/decision-map.md` (карта всех точек решения по проекту)
+- [ ] **Пройти `docs/decision-map.md` по шагам** — обсудить каждую развилку, по итогу каждой завести ADR. Это разблокирует инженерные доки ниже. Прогресс — в самом decision-map (статусы + «Текущая позиция»).
+- [ ] **Принять решение по VPS** — выбрать провайдера вне РФ (см. ниже §«Решения, которые нужно принять»)
+- [ ] **Зарегистрировать backup-домен** в зоне `.com` / `.app` / `.io` (риск разделегирования `.рф`, см. `docs/152fz.md`)
+- [ ] Зафиксировать решение по VPS в `docs/deployment.md`
+- [ ] Написать `docs/architecture.md` — слоистая архитектура backend, границы модулей
+- [x] Написать `docs/domain-model.md` — Account, SecretQuestion, InviteCode, Invitation, Ban, Session (консолидировано из ADR)
+- [x] Написать `docs/database.md` — 7 таблиц фазы 1, связи, политика миграций (консолидировано из ADR)
+- [ ] Написать `docs/api-contracts.md` — REST для auth/profile/invites/bans
+- [ ] Написать `docs/backend.md` — правила работы в `./nest/`, структура модуля
+- [ ] Написать `docs/frontend.md` — правила работы в `./angular/`, структура feature
+- [ ] Написать `docs/ui-ux.md` — экраны фазы 1 (login, register, profile, my-invites)
+- [ ] Написать `docs/deployment.md` — Docker, Let's Encrypt, ENV, бэкапы
+- [ ] Написать `docs/getting-started.md` — как поднять локально с нуля
+
+---
+
+## Фаза 1 — Личный кабинет
+
+### 1.1. Bootstrap
+
+- [ ] Инициализировать `./nest/` (NestJS 10+, TypeScript strict)
+- [ ] Инициализировать `./angular/` (Angular 17+, standalone, Signals, Tailwind)
+- [ ] `docker-compose.dev.yml` — Postgres, nest, angular dev-server
+- [ ] `.env.example` с `FREE_REGISTRATION`, `JWT_SECRET`, `DB_*`
+- [ ] `.gitignore`, `.editorconfig`, ESLint, Prettier
+- [ ] Базовая CI (lint + build) — отложить до момента, когда появится репозиторий на git-хостинге
+
+### 1.2. Backend — модуль `auth`
+
+- [ ] Доменные сущности: `User`, `Credentials`, `SecretQA`
+- [ ] Use-case: `RegisterUser` (с поддержкой обоих режимов `FREE_REGISTRATION`)
+- [ ] Use-case: `LoginUser`
+- [ ] Use-case: `LogoutUser`
+- [ ] Use-case: `RecoverPasswordViaSecretQA`
+- [ ] Порты репозиториев (интерфейсы) в `application/`
+- [ ] TypeORM-адаптеры в `infrastructure/`
+- [ ] NestJS controllers + DTO + guards в `interface/`
+- [ ] JWT-стратегия + refresh-механика
+- [ ] Тесты на use-cases (unit)
+- [ ] Интеграционные тесты на endpoint-ы
+
+### 1.3. Backend — модуль `profile`
+
+- [ ] Доменная сущность `Profile` (alias, public-view, self-view)
+- [ ] Use-case: `GetMyProfile`
+- [ ] Use-case: `GetUserProfileByLogin`
+- [ ] Use-case: `UpdateMyAlias`
+- [ ] Endpoints
+
+### 1.4. Backend — модуль `invites`
+
+- [ ] Доменная сущность `Invite` (code, reason, inviter, used_by, used_at)
+- [ ] Use-case: `CreateInvite` (с обязательной причиной)
+- [ ] Use-case: `ConsumeInvite` (вызывается из `RegisterUser`)
+- [ ] Use-case: `ListMyInvites`
+- [ ] Endpoints
+
+### 1.5. Backend — модуль `bans`
+
+- [ ] Доменная сущность `Ban` (banner, banned, reason, created_at)
+- [ ] Проверка прав: банить можно только в своём поддереве приглашений
+- [ ] Use-case: `BanUserInMyTree`
+- [ ] Use-case: `UnbanUser`
+- [ ] Use-case: `ListBansByMe`
+- [ ] Guard: блокировать вход забаненным
+- [ ] Endpoints
+
+### 1.6. Frontend — feature `auth`
+
+- [ ] Экран `register` (с условным полем кода приглашения)
+- [ ] Экран `login`
+- [ ] Экран `recover-password` (через секретный вопрос)
+- [ ] Сервис `core/api/auth.service.ts`
+- [ ] Storage refresh-токена + interceptor
+
+### 1.7. Frontend — feature `profile`
+
+- [ ] Экран `my-profile` (self-view)
+- [ ] Экран `user-profile/:login` (public-view)
+- [ ] Редактирование alias
+
+### 1.8. Frontend — feature `invites`
+
+- [ ] Экран `my-invites` (создать с причиной, посмотреть кого пригласил)
+- [ ] Действие «забанить» в карточке приглашённого
+
+### 1.9. Deploy (когда фаза 1 готова к боевому тесту)
+
+- [ ] Купить VPS (см. решение в Фазе 0)
+- [ ] Ubuntu 22.04 LTS, базовая настройка, SSH-ключи, firewall
+- [ ] Установить Docker
+- [ ] `docker-compose.prod.yml`
+- [ ] Let's Encrypt через nginx или Traefik (решение зафиксировать в `docs/deployment.md`)
+- [ ] Привязать `нормисы.рф` (но **домен в зоне `.рф` ≠ хостинг в РФ**, это норм — см. `docs/152fz.md`)
+- [ ] Бэкапы Postgres (стратегия — в `docs/deployment.md`)
+
+---
+
+## Фаза 2 — Раздел «Акцент»
+
+Открыть после закрытия Фазы 1. Стартовый шаг — прочитать [`Вдохновиться/акцент/Technical-assignment.md`](./Вдохновиться/акцент/Technical-assignment.md) и сформировать **адаптированный** scope (раздел Нормисов, не самостоятельный продукт).
+
+- [ ] Адаптированный scope в `docs/sections/accent.md`
+- [ ] Дальнейшие подзадачи — формализуем при открытии фазы
+
+---
+
+## Фаза 3 — Раздел «НоваСкил»
+
+Открыть после Фазы 2. Стартовый шаг — прочитать [`Вдохновиться/новаскил/NOVASKIL_PROTOCOL.md`](./Вдохновиться/новаскил/NOVASKIL_PROTOCOL.md) и адаптировать.
+
+- [ ] **Продуктовая идея (на проверку при открытии фазы):** оценить CoT / Tree-of-Thoughts / Self-Consistency как *механику самого раздела* (например, протокол разбора навыка: пошаговое рассуждение, ветвление вариантов, перепроверка). Не путать с методом работы Claude Code — тот живёт в [`docs/methodology.md`](./docs/methodology.md). Решить: берём, режем или переосмысливаем под scope НоваСкила.
+
+---
+
+## Фаза 4 — Мессенджер «облачный»
+
+Открыть после Фазы 3.
+
+---
+
+## Фаза 5 — Мессенджер e2e
+
+Открыть после Фазы 4. Поднимать кодовую базу `~/coding/norms` как референс.
+
+---
+
+## Фаза 6 — Native (Capacitor + Electron)
+
+Открыть после Фазы 5.
+
+---
+
+## Решения, которые нужно принять
+
+Полный реестр всех точек решения по проекту — в [`docs/decision-map.md`](./docs/decision-map.md) (карта со статусами и «Текущей позицией», resumable между сессиями). Здесь не дублируем — единый источник там. Принятые решения переезжают в [`docs/decisions/`](./docs/decisions/README.md) как ADR.
+
+---
+
+## Архив идей из переписки (чтоб не потерять)
+
+Из сессии запуска проекта 2026-05-29:
+
+- Домен `нормисы.рф` уже куплен — entry point остаётся; хостинг — вне РФ.
+- В долгосрочной перспективе — мессенджер с двумя режимами: «облачный» (web-доступный, сервер видит ключи) и «e2e» (только нативные приложения, как было в `~/coding/norms`).
+- Не хранить ФИО, паспорта, реальные email в обязательных полях; идентификация — `login` + `alias`-псевдоним.
+- Регистрация по приглашениям, у каждого приглашения — обязательная причина; пригласитель может банить в своём поддереве.
+- Восстановление пароля — через секретный вопрос/ответ.

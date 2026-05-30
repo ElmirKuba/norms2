@@ -50,7 +50,12 @@
 | [`deployment.md`](./deployment.md) | Docker, Traefik+TLS, ENV, бэкапы, sweep, переезд | ✅ v1 |
 | [`getting-started.md`](./getting-started.md) | Локальный запуск с нуля | ✅ v1 |
 
-Документы разделов (`sections/`) появятся при старте Фазы 2 (`accent.md`), Фазы 3 (`novaskil.md`) и далее.
+### Разделы (`sections/`)
+| Папка | Область | Статус |
+|---|---|---|
+| [`sections/accent/`](./sections/accent/README.md) | Фаза 2 «Акцент»: цели, привычки, микро-победы, геймификация (README, domain-model, gamification, api-contracts, ui-ux) | ✅ v1 (дока готова) |
+
+Документы Фазы 3 (`sections/novaskil/`) и далее появятся при старте соответствующих фаз. Рабочая карта переваривания источников Фазы 2 — в [`archive/phase2-analysis-map.md`](./archive/phase2-analysis-map.md).
 
 ---
 

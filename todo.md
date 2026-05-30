@@ -116,10 +116,13 @@
 
 ## Фаза 2 — Раздел «Акцент»
 
-Открыть после закрытия Фазы 1. Стартовый шаг — прочитать [`Вдохновиться/акцент/Technical-assignment.md`](./Вдохновиться/акцент/Technical-assignment.md) и сформировать **адаптированный** scope (раздел Нормисов, не самостоятельный продукт).
+**Дока раздела готова** (синтезирована из вдохновения, источники переварены и удалены). Реализация — после закрытия Фазы 1.
 
-- [ ] Адаптированный scope в `docs/sections/accent.md`
-- [ ] Дальнейшие подзадачи — формализуем при открытии фазы
+- [x] Переварить источники вдохновения (Ascent + SuperBetter-спек) → копилка идей. История: [`docs/archive/phase2-analysis-map.md`](./docs/archive/phase2-analysis-map.md)
+- [x] Принять ключевые решения раздела — [`docs/decisions/0027-accent-phase2-core.md`](./docs/decisions/0027-accent-phase2-core.md)
+- [x] Написать доку раздела — [`docs/sections/accent/`](./docs/sections/accent/README.md): README, domain-model, gamification, api-contracts, ui-ux
+- [ ] **На подтверждение Elmir:** R6 (timezone → `accent_settings` vs поле в `accounts`), R10 (сферы DomainKey vs RPG-атрибуты)
+- [ ] Реализация (после Фазы 1): по под-волнам 2.0 → 2.1 (workout/соц/AI) — детализируем при старте
 
 ---
 

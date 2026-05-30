@@ -68,6 +68,14 @@ ADR и [`decision-map.md`](../decision-map.md) — это **строительн
 | [0016](./0016-primary-key-format.md) | **Сквозная конвенция:** id = строка `uuidv7___unixmillis`, util на be+fe | accepted | [db] [domain] |
 | [0017](./0017-account-soft-delete.md) | Аккаунт: soft-delete (`deleted_at`) + деактивация, в фазе 1 | accepted | [domain] [db] |
 | [0018](./0018-refresh-tokens-sessions.md) | Refresh-токены/сессии в Postgres, управление устройствами | accepted | [backend] [db] [security] |
+| [0019](./0019-backend-architecture-conventions.md) | Архитектура бэка: монорепо, zod-конфиг, shared, ошибки, pino, идемпотентность | accepted | [architecture] [backend] |
+| [0020](./0020-api-conventions.md) | API: /api/v1, конверт ошибок, throttler, zod-DTO, токены (access в памяти, refresh httpOnly) | accepted | [api] [interface] [security] |
+| [0021](./0021-tooling-defaults.md) | Тулинг: pnpm, Node LTS, latest Nest/Angular, Jest, Signals | accepted | [backend] [frontend] [tooling] |
+| [0022](./0022-concept-and-philosophy.md) | Концепция: ламповое invite-only, RU, некоммерческое | accepted | [product] [concept] |
+| [0023](./0023-deployment-jurisdiction.md) | Деплой: РФ на время разработки, Traefik+LE, sweep, backup-домен позже | accepted | [deployment] [152fz] |
+| [0024](./0024-cookie-consent-gate.md) | Блокирующий cookie-гейт (Я согласен / Покинуть сайт) | accepted | [frontend] [ux] |
+| [0025](./0025-ui-ux-design-language.md) | Дизайн: тёмная+toggle, минимал с теплотой, свои компоненты на SCSS (без Tailwind) | accepted | [frontend] [ux] |
+| [0026](./0026-modal-system.md) | Модалки: MatDialog, конфигурируемый shell `DialogModalData<T>`, 5 паттернов | accepted | [frontend] [ux] |
 
 ### Ожидают решения (заглушки появятся при принятии)
 

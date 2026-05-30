@@ -40,15 +40,15 @@
 | [`decision-map.md`](./decision-map.md) | Реестр **всех открытых** точек решения + «Текущая позиция» (resumable) | ✅ v1 |
 | [`decisions/`](./decisions/README.md) | Журнал **принятых** решений (ADR), неизменяемых | ✅ заведён |
 | [`152fz.md`](./152fz.md) | Юрисдикция, ПДн, что НЕ собираем, политика данных | ✅ v1 |
-| [`architecture.md`](./architecture.md) | Слои, границы модулей, shared kernel, потоки данных, ошибки, токены | 📋 запланирован |
+| [`architecture.md`](./architecture.md) | Слои, границы модулей, shared kernel, потоки данных, ошибки, токены | ✅ v1 |
 | [`domain-model.md`](./domain-model.md) | Сущности и инварианты: Account, SecretQuestion, InviteCode, Invitation, Ban, Session | ✅ v1 (консолидировано из ADR) |
 | [`database.md`](./database.md) | Физическая схема (7 таблиц), индексы, миграции, security_logs, хеши | ✅ v1 (консолидировано из ADR) |
-| [`api-contracts.md`](./api-contracts.md) | REST: эндпоинты, DTO (closed-shape), формат ошибок, rate-limit | 📋 запланирован |
-| [`backend.md`](./backend.md) | Правила `./nest/`: структура модуля, тесты, DI, версии | 📋 запланирован |
-| [`frontend.md`](./frontend.md) | Правила `./angular/`: feature-структура, Signals, HTTP-слой | 📋 запланирован |
-| [`ui-ux.md`](./ui-ux.md) | Экраны фазы 1, дизайн-язык, копирайт, адаптивность | 📋 запланирован |
-| [`deployment.md`](./deployment.md) | Docker, reverse-proxy, TLS, ENV, бэкапы, CI/CD | 📋 запланирован |
-| [`getting-started.md`](./getting-started.md) | Локальный запуск с нуля | 📋 запланирован |
+| [`api-contracts.md`](./api-contracts.md) | REST: эндпоинты, DTO (closed-shape), формат ошибок, rate-limit | ✅ v1 |
+| [`backend.md`](./backend.md) | Правила `./nest/`: структура модуля, тесты, DI, версии | ✅ v1 |
+| [`frontend.md`](./frontend.md) | Правила `./angular/`: feature-структура, Signals, HTTP-слой | ✅ v1 |
+| [`ui-ux.md`](./ui-ux.md) | Экраны фазы 1, дизайн-язык, копирайт, адаптивность | ✅ v1 |
+| [`deployment.md`](./deployment.md) | Docker, Traefik+TLS, ENV, бэкапы, sweep, переезд | ✅ v1 |
+| [`getting-started.md`](./getting-started.md) | Локальный запуск с нуля | ✅ v1 |
 
 Документы разделов (`sections/`) появятся при старте Фазы 2 (`accent.md`), Фазы 3 (`novaskil.md`) и далее.
 

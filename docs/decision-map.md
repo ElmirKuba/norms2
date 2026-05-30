@@ -20,7 +20,12 @@
 - **Сейчас:** **модель данных фазы 1 ПОЛНОСТЬЮ зафиксирована — 7 таблиц** (`accounts`, `secret_qa`, `invite_codes`, `invitations`, `bans`, `security_logs`, `sessions`). Закрыты D1–D8, E1, E4, E7, C1. Готово к консолидации в `database.md`/`domain-model.md`. Дальше по карте — блоки C (остаток: C2–C8), F (API), G/H/I (back/front/ui), J/K (деплой/локалка), A/B (концепт/приватность).
 - ER со связями (1:1 `accounts`↔`invitations`; остальные 1:N) — в ADR-0014 + будет формализовано в `database.md`.
 - id всех записей — `uuidv7___unixmillis` ([ADR-0016](./decisions/0016-primary-key-format.md), сквозная конвенция).
-- **Консолидировано:** [`database.md`](./database.md) ✅ и [`domain-model.md`](./domain-model.md) ✅ — первые чистые reference-доки для реализации (по плану «леса → стена»).
+- **Консолидировано (reference-доки):** database, domain-model, architecture, api-contracts, **backend, frontend, getting-started** — все ✅. Закрыты блоки C, F, G, K и H (кроме H5 дизайн-токены → ui-ux, H6 i18n → A3). Тулинг — [ADR-0021](./decisions/0021-tooling-defaults.md).
+- **Блоки A, J, B закрыты:** [ADR-0022](./decisions/0022-concept-and-philosophy.md) (концепт), [ADR-0023](./decisions/0023-deployment-jurisdiction.md) (деплой: РФ на время разработки, Traefik, sweep, backup позже, соль B3), [ADR-0024](./decisions/0024-cookie-consent-gate.md) (cookie-гейт B4). `deployment.md` ✅.
+- **🎉 ВСЕ reference-доки фазы 1 готовы.** `ui-ux.md` ✅ ([ADR-0025](./decisions/0025-ui-ux-design-language.md)). Блок I + H5 закрыты. Открытых решений по фазе 1 не осталось — карта исчерпана.
+- **UI-стек ([ADR-0025](./decisions/0025-ui-ux-design-language.md)):** чистый SCSS/CSS (без Tailwind), свои компоненты. **Модалки — `MatDialog`** ([ADR-0026](./decisions/0026-modal-system.md), механика зафиксирована из анализа Elmir). Tailwind убран из всех доков.
+- **Все решения и reference-доки фазы 1 закрыты.** Открытых вопросов нет.
+- **Следующий шаг (по плану «снять леса»):** финальная проверка непротиворечивости, затем consolidation-cleanup. Реализацию фазы 1 можно отдавать Sonnet.
 - **Уже решено:**
   - [ADR-0001](./decisions/0001-data-minimization-no-pii.md) — минимизация ПДн (A-приватность, B1).
   - [ADR-0002](./decisions/0002-invite-tree-adjacency.md) — дерево приглашений: adjacency + CTE за портом (D2).
@@ -63,13 +68,7 @@
 | ID | Точка решения | Статус | Заметка / ветви |
 |---|---|---|---|
 | C1 | Logout/JWT: стор refresh-токенов (БД vs Redis), ротация, TTL access/refresh | ✅ | [ADR-0018](./decisions/0018-refresh-tokens-sessions.md) — таблица `sessions` в Postgres, ротация, управление устройствами |
-| C2 | Структура репо: монорепо `/nest` + `/angular` или раздельные репо | ⬜ | влияет на CI, деплой |
-| C3 | Конфигурация: `ConfigService` + валидация схемы ENV (zod/joi) | ⬜ | Elmir: env только через ConfigService |
-| C4 | Shared kernel: где живёт общий домен `User` для всех разделов | ⬜ | общий модуль vs дублирование |
-| C5 | Межмодульное взаимодействие разделов с auth/profile (прямо vs через порт) | ⬜ | сохранить слоистость |
-| C6 | Единый формат ошибки API (problem+json или свой) | ⬜ | следствие для всех контроллеров |
-| C7 | Логирование/observability: чем и в каком формате (structured) | ⬜ | без облачных зависимостей (предпочтение Elmir) |
-| C8 | Идемпотентность операций: где нужна и как (ключи идемпотентности) | ⬜ | явное предпочтение Elmir |
+| C2–C8 | Репо, конфиг, shared kernel, межмодульность, формат ошибок, логи, идемпотентность | ✅ | [ADR-0019](./decisions/0019-backend-architecture-conventions.md): монорепо `nest/`+`angular/`; zod-конфиг fail-fast; `shared/`; порты между модулями; конверт `{error:{code,message}}`; pino; идемпотентность через unique. → [architecture.md](./architecture.md) |
 
 ## D. Доменная модель
 
@@ -101,22 +100,13 @@
 
 | ID | Точка решения | Статус | Заметка / ветви |
 |---|---|---|---|
-| F1 | Версионирование API (`/api/v1`) | ⬜ | |
-| F2 | Формат ответа и ошибки | ⬜ | следствие C6 |
-| F3 | Набор auth-эндпоинтов: register/login/refresh/logout/recover | ⬜ | следствие C1 |
-| F4 | Пагинация списков (инвайты, баны) | ⬜ | |
-| F5 | Rate-limiting на login/register/recover | ⬜ | анти-абуз, пересекается с D4 |
-| F6 | Валидация DTO (class-validator vs zod), closed-shape | ⬜ | предпочтение Elmir: без `any` |
-| F7 | Где хранится токен на клиенте (httpOnly cookie vs localStorage) | ⬜ | следствие C1, влияет на фронт H3 |
+| F1–F7 | Версионирование, формат, auth-эндпоинты, пагинация, rate-limit, DTO-валидация, токены на клиенте | ✅ | [ADR-0020](./decisions/0020-api-conventions.md): `/api/v1`; конверт ошибок; throttler; zod-DTO; access в памяти + refresh httpOnly. → [api-contracts.md](./api-contracts.md) |
 
 ## G. Backend-правила (`backend.md`)
 
 | ID | Точка решения | Статус | Заметка / ветви |
 |---|---|---|---|
-| G1 | Детализация структуры модуля (база в CLAUDE.md есть) | ⬜ | |
-| G2 | Тестирование: unit на use-cases + e2e, фреймворк, фикстуры | ⬜ | |
-| G3 | Версия Nest, пакетный менеджер (npm/pnpm/yarn) | ⬜ | |
-| G4 | DI-токены для портов репозиториев | ⬜ | следствие слоистости |
+| G1–G4 | Структура модуля, тесты, версия Nest/пакетный менеджер, DI-токены портов | ✅ | [backend.md](./backend.md) + [ADR-0021](./decisions/0021-tooling-defaults.md) (pnpm, Jest, DI-токены портов) |
 
 ## H. Frontend-правила (`frontend.md`)
 
@@ -126,7 +116,7 @@
 | H2 | State на Signals: глобальный store или per-feature | ⬜ | |
 | H3 | HTTP-слой: interceptor + клиентская refresh-механика | ⬜ | следствие C1/F7 |
 | H4 | Формы: reactive, валидация в зеркало к backend DTO | ⬜ | |
-| H5 | Tailwind-конфиг и дизайн-токены | ⬜ | пересекается с I2 |
+| H5 | Дизайн-токены (SCSS-переменные) | ✅ | [ADR-0025](./decisions/0025-ui-ux-design-language.md) — SCSS, без Tailwind |
 | H6 | i18n | ⬜ | следствие A3 |
 
 ## I. UI/UX (`ui-ux.md`)
@@ -142,7 +132,7 @@
 
 | ID | Точка решения | Статус | Заметка / ветви |
 |---|---|---|---|
-| J1 | VPS-провайдер вне РФ | ⬜ | в `todo.md` как открытое |
+| J1 | VPS-провайдер / юрисдикция | ✅ | [ADR-0023](./decisions/0023-deployment-jurisdiction.md) — РФ на время разработки, переезд под давлением |
 | J2 | reverse-proxy: nginx vs Traefik | ⬜ | по итогам пробного деплоя |
 | J3 | TLS: механика Let's Encrypt (через прокси) | ⬜ | следствие J2 |
 | J4 | Список ENV и секрет-менеджмент | ⬜ | следствие C3 |

@@ -4,9 +4,13 @@
 
 ## 1. Что это
 
-**Нормисы** — web-платформа (в будущем — Capacitor и Electron) с личным кабинетом, объединяющая несколько разделов для авторизованных пользователей. Доступна по домену `нормисы.рф`, хостится **вне РФ** (см. [`docs/152fz.md`](./docs/152fz.md)).
+**Нормисы** — web-платформа (в будущем — Capacitor и Electron) с личным кабинетом, объединяющая несколько разделов для авторизованных пользователей. Домен `нормисы.рф`. Хостинг: **на время разработки — РФ допустим**, переезд вне РФ — под давлением; главный щит приватности — отсутствие ПДн, а не локация (см. [ADR-0023](./docs/decisions/0023-deployment-jurisdiction.md), приватный 152fz).
 
 Каждый раздел — отдельный продукт по смыслу, но не отдельное приложение: единый ЛК, единые приглашения, единая аутентификация, общие профили.
+
+**Концепция и тон** (см. [`docs/decisions/0022-concept-and-philosophy.md`](./docs/decisions/0022-concept-and-philosophy.md)): ламповое/мемное закрытое сообщество «для своих» с псевдонимами; **invite-only всегда** в проде; язык фазы 1 — русский; проект **некоммерческий** (без рекламы и продажи ПДн).
+
+**Концепция и тон** (см. [`docs/decisions/0022-concept-and-philosophy.md`](./docs/decisions/0022-concept-and-philosophy.md)): ламповое/мемное закрытое сообщество «для своих» с псевдонимами; **invite-only всегда** в проде; язык фазы 1 — русский; проект **некоммерческий** (без рекламы и продажи ПДн).
 
 ## 2. Разделы (порядок реализации)
 
@@ -42,13 +46,13 @@ Capacitor (iOS, Android) + Electron (macOS, Windows, Linux). Общая Angular 
 
 ## 3. Стек
 
-- **Frontend:** Angular 17+ SPA, standalone-компоненты, Signals, Tailwind, **без Angular Material**.
+- **Frontend:** Angular 17+ SPA, standalone-компоненты, Signals, **чистый SCSS/CSS** (свои компоненты, без Tailwind). **Angular Material — только `MatDialog`** для модалок (см. [ADR-0025](./docs/decisions/0025-ui-ux-design-language.md)).
 - **Backend:** NestJS, слоистая архитектура (domain / application / infrastructure / interface).
 - **БД:** PostgreSQL.
 - **ORM:** TypeORM с ручными миграциями, инкапсулирован в `infrastructure/`. Возможность заменить на другую ORM или raw SQL без правки домена — обязательное требование.
 - **Контейнеризация:** Docker, docker-compose.
 - **TLS:** Let's Encrypt.
-- **Деплой:** SSH + git на Ubuntu VPS вне РФ.
+- **Деплой:** SSH + git на Ubuntu VPS (на время разработки РФ допустим, переезд вне РФ — под давлением; см. [ADR-0023](./docs/decisions/0023-deployment-jurisdiction.md)).
 - **Native (фаза 6):** Capacitor, Electron.
 
 ---
@@ -119,6 +123,6 @@ Capacitor (iOS, Android) + Electron (macOS, Windows, Linux). Общая Angular 
 | Вопрос | Где решаем |
 |---|---|
 | Попадает ли `login`+`alias` без ФИО под 152-ФЗ? | [`docs/152fz.md`](./docs/152fz.md) |
-| Какой именно VPS-провайдер вне РФ берём? | [`docs/deployment.md`](./docs/deployment.md) (пишем в фазе 1) |
+| Какой VPS-провайдер? (решено: РФ на время разработки) | [ADR-0023](./docs/decisions/0023-deployment-jurisdiction.md), [`docs/deployment.md`](./docs/deployment.md) |
 | Как именно шифруем «облачные» сообщения в БД (фаза 4)? | отложено |
 | Формализованный scope «Акцент»-раздела (что берём из вдохновения, что режем) | начало фазы 2 |

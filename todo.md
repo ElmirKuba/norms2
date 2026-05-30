@@ -20,15 +20,15 @@
 - [ ] **Принять решение по VPS** — выбрать провайдера вне РФ (см. ниже §«Решения, которые нужно принять»)
 - [ ] **Зарегистрировать backup-домен** в зоне `.com` / `.app` / `.io` (риск разделегирования `.рф`, см. `docs/152fz.md`)
 - [ ] Зафиксировать решение по VPS в `docs/deployment.md`
-- [ ] Написать `docs/architecture.md` — слоистая архитектура backend, границы модулей
+- [x] Написать `docs/architecture.md` — слои, модули, потоки, сквозные механизмы (ADR-0019)
 - [x] Написать `docs/domain-model.md` — Account, SecretQuestion, InviteCode, Invitation, Ban, Session (консолидировано из ADR)
 - [x] Написать `docs/database.md` — 7 таблиц фазы 1, связи, политика миграций (консолидировано из ADR)
-- [ ] Написать `docs/api-contracts.md` — REST для auth/profile/invites/bans
-- [ ] Написать `docs/backend.md` — правила работы в `./nest/`, структура модуля
-- [ ] Написать `docs/frontend.md` — правила работы в `./angular/`, структура feature
-- [ ] Написать `docs/ui-ux.md` — экраны фазы 1 (login, register, profile, my-invites)
-- [ ] Написать `docs/deployment.md` — Docker, Let's Encrypt, ENV, бэкапы
-- [ ] Написать `docs/getting-started.md` — как поднять локально с нуля
+- [x] Написать `docs/api-contracts.md` — REST для auth/profile/invites/bans/sessions/recovery (ADR-0020)
+- [x] Написать `docs/backend.md` — правила `./nest/`, конфиг/ошибки/логи/тесты (ADR-0019/0020/0021)
+- [x] Написать `docs/frontend.md` — правила `./angular/`, Signals, HTTP-слой, auth (ADR-0020/0021)
+- [x] Написать `docs/ui-ux.md` — дизайн-язык, токены, экраны фазы 1, тон (ADR-0025)
+- [x] Написать `docs/deployment.md` — Docker, Traefik+LE, ENV, бэкапы, sweep (ADR-0023)
+- [x] Написать `docs/getting-started.md` — docker-compose.dev, .env.example, локальный запуск (ADR-0021)
 
 ---
 

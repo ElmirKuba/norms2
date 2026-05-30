@@ -32,13 +32,13 @@ Web-платформа (потом — Capacitor для iOS/Android и Electron 
 
 ## Стек и архитектурные принципы
 
-- **Frontend:** Angular 17+, standalone-компоненты, Signals, Tailwind. SPA.
+- **Frontend:** Angular 17+, standalone-компоненты, Signals, **чистый SCSS/CSS** (свои компоненты, без Tailwind). SPA. **Angular Material — только `MatDialog`** (модалки), см. [`docs/decisions/0025-ui-ux-design-language.md`](./docs/decisions/0025-ui-ux-design-language.md).
 - **Backend:** NestJS, **слоистая архитектура** — domain / application / infrastructure / interface. Любая замена ORM, переход на raw SQL, параллельное использование нескольких хранилищ — должны делаться **без правки доменного слоя**.
 - **БД:** PostgreSQL.
 - **Идентификаторы (сквозная конвенция, всегда):** PK и все FK — строка формата `uuidv7___unixmillis` (пример `019e7488-0147-7305-9b95-a553f2d00c8e___1780071500548`). Генерация — общий util `generateId()` на бэке и фронте. Подробно — [`docs/decisions/0016-primary-key-format.md`](./docs/decisions/0016-primary-key-format.md). Применяется ко всем таблицам/сущностям во всех фазах.
 - **ORM:** TypeORM с явными миграциями (никогда `synchronize: true` в проде/деве). Слой репозиториев инкапсулирует ORM — домен про неё не знает.
 - **Docker** для всего (dev + prod), **Let's Encrypt** для TLS, **SSH + Git** для деплоя.
-- **Хостинг:** только не-РФ юрисдикция (см. [`docs/152fz.md`](./docs/152fz.md)). Домен `нормисы.рф` пока остаётся как entry point.
+- **Хостинг:** на время разработки РФ допустим, домен `нормисы.рф`; переезд вне РФ — под давлением (см. [`docs/decisions/0023-deployment-jurisdiction.md`](./docs/decisions/0023-deployment-jurisdiction.md)). Щит приватности — отсутствие ПДн, не локация.
 
 ### Слоистая архитектура backend (строго)
 
@@ -161,5 +161,5 @@ test(invites): cover ban-chain cases
 Не любит:
 - Магию через декораторы без понимания.
 - ORM-фичи, скрывающие SQL.
-- Раздутые UI-фреймворки (без Angular Material).
+- Раздутые UI-фреймворки и CSS-киты (без Tailwind/Bootstrap; Angular Material — только `MatDialog` для модалок).
 - Хранить ПДн.

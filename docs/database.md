@@ -25,6 +25,7 @@
 | `registration_source` | varchar(8) | CHECK in (`free`,`invite`,`seed`) ([ADR-0010](./decisions/0010-registration-auth-flow.md)) |
 | `invites_remaining` | int | not null, default из ENV `INVITE_DEFAULT_QUOTA`=3 ([ADR-0007](./decisions/0007-invite-quota-counter.md)) |
 | `recovery_required_count` | int | null; K вопросов при восстановлении ([ADR-0008](./decisions/0008-account-recovery-secret-questions.md)) |
+| `timezone` | varchar(64) | not null default `'UTC'`; IANA TZ пользователя (для ролловера/серий разделов) ([ADR-0028](./decisions/0028-accent-timezone-and-domains.md)) |
 | `deactivated_at` | timestamptz | null; обратимая деактивация ([ADR-0017](./decisions/0017-account-soft-delete.md)) |
 | `deleted_at` | timestamptz | null; soft-delete (скрыт из дефолтного scope) |
 | `created_at`,`updated_at` | timestamptz | not null |

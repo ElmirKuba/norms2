@@ -68,7 +68,7 @@ Desktop ≥1024 — 2 колонки (лево: сегодня+неделя+це
 - **Частичное выполнение:** для quantitative/timed — ввод факта (30 из 50) одним жестом; засчитывается пропорционально, ≥minTarget держит серию.
 
 ## 7. Компоненты раздела (свои, SCSS)
-ProgressDonut (SVG, число по центру), ProgressBar, XpBar, StreakBadge (🔥N), TaskCard (чекбокс/частичный ввод/swipe-перенос), GoalCard, PowerUpChip, AntiHabitTimer, MetricSlider (1..10), Heatmap (как GitHub), EmptyState (с CTA), Toast. Модалки/диалоги — только через MatDialog.
+ProgressDonut (SVG, число по центру), ProgressBar, XpBar, StreakBadge (🔥N), TaskCard (чекбокс/частичный ввод/swipe-перенос), GoalCard, PowerUpChip, AntiHabitTimer, MetricSlider (1..10), Heatmap (как GitHub), **AttributeRadar (паучья диаграмма баланса атрибутов — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md))**, EmptyState (с CTA), Toast. Модалки/диалоги — только через MatDialog. (radar может уйти в волну 2.1, модель — сразу).
 
 ## 8. Онбординг (волна, но заложить)
 Короткий: что важно (1–3 сферы) → первая цель (с подсказкой) → первая привычка (из шаблонов) → достижение «Первый шаг» сразу → мини-тур. Прогрессивное раскрытие сложных фич. Для «Васи» — первая победа за ~5 минут.

@@ -31,6 +31,7 @@ account (фаза 1)
 - **`Id`** — VO формата `uuidv7___unixmillis`.
 - **`UserState`** = `survival | recovery | stability | growth | sprint | maintenance` (+ производные «перегружен/откатился» вычисляются, не хранятся).
 - **`DomainKey`** — сфера жизни: `health | sleep | sport | work | money | relationships | learning | home | creativity | purpose` (расширяемо; справочник, не жёсткий enum в БД).
+- **`Attribute`** (RPG-прокачка, [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)) — `strength | discipline | intellect | spirit | social | health` (расширяемо). Цель/привычка может прокачивать 0..N атрибутов → «паучья диаграмма» баланса + связь с Secret Identity. Сфера (факт) и атрибуты (игра) — параллельны, не взаимоисключающи.
 - **`HabitKind`** = `binary | quantitative | timed` (тип измерения выполнения).
 - **`Priority`** = `low | normal | high | urgent`.
 - **`ProgressUnit`** — свободная строка (`раз`, `км`, `страниц`, `мин`). Числа прогресса — `numeric`, не float.
@@ -57,7 +58,7 @@ account (фаза 1)
 ## 4. Goal (= Epic Win) + GoalEntry + Milestone
 
 **Goal:**
-- `id`, `account_id`, `title`, `whyItMatters?` (мотив-якорь), `domainKey?`, `unit`, `targetValue` (numeric > 0), `deadline?` (date), `status` (`active|paused|completed|archived`), `completedAt?`, `fallbackVersion?` (текст: цель на плохой день), `pausedAt?`, `pauseHistory?` (jsonb `[{pausedAt,resumedAt}]`), `created_at`, `updated_at`.
+- `id`, `account_id`, `title`, `whyItMatters?` (мотив-якорь), `domainKey?`, **`attributes[]`** (0..N — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)), `unit`, `targetValue` (numeric > 0), `deadline?` (date), `status` (`active|paused|completed|archived`), `completedAt?`, `fallbackVersion?` (текст: цель на плохой день), `pausedAt?`, `pauseHistory?` (jsonb `[{pausedAt,resumedAt}]`), `created_at`, `updated_at`.
 - **Вычисляемые (на чтение):** `currentValue` = Σ GoalEntry.value; `percentage` = min(current/target·100, 100); `daysLeft`; `activeDays` (дни минус паузы); `pace` = current/activeDays; `forecast` (`ahead|on_track|behind|null`).
 - **Инварианты:** `target>0`; при `current≥target` → авто-`completed` (видна, не удаляется), `completedAt` фиксируется один раз; `paused` не принимает GoalEntry и не участвует в forecast; entries при паузе не теряются; `archived` не в дашборде.
 
@@ -67,7 +68,7 @@ account (фаза 1)
 
 ## 5. Habit / TaskTemplate → Task (+ разовые) + лесенка
 
-**Habit (TaskTemplate):** `id`, `account_id`, `title`, `description?`, `icon?`, `domainKey?`, `goalId?` (привязка к цели → выполнение даёт прогресс), `priority`, `kind` (`binary|quantitative|timed`), `recurrence` (RRULE), `isActive`, **`ladder`** (см. ниже), `minVersion?` (текст «минимум плохого дня»), `created_at`, `updated_at`.
+**Habit (TaskTemplate):** `id`, `account_id`, `title`, `description?`, `icon?`, `domainKey?`, **`attributes[]`** (0..N, [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)), `goalId?` (привязка к цели → выполнение даёт прогресс), `priority`, `kind` (`binary|quantitative|timed`), `recurrence` (RRULE), `isActive`, **`ladder`** (см. ниже), `minVersion?` (текст «минимум плохого дня»), `created_at`, `updated_at`.
 
 **Лесенка (`ladder`)** — встроенный объект, ядро адаптивности ([ADR-0027](../../decisions/0027-accent-phase2-core.md) R2):
 - `minTarget` — **минимальная победа** (для binary = 1 факт; для quantitative = напр. 1 повтор; для timed = напр. 60 сек).
@@ -121,8 +122,8 @@ account (фаза 1)
 
 ## 13. Открытые мелкие развилки (решить в gamification/api или под-ADR)
 
-- **R6** — `timezone` нужен для ролловера/состояний по локальной полуночи; в `accounts` фазы 1 его НЕТ → добавить поле в accounts ИЛИ хранить в настройках раздела. **Нужно решение.**
-- **R10** — сферы жизни (DomainKey) vs RPG-атрибуты (Сила/Дисциплина/…+паучья диаграмма). Сейчас заложен DomainKey; атрибуты — кандидат-усиление.
+- **R6** ✅ РЕШЕНО ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)) — `timezone` добавлен платформенным полем в `accounts`; Акцент берёт из профиля ЛК.
+- **R10** ✅ РЕШЕНО ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)) — и сфера (`domainKey`), и RPG-атрибуты (`attributes[]`) + паучья диаграмма баланса.
 - **R8** — серии on-demand vs материализация (`streak_state`). Старт — on-demand.
 - **R11** — формула XP/уровня (sqrt vs `100·N^1.5` + множитель серии) — в gamification.
 - **R20/R21/R22** — Identity-развитие, accessibility-требования, AI-границы.

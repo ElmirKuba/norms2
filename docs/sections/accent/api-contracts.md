@@ -4,8 +4,8 @@
 >
 > Все эндпоинты — под `/api/v1/accent/...`, требуют аутентификации (раздел для авторизованных). Ресурс всегда принадлежит вызывающему `account` — чужой → `FORBIDDEN`.
 
-## 0. Решение R6 — timezone (к подтверждению Elmir)
-Ролловер задач и серии считаются по **локальной полуночи** пользователя → нужен часовой пояс. Таблицу `accounts` фазы 1 не трогаем (заморожена). **Дефолт:** хранить `timezone` (IANA, напр. `Europe/Moscow`) в **настройках раздела** `accent_settings`. Альтернатива (если Elmir решит) — добавить поле в `accounts` как платформенное. До подтверждения — `accent_settings.timezone`, дефолт из браузера при первом входе в раздел.
+## 0. Timezone (R6 — РЕШЕНО)
+Ролловер задач и серии считаются по **локальной полуночи** пользователя → нужен часовой пояс. **Решение ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)):** `timezone` — **платформенное поле в `accounts`** (не в настройках раздела), редактируется в профиле ЛК. Акцент берёт TZ из профиля; `accent_settings.timezone` не существует.
 
 ## Общее
 - **Формат дат:** `occurred_on` — `YYYY-MM-DD` (локальная дата юзера). Таймстампы — ISO `timestamptz`.
@@ -16,8 +16,8 @@
 ---
 
 ## 1. Настройки раздела
-- `GET /accent/settings` → `{ timezone, locale?, overallStreakThreshold, accentPausedFrom? }`.
-- `PATCH /accent/settings` Body `{ timezone?, overallStreakThreshold? }` → 200.
+- `GET /accent/settings` → `{ overallStreakThreshold, accentPausedFrom? }` (timezone — в профиле ЛК, не здесь — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)).
+- `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200.
 - `POST /accent/pause` / `POST /accent/resume` — пауза-режим (заморозка серий) → 204.
 
 ## 2. Identity

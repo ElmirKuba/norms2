@@ -121,7 +121,7 @@
 - [x] Переварить источники вдохновения (Ascent + SuperBetter-спек) → копилка идей. История: [`docs/archive/phase2-analysis-map.md`](./docs/archive/phase2-analysis-map.md)
 - [x] Принять ключевые решения раздела — [`docs/decisions/0027-accent-phase2-core.md`](./docs/decisions/0027-accent-phase2-core.md)
 - [x] Написать доку раздела — [`docs/sections/accent/`](./docs/sections/accent/README.md): README, domain-model, gamification, api-contracts, ui-ux
-- [ ] **На подтверждение Elmir:** R6 (timezone → `accent_settings` vs поле в `accounts`), R10 (сферы DomainKey vs RPG-атрибуты)
+- [x] Развилки R6/R10 решены — [`docs/decisions/0028-accent-timezone-and-domains.md`](./docs/decisions/0028-accent-timezone-and-domains.md): timezone в `accounts`, цели = сфера + RPG-атрибуты
 - [ ] Реализация (после Фазы 1): по под-волнам 2.0 → 2.1 (workout/соц/AI) — детализируем при старте
 
 ---

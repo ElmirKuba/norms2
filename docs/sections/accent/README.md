@@ -78,7 +78,7 @@ North star: **даже человек в тяжёлом состоянии, де
 | Файл | О чём | Статус |
 |---|---|---|
 | `README.md` (этот) | scope, привязка, состав, волны | ✅ v1 |
-| [`domain-model.md`](./domain-model.md) | сущности, поля, инварианты, состояния | 📋 G2b |
-| [`gamification.md`](./gamification.md) | очки, серии, достижения, лесенка, формулы | 📋 G2c |
-| [`api-contracts.md`](./api-contracts.md) | REST-эндпоинты раздела | 📋 G2d |
-| [`ui-ux.md`](./ui-ux.md) | экраны, дизайн, a11y, тон | 📋 G2e |
+| [`domain-model.md`](./domain-model.md) | сущности, поля, инварианты, состояния | ✅ v1 |
+| [`gamification.md`](./gamification.md) | очки, серии, достижения, лесенка, формулы | ✅ v1 |
+| [`api-contracts.md`](./api-contracts.md) | REST-эндпоинты раздела | ✅ v1 |
+| [`ui-ux.md`](./ui-ux.md) | экраны, дизайн, a11y, тон | ✅ v1 |

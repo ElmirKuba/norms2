@@ -76,6 +76,7 @@ ADR и [`decision-map.md`](../archive/decision-map.md) (🗄 в архиве —
 | [0024](./0024-cookie-consent-gate.md) | Блокирующий cookie-гейт (Я согласен / Покинуть сайт) | accepted | [frontend] [ux] |
 | [0025](./0025-ui-ux-design-language.md) | Дизайн: тёмная+toggle, минимал с теплотой, свои компоненты на SCSS (без Tailwind) | accepted | [frontend] [ux] |
 | [0026](./0026-modal-system.md) | Модалки: MatDialog, конфигурируемый shell `DialogModalData<T>`, 5 паттернов | accepted | [frontend] [ux] |
+| [0027](./0027-accent-phase2-core.md) | Ядро Фазы 2 «Акцент»: гибрид-каркас, адаптивная лесенка, полная state-модель, широкий MVP | accepted | [product] [accent] [phase2] |
 
 ### Ожидают решения
 

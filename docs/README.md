@@ -19,9 +19,9 @@
 └────────────────────────────────────────────────────────────────────────┘
         │
         ├─ СКВОЗНЫЕ (процесс и принципы, нужны на любой фазе)
-        │     methodology.md · decision-map.md · decisions/ · 152fz.md
+        │     methodology.md · decisions/ · 152fz.md · archive/decision-map.md
         │
-        ├─ ИНЖЕНЕРНЫЕ (фаза 1, пишутся по мере прохождения decision-map)
+        ├─ ИНЖЕНЕРНЫЕ (фаза 1, спек для реализации)
         │     architecture · domain-model · database · api-contracts
         │     · backend · frontend · ui-ux · deployment · getting-started
         │
@@ -37,7 +37,7 @@
 | Файл | Доменная область — **единственный источник истины для** | Статус |
 |---|---|---|
 | [`methodology.md`](./methodology.md) | Как Claude Code рассуждает: CoT / ToT / Self-Consistency | ✅ v1 |
-| [`decision-map.md`](./decision-map.md) | Реестр **всех открытых** точек решения + «Текущая позиция» (resumable) | ✅ v1 |
+| [`archive/decision-map.md`](./archive/decision-map.md) | Карта решений фазы 0 (исчерпана, в архиве) — индекс «какой ADR что закрыл» | 🗄 архив |
 | [`decisions/`](./decisions/README.md) | Журнал **принятых** решений (ADR), неизменяемых | ✅ заведён |
 | [`152fz.md`](./152fz.md) | Юрисдикция, ПДн, что НЕ собираем, политика данных | ✅ v1 |
 | [`architecture.md`](./architecture.md) | Слои, границы модулей, shared kernel, потоки данных, ошибки, токены | ✅ v1 |
@@ -61,7 +61,7 @@
 ```
                   152fz.md ───────────────┐ (ограничивает всё: что нельзя хранить)
                        │                   │
-   decision-map.md ──► (каждое решение → ADR в decisions/) ──► питает доки ниже
+   archive/decision-map.md ──► (каждое решение → ADR в decisions/) ──► питает доки ниже
                        │
    architecture.md ──► domain-model.md ──► database.md ──► api-contracts.md
         │                   │                                   │
@@ -95,7 +95,7 @@
 2. **Ссылки вместо копий.** Нужны детали из другого дока — `[название](./other.md#section)`, не повторять.
 3. **Изменение поведения = изменение docs в том же коммите.** Без исключений.
 4. **Свежесть важнее полноты.** Короткий актуальный документ лучше длинного устаревшего.
-5. **Решение → ADR.** Развилка из `decision-map.md`, как только закрыта, фиксируется в `decisions/` и больше не «живёт в голове».
+5. **Решение → ADR.** Развилка, как только закрыта, фиксируется в `decisions/` и больше не «живёт в голове». (Карта развилок фазы 0 — в `archive/decision-map.md`.)
 
 ---
 

@@ -69,8 +69,8 @@ Technical-assignment.md  ← общий обзор, всегда читать п
         │   ├─ README.md          (индекс)
         │   ├─ 152fz.md           (юрисдикция, ПДн, почему не РФ)
         │   ├─ methodology.md     (метод рассуждения: CoT / ToT / SC)
-        │   ├─ decision-map.md    (карта всех точек решения + «текущая позиция»)
-        │   ├─ decisions/         (ADR — журнал архитектурных решений)
+        │   ├─ decisions/         (ADR — журнал архитектурных решений, «почему»)
+        │   ├─ archive/           (decision-map.md — карта решений, фаза 0 завершена)
         │   ├─ architecture.md    (слои, границы модулей)        — пишем в фазе 1
         │   ├─ domain-model.md    (User, Invite, Profile, ...)   — пишем в фазе 1
         │   ├─ database.md        (схема, миграции)              — пишем в фазе 1

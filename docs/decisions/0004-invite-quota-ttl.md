@@ -2,7 +2,7 @@
 
 - **Статус:** accepted — **механика квоты заменена [ADR-0007](./0007-invite-quota-counter.md)** (состояния инвайта, TTL 3д, отзыв — остаются в силе)
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в [`../decision-map.md`](../decision-map.md) (пункт D4 — квота/TTL инвайтов)
+- **Решает:** Elmir + ToT в [`../archive/decision-map.md`](../archive/decision-map.md) (пункт D4 — квота/TTL инвайтов)
 - **Контекст-теги:** [domain] [db] [backend]
 
 ## Контекст

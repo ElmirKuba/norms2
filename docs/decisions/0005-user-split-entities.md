@@ -2,7 +2,7 @@
 
 - **Статус:** accepted — **кардинальность `SecretQA` (была 1:1) заменена [ADR-0008](./0008-account-recovery-secret-questions.md)** (теперь 1:N, в настройках). Раздельность сущностей User/Credentials/SecretQA — в силе.
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в [`../decision-map.md`](../decision-map.md) (пункт D1)
+- **Решает:** Elmir + ToT в [`../archive/decision-map.md`](../archive/decision-map.md) (пункт D1)
 - **Контекст-теги:** [domain] [db]
 
 ## Контекст

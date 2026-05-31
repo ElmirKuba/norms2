@@ -1,20 +1,23 @@
 # backend.md — правила работы в `nest/`
 
-> Реализация бэкенда. Архитектура/слои — [`architecture.md`](./architecture.md). Конвенции — [ADR-0019](./decisions/0019-backend-architecture-conventions.md), [ADR-0020](./decisions/0020-api-conventions.md). Тулинг — [ADR-0021](./decisions/0021-tooling-defaults.md). Домен — [`domain-model.md`](./domain-model.md). Схема — [`database.md`](./database.md).
+> Реализация бэкенда. Архитектура/слои — [`architecture.md`](./architecture.md) + [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md). Конвенции — [ADR-0019](./decisions/0019-backend-architecture-conventions.md) (конфиг/ошибки/логи), [ADR-0020](./decisions/0020-api-conventions.md). Домен — [`domain-model.md`](./domain-model.md). Схема — [`database.md`](./database.md). Образец — `~/coding/kuba-game/nest-backend`.
 
 ## Стек
-NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужение), TypeORM (явные миграции), PostgreSQL, pnpm. Зависимости: `@nestjs/config`, `zod`, `nestjs-zod`, `@nestjs/throttler`, `nestjs-pino`, `argon2`, `@nestjs/jwt`, `cookie-parser`.
+NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужение), **Drizzle** + drizzle-kit (явные миграции), PostgreSQL, **npm** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Зависимости: `@nestjs/config`, `zod`, `nestjs-zod`, `@nestjs/throttler`, `nestjs-pino`, `argon2`, `@nestjs/jwt`, `cookie-parser`, `drizzle-orm`, `drizzle-kit`.
 
-## Структура модуля (per feature)
+## 5-слойная структура (папками в `src`, см. [architecture.md](./architecture.md))
 ```
-modules/<feature>/
-├─ domain/          # сущности, VO, доменные сервисы (без @nestjs/*, без typeorm)
-├─ application/     # use-cases + порты (интерфейсы репозиториев)
-├─ infrastructure/  # TypeORM-репозитории (реализации портов), хеш-сервис, адаптеры
-├─ interface/       # controllers, DTO (zod), guards
-└─ <feature>.module.ts
+src/
+├─ api-endpoints/<feature>/        # контроллеры + DTO + guards
+├─ managers-level/<feature>/       # бизнес-оркестрация; кросс-домен — вниз
+├─ use-cases-level/<feature>/      # атомарные операции
+├─ adapters/<feature>/             # граница домен↔инфра
+├─ drizzle-repositories/<feature>/ # Drizzle-доступ
+├─ system/   (orm-schemas, orm-relations)
+├─ interfaces/  dtos/  utility-level/  filters/  gateways/
+└─ app.module.ts · main.ts         # только bootstrap
 ```
-`app.module.ts`/`main.ts` — только bootstrap, без бизнес-логики.
+**Кросс-домен только вниз:** `manager` области A зовёт `use-case` области B (не её manager) → круговой DI исключён ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
 ## Конфигурация
 - `zod`-схема всех ENV; валидация при старте (**fail-fast** — нет валидного env → не поднимаемся).
@@ -38,14 +41,15 @@ modules/<feature>/
 - Refresh — в httpOnly+Secure+SameSite cookie ([ADR-0020](./decisions/0020-api-conventions.md)); CSRF: SameSite + проверка origin на мутациях.
 - `@nestjs/throttler` по IP на `auth/login|register`, `recovery/*`, `invites/check`.
 
-## DI и порты
-- Порты репозиториев — интерфейсы в `application/`; реализации в `infrastructure/`. Привязка через DI-токены (Symbol/строка), напр. `ACCOUNT_REPOSITORY`. Use-cases зависят от токена-порта, не от TypeORM.
+## DI и слои
+- Доступ к данным — только `adapters` → `drizzle-repositories`. `use-cases`/`managers` не импортируют Drizzle. Привязка реализаций через DI-токены (Symbol/строка), напр. `ACCOUNT_ADAPTER`.
+- Кросс-доменные вызовы: `manager` зовёт `use-case` чужой области (слой ниже), не её `manager` ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
 ## Транзакции
-- Регистрация по коду, погашение/отзыв инвайта — в **одной транзакции** (unit-of-work): консистентность `accounts` + `invitations` + `invite_codes` + счётчика ([ADR-0013](./decisions/0013-invites-lifecycle-cleanup.md), [ADR-0007](./decisions/0007-invite-quota-counter.md)).
+- Регистрация по коду, погашение/отзыв инвайта — в **одной транзакции** (Drizzle transaction): консистентность `accounts` + `invitations` + `invite_codes` + счётчика ([ADR-0013](./decisions/0013-invites-lifecycle-cleanup.md), [ADR-0007](./decisions/0007-invite-quota-counter.md)).
 
 ## Миграции
-- Только явные TypeORM-миграции; `synchronize` запрещён везде. Файлы `<timestamp>-<name>.ts`, обязательны `up`/`down`.
+- Только явные миграции через **drizzle-kit**; auto-push в проде запрещён. Схемы — `system/orm-schemas`, связи — `system/orm-relations`.
 
 ## Тесты
 - Unit (Jest) на use-cases с замоканными портами — основная масса.

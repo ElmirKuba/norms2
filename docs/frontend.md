@@ -35,7 +35,7 @@ angular/src/app/
 - Ошибки API (`{error:{code,message}}`) маппятся в человекочитаемые сообщения по `code`.
 
 ## Состояние
-- **Signals**, per-feature сторы; без глобального store-фреймворка ([ADR-0021](./decisions/0021-tooling-defaults.md)).
+- **Signals + обычные поля класса**; rxjs/сервисы — только где реально нужно (async-потоки). **Без стейт-менеджеров (NgRx и любых) — категорически** (предпочтение Elmir, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Без глобального store-фреймворка.
 
 ## Идентификаторы
 - util `generateId()` (формат `uuidv7___unixmillis`, [ADR-0016](./decisions/0016-primary-key-format.md)) — тот же, что на бэке; для случаев, когда id нужен на клиенте.

@@ -1,6 +1,6 @@
 # НоваСкил — доменная модель / БД (Фаза 3)
 
-> Что хранится **в PostgreSQL** (TypeORM): роли, прогресс. Контент курсов — на диске ([content-format](./content-format.md)). Решения — [ADR-0029](../../decisions/0029-novaskil-phase3-core.md). Все id — `uuidv7___unixmillis` ([ADR-0016](../../decisions/0016-primary-key-format.md)); `created_at`/`updated_at` на всех таблицах; слой за портами ([архитектура](../../architecture.md)).
+> Что хранится **в PostgreSQL** (Drizzle, [ADR-0030](../../decisions/0030-stack-revision-drizzle-5layer-npm.md)): роли, прогресс. Контент курсов — на диске ([content-format](./content-format.md)). Решения — [ADR-0029](../../decisions/0029-novaskil-phase3-core.md). Все id — `uuidv7___unixmillis` ([ADR-0016](../../decisions/0016-primary-key-format.md)); `created_at`/`updated_at` на всех таблицах; слой за портами ([архитектура](../../architecture.md)).
 
 ## 1. Роли (платформенные — общие, не только НоваСкил)
 

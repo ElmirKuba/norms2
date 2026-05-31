@@ -1,10 +1,10 @@
 # getting-started.md — локальный запуск с нуля
 
-> Как поднять проект локально. Тулинг — [ADR-0021](./decisions/0021-tooling-defaults.md). Прод-деплой — `deployment.md`.
+> Как поднять проект локально. Тулинг — [ADR-0021](./decisions/0021-tooling-defaults.md) + [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md) (npm, Drizzle). Прод-деплой — `deployment.md`.
 
 ## Требования
 - Docker + docker-compose.
-- Node LTS ≥20 и `pnpm` (для запуска вне Docker / миграций).
+- Node LTS ≥20 и `npm` (для запуска вне Docker / миграций).
 
 ## Состав dev-окружения
 `docker-compose.dev.yml`:
@@ -16,7 +16,7 @@
 1. Клонировать репозиторий.
 2. Скопировать `.env.example` → `.env` (значения для dev уже подходят).
 3. `docker compose -f docker-compose.dev.yml up` — поднимет Postgres, бэк и фронт.
-4. Прогнать миграции (бэк): `pnpm migration:run` (внутри контейнера `nest` или локально с доступом к БД).
+4. Прогнать миграции (бэк, Drizzle): `npm run db:migrate` (внутри контейнера `nest` или локально с доступом к БД).
 5. Открыть фронт на `http://localhost:<порт>` (порт — в compose).
 
 ## `.env.example` (dev)
@@ -43,7 +43,7 @@ SECURITY_LOG_TTL_DAYS=60
 - Чтобы протестировать закрытый режим — поставить `FREE_REGISTRATION=false`, создать инвайт из настроек первого аккаунта и регистрироваться по коду.
 
 ## Полезные команды (в `nest/` и `angular/`)
-- `pnpm install` — зависимости.
-- `pnpm start` / watch — запуск вне Docker.
-- `pnpm migration:generate` / `migration:run` — миграции (только бэк).
-- `pnpm test` — тесты.
+- `npm install` — зависимости.
+- `npm start` / watch — запуск вне Docker.
+- `npm run db:generate` / `db:migrate` — миграции Drizzle (только бэк, drizzle-kit).
+- `npm test` — тесты.

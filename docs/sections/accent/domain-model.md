@@ -2,7 +2,7 @@
 
 > Сущности, поля, инварианты, состояния, механика лесенки. Каркас — [ADR-0027](../../decisions/0027-accent-phase2-core.md). Привязка к фундаменту — [README](./README.md). Геймификация — [`gamification.md`](./gamification.md). Схема БД/контракты — синтезируются на базе этого файла.
 >
-> **Слой:** доменный (без `@nestjs/*`/`typeorm`), работа через порты ([архитектура](../../architecture.md)). Все id — `uuidv7___unixmillis` ([ADR-0016](../../decisions/0016-primary-key-format.md)). Все сущности принадлежат `accounts` фазы 1 через `account_id` (отдельного User нет). У всех — `created_at`/`updated_at`; мягкое удаление через `archived`/`deleted_at` по образцу фазы 1.
+> **Слой:** бизнес-логика без прямого ORM — доступ к данным через adapters→drizzle-repositories (5-слойка, [ADR-0030](../../decisions/0030-stack-revision-drizzle-5layer-npm.md), [архитектура](../../architecture.md)). Все id — `uuidv7___unixmillis` ([ADR-0016](../../decisions/0016-primary-key-format.md)). Все сущности принадлежат `accounts` фазы 1 через `account_id` (отдельного User нет). У всех — `created_at`/`updated_at`; мягкое удаление через `archived`/`deleted_at` по образцу фазы 1.
 
 ## 0. Карта связей
 

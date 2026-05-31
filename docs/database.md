@@ -102,6 +102,8 @@
 
 Access-токен — stateless JWT, **не хранится**. Индексы: `(account_id)`, `(token_hash)`.
 
+> **Платформенное расширение (введено в Фазе 3, [ADR-0029](./decisions/0029-novaskil-phase3-core.md)):** таблицы `roles` и `account_roles` (N:M аккаунт↔роль, роли `admin`/`user`) — общие для площадки, не только НоваСкил. Схема — в [`sections/novaskil/domain-model.md`](./sections/novaskil/domain-model.md). Разделы Акцент/НоваСкил добавляют свои таблицы в эту же БД (рядом).
+
 ### 7. `security_logs` — тех. логи (ИЗОЛИРОВАНА, без FK)
 ([152fz.md](./152fz.md), [ADR-0001](./decisions/0001-data-minimization-no-pii.md))
 

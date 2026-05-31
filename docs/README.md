@@ -54,6 +54,7 @@
 | Папка | Область | Статус |
 |---|---|---|
 | [`sections/accent/`](./sections/accent/README.md) | Фаза 2 «Акцент»: цели, привычки, микро-победы, геймификация (README, domain-model, gamification, api-contracts, ui-ux) | ✅ v1 (дока готова) |
+| [`sections/novaskil/`](./sections/novaskil/README.md) | Фаза 3 «НоваСкил»: LMS-курсы (README, domain-model, content-format, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 
 Документы Фазы 3 (`sections/novaskil/`) и далее появятся при старте соответствующих фаз. Рабочая карта переваривания источников Фазы 2 — в [`archive/phase2-analysis-map.md`](./archive/phase2-analysis-map.md).
 

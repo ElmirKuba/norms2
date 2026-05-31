@@ -71,7 +71,8 @@ Body: `{ login, password }`.
 - `GET /accounts/me` (auth) → `{ login, alias, createdAt, invitesRemaining, inviter: {login,alias}|null, banned: boolean }`.
 - `GET /accounts/:login` (auth) → публичный: `{ login, alias, createdAt }`.
 - `PATCH /accounts/me` (auth) Body `{ alias }` → 200.
-- `POST /accounts/me/deactivate` (auth) → 204. `POST /accounts/me/reactivate`. `DELETE /accounts/me` (soft) → 204.
+- `POST /accounts/me/deactivate` (auth) → 204. `POST /accounts/me/reactivate`. `DELETE /accounts/me` (soft, без UI-восстановления — [ADR-0017](./decisions/0017-account-soft-delete.md)) → 204.
+- _Задел (не в MVP — [ADR-0031](./decisions/0031-file-storage-uploads.md)):_ `POST /accounts/me/avatar` (multipart, изображение на диск) · `DELETE /accounts/me/avatar`.
 
 ---
 

@@ -21,6 +21,7 @@
 | `id` | varchar(52) | PK |
 | `login` | varchar(32) | `^[a-zA-Z0-9_]{3,32}$`; **уникальность по `lower(login)`**, глобальная ([ADR-0006](./decisions/0006-registration-field-rules.md), [ADR-0017](./decisions/0017-account-soft-delete.md)) |
 | `alias` | varchar(32) | 2–32, Unicode; не уникален |
+| `avatar` | varchar | null; путь `content/avatars/<id>...` ([ADR-0031](./decisions/0031-file-storage-uploads.md)) — **задел, UI/загрузка позже** |
 | `password_hash` | text | argon2id |
 | `registration_source` | varchar(8) | CHECK in (`free`,`invite`,`seed`) ([ADR-0010](./decisions/0010-registration-auth-flow.md)) |
 | `invites_remaining` | int | not null, default из ENV `INVITE_DEFAULT_QUOTA`=3 ([ADR-0007](./decisions/0007-invite-quota-counter.md)) |

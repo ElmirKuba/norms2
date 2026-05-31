@@ -15,7 +15,7 @@
 ## Сущности и инварианты
 
 ### `Account` (корень)
-Поля (доменный вид): `id`, `login: Login`, `alias: Alias`, `passwordHash`, `registrationSource: free|invite|seed`, `invitesRemaining`, `recoveryRequiredCount?`, `timezone` (IANA, default UTC — [ADR-0028](./decisions/0028-accent-timezone-and-domains.md)), `deactivatedAt?`, `deletedAt?`.
+Поля (доменный вид): `id`, `login: Login`, `alias: Alias`, `passwordHash`, `registrationSource: free|invite|seed`, `invitesRemaining`, `recoveryRequiredCount?`, `timezone` (IANA, default UTC — [ADR-0028](./decisions/0028-accent-timezone-and-domains.md)), `avatar?` (путь; задел — [ADR-0031](./decisions/0031-file-storage-uploads.md)), `deactivatedAt?`, `deletedAt?`.
 Инварианты:
 - `invitesRemaining ≥ 0`; создать код можно только при `> 0`. ([ADR-0007](./decisions/0007-invite-quota-counter.md))
 - **Вход разрешён ⇔** `deletedAt == null` И `deactivatedAt == null` И не забанен. ([ADR-0017](./decisions/0017-account-soft-delete.md), [ADR-0012](./decisions/0012-bans-derived-status.md))

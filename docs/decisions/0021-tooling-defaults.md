@@ -1,6 +1,6 @@
 # ADR-0021: Тулинг и версии (дефолты)
 
-- **Статус:** accepted
+- **Статус:** accepted — **частично заменён [ADR-0030](./0030-stack-revision-drizzle-5layer-npm.md):** пакетный менеджер **npm** (не pnpm), ORM **Drizzle** (не TypeORM), архитектура 5-слойная. Остальное (Node LTS, Jest, Signals-без-стора, latest Nest/Angular) — в силе.
 - **Дата:** 2026-05-30
 - **Решает:** рекомендации Claude, одобрено Elmir (пункты G2, G3, H1, H2)
 - **Контекст-теги:** [backend] [frontend] [tooling]

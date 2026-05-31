@@ -3,7 +3,7 @@
 > Реализация фронтенда (SPA). Конвенции — [ADR-0020](./decisions/0020-api-conventions.md) (токены), [ADR-0021](./decisions/0021-tooling-defaults.md) (тулинг). API — [`api-contracts.md`](./api-contracts.md).
 
 ## Стек
-Angular latest stable (≥17), **standalone-компоненты**, **Signals**, **чистый SCSS/CSS** (без Tailwind/Bootstrap — свои лёгкие компоненты). **Angular Material — только `MatDialog`** для модалок ([ADR-0025](./decisions/0025-ui-ux-design-language.md)). TypeScript strict, pnpm.
+Angular latest stable (≥17), **standalone-компоненты**, **Signals** (+ поля класса, rxjs где нужно — **без стейт-менеджеров/NgRx**, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)), **чистый SCSS/CSS** (без Tailwind/Bootstrap — свои лёгкие компоненты). **Angular Material — только `MatDialog`** для модалок ([ADR-0025](./decisions/0025-ui-ux-design-language.md)). TypeScript strict, **npm**.
 
 ## Структура
 ```

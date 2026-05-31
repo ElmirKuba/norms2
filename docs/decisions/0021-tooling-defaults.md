@@ -6,7 +6,7 @@
 - **Контекст-теги:** [backend] [frontend] [tooling]
 
 ## Решение
-- **Пакетный менеджер:** `pnpm` (для `nest/` и `angular/`); быстрый, экономный к диску, удобен в монорепо.
+- **Пакетный менеджер:** ~~pnpm~~ → **npm** (заменено [ADR-0030](./0030-stack-revision-drizzle-5layer-npm.md): единообразие с проектами Elmir).
 - **Node:** LTS ≥20.
 - **NestJS:** latest stable (≥10). **Angular:** latest stable (≥17 как база) — **точная версия пинится при bootstrap** (не хардкодим число в доке, чтобы не устарело).
 - **Тесты бэка:** Jest — unit на use-cases (порты замоканы) + e2e через supertest на тестовой БД.
@@ -15,7 +15,7 @@
 - **Стили:** чистый SCSS/CSS (без Tailwind), свои компоненты; `MatDialog` (Angular Material) только для модалок — см. [ADR-0025](./0025-ui-ux-design-language.md). Дизайн-токены — SCSS-переменные в `ui-ux.md`.
 
 ## Альтернативы
-- npm/yarn — pnpm выигрывает в монорепо. Karma — устаревает, не берём.
+- Karma — устаревает, не берём. (pnpm рассматривался, отвергнут в пользу npm — [ADR-0030](./0030-stack-revision-drizzle-5layer-npm.md).)
 
 ## Последствия
 - `backend.md`, `frontend.md`, `getting-started.md` опираются на эти дефолты.

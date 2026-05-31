@@ -6,16 +6,16 @@
 Раздел онлайн-обучения «для своих»: админы создают курсы, аутентифицированные пользователи проходят их и копят прогресс. Часть площадки Нормисы наравне с ЛК / Акцент / Мессенджер.
 
 ## 2. Привязка к фундаменту
-- Аккаунты, сессии, id `uuidv7___unixmillis`, слои Nest+TypeORM, `/api/v1`, SCSS+MatDialog — из фазы 1 ([ADR-0029](../../decisions/0029-novaskil-phase3-core.md) §«Наследует»). Свой ЛК/email — НЕ заводим.
+- Аккаунты, сессии, id `uuidv7___unixmillis`, 5-слойный Nest+Drizzle ([ADR-0030](../../decisions/0030-stack-revision-drizzle-5layer-npm.md)), `/api/v1`, SCSS+MatDialog — из фазы 1. Свой ЛК/email — НЕ заводим.
 - **Роли:** платформенные `roles` + `account_roles` (N:M), вводятся этим разделом ([domain-model](./domain-model.md)).
 - **Контент** — JSON-файлы + медиа на диске (`content/`), раздаётся статикой ([content-format](./content-format.md)).
 
 ## 3. Состав
 | Часть | Где | Кратко |
 |---|---|---|
-| Роли | БД (TypeORM) | `roles`, `account_roles` — кто админ |
+| Роли | БД (Drizzle) | `roles`, `account_roles` — кто админ |
 | Контент | диск (JSON) | Курс → Глава → Урок, `index.json`, медиа |
-| Прогресс / enrollment | БД (TypeORM) | отметка пройденных уроков на `account` |
+| Прогресс / enrollment | БД (Drizzle) | отметка пройденных уроков на `account` |
 | Редактор | фронт (admin) | TipTap (md/html, визуал+исходник) |
 
 Подробно: [domain-model](./domain-model.md) (БД), [content-format](./content-format.md) (диск), [api-contracts](./api-contracts.md), [ui-ux](./ui-ux.md).

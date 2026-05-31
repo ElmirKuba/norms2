@@ -2,7 +2,7 @@
 
 > Источник истины по **доменному слою** (сущности, value objects, инварианты, порты, use-cases). Физическая схема — [`database.md`](./database.md). Границы слоёв — `architecture.md`. «Почему» — [`decisions/`](./decisions/README.md).
 >
-> Домен **не импортирует** `@nestjs/*` и `typeorm`. Работает с **портами** (интерфейсами репозиториев); реализации — в `infrastructure/`. ([CLAUDE.md](../CLAUDE.md))
+> Бизнес-слои (managers/use-cases) **не импортируют ORM** напрямую — доступ к данным через `adapters` → `drizzle-repositories` (5-слойка, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). ([CLAUDE.md](../CLAUDE.md))
 
 ## Value objects
 

@@ -70,7 +70,7 @@ ADR и [`decision-map.md`](../archive/decision-map.md) (🗄 в архиве —
 | [0018](./0018-refresh-tokens-sessions.md) | Refresh-токены/сессии в Postgres, управление устройствами | accepted | [backend] [db] [security] |
 | [0019](./0019-backend-architecture-conventions.md) | Архитектура бэка: монорепо, zod-конфиг, shared, ошибки, pino, идемпотентность | accepted | [architecture] [backend] |
 | [0020](./0020-api-conventions.md) | API: /api/v1, конверт ошибок, throttler, zod-DTO, токены (access в памяти, refresh httpOnly) | accepted | [api] [interface] [security] |
-| [0021](./0021-tooling-defaults.md) | Тулинг: pnpm, Node LTS, latest Nest/Angular, Jest, Signals | accepted | [backend] [frontend] [tooling] |
+| [0021](./0021-tooling-defaults.md) | Тулинг: Node LTS, latest Nest/Angular, Jest, Signals (npm/Drizzle → ADR-0030) | accepted (частично → ADR-0030) | [backend] [frontend] [tooling] |
 | [0022](./0022-concept-and-philosophy.md) | Концепция: ламповое invite-only, RU, некоммерческое | accepted | [product] [concept] |
 | [0023](./0023-deployment-jurisdiction.md) | Деплой: РФ на время разработки, Traefik+LE, sweep, backup-домен позже | accepted | [deployment] [152fz] |
 | [0024](./0024-cookie-consent-gate.md) | Блокирующий cookie-гейт (Я согласен / Покинуть сайт) | accepted | [frontend] [ux] |

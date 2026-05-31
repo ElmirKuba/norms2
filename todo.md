@@ -133,7 +133,7 @@
 - [x] Переварить протокол НоваСкил → копилка. История: [`docs/phase3-analysis-map.md`](./docs/phase3-analysis-map.md)
 - [x] Решения N1–N8 → [`docs/decisions/0029-novaskil-phase3-core.md`](./docs/decisions/0029-novaskil-phase3-core.md)
 - [x] Дока раздела — [`docs/sections/novaskil/`](./docs/sections/novaskil/README.md): README, domain-model, content-format, api-contracts, ui-ux
-- [ ] Источник `Вдохновиться/новаскил/NOVASKIL_PROTOCOL.md` — оставлен (бэкап); решить судьбу при общем ревью доки
+- [x] Папка `Вдохновиться/` удалена (оба источника переварены 100%; бэкапы — в git-истории и `~/Downloads`)
 - [ ] Реализация (после Фаз 1–2); связь курс↔Акцент (N6) и геймификация обучения (N5) — волнами
 
 ---

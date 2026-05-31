@@ -33,7 +33,7 @@ Web-платформа (потом — Capacitor для iOS/Android и Electron 
 ## Стек и архитектурные принципы
 
 - **Frontend:** Angular 17+, standalone-компоненты, Signals, **чистый SCSS/CSS** (свои компоненты, без Tailwind). SPA. **Angular Material — только `MatDialog`** (модалки), см. [`docs/decisions/0025-ui-ux-design-language.md`](./docs/decisions/0025-ui-ux-design-language.md).
-- **Backend:** NestJS, **5-слойная архитектура** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), образец — `~/coding/kuba-game`): `api-endpoints → managers-level → use-cases-level → adapters → drizzle-repositories` (+ `system`/`interfaces`/`dtos`/`utility-level`). Поток: controller→manager→use-case→adapter→repository. **Кросс-доменные вызовы только ВНИЗ:** manager своей области зовёт use-case ДРУГОЙ области (не её manager) → круговой DI исключён. Замена доступа к данным — без правки бизнес-слоёв.
+- **Backend:** NestJS, **5-слойная архитектура** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), образец — `~/coding/kuba-game`): `api-endpoints → use-cases-level → managers-level → adapters → drizzle-repositories` (+ `system`/`interfaces`/`dtos`/`utility-level`). Поток: controller→use-case→manager→adapter→repository. **Кросс-доменные вызовы только ВНИЗ:** use-case области A зовёт manager ДРУГОЙ области B (не её use-case) → круговой DI исключён. Замена доступа к данным — без правки бизнес-слоёв.
 - **БД:** PostgreSQL + **Drizzle** ORM ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md); НЕ TypeORM). Репозитории — слой `drizzle-repositories`; домен/use-cases про ORM не знают.
 - **Идентификаторы (сквозная конвенция, всегда):** PK и все FK — строка формата `uuidv7___unixmillis` (пример `019e7488-0147-7305-9b95-a553f2d00c8e___1780071500548`). Генерация — общий util `generateId()` на бэке и фронте. Подробно — [`docs/decisions/0016-primary-key-format.md`](./docs/decisions/0016-primary-key-format.md). Применяется ко всем таблицам/сущностям во всех фазах.
 - **ORM:** Drizzle + drizzle-kit (явные миграции, без auto-push в проде). Слой `drizzle-repositories` инкапсулирует ORM.
@@ -50,7 +50,7 @@ src/
       ... (5 слоёв папками в корне src, см. ниже)
 ```
 
-**5 слоёв** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md)) — папками в `src`: `api-endpoints` (контроллеры) → `managers-level` (бизнес-оркестрация, точка кросс-домена) → `use-cases-level` (атомарные операции) → `adapters` (граница домен↔инфра) → `drizzle-repositories` (Drizzle). Use-cases/домен не импортируют ORM. **Кросс-домен — только вниз:** manager области A зовёт use-case области B (не manager B) → нет круговой DI. Детали — [`docs/architecture.md`](./docs/architecture.md).
+**5 слоёв** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md)) — папками в `src`: `api-endpoints` (контроллеры) → `use-cases-level` (оркестрация сценария, точка кросс-домена) → `managers-level` (бизнес-логика области) → `adapters` (граница домен↔инфра) → `drizzle-repositories` (Drizzle). Бизнес-слои не импортируют ORM. **Кросс-домен — только вниз:** use-case области A зовёт manager области B (не use-case B) → нет круговой DI. Детали — [`docs/architecture.md`](./docs/architecture.md).
 
 ---
 

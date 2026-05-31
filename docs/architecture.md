@@ -19,9 +19,9 @@ norms2/
 
 ```
 nest/src/
-├─ api-endpoints/        # СЛОЙ 1: контроллеры — HTTP, валидация DTO, вызов менеджера
-├─ managers-level/       # СЛОЙ 2: бизнес-оркестрация; ТОЧКА кросс-доменных вызовов
-├─ use-cases-level/      # СЛОЙ 3: атомарные операции одной доменной области
+├─ api-endpoints/        # СЛОЙ 1: контроллеры — HTTP, валидация DTO, вызов use-case
+├─ use-cases-level/      # СЛОЙ 2: верхнеуровневая оркестрация сценария; ТОЧКА кросс-домена
+├─ managers-level/       # СЛОЙ 3: бизнес-логика одной доменной области
 ├─ adapters/             # СЛОЙ 4: граница домен↔инфраструктура (порт-подобный)
 ├─ drizzle-repositories/ # СЛОЙ 5: доступ к данным через Drizzle
 ├─ system/               # orm-schemas, orm-relations (Drizzle), системные сервисы
@@ -32,16 +32,17 @@ nest/src/
 └─ app.module.ts · main.ts   # только bootstrap
 ```
 
-**Поток вызова:** `controller (api-endpoints) → manager (managers-level) → use-case (use-cases-level) → adapter (adapters) → repository (drizzle-repositories)`.
+**Поток вызова (сверху вниз):** `controller (api-endpoints) → use-case (use-cases-level) → manager (managers-level) → adapter (adapters) → repository (drizzle-repositories)`.
 
 ## Правила зависимостей (вниз, не вбок)
 
-- Каждый слой зовёт **только слой ниже** своей доменной области.
+- Каждый слой зовёт **только слой ниже**.
 - `use-cases`/`managers` не импортируют Drizzle — доступ к данным только через `adapters` → `drizzle-repositories`. Замена ORM = переписать `drizzle-repositories` (+ adapters при нужде), бизнес-слои не трогаем.
 - **Кросс-доменное взаимодействие — ТОЛЬКО ВНИЗ** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)):
-  - `manager` области **A** может звать `use-case` области **B** (слой ниже), но **НЕ** `manager` области B.
-  - Поскольку `use-case` не зависит от `manager`, цикла NestJS-DI не возникает.
-  - Пример: `account.manager → courses.use-case` И `courses.manager → account.use-case` — оба валидны, цикла нет. Именно это решает круговую DI (ради чего и 5 слоёв, а не 4).
+  - `use-case` области **A** может звать `manager` области **B** (слой ниже), но **НЕ** `use-case` области B.
+  - Поскольку `manager` не зависит от `use-case`, цикла NestJS-DI не возникает.
+  - Пример: `account.use-case → courses.manager` И `courses.use-case → account.manager` — оба валидны, цикла нет. Именно это решает круговую DI (ради чего 5 слоёв, а не 4).
+- **Связывание модулей:** модуль каждого слоя `imports` модуль слоя ниже и `exports` свой сервис (`manager.module` imports `adapter.module`; `use-case.module` imports нужные `manager.module`(ы); controller-module imports `use-case.module`).
 
 ## Shared / системное
 
@@ -63,8 +64,8 @@ nest/src/
 
 ```
 api-endpoints (controller + DTO)
-  → managers-level: RegisterAccount (оркестрация; при нужде зовёт use-case других областей ВНИЗ)
-      → use-cases-level: проверка квоты/кода, создание account+invitation, погашение кода (транзакция)
+  → use-cases-level: RegisterAccount (оркестрация; при нужде зовёт manager других областей ВНИЗ)
+      → managers-level: проверка квоты/кода, создание account+invitation, погашение кода (транзакция)
           → adapters → drizzle-repositories (Drizzle)
   ← результат → DTO (без токенов) → редирект на вход
 ```

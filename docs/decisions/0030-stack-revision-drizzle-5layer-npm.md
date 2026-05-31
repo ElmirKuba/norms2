@@ -17,19 +17,20 @@
 - Миграции — средствами Drizzle (drizzle-kit), явные; без auto-push в проде.
 
 ### 2. 5-слойная архитектура backend (не 4-слойная)
-Слои папками в корне `src` (сверху вниз), поток `controller → manager → use-case → adapter → repository`:
+Слои папками в корне `src`. Порядок СВЕРХУ ВНИЗ (как в kuba-game), поток `controller → use-case → manager → adapter → repository`:
 
-1. **`api-endpoints`** — контроллеры: HTTP, валидация входа (DTO), вызов менеджера.
-2. **`managers-level`** — бизнес-оркестрация. **Точка входа для кросс-доменных вызовов.**
-3. **`use-cases-level`** — атомарные операции одной доменной области; зовёт adapters своей области.
+1. **`api-endpoints`** — контроллеры: HTTP, валидация входа (DTO), вызов **use-case**.
+2. **`use-cases-level`** — верхнеуровневая оркестрация сценария. **Точка кросс-доменных вызовов.** Зовёт manager(ы) своей и/или других областей.
+3. **`managers-level`** — бизнес-логика одной доменной области; зовёт adapter своей области.
 4. **`adapters`** — граница домен↔инфраструктура (порт-подобный слой); зовёт репозитории.
 5. **`drizzle-repositories`** — доступ к данным через Drizzle.
 
-Вспомогательные: `system` (orm-schemas/relations), `interfaces`, `dtos`, `utility-level`, `filters`, `gateways`, `adapters`.
+Вспомогательные: `system` (orm-schemas/relations), `interfaces`, `dtos`, `utility-level`, `filters`, `gateways`.
 
 **Зачем именно 5 слоёв (разрешение круговой DI) — ключевое:**
-Кросс-доменные зависимости идут **только вниз**: manager своей области зовёт **use-case другой** области, а НЕ её manager. Use-case не зависит от manager → цикла нет.
-Пример: `account.manager → courses.use-case` И `courses.manager → account.use-case` — оба валидны, цикла NestJS-DI нет. В 4-слойке (norms) такого разведения не было, отсюда риск `forwardRef`/циклов; 5-слойка это снимает структурно и делает систему расширяемой.
+Кросс-доменные зависимости идут **только вниз**: `use-case` области A может звать **`manager` другой** области B (слой ниже), а НЕ её use-case. `manager` не зависит от `use-case` → цикла NestJS-DI нет.
+Пример: `account.use-case → courses.manager` И `courses.use-case → account.manager` — оба валидны, цикла нет. В 4-слойке (norms) такого разведения не было, отсюда риск `forwardRef`/циклов; 5-слойка снимает это структурно и делает систему расширяемой.
+(Связывание модулей: каждый модуль слоя `imports` модуль слоя ниже и `exports` свой сервис; пример из kuba-game: `*.manager.module → imports AdapterModule`, `*.use-case.module → imports ManagerModule(ы)`, controller-module → imports UseCaseModule.)
 
 ### 3. Пакетный менеджер — npm (не pnpm)
 Единообразно с другими проектами Elmir (kuba-game на npm). pnpm-преимущества (диск/скорость) для нас не перевешивают привычность npm. Применяется к `nest/` и `angular/`.

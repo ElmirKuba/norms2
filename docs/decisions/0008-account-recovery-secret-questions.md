@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в [`../archive/decision-map.md`](../archive/decision-map.md) (пункт D7)
+- **Решает:** Elmir + ToT в `../archive/decision-map.md` (пункт D7)
 - **Контекст-теги:** [domain] [db] [152fz]
 - **Заменяет:** часть про `SecretQA` в [ADR-0005](./0005-user-split-entities.md) (кардинальность 1:1) и [ADR-0006](./0006-registration-field-rules.md) (вопрос на регистрации). Чёрный список тем из ADR-0006 — остаётся в силе.
 

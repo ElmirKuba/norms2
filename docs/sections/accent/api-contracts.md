@@ -86,4 +86,4 @@
 `@nestjs/schedule`: материализация Task из активных Habit по RRULE в локальную полночь (по `timezone`, §0). В recovery/паузе — мягкий ролловер (минимальные версии). Sweep устаревших — по образцу фазы 1.
 
 ## 14. AI-эндпоинты (волна, заложить путь)
-`POST /accent/ai/decompose-goal`, `POST /accent/ai/repack-after-relapse` — с границами безопасности ([спек](../../archive/phase2-analysis-map.md): не стыдить, не обещать лечение, объяснимость). Не в MVP.
+`POST /accent/ai/decompose-goal`, `POST /accent/ai/repack-after-relapse` — с границами безопасности (спек: не стыдить, не обещать лечение, объяснимость). Не в MVP.

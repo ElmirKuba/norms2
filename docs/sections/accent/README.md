@@ -2,7 +2,7 @@
 
 > Личная ОС достижений внутри Нормисов: цели, привычки, микро-победы и геймификация, которые ведут человека от «1 отжимания» к устойчивому росту. Для **аутентифицированных** пользователей, на общем ЛК фазы 1.
 >
-> Характер и ключевые решения — [ADR-0027](../../decisions/0027-accent-phase2-core.md). История переваривания источников — [`../../archive/phase2-analysis-map.md`](../../archive/phase2-analysis-map.md) (🗄 рабочая карта). Детали — в соседних файлах этой папки.
+> Характер и ключевые решения — [ADR-0027](../../decisions/0027-accent-phase2-core.md). История переваривания источников — `../../archive/phase2-analysis-map.md` (🗄 рабочая карта). Детали — в соседних файлах этой папки.
 
 ## 1. Что это и для кого
 
@@ -19,7 +19,7 @@ North star: **даже человек в тяжёлом состоянии, де
 «Акцент» — **раздел, не отдельный продукт**. Использует общий ЛК:
 - идентичность — `accounts` ([фаза 1](../../domain-model.md)); **отдельного User не заводим**, все сущности раздела вешаются на `account_id`;
 - идентификаторы — формат `uuidv7___unixmillis` ([ADR-0016](../../decisions/0016-primary-key-format.md));
-- backend — слоистый Nest (domain/application/infrastructure/interface), [архитектура](../../architecture.md), [ADR-0019](../../decisions/0019-backend-architecture-conventions.md);
+- backend — 5-слойный Nest (api-endpoints/use-cases-level/managers-level/adapters/drizzle-repositories), [архитектура](../../architecture.md), [ADR-0030](../../decisions/0030-stack-revision-drizzle-5layer-npm.md);
 - API — `/api/v1`, конверт ошибок, zod-DTO ([ADR-0020](../../decisions/0020-api-conventions.md));
 - frontend — Angular standalone + Signals + **чистый SCSS** (без Tailwind), модалки через `MatDialog` ([ADR-0025](../../decisions/0025-ui-ux-design-language.md), [ADR-0026](../../decisions/0026-modal-system.md));
 - «Акцент» — отдельный модуль на бэке (`modules/accent/...` или набор под-модулей) и lazy-loaded feature на фронте.

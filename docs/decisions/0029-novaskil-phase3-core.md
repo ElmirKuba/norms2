@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-31
-- **Решает:** Elmir (развилки N1–N8 из [`../phase3-analysis-map.md`](../phase3-analysis-map.md))
+- **Решает:** Elmir (развилки N1–N8 из `../phase3-analysis-map.md`)
 - **Контекст-теги:** [product] [novaskil] [phase3] [domain] [db]
 
 ## Контекст

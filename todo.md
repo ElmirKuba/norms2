@@ -16,7 +16,7 @@
 - [x] Завести `docs/decisions/` (ADR-журнал) + ADR-0001 (минимизация ПДн)
 - [x] Написать `docs/methodology.md` (метод рассуждения: CoT / ToT / Self-Consistency)
 - [x] Построить `docs/decision-map.md` (карта всех точек решения по проекту)
-- [x] **Пройти карту решений по шагам** — все развилки фазы 1 закрыты, по каждой заведён ADR (0001–0026). Карта сверена построчно и перенесена в [`docs/archive/decision-map.md`](./docs/archive/decision-map.md).
+- [x] **Пройти карту решений по шагам** — все развилки фазы 1 закрыты, по каждой заведён ADR (0001–0026). Карта сверена построчно и перенесена в `docs/archive/decision-map.md`.
 - [ ] **Принять решение по VPS** — выбрать провайдера вне РФ (см. ниже §«Решения, которые нужно принять»)
 - [ ] **Зарегистрировать backup-домен** в зоне `.com` / `.app` / `.io` (риск разделегирования `.рф`, см. `docs/152fz.md`)
 - [ ] Зафиксировать решение по VPS в `docs/deployment.md`
@@ -118,7 +118,7 @@
 
 **Дока раздела готова** (синтезирована из вдохновения, источники переварены и удалены). Реализация — после закрытия Фазы 1.
 
-- [x] Переварить источники вдохновения (Ascent + SuperBetter-спек) → копилка идей. История: [`docs/archive/phase2-analysis-map.md`](./docs/archive/phase2-analysis-map.md)
+- [x] Переварить источники вдохновения (Ascent + SuperBetter-спек) → копилка идей. История: `docs/archive/phase2-analysis-map.md`
 - [x] Принять ключевые решения раздела — [`docs/decisions/0027-accent-phase2-core.md`](./docs/decisions/0027-accent-phase2-core.md)
 - [x] Написать доку раздела — [`docs/sections/accent/`](./docs/sections/accent/README.md): README, domain-model, gamification, api-contracts, ui-ux
 - [x] Развилки R6/R10 решены — [`docs/decisions/0028-accent-timezone-and-domains.md`](./docs/decisions/0028-accent-timezone-and-domains.md): timezone в `accounts`, цели = сфера + RPG-атрибуты
@@ -130,7 +130,7 @@
 
 **Дока раздела готова** (LMS-курсы, синтезировано из протокола вдохновения). Реализация — после Фаз 1–2.
 
-- [x] Переварить протокол НоваСкил → копилка. История: [`docs/phase3-analysis-map.md`](./docs/phase3-analysis-map.md)
+- [x] Переварить протокол НоваСкил → копилка. История: `docs/phase3-analysis-map.md`
 - [x] Решения N1–N8 → [`docs/decisions/0029-novaskil-phase3-core.md`](./docs/decisions/0029-novaskil-phase3-core.md)
 - [x] Дока раздела — [`docs/sections/novaskil/`](./docs/sections/novaskil/README.md): README, domain-model, content-format, api-contracts, ui-ux
 - [x] Папка `Вдохновиться/` удалена (оба источника переварены 100%; бэкапы — в git-истории и `~/Downloads`)
@@ -158,7 +158,7 @@
 
 ## Решения, которые нужно принять
 
-Все решения фазы 1 приняты и зафиксированы как ADR — [`docs/decisions/`](./docs/decisions/README.md). Карта развилок (🗄 архив, фаза 0 завершена) — [`docs/archive/decision-map.md`](./docs/archive/decision-map.md).
+Все решения фазы 1 приняты и зафиксированы как ADR — [`docs/decisions/`](./docs/decisions/README.md). Карта развилок (🗄 архив, фаза 0 завершена) — `docs/archive/decision-map.md`.
 
 ---
 

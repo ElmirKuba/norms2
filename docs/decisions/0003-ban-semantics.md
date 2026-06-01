@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в [`../archive/decision-map.md`](../archive/decision-map.md) (пункт D3)
+- **Решает:** Elmir + ToT в `../archive/decision-map.md` (пункт D3)
 - **Контекст-теги:** [domain]
 
 ## Контекст

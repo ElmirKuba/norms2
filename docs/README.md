@@ -37,7 +37,7 @@
 | Файл | Доменная область — **единственный источник истины для** | Статус |
 |---|---|---|
 | [`methodology.md`](./methodology.md) | Как Claude Code рассуждает: CoT / ToT / Self-Consistency | ✅ v1 |
-| [`archive/decision-map.md`](./archive/decision-map.md) | Карта решений фазы 0 (исчерпана, в архиве) — индекс «какой ADR что закрыл» | 🗄 архив |
+| `archive/decision-map.md` | Карта решений фазы 0 (исчерпана, в архиве) — индекс «какой ADR что закрыл» | 🗄 архив |
 | [`decisions/`](./decisions/README.md) | Журнал **принятых** решений (ADR), неизменяемых | ✅ заведён |
 | [`152fz.md`](./152fz.md) | Юрисдикция, ПДн, что НЕ собираем, политика данных | ✅ v1 |
 | [`architecture.md`](./architecture.md) | Слои, границы модулей, shared kernel, потоки данных, ошибки, токены | ✅ v1 |
@@ -56,7 +56,7 @@
 | [`sections/accent/`](./sections/accent/README.md) | Фаза 2 «Акцент»: цели, привычки, микро-победы, геймификация (README, domain-model, gamification, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 | [`sections/novaskil/`](./sections/novaskil/README.md) | Фаза 3 «НоваСкил»: LMS-курсы (README, domain-model, content-format, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 
-Документы Фазы 3 (`sections/novaskil/`) и далее появятся при старте соответствующих фаз. Рабочая карта переваривания источников Фазы 2 — в [`archive/phase2-analysis-map.md`](./archive/phase2-analysis-map.md).
+Документы Фазы 3 (`sections/novaskil/`) и далее появятся при старте соответствующих фаз. Рабочая карта переваривания источников Фазы 2 — в `archive/phase2-analysis-map.md`.
 
 ---
 

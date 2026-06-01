@@ -20,7 +20,7 @@
 
 - Каждое значимое решение принимается через разбор альтернатив и фиксируется отдельной записью — **ADR** (Architecture Decision Record) в [`docs/decisions/`](./docs/decisions/). Сейчас их 18: от модели данных до формата идентификаторов.
 - Методика рассуждения (Chain-of-Thought, Tree-of-Thoughts, Self-Consistency) описана в [`docs/methodology.md`](./docs/methodology.md).
-- Все развилки видны на одной карте — [`docs/archive/decision-map.md`](./docs/archive/decision-map.md) (фаза 0 завершена, карта в архиве).
+- Все развилки видны на одной карте — `docs/archive/decision-map.md` (фаза 0 завершена, карта в архиве).
 
 Цель — документация, по которой реализация идёт без вопросов и багов.
 

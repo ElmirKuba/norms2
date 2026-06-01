@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в [`../archive/decision-map.md`](../archive/decision-map.md) (пункт D4)
+- **Решает:** Elmir + ToT в `../archive/decision-map.md` (пункт D4)
 - **Контекст-теги:** [domain] [db]
 - **Заменяет:** механику квоты из [ADR-0004](./0004-invite-quota-ttl.md) (состояния, TTL 3д, отзыв из ADR-0004 — остаются в силе).
 

@@ -53,9 +53,9 @@ Capacitor (iOS, Android) + Electron (macOS, Windows, Linux). Общая Angular 
 ## 3. Стек
 
 - **Frontend:** Angular 17+ SPA, standalone-компоненты, Signals, **чистый SCSS/CSS** (свои компоненты, без Tailwind). **Angular Material — только `MatDialog`** для модалок (см. [ADR-0025](./docs/decisions/0025-ui-ux-design-language.md)).
-- **Backend:** NestJS, **5-слойная архитектура** (api-endpoints / managers-level / use-cases-level / adapters / drizzle-repositories; кросс-домен только вниз) — см. [ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), [`docs/architecture.md`](./docs/architecture.md).
+- **Backend:** NestJS, **5-слойная архитектура** (controllers / domain-services / use-cases / adapters / repositories; кросс-домен только вниз) — см. [ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), [`docs/architecture.md`](./docs/architecture.md).
 - **БД:** PostgreSQL.
-- **ORM:** Drizzle с ручными миграциями (drizzle-kit), инкапсулирован в `drizzle-repositories`. Возможность заменить ORM/уйти на raw SQL без правки бизнес-слоёв — обязательное требование. Пакетный менеджер — npm. ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md))
+- **ORM:** Drizzle с ручными миграциями (drizzle-kit), инкапсулирован в `repositories`. Возможность заменить ORM/уйти на raw SQL без правки бизнес-слоёв — обязательное требование. Пакетный менеджер — npm. ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md))
 - **Контейнеризация:** Docker, docker-compose.
 - **TLS:** Let's Encrypt.
 - **Деплой:** SSH + git на Ubuntu VPS (на время разработки РФ допустим, переезд вне РФ — под давлением; см. [ADR-0023](./docs/decisions/0023-deployment-jurisdiction.md)).

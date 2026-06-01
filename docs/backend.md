@@ -8,16 +8,16 @@ NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужени
 ## 5-слойная структура (папками в `src`, см. [architecture.md](./architecture.md))
 ```
 src/
-├─ api-endpoints/<feature>/        # контроллеры + DTO + guards
-├─ use-cases-level/<feature>/      # оркестрация сценария; кросс-домен — вниз
-├─ managers-level/<feature>/       # бизнес-логика области
+├─ controllers/<feature>/        # контроллеры + DTO + guards
+├─ use-cases/<feature>/      # оркестрация сценария; кросс-домен — вниз
+├─ domain-services/<feature>/       # бизнес-логика области
 ├─ adapters/<feature>/             # граница домен↔инфра
-├─ drizzle-repositories/<feature>/ # Drizzle-доступ
+├─ repositories/<feature>/ # Drizzle-доступ
 ├─ system/   (orm-schemas, orm-relations)
 ├─ interfaces/  dtos/  utility-level/  filters/  gateways/
 └─ app.module.ts · main.ts         # только bootstrap
 ```
-**Кросс-домен только вниз:** `use-case` области A зовёт `manager` области B (не её use-case) → круговой DI исключён ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
+**Кросс-домен только вниз:** `use-case` области A зовёт `domain-service` области B (не её use-case) → круговой DI исключён ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
 ## Конфигурация
 - `zod`-схема всех ENV; валидация при старте (**fail-fast** — нет валидного env → не поднимаемся).
@@ -42,8 +42,8 @@ src/
 - `@nestjs/throttler` по IP на `auth/login|register`, `recovery/*`, `invites/check`.
 
 ## DI и слои
-- Доступ к данным — только `adapters` → `drizzle-repositories`. `use-cases`/`managers` не импортируют Drizzle. Привязка реализаций через DI-токены (Symbol/строка), напр. `ACCOUNT_ADAPTER`.
-- Кросс-доменные вызовы: `use-case` зовёт `manager` чужой области (слой ниже), не её `use-case` ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
+- Доступ к данным — только `adapters` → `repositories`. `use-cases`/`domain-services` не импортируют Drizzle. Привязка реализаций через DI-токены (Symbol/строка), напр. `ACCOUNT_ADAPTER`.
+- Кросс-доменные вызовы: `use-case` зовёт `domain-service` чужой области (слой ниже), не её `use-case` ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
 ## Транзакции
 - Регистрация по коду, погашение/отзыв инвайта — в **одной транзакции** (Drizzle transaction): консистентность `accounts` + `invitations` + `invite_codes` + счётчика ([ADR-0013](./decisions/0013-invites-lifecycle-cleanup.md), [ADR-0007](./decisions/0007-invite-quota-counter.md)).

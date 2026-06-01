@@ -1,7 +1,7 @@
 # database.md — схема БД фазы 1
 
 > Источник истины по **физической схеме**. Описывает «что есть», без истории решений. «Почему так» — в [`decisions/`](./decisions/README.md) (ссылки по тексту).
-> Реализация: PostgreSQL + **Drizzle** с **явными миграциями** (drizzle-kit; auto-push в проде запрещён) — [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md). Слой `drizzle-repositories` инкапсулирует ORM — бизнес-слои про неё не знают. Схема таблиц ниже от ORM не зависит.
+> Реализация: PostgreSQL + **Drizzle** с **явными миграциями** (drizzle-kit; auto-push в проде запрещён) — [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md). Слой `repositories` инкапсулирует ORM — бизнес-слои про неё не знают. Схема таблиц ниже от ORM не зависит.
 
 ## Конвенции (применяются ко всем таблицам)
 

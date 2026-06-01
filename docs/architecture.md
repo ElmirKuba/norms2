@@ -19,11 +19,11 @@ norms2/
 
 ```
 nest/src/
-├─ api-endpoints/        # СЛОЙ 1: контроллеры — HTTP, валидация DTO, вызов use-case
-├─ use-cases-level/      # СЛОЙ 2: верхнеуровневая оркестрация сценария; ТОЧКА кросс-домена
-├─ managers-level/       # СЛОЙ 3: бизнес-логика одной доменной области
+├─ controllers/        # СЛОЙ 1: контроллеры — HTTP, валидация DTO, вызов use-case
+├─ use-cases/      # СЛОЙ 2: верхнеуровневая оркестрация сценария; ТОЧКА кросс-домена
+├─ domain-services/       # СЛОЙ 3: бизнес-логика одной доменной области
 ├─ adapters/             # СЛОЙ 4: граница домен↔инфраструктура (порт-подобный)
-├─ drizzle-repositories/ # СЛОЙ 5: доступ к данным через Drizzle
+├─ repositories/ # СЛОЙ 5: доступ к данным через Drizzle
 ├─ system/               # orm-schemas, orm-relations (Drizzle), системные сервисы
 ├─ interfaces/           # типы/контракты (pure-and-base, full, with-child, systems…)
 ├─ dtos/                 # input/output DTO
@@ -32,21 +32,21 @@ nest/src/
 └─ app.module.ts · main.ts   # только bootstrap
 ```
 
-**Поток вызова (сверху вниз):** `controller (api-endpoints) → use-case (use-cases-level) → manager (managers-level) → adapter (adapters) → repository (drizzle-repositories)`.
+**Поток вызова (сверху вниз):** `controller (controllers) → use-case (use-cases) → domain-service (domain-services) → adapter (adapters) → repository (repositories)`.
 
 ## Правила зависимостей (вниз, не вбок)
 
 - Каждый слой зовёт **только слой ниже**.
-- `use-cases`/`managers` не импортируют Drizzle — доступ к данным только через `adapters` → `drizzle-repositories`. Замена ORM = переписать `drizzle-repositories` (+ adapters при нужде), бизнес-слои не трогаем.
+- `use-cases`/`domain-services` не импортируют Drizzle — доступ к данным только через `adapters` → `repositories`. Замена ORM = переписать `repositories` (+ adapters при нужде), бизнес-слои не трогаем.
 - **Кросс-доменное взаимодействие — ТОЛЬКО ВНИЗ** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)):
-  - `use-case` области **A** может звать `manager` области **B** (слой ниже), но **НЕ** `use-case` области B.
-  - Поскольку `manager` не зависит от `use-case`, цикла NestJS-DI не возникает.
-  - Пример: `account.use-case → courses.manager` И `courses.use-case → account.manager` — оба валидны, цикла нет. Именно это решает круговую DI (ради чего 5 слоёв, а не 4).
-- **Связывание модулей:** модуль каждого слоя `imports` модуль слоя ниже и `exports` свой сервис (`manager.module` imports `adapter.module`; `use-case.module` imports нужные `manager.module`(ы); controller-module imports `use-case.module`).
+  - `use-case` области **A** может звать `domain-service` области **B** (слой ниже), но **НЕ** `use-case` области B.
+  - Поскольку `domain-service` не зависит от `use-case`, цикла NestJS-DI не возникает.
+  - Пример: `account.use-case → courses.domain-service` И `courses.use-case → account.domain-service` — оба валидны, цикла нет. Именно это решает круговую DI (ради чего 5 слоёв, а не 4).
+- **Связывание модулей:** модуль каждого слоя `imports` модуль слоя ниже и `exports` свой сервис (`domain-service.module` imports `adapter.module`; `use-case.module` imports нужные `domain-service.module`(ы); controller-module imports `use-case.module`).
 
 ## Shared / системное
 
-`utility-level` + `interfaces` + `system` — кросс-доменные примитивы: `Id` (VO `uuidv7___unixmillis`), `generateId()`, базовые ошибки, Drizzle-схемы/связи. Области импортят из них, **не друг из друга напрямую** (только через правило «manager→чужой use-case»).
+`utility-level` + `interfaces` + `system` — кросс-доменные примитивы: `Id` (VO `uuidv7___unixmillis`), `generateId()`, базовые ошибки, Drizzle-схемы/связи. Области импортят из них, **не друг из друга напрямую** (только через правило «use-case→чужой domain-service»).
 
 ## Модули фазы 1 (доменные области)
 
@@ -63,10 +63,10 @@ nest/src/
 ## Поток данных (пример: регистрация по коду)
 
 ```
-api-endpoints (controller + DTO)
-  → use-cases-level: RegisterAccount (оркестрация; при нужде зовёт manager других областей ВНИЗ)
-      → managers-level: проверка квоты/кода, создание account+invitation, погашение кода (транзакция)
-          → adapters → drizzle-repositories (Drizzle)
+controllers (controller + DTO)
+  → use-cases: RegisterAccount (оркестрация; при нужде зовёт domain-service других областей ВНИЗ)
+      → domain-services: проверка квоты/кода, создание account+invitation, погашение кода (транзакция)
+          → adapters → repositories (Drizzle)
   ← результат → DTO (без токенов) → редирект на вход
 ```
 

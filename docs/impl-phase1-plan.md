@@ -4,14 +4,16 @@
 >
 > Стек: NestJS (5-слойка: controllers→use-cases→domain-services→adapters→repositories) + Drizzle + Postgres, npm, Docker. Angular standalone+Signals, SCSS, MatDialog. id `uuidv7___unixmillis`.
 
-## Текущая позиция
-- **Окружение проверено:** Node 24, npm 11, Docker 29, Angular CLI глобально, nest — через npx. Git чисто.
-- **Следующий: Этап 1 (bootstrap инфраструктуры).**
+## Текущая позиция (по факту)
+- **Окружение:** Node 24, npm 11, Docker 29, Angular CLI глобально, nest — через npx.
+- **`nest/` СОЗДАН:** NestJS 11, npm, строгий tsconfig (strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes + noPropertyAccessFromIndexSignature и др.) и строгий eslint (strictTypeChecked + явные типы/возвраты + обязательный JSDoc на русском + readonly + naming-convention; послабления для `*.dto.ts` и `src/system/orm-schemas/*`). Сборка `npm run build` зелёная. Демо-файлы `app.*` пока стоковые (нарушают JSDoc/accessibility — перестроим под 5-слойку на B4).
+- **Следующий: B1-angular** (каркас Angular latest stable), затем B2.
+- **Версии:** всё — latest stable на сегодня ([ADR-0021](./decisions/0021-tooling-defaults.md)).
 
 ## Этапы (каждый — отдельный коммит)
 
 ### B. Bootstrap
-- [ ] **B1** — `nest/` каркас (npm, strict TS), `angular/` каркас (standalone, SCSS), корневой `.gitignore` для node_modules/dist.
+- [~] **B1** — `nest/` каркас ✅ (NestJS 11, npm, строгие tsconfig+eslint, JSDoc на русском, сборка зелёная); осталось: `angular/` каркас (standalone, SCSS).
 - [ ] **B2** — `docker-compose.dev.yml` (postgres), `.env.example`, подключить Drizzle + drizzle-kit к nest, конфиг через zod (fail-fast).
 - [ ] **B3** — health-эндпоинт `GET /api/v1/health`, CORS, глобальный exception-filter (конверт ошибок), pino. Фронт дёргает health → «OK».
 - [ ] **B4** — utility `generateId()` (uuidv7___unixmillis) на бэке и фронте; базовые `interfaces`/`dtos` каркас 5-слойки.

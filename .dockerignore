@@ -4,6 +4,7 @@
 **/dist
 **/.angular
 **/coverage
+**/*.tsbuildinfo
 .git
 docker/volumes
 **/*.log

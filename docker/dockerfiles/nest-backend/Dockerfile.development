@@ -7,7 +7,10 @@ WORKDIR /app
 
 # Сначала только манифесты — чтобы слой с зависимостями кэшировался.
 COPY nest/package.json nest/package-lock.json ./
-RUN npm ci
+# npm install (не ci): lockfile генерится на macOS-хосте и не содержит linux-
+# вариантов опциональных пакетов; install доставит их под платформу контейнера.
+# Прод-образ использует детерминированный npm ci (lock соберём на linux на D1).
+RUN npm install
 
 # Остальной код бэкенда.
 COPY nest/ ./

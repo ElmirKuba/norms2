@@ -16,7 +16,7 @@ export PROJECT_ROOT := $(shell pwd)
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
 
-.PHONY: help dev-up dev-down dev-logs dev-ps dev-restart db-psql dev-config prod-build prod-up prod-down prod-config
+.PHONY: help dev-up dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -40,6 +40,15 @@ dev-config: ## Проверить dev-compose (render с подстановко�
 
 db-psql: ## psql в dev-постгрес
 	$(DEV_COMPOSE) exec postgres psql -U $(DB_USER) -d $(DB_NAME)
+
+db-generate: ## drizzle-kit: сгенерить миграцию из orm-схем
+	cd nest && npm run db:generate
+
+db-migrate: ## drizzle-kit: накатить миграции на БД
+	cd nest && npm run db:migrate
+
+db-studio: ## drizzle-kit: GUI по БД
+	cd nest && npm run db:studio
 
 prod-build: ## Собрать prod-образы
 	$(PROD_COMPOSE) build

@@ -51,27 +51,27 @@ services:
     networks:
       - norms2_dev-net
 
-  # ── NestJS backend (включить после этапа B2) ──
-  # nest:
-  #   container_name: norms2_nest_dev
-  #   build:
-  #     context: ${PROJECT_ROOT}
-  #     dockerfile: docker/dockerfiles/nest-backend/Dockerfile.development
-  #   restart: unless-stopped
-  #   env_file:
-  #     - ${PROJECT_ROOT}/.env
-  #   environment:
-  #     DB_HOST: norms2_postgres_dev   # внутри сети — имя контейнера, не localhost
-  #     CHOKIDAR_USEPOLLING: 'true'
-  #   volumes:
-  #     - ${PROJECT_ROOT}/nest/src:/app/src:rw
-  #   ports:
-  #     - '${BACKEND_PORT}:3000'
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - norms2_dev-net
+  # ── NestJS backend (watch-режим, монтируем src) ──
+  nest:
+    container_name: norms2_nest_dev
+    build:
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/nest-backend/Dockerfile.development
+    restart: unless-stopped
+    env_file:
+      - ${PROJECT_ROOT}/.env
+    environment:
+      DB_HOST: norms2_postgres_dev   # внутри сети — имя контейнера, не localhost
+      CHOKIDAR_USEPOLLING: 'true'    # надёжный hot-reload по смонтированному src
+    volumes:
+      - ${PROJECT_ROOT}/nest/src:/app/src:rw
+    ports:
+      - '${BACKEND_PORT}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - norms2_dev-net
 
   # ── Angular frontend (включить после этапа B2) ──
   # angular:

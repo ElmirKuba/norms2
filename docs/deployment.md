@@ -15,7 +15,7 @@
 
 ## ENV (прод)
 Все через `ConfigService`, валидируются zod fail-fast ([ADR-0019](./decisions/0019-backend-architecture-conventions.md)). Секреты — вне репозитория (`.env` в `.gitignore`), на сервере — через защищённый `.env`/секрет-стор.
-`FREE_REGISTRATION=false` (прод, invite-only — [ADR-0022](./decisions/0022-concept-and-philosophy.md)), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL`, `REFRESH_TTL`, `COOKIE_SECURE=true`, `DB_*`, `INVITE_DEFAULT_QUOTA=3`, `INVITE_TTL_DAYS=3`, `AVATAR_MAX_BYTES`. (security_logs не ведём — [ADR-0032](./decisions/0032-phase1-refinements.md).)
+`FREE_REGISTRATION=false` (прод, invite-only — [ADR-0022](./decisions/0022-concept-and-philosophy.md)), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL`, `REFRESH_TTL`, `COOKIE_SECURE=true`, `DB_*`, `INVITE_DEFAULT_QUOTA=3`, `INVITE_TTL_DAYS=3`, `AVATAR_MAX_BYTES`, `OPTIMISTIC_RETRY_ATTEMPTS=3` ([ADR-0035](./decisions/0035-concurrency-control.md)). (security_logs не ведём — [ADR-0032](./decisions/0032-phase1-refinements.md).)
 
 ## Фоновые задачи (sweep)
 - `@nestjs/schedule` ([ADR-0023](./decisions/0023-deployment-jurisdiction.md)): удаление истёкших `invite_codes` (по `expires_at`). Папка `content/` (включая `avatars/`) — в бэкапах.

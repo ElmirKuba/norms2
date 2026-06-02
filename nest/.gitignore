@@ -1,0 +1,40 @@
+# Compiled output
+/dist
+/node_modules
+/build
+/out-tsc
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Tests / coverage
+/coverage
+/.nyc_output
+
+# Env / секреты (пример — коммитим)
+.env
+.env.*
+!.env.example
+
+# IDEs and editors
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temp / runtime
+.temp
+.tmp
+*.pid
+*.seed
+*.pid.lock
+
+# System files
+.DS_Store
+Thumbs.db

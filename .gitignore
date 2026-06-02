@@ -1,15 +1,8 @@
-# Node
-node_modules/
-dist/
-build/
-coverage/
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Монорепо без workspace: сборочные/зависимостные игноры — у каждого подпроекта
+# свои (nest/.gitignore, angular/.gitignore). В корне нет package.json, поэтому
+# node_modules/dist тут не появляются. Здесь — только репо-уровневое.
 
-# Env / секреты
+# Env / секреты (корневой .env, напр. для docker-compose)
 .env
 .env.*
 !.env.example
@@ -19,10 +12,6 @@ yarn-error.log*
 .idea/
 .vscode/
 *.swp
-
-# Сборки/кеши
-.cache/
-tmp/
 
 # Приватная стратегия — не публикуем (см. обсуждение)
 docs/152fz.md

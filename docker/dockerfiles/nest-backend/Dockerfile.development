@@ -1,0 +1,18 @@
+# Dev-образ бэкенда (NestJS). Контекст сборки — корень репозитория,
+# поэтому пути COPY указывают внутрь nest/. Hot-reload обеспечивается
+# монтированием nest/src в compose (см. docker-compose.dev.yml).
+FROM node:24
+
+WORKDIR /app
+
+# Сначала только манифесты — чтобы слой с зависимостями кэшировался.
+COPY nest/package.json nest/package-lock.json ./
+RUN npm ci
+
+# Остальной код бэкенда.
+COPY nest/ ./
+
+EXPOSE 3000
+
+# Watch-режим NestJS.
+CMD ["npm", "run", "start:dev"]

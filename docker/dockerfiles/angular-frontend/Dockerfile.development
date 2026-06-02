@@ -1,0 +1,16 @@
+# Dev-образ фронтенда (Angular dev-server). Контекст сборки — корень репозитория,
+# пути COPY указывают внутрь angular/. Hot-reload — через монтирование angular/src
+# в compose (см. docker-compose.dev.yml). --host 0.0.0.0 нужен, чтобы dev-server
+# был доступен снаружи контейнера.
+FROM node:24
+
+WORKDIR /app
+
+COPY angular/package.json angular/package-lock.json ./
+RUN npm ci
+
+COPY angular/ ./
+
+EXPOSE 4200
+
+CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--poll", "1000"]

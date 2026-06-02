@@ -1,0 +1,23 @@
+# Prod-образ бэкенда (NestJS), multi-stage. Контекст сборки — корень репозитория.
+# Чистый рантайм без dev-зависимостей; Drizzle-миграции прогоняются отдельным
+# шагом деплоя (см. docs/deployment.md), не в этом образе.
+
+# ── Стадия сборки ──
+FROM node:24 AS build
+WORKDIR /app
+COPY nest/package.json nest/package-lock.json ./
+RUN npm ci
+COPY nest/ ./
+RUN npm run build
+
+# ── Стадия рантайма ──
+FROM node:24-slim AS run
+WORKDIR /app
+ENV NODE_ENV=production
+COPY nest/package.json nest/package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]

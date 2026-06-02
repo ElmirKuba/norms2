@@ -13,5 +13,9 @@
 .vscode/
 *.swp
 
+# Docker: данные томов не коммитим (структуру держит .gitkeep)
+docker/volumes/*
+!docker/volumes/.gitkeep
+
 # Приватная стратегия — не публикуем (см. обсуждение)
 docs/152fz.md

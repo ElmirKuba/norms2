@@ -1,0 +1,101 @@
+# Prod-окружение «Нормисов» — ЧЕРНОВИК этапа D1 (см. docs/deployment.md).
+# Traefik терминирует TLS (Let's Encrypt/ACME) и роутит по доменам; БД наружу
+# не публикуется. Финализируется при настройке VPS: домен, ACME-почта, секреты
+# (только из защищённого .env на сервере, не из репозитория). Запуск:
+#   docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml up -d
+#
+# Drizzle-миграции прогоняются ОТДЕЛЬНЫМ шагом до старта nest (auto-push запрещён,
+# ADR-0030) — см. docs/deployment.md.
+
+services:
+  # ── Reverse-proxy + авто-TLS ──
+  traefik:
+    container_name: norms2_traefik_prod
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # HTTP → HTTPS
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      # Let's Encrypt (TLS-ALPN)
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./../volumes/letsencrypt:/letsencrypt
+    networks:
+      - norms2_prod-net
+
+  # ── PostgreSQL (без публикации портов наружу) ──
+  postgres:
+    container_name: norms2_postgres_prod
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./../volumes/pg_data_prod:/var/lib/postgresql/data
+      - ./../sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - norms2_prod-net
+
+  # ── NestJS backend (API на api.${DOMAIN}) ──
+  nest:
+    container_name: norms2_nest_prod
+    build:
+      context: ./../../
+      dockerfile: ./docker/dockerfiles/nest-backend/Dockerfile.production
+    restart: unless-stopped
+    env_file:
+      - ./../../.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: norms2_postgres_prod
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.norms2-api.rule=Host(`api.${DOMAIN}`)
+      - traefik.http.routers.norms2-api.entrypoints=websecure
+      - traefik.http.routers.norms2-api.tls.certresolver=le
+      - traefik.http.services.norms2-api.loadbalancer.server.port=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - norms2_prod-net
+
+  # ── Angular frontend (статика nginx на ${DOMAIN}) ──
+  angular:
+    container_name: norms2_angular_prod
+    build:
+      context: ./../../
+      dockerfile: ./docker/dockerfiles/angular-frontend/Dockerfile.production
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.norms2-web.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.norms2-web.entrypoints=websecure
+      - traefik.http.routers.norms2-web.tls.certresolver=le
+      - traefik.http.services.norms2-web.loadbalancer.server.port=80
+    depends_on:
+      - nest
+    networks:
+      - norms2_prod-net
+
+networks:
+  norms2_prod-net:
+    name: norms2_prod-net

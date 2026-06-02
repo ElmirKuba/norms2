@@ -1,0 +1,21 @@
+# Prod-образ фронтенда: собираем статику Angular и раздаём через nginx.
+# Контекст сборки — корень репозитория.
+
+# ── Стадия сборки ──
+FROM node:24 AS build
+WORKDIR /app
+COPY angular/package.json angular/package-lock.json ./
+RUN npm ci
+COPY angular/ ./
+RUN npm run build
+
+# ── Стадия раздачи статики ──
+FROM nginx:1.27-alpine AS run
+# Angular (application builder) кладёт статику в dist/<project>/browser.
+COPY --from=build /app/dist/angular/browser /usr/share/nginx/html
+# SPA-конфиг nginx (history-fallback на index.html).
+COPY docker/dockerfiles/angular-frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

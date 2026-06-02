@@ -53,6 +53,7 @@
 ### Разделы (`sections/`)
 | Папка | Область | Статус |
 |---|---|---|
+| [`sections/_shared/modal-system.md`](./sections/_shared/modal-system.md) | Общая модальная система (MatDialog): контракт, код, partials, паттерны, схема | ✅ v1 |
 | [`sections/accent/`](./sections/accent/README.md) | Фаза 2 «Акцент»: цели, привычки, микро-победы, геймификация (README, domain-model, gamification, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 | [`sections/novaskil/`](./sections/novaskil/README.md) | Фаза 3 «НоваСкил»: LMS-курсы (README, domain-model, content-format, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 

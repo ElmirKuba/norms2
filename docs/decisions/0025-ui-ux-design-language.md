@@ -10,7 +10,7 @@
 - **I1 — тема:** тёмная по умолчанию + переключатель на светлую. Реализация через **CSS-переменные** (SCSS), класс темы на `<html>`, выбор в localStorage.
 - **I2 — вайб:** чистый минимал с теплотой — мягкие скругления, тёплый акцент, живые микротексты в ламповом/мемном тоне ([ADR-0022](./0022-concept-and-philosophy.md)), читаемо.
 - **I3 — стилизация/компоненты:** **собственные лёгкие компоненты на чистом SCSS/CSS**. Без Tailwind, без Bootstrap, без UI-китов. Полный контроль, минимум зависимостей.
-- **I4 — исключение (модалки):** диалоги/модалки — через **`MatDialog.open` из Angular Material** (единственная часть Material в проекте). Механику/логику взять из анализа Elmir-а (`angular-modal-system-analysis.md` — **файл нужно получить от Elmir**, пока не найден).
+- **I4 — исключение (модалки):** диалоги/модалки — через **`MatDialog.open` из Angular Material** (единственная часть Material в проекте). Полная механика зафиксирована в [`sections/_shared/modal-system.md`](../sections/_shared/modal-system.md) ([ADR-0026](./0026-modal-system.md)).
 - **H5 — дизайн-токены:** палитра (тёмная+светлая), радиусы, отступы, типографика — как **SCSS-переменные / CSS custom properties**; смена темы через переопределение переменных.
 
 ## Альтернативы
@@ -21,4 +21,4 @@
 - Зависимость: `@angular/material` — **используется только `MatDialog`** (тянет `@angular/cdk` транзитивно). Остальной UI — свой на SCSS.
 - Обновить стек в `Technical-assignment.md`, `CLAUDE.md`, `frontend.md`, `ADR-0021` (убрать Tailwind, добавить MatDialog-исключение).
 - `ui-ux.md` — токены и компоненты на SCSS; модальный слой на MatDialog.
-- **TODO:** получить `angular-modal-system-analysis.md` от Elmir и зафиксировать механику модалок в `frontend.md`/`ui-ux.md`.
+- ✅ Механика модалок зафиксирована в репо: [`sections/_shared/modal-system.md`](../sections/_shared/modal-system.md) ([ADR-0026](./0026-modal-system.md)). Внешний файл больше не нужен.

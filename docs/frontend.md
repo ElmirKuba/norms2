@@ -64,4 +64,4 @@ angular/src/app/
 - **5 паттернов результата:** void; `afterClosed()` Observable; `firstValueFrom` Promise; `new Promise` + sync-колбеки; `MatDialogRef` (закрыть позже, спиннер).
 - **Доменные modal-сервисы** на модуль прячут конфиг за методами (`confirmDelete()`, `showError()`, `openLoading()`).
 - Константы/пресеты размеров для единообразия.
-- Полный референс — `angular-modal-system-analysis.md` (у Elmir, не в репо).
+- Полный референс (контракт, код, partials, паттерны, схема) — [`sections/_shared/modal-system.md`](./sections/_shared/modal-system.md).

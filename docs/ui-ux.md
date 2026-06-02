@@ -6,7 +6,7 @@
 - **Тема:** тёмная по умолчанию + переключатель на светлую (**CSS-переменные / SCSS**, класс темы на `<html>`; выбор в localStorage).
 - **Вайб:** чистый минимал с теплотой — мягкие скругления, тёплый акцент, воздух, живые микротексты. Ламповое/мемное «для своих», но читаемо.
 - **Компоненты:** **собственные лёгкие компоненты на чистом SCSS/CSS** — без Tailwind/Bootstrap/UI-китов, полный контроль ([ADR-0025](./decisions/0025-ui-ux-design-language.md)).
-- **Модалки — исключение:** диалоги через **`MatDialog` (Angular Material)** — единственная часть Material. Механика — по `angular-modal-system-analysis.md` (получить у Elmir).
+- **Модалки — исключение:** диалоги через **`MatDialog` (Angular Material)** — единственная часть Material. Полная механика — [`sections/_shared/modal-system.md`](./sections/_shared/modal-system.md).
 - **Язык:** русский (фаза 1).
 
 ## Дизайн-токены (SCSS-переменные / CSS custom properties)

@@ -16,7 +16,7 @@ export PROJECT_ROOT := $(shell pwd)
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
 
-.PHONY: help dev-up dev-up-detach dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config
+.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config
 
 help: ## Показать список команд
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -26,6 +26,9 @@ dev-up: ## Поднять dev в форграунде (логи в термин�
 
 dev-up-detach: ## Поднять dev в фоне (-d)
 	$(DEV_COMPOSE) up -d
+
+dev-rebuild: ## Пересобрать образы и поднять (после смены зависимостей/Dockerfile)
+	$(DEV_COMPOSE) up --build
 
 dev-down: ## Остановить dev
 	$(DEV_COMPOSE) down

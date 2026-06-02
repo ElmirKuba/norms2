@@ -25,7 +25,7 @@ src/
 ## Конфигурация
 - `zod`-схема всех ENV; валидация при старте (**fail-fast** — нет валидного env → не поднимаемся).
 - В коде только `ConfigService`, никогда `process.env`.
-- ENV (см. также `deployment.md`): `FREE_REGISTRATION`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL` (~15m), `REFRESH_TTL` (~30d), `DB_*`, `INVITE_DEFAULT_QUOTA`=3, `INVITE_TTL_DAYS`=3, `COOKIE_SECURE` (true в проде), `AVATAR_MAX_BYTES`.
+- ENV (см. также `deployment.md`): `FREE_REGISTRATION`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL` (~15m), `REFRESH_TTL` (~30d), `DB_*`, `INVITE_DEFAULT_QUOTA`=3, `INVITE_TTL_DAYS`=3, `COOKIE_SECURE` (true в проде), `AVATAR_MAX_BYTES`, `OPTIMISTIC_RETRY_ATTEMPTS`=3 ([ADR-0035](./decisions/0035-concurrency-control.md)).
 - **Валидация (zod):** `login` 3–32 `[A-Za-z0-9_]`, `alias` 3–32, `password` **3–64** ([ADR-0032](./decisions/0032-phase1-refinements.md); мин 3 — осознанный риск). Аватар: тип jpeg/png/webp, ≤ `AVATAR_MAX_BYTES`, приходит уже нарезанным с фронта.
 
 ## DTO и валидация
@@ -43,7 +43,8 @@ src/
 
 ## Ошибки
 - Глобальный exception filter → конверт `{ error: { code, message, details? } }`.
-- Доменные ошибки — типизированы (`shared/errors`), мапятся на HTTP-статус + машинный `code` (`LOGIN_TAKEN`, `INVITE_INVALID`, `QUOTA_EXCEEDED`, `NOT_IN_SUBTREE`, `BAD_CREDENTIALS`, `ACCOUNT_BANNED`, …). Стектрейсы наружу не уходят.
+- Доменные ошибки — типизированы (`shared/errors`), мапятся на HTTP-статус + машинный `code` (`LOGIN_TAKEN`, `INVITE_INVALID`, `QUOTA_EXCEEDED`, `NOT_IN_SUBTREE`, `BAD_CREDENTIALS`, `ACCOUNT_BANNED`, `CONCURRENT_MODIFICATION`→409, …). Стектрейсы наружу не уходят.
+- **Конкурентный доступ** ([ADR-0035](./decisions/0035-concurrency-control.md)): optimistic lock по `accounts.version` + retry (`OPTIMISTIC_RETRY_ATTEMPTS`, хелпер `withOptimisticRetry`); счётчик инвайтов/сессии — атомарный SQL/CAS. Репозиторий = одна CAS-попытка (`VersionConflictError`), политика ретраев — в use-case.
 
 ## Логирование
 - `nestjs-pino`, структурный JSON, `request-id` на запрос. **Redact** тел с секретами (`password`, `answer`, `token`).

@@ -84,6 +84,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0032](./0032-phase1-refinements.md) | Фаза 1: alias/пароль 3–64, рег-режим по клику, убрать security_logs, аватарки в MVP | accepted | [phase1] [domain] [api] |
 | [0033](./0033-type-hierarchy-convention.md) | Иерархия типов: Pure→Base→Full + производные утилитами, одно свойство — одно место, per-project | accepted | [architecture] [backend] [frontend] [conventions] |
 | [0034](./0034-feature-first-layout.md) | Раскладка: feature-first (`modules/<feature>`) + вынесенный `database/` (ORM-граница); уточняет ADR-0030 | accepted | [architecture] [backend] [conventions] |
+| [0035](./0035-concurrency-control.md) | Конкуренция: optimistic `version` на accounts + retry, атомарный счётчик/CAS сессий, READ COMMITTED | accepted | [architecture] [backend] [db] [concurrency] |
 
 ### Ожидают решения
 

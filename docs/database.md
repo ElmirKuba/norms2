@@ -30,6 +30,7 @@
 | `timezone` | varchar(64) | not null default `'UTC'`; IANA TZ пользователя (для ролловера/серий разделов) ([ADR-0028](./decisions/0028-accent-timezone-and-domains.md)) |
 | `deactivated_at` | timestamptz | null; обратимая деактивация ([ADR-0017](./decisions/0017-account-soft-delete.md)) |
 | `deleted_at` | timestamptz | null; soft-delete (скрыт из дефолтного scope) |
+| `version` | bigint | not null; optimistic-lock на правках профиля ([ADR-0035](./decisions/0035-concurrency-control.md)) |
 | `created_at`,`updated_at` | timestamptz | not null |
 
 Индексы: `UNIQUE (lower(login))`. **Нет** колонки статуса бана (бан — производный, см. `bans`); **нет** `inviter_id` (см. `invitations`).
@@ -128,6 +129,13 @@ accounts ──1:N── sessions.account_id
 - **Погасить** (регистрация по коду, одна транзакция): insert в `invitations` (`account_id`=новый, `inviter_id`=создатель, `reason`/`invited_at`); **delete** строки кода. Счётчик не меняется.
 - **Отозвать** (только pending): `invites_remaining += 1`; delete кода.
 - **Истечь** (TTL): слот **сгорает** (счётчик не меняется); sweep удаляет код.
+
+## Конкурентный доступ ([ADR-0035](./decisions/0035-concurrency-control.md))
+
+- **`accounts.version`** (bigint, инкремент) — optimistic lock на правках профиля: `UPDATE … SET …, version=version+1 WHERE id=? AND version=?`; `rowcount=0` → конфликт → **retry** (reload+reapply, до `OPTIMISTIC_RETRY_ATTEMPTS`=3) → иначе `409 CONCURRENT_MODIFICATION`.
+- **`invites_remaining`** — атомарно: `UPDATE … WHERE invites_remaining>0` (НЕ version).
+- **`sessions`** — ротация через CAS по `token_hash` (`WHERE token_hash=:old RETURNING`; 0 строк → reuse → отозвать все).
+- Остальное (`secret_qa`/`invite_codes`/`invitations`/`bans`) — транзакции + `DELETE…RETURNING` + unique/partial-unique. Изоляция — READ COMMITTED.
 
 ## Политика миграций
 

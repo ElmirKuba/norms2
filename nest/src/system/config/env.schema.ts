@@ -32,6 +32,7 @@ export const envSchema = z.object({
   INVITE_DEFAULT_QUOTA: z.coerce.number().int().nonnegative().default(3),
   INVITE_TTL_DAYS: z.coerce.number().int().positive().default(3),
   AVATAR_MAX_BYTES: z.coerce.number().int().positive().default(512_000),
+  OPTIMISTIC_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(3),
 });
 
 /** Тип валидированного окружения (выводится из схемы). */

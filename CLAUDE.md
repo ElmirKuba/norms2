@@ -33,7 +33,7 @@ Web-платформа (потом — Capacitor для iOS/Android и Electron 
 ## Стек и архитектурные принципы
 
 - **Frontend:** Angular 17+, standalone-компоненты, Signals, **чистый SCSS/CSS** (свои компоненты, без Tailwind). SPA. **Angular Material — только `MatDialog`** (модалки), см. [`docs/decisions/0025-ui-ux-design-language.md`](./docs/decisions/0025-ui-ux-design-language.md).
-- **Backend:** NestJS, **5-слойная архитектура** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), образец — `~/coding/kuba-game`): `controllers → use-cases → domain-services → adapters → repositories` (+ `system`/`interfaces`/`dtos`/`utility-level`). Поток: controller→use-case→domain-service→adapter→repository. **Кросс-доменные вызовы только ВНИЗ:** use-case области A зовёт domain-service ДРУГОЙ области B (не её use-case) → круговой DI исключён. Замена доступа к данным — без правки бизнес-слоёв.
+- **Backend:** NestJS, **5-слойная архитектура** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md), образец — `~/coding/kuba-game`): `controllers → use-cases → domain-services → adapters → repositories`. Раскладка — **feature-first**: фичи в `modules/<feature>/` (без ORM), ORM-слой (схемы+репозитории) вынесен в `database/`, инфра в `system/`+`shared/` ([ADR-0034](./docs/decisions/0034-feature-first-layout.md)). Поток: controller→use-case→domain-service→adapter→repository. **Кросс-доменные вызовы только ВНИЗ:** use-case области A зовёт domain-service ДРУГОЙ области B (не её use-case) → круговой DI исключён. Замена доступа к данным — без правки бизнес-слоёв.
 - **БД:** PostgreSQL + **Drizzle** ORM ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md); НЕ TypeORM). Репозитории — слой `repositories`; домен/use-cases про ORM не знают.
 - **Идентификаторы (сквозная конвенция, всегда):** PK и все FK — строка формата `uuidv7___unixmillis` (пример `019e7488-0147-7305-9b95-a553f2d00c8e___1780071500548`). Генерация — общий util `generateId()` на бэке и фронте. Подробно — [`docs/decisions/0016-primary-key-format.md`](./docs/decisions/0016-primary-key-format.md). Применяется ко всем таблицам/сущностям во всех фазах.
 - **ORM:** Drizzle + drizzle-kit (явные миграции, без auto-push в проде). Слой `repositories` инкапсулирует ORM.
@@ -43,14 +43,19 @@ Web-платформа (потом — Capacitor для iOS/Android и Electron 
 
 ### Слоистая архитектура backend (строго)
 
+**Раскладка — feature-first + вынесенный `database/`** ([ADR-0034](./docs/decisions/0034-feature-first-layout.md)):
+
 ```
 src/
-  modules/
-    <feature>/
-      ... (5 слоёв папками в корне src, см. ниже)
+  modules/<feature>/   # вертикальный слайс БЕЗ ORM: controllers/ use-cases/
+                       #   domain-services/ adapters(порты)/ interfaces/ dtos/ <feature>.module.ts
+  database/            # вся связь с Drizzle: client/ schemas/ relations/ repositories/<feature>/
+  system/              # инфра без ORM: config, logging
+  shared/              # filters, utility-level, общие interfaces
+  app.module.ts · main.ts
 ```
 
-**5 слоёв** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md)) — папками в `src`: `controllers` (контроллеры) → `use-cases` (оркестрация сценария, точка кросс-домена) → `domain-services` (бизнес-логика области) → `adapters` (граница домен↔инфра) → `repositories` (Drizzle). Бизнес-слои не импортируют ORM. **Кросс-домен — только вниз:** use-case области A зовёт domain-service области B (не use-case B) → нет круговой DI. Детали — [`docs/architecture.md`](./docs/architecture.md).
+**5 слоёв** ([ADR-0030](./docs/decisions/0030-stack-revision-drizzle-5layer-npm.md)) — поток вниз: `controllers` → `use-cases` (точка кросс-домена) → `domain-services` → `adapters` (порты: интерфейсы+DI-токены, в фиче) → `repositories` (Drizzle-реализации, в `database/`). ORM импортируется **только** в `database/` (schemas+repositories); доменные слои его не видят. **Кросс-домен — только вниз:** use-case области A зовёт domain-service области B (не use-case B) → нет круговой DI. Архитектура = правила зависимостей, не раскладка файлов. Детали — [`docs/architecture.md`](./docs/architecture.md).
 
 ---
 

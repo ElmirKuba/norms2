@@ -5,18 +5,21 @@
 ## Стек
 NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужение), **Drizzle** + drizzle-kit (явные миграции), PostgreSQL, **npm** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Зависимости: `@nestjs/config`, `zod`, `nestjs-zod`, `@nestjs/throttler`, `nestjs-pino`, `argon2`, `@nestjs/jwt`, `cookie-parser`, `drizzle-orm`, `drizzle-kit`.
 
-## 5-слойная структура (папками в `src`, см. [architecture.md](./architecture.md))
+## Структура: feature-first + вынесенный `database/` ([ADR-0034](./decisions/0034-feature-first-layout.md), детали — [architecture.md](./architecture.md))
 ```
 src/
-├─ controllers/<feature>/        # контроллеры + DTO + guards
-├─ use-cases/<feature>/      # оркестрация сценария; кросс-домен — вниз
-├─ domain-services/<feature>/       # бизнес-логика области
-├─ adapters/<feature>/             # граница домен↔инфра
-├─ repositories/<feature>/ # Drizzle-доступ
-├─ system/   (orm-schemas, orm-relations)
-├─ interfaces/  dtos/  utility-level/  filters/  gateways/
-└─ app.module.ts · main.ts         # только bootstrap
+├─ modules/<feature>/          # вертикальный слайс области, БЕЗ ORM
+│  ├─ controllers/  use-cases/  domain-services/
+│  ├─ adapters/                # порты: интерфейсы + DI-токены (ORM-free)
+│  ├─ interfaces/  dtos/
+│  └─ <feature>.module.ts      # биндит токены портов → реализации из database/
+├─ database/                   # вся связь с Drizzle (видимая граница)
+│  ├─ client/ (пул+drizzle+токен DRIZZLE)  schemas/  relations/
+│  └─ repositories/<feature>/  # Drizzle-реализации портов
+├─ system/   (config, logging)   shared/ (filters, utility-level, interfaces)
+└─ app.module.ts · main.ts        # только bootstrap
 ```
+**5 слоёв (поток вниз):** `controller → use-case → domain-service → adapter(порт) → repository`. ORM импортируется только в `database/`.
 **Кросс-домен только вниз:** `use-case` области A зовёт `domain-service` области B (не её use-case) → круговой DI исключён ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
 ## Конфигурация

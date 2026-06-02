@@ -13,26 +13,32 @@ norms2/
 ```
 У `nest/` и `angular/` — свои `package.json` и `.gitignore`. Пакетный менеджер — **npm** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)).
 
-## 5-слойная архитектура (строго)
+## 5-слойная архитектура + feature-first раскладка ([ADR-0034](./decisions/0034-feature-first-layout.md))
 
-Слои — папками в корне `nest/src` (не внутри каждого модуля). Каждая доменная область (`account`, `courses`, …) представлена в каждом слое:
+Архитектура — это **правила зависимостей и поток**, а не раскладка файлов. Те же 5 слоёв проецируем на папки **по фиче** (вертикальный слайс), а **ORM-слой выносим** в общий `database/` — чтобы граница с Drizzle была в одном видимом месте:
 
 ```
 nest/src/
-├─ controllers/        # СЛОЙ 1: контроллеры — HTTP, валидация DTO, вызов use-case
-├─ use-cases/      # СЛОЙ 2: верхнеуровневая оркестрация сценария; ТОЧКА кросс-домена
-├─ domain-services/       # СЛОЙ 3: бизнес-логика одной доменной области
-├─ adapters/             # СЛОЙ 4: граница домен↔инфраструктура (порт-подобный)
-├─ repositories/ # СЛОЙ 5: доступ к данным через Drizzle
-├─ system/               # orm-schemas, orm-relations (Drizzle), системные сервисы
-├─ interfaces/           # типы/контракты (pure-and-base, full, with-child, systems…)
-├─ dtos/                 # input/output DTO
-├─ utility-level/        # утилиты (generateId и пр.)
-├─ filters/  gateways/   # exception filters, ws-gateways
-└─ app.module.ts · main.ts   # только bootstrap
+├─ modules/<feature>/          # вертикальный слайс области, БЕЗ ORM
+│  ├─ controllers/             # СЛОЙ 1: HTTP, валидация DTO, вызов use-case
+│  ├─ use-cases/               # СЛОЙ 2: оркестрация сценария; ТОЧКА кросс-домена
+│  ├─ domain-services/         # СЛОЙ 3: бизнес-логика области
+│  ├─ adapters/                # СЛОЙ 4: ПОРТЫ (интерфейсы + DI-токены) — ORM-free
+│  ├─ interfaces/  dtos/       # контракты области / input-output DTO
+│  └─ <feature>.module.ts      # биндит токены портов → реализации из database/
+├─ database/                   # вся связь с Drizzle (видимая ORM-граница)
+│  ├─ client/                  # пул + drizzle-инстанс + токен DRIZZLE
+│  ├─ schemas/                 # СЛОЙ 5 (схемы): orm-схемы централизованно (relations)
+│  ├─ relations/               # orm-relations
+│  └─ repositories/<feature>/  # СЛОЙ 5: Drizzle-реализации портов области
+├─ system/                     # инфра без ORM: config (zod), logging (pino)
+├─ shared/                     # filters, utility-level, общие interfaces
+└─ app.module.ts · main.ts     # только bootstrap
 ```
 
-**Поток вызова (сверху вниз):** `controller (controllers) → use-case (use-cases) → domain-service (domain-services) → adapter (adapters) → repository (repositories)`.
+**Поток вызова (сверху вниз):** `controller → use-case → domain-service → adapter (порт в фиче) → repository (реализация в database/)`. ORM (Drizzle) импортируется **только** в `database/` (schemas + repositories); доменные слои фичи его не видят.
+
+> Простой эндпоинт может задействовать не все слои (напр. `health` = controllers + use-cases + interfaces, без БД).
 
 ## Правила зависимостей (вниз, не вбок)
 
@@ -42,11 +48,15 @@ nest/src/
   - `use-case` области **A** может звать `domain-service` области **B** (слой ниже), но **НЕ** `use-case` области B.
   - Поскольку `domain-service` не зависит от `use-case`, цикла NestJS-DI не возникает.
   - Пример: `account.use-case → courses.domain-service` И `courses.use-case → account.domain-service` — оба валидны, цикла нет. Именно это решает круговую DI (ради чего 5 слоёв, а не 4).
-- **Связывание модулей:** модуль каждого слоя `imports` модуль слоя ниже и `exports` свой сервис (`domain-service.module` imports `adapter.module`; `use-case.module` imports нужные `domain-service.module`(ы); controller-module imports `use-case.module`).
+- **Связывание модулей:** у каждой области один `<feature>.module.ts`. Он объявляет провайдеры слоёв области, **биндит DI-токен порта** (из `adapters/`) на конкретную реализацию-репозиторий из `database/repositories/<feature>/`, и `imports` нужные `<feature>.module` других областей для кросс-доменных вызовов (вниз: use-case A → domain-service B). `database/client` — глобальный модуль (токен `DRIZZLE`).
 
-## Shared / системное
+## Shared / системное / database
 
-`utility-level` + `interfaces` + `system` — кросс-доменные примитивы: `Id` (VO `uuidv7___unixmillis`), `generateId()`, базовые ошибки, Drizzle-схемы/связи. Области импортят из них, **не друг из друга напрямую** (только через правило «use-case→чужой domain-service»).
+- **`shared/`** — кросс-доменные примитивы без ORM: `utility-level` (`generateId()` и пр.), общие `interfaces` (`Id` VO `uuidv7___unixmillis`, базовые ошибки), `filters`.
+- **`system/`** — инфраструктура без ORM: `config` (zod), `logging` (pino).
+- **`database/`** — всё про Drizzle: `client` (соединение, токен `DRIZZLE`), `schemas`/`relations` (orm-схемы централизованно), `repositories/<feature>` (реализации портов).
+
+Области импортят примитивы из `shared`/`system`, **не друг из друга напрямую** (только через правило «use-case → чужой domain-service»).
 
 ## Модули фазы 1 (доменные области)
 

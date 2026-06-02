@@ -6,10 +6,10 @@
 
 ## Текущая позиция (по факту)
 - **Окружение:** Node 24, npm 11, Docker 29, Angular CLI глобально, nest — через npx.
-- **`nest/` B2 ГОТОВ:** NestJS 11, строгий tsconfig+eslint. Подключены `@nestjs/config`+zod (fail-fast, `system/config`), Drizzle+pg+drizzle-kit (`system/database`: `DatabaseService` пул+пинг+shutdown, Global `DatabaseModule`, токен `DRIZZLE`; `db:generate/migrate/studio`). Стоковые `app.*` удалены; `main.ts` — порт из ConfigService, listen 0.0.0.0. Сборка `tsc` зелёная. ⚠️ **Линт nest красный** — почистить под строгий eslint отдельно (вынесено на Sonnet).
+- **`nest/` B2+B3 ГОТОВ:** NestJS 11. Конфиг zod fail-fast (`system/config`), логи pino (`system/logging`), Drizzle (`database/client`: `DatabaseService`+токен `DRIZZLE`, схемы `database/schemas`; `db:generate/migrate/studio`), health (`modules/health`), exception-filter (`shared/filters`). **Раскладка — feature-first + вынесенный `database/`** ([ADR-0034](./decisions/0034-feature-first-layout.md)). Сборка `tsc` зелёная. ⚠️ **Линт nest красный** — почистить под строгий eslint отдельно (Sonnet).
 - **`angular/` СОЗДАН:** Angular 21, standalone + Signals, SCSS, npm. Строгий eslint согласован с nest. Оболочка `App` с `<router-outlet/>`; `index.html` — `lang="ru"`, title «Нормисы». `build`+`lint`+`test` зелёные.
 - **Docker dev:** `make dev-up` → postgres + pgadmin + **nest (watch, volume на src)**; пути через `${PROJECT_ROOT}`. Hot-reload проверен.
-- **Следующий: B3** (health `GET /api/v1/health`, CORS, exception-filter, pino).
+- **Следующий: S1** (первые таблицы Drizzle в `database/schemas`: accounts, secret_qa, invite_codes, invitations, bans, sessions; тогда же — ADR по concurrency/`version`).
 - **Версии:** всё — latest stable на сегодня ([ADR-0021](./decisions/0021-tooling-defaults.md)).
 
 ## Этапы (каждый — отдельный коммит)

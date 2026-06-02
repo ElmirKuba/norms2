@@ -28,6 +28,16 @@ src/
 ## DTO и валидация
 - `nestjs-zod`: каждая DTO — zod-схема (closed shape). Пайп валидирует вход; типы выводятся из схемы. Без class-validator-декораторов.
 
+## Иерархия типов ([ADR-0033](./decisions/0033-type-hierarchy-convention.md))
+Каждое свойство объявляется **в одном месте**; «виды» сущности собираются из него, не переобъявляются. Слой `src/interfaces/<entity>/`:
+
+- `XxxPure` — содержательные поля (смысл), без `id`/FK/системных меток.
+- `XxxBase extends XxxPure` — + FK (`xxxId: string`) и поля для создания.
+- `XxxFull extends Required<XxxBase>` — + `id: string` (PK) + метки (`createdAt`, `deletedAt?`). ≈ строка БД.
+- Производные — только утилитами: `XxxCreate = XxxBase`, `XxxUpdate = Pick<XxxFull,'id'> & Partial<XxxBase>`, `XxxRead = Omit<XxxFull, секреты>`.
+
+Классы — через `implements` (DTO `implements XxxRead`/`Create`/`Update`); zod даёт рантайм-валидацию, интерфейс — форму типа. Имена: суффикс роли, **без** `I`-префикса; PK `id`, FK `xxxId`. Drizzle row-тип (`$inferSelect`) живёт в `repositories`, репозиторий маппит row→`XxxFull` (домен ORM не знает). Запрещено повторно перечислять поля вместо `extends`/`Pick`/`Omit`/`Required`/`Partial`.
+
 ## Ошибки
 - Глобальный exception filter → конверт `{ error: { code, message, details? } }`.
 - Доменные ошибки — типизированы (`shared/errors`), мапятся на HTTP-статус + машинный `code` (`LOGIN_TAKEN`, `INVITE_INVALID`, `QUOTA_EXCEEDED`, `NOT_IN_SUBTREE`, `BAD_CREDENTIALS`, `ACCOUNT_BANNED`, …). Стектрейсы наружу не уходят.

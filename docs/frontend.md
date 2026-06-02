@@ -37,6 +37,11 @@ angular/src/app/
 ## Состояние
 - **Signals + обычные поля класса**; rxjs/сервисы — только где реально нужно (async-потоки). **Без стейт-менеджеров (NgRx и любых) — категорически** (предпочтение Elmir, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Без глобального store-фреймворка.
 
+## Типы и интерфейсы ([ADR-0033](./decisions/0033-type-hierarchy-convention.md))
+- Та же иерархия, что на бэке: `XxxPure → XxxBase extends XxxPure → XxxFull extends Required<XxxBase>`; «виды» — утилитами (`XxxCreate`, `XxxUpdate = Pick<XxxFull,'id'> & Partial<XxxBase>`, `XxxRead = Omit<XxxFull, секреты>`). Каждое свойство — в одном месте; не переобъявлять, только `extends`/`Pick`/`Omit`/`Required`/`Partial`.
+- Имена: суффикс роли, **без** `I`-префикса; PK `id`, FK `xxxId` (тип `string`).
+- Типы **не шарятся** с бэком (монорепо без workspace): фронт держит в `core/interfaces/<entity>/` своё **зеркало подмножества** контракта (обычно `Read`/`Create`/`Update`), которое реально нужно UI. Источник истины формы — бэк; рассинхрон ловится на интеграции.
+
 ## Идентификаторы
 - util `generateId()` (формат `uuidv7___unixmillis`, [ADR-0016](./decisions/0016-primary-key-format.md)) — тот же, что на бэке; для случаев, когда id нужен на клиенте.
 

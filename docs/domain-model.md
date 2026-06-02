@@ -3,6 +3,8 @@
 > Источник истины по **доменному слою** (сущности, value objects, инварианты, порты, use-cases). Физическая схема — [`database.md`](./database.md). Границы слоёв — `architecture.md`. «Почему» — [`decisions/`](./decisions/README.md).
 >
 > Бизнес-слои (use-cases/domain-services) **не импортируют ORM** напрямую — доступ к данным через `adapters` → `repositories` (5-слойка, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). ([CLAUDE.md](../CLAUDE.md))
+>
+> Сущности ниже выражаются в коде **иерархией типов** `Pure→Base→Full` + производные через утилиты (`Pick`/`Omit`/`Required`/`Partial`), каждое свойство — в одном месте ([ADR-0033](./decisions/0033-type-hierarchy-convention.md)).
 
 ## Value objects
 

@@ -82,6 +82,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0030](./0030-stack-revision-drizzle-5layer-npm.md) | Ревизия стека: Drizzle, 5-слойная архитектура (кросс-домен вниз), npm | accepted | [architecture] [backend] [db] [tooling] |
 | [0031](./0031-file-storage-uploads.md) | Файлы на диске (платформенно); аватарки ЛК — задел, реализация позже | accepted (аватарки → MVP в ADR-0032) | [platform] [files] |
 | [0032](./0032-phase1-refinements.md) | Фаза 1: alias/пароль 3–64, рег-режим по клику, убрать security_logs, аватарки в MVP | accepted | [phase1] [domain] [api] |
+| [0033](./0033-type-hierarchy-convention.md) | Иерархия типов: Pure→Base→Full + производные утилитами, одно свойство — одно место, per-project | accepted | [architecture] [backend] [frontend] [conventions] |
 
 ### Ожидают решения
 

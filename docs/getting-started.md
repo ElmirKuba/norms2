@@ -17,7 +17,7 @@
 ## Шаги
 1. Клонировать репозиторий.
 2. Скопировать `.env.example` → `.env` (значения для dev уже подходят).
-3. `make dev-up` — поднимет Postgres + pgAdmin. Проверить: `make dev-ps`.
+3. `make dev-up-detach` — поднимет Postgres + pgAdmin + nest (в фоне). Проверить: `make dev-ps`. (Или `make dev-up` — в форграунде с логами.)
 4. В отдельных терминалах: `cd nest && npm install && npm run start:dev`; `cd angular && npm install && npm start`.
 5. (после B2) Прогнать миграции Drizzle: `cd nest && npm run db:migrate`.
 6. Открыть фронт на `http://localhost:${FRONTEND_PORT}` (по умолчанию 4200), pgAdmin — `http://localhost:${PGADMIN_PORT}` (8081).

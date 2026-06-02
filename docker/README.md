@@ -29,11 +29,12 @@ docker/
 Из корня репозитория:
 
 ```bash
-make dev-up      # поднять postgres + pgAdmin
-make dev-logs    # логи
-make db-psql     # psql внутрь dev-постгрес
-make dev-down    # остановить
-make help        # все команды
+make dev-up         # поднять в форграунде (логи в терминал, Ctrl+C — стоп)
+make dev-up-detach  # поднять в фоне (-d)
+make dev-logs       # логи (follow) — для фонового режима
+make db-psql        # psql внутрь dev-постгрес
+make dev-down       # остановить
+make help           # все команды
 ```
 
 Сейчас активны **postgres** (`localhost:${DB_PORT}`) и **pgAdmin** (`localhost:${PGADMIN_PORT}`). Бэкенд и фронт в dev обычно поднимаются на хосте (`cd nest && npm run start:dev`, `cd angular && npm start`); их сервисы в compose закомментированы и включатся после этапа B2 (Drizzle/конфиг готовы).

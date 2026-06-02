@@ -9,9 +9,10 @@
 - **Имена** — `snake_case` для таблиц и колонок; Drizzle-схемы (`system/orm-schemas`) маппят на camelCase в коде.
 - **Таймстампы** — `created_at` и `updated_at` (`timestamptz not null`) на **каждой** таблице; `updated_at` автообновляется. ([ADR-0011](./decisions/0011-accounts-table-merge-rename.md))
 - **Soft-delete** — аккаунты физически не удаляются; FK на `accounts` — `ON DELETE RESTRICT` (удаления строки не происходит). ([ADR-0017](./decisions/0017-account-soft-delete.md))
-- **Хеши** — `password_hash`, `answer_hash`, `token_hash` хранят argon2id-хеши (плейнтекст приходит по TLS, хешируется на бэке). ([ADR-0009](./decisions/0009-server-side-hashing.md))
+- **Хеши** — `password_hash` (пароль 3–64, [ADR-0032](./decisions/0032-phase1-refinements.md)), `answer_hash`, `token_hash` хранят argon2id-хеши (плейнтекст приходит по TLS, хешируется на бэке). ([ADR-0009](./decisions/0009-server-side-hashing.md))
 
-## Таблицы (7)
+## Таблицы (6)
+> security_logs убрана ([ADR-0032](./decisions/0032-phase1-refinements.md)): логи безопасности в фазе 1 не ведём.
 
 ### 1. `accounts` — аккаунт (идентичность + вход + квота)
 ([ADR-0005](./decisions/0005-user-split-entities.md) с правкой [ADR-0011](./decisions/0011-accounts-table-merge-rename.md))
@@ -20,8 +21,8 @@
 |---|---|---|
 | `id` | varchar(52) | PK |
 | `login` | varchar(32) | `^[a-zA-Z0-9_]{3,32}$`; **уникальность по `lower(login)`**, глобальная ([ADR-0006](./decisions/0006-registration-field-rules.md), [ADR-0017](./decisions/0017-account-soft-delete.md)) |
-| `alias` | varchar(32) | 2–32, Unicode; не уникален |
-| `avatar` | varchar | null; путь `content/avatars/<id>...` ([ADR-0031](./decisions/0031-file-storage-uploads.md)) — **задел, UI/загрузка позже** |
+| `alias` | varchar(32) | 3–32, Unicode; **не уникален** (один alias у разных людей допустим; уникален только `login`) ([ADR-0032](./decisions/0032-phase1-refinements.md)) |
+| `avatar` | varchar | null; путь `content/avatars/<id>.<ext>` — аватар в MVP ([ADR-0031](./decisions/0031-file-storage-uploads.md), [ADR-0032](./decisions/0032-phase1-refinements.md)) |
 | `password_hash` | text | argon2id |
 | `registration_source` | varchar(8) | CHECK in (`free`,`invite`,`seed`) ([ADR-0010](./decisions/0010-registration-auth-flow.md)) |
 | `invites_remaining` | int | not null, default из ENV `INVITE_DEFAULT_QUOTA`=3 ([ADR-0007](./decisions/0007-invite-quota-counter.md)) |
@@ -105,18 +106,7 @@ Access-токен — stateless JWT, **не хранится**. Индексы: 
 
 > **Платформенное расширение (введено в Фазе 3, [ADR-0029](./decisions/0029-novaskil-phase3-core.md)):** таблицы `roles` и `account_roles` (N:M аккаунт↔роль, роли `admin`/`user`) — общие для площадки, не только НоваСкил. Схема — в [`sections/novaskil/domain-model.md`](./sections/novaskil/domain-model.md). Разделы Акцент/НоваСкил добавляют свои таблицы в эту же БД (рядом).
 
-### 7. `security_logs` — тех. логи (ИЗОЛИРОВАНА, без FK)
-([152fz.md](./152fz.md), [ADR-0001](./decisions/0001-data-minimization-no-pii.md))
-
-| Колонка | Тип | Ограничения |
-|---|---|---|
-| `id` | varchar(52) | PK |
-| `ip_hash` | text | `hash(ip + daily_salt)` |
-| `login` | varchar(32) | null; **строка, НЕ FK** |
-| `user_agent` | text | null |
-| `created_at`,`updated_at` | timestamptz | not null |
-
-**Никаких FK на `accounts`** — намеренная изоляция по 152-ФЗ. TTL **60 дней**: фоновая чистка удаляет старше.
+> ~~7. security_logs~~ — **убрана** ([ADR-0032](./decisions/0032-phase1-refinements.md)): логи безопасности в фазе 1 не ведём (меньше данных = лучше для 152-ФЗ). Rate-limit работает без персистентного следа. Можно вернуть волной.
 
 ## Связи (ER)
 
@@ -128,7 +118,6 @@ accounts ──1:N── invite_codes.inviter_id
 accounts ──1:N── bans.banner_id
 accounts ──1:N── bans.target_id
 accounts ──1:N── sessions.account_id
-security_logs ──✗── (нет связей; login — строка)
 ```
 
 Единственная 1:1 — `accounts`↔`invitations`. Все FK ссылаются на `accounts.id`. `accounts` ни на кого не ссылается.

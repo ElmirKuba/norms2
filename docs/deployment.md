@@ -15,10 +15,10 @@
 
 ## ENV (прод)
 Все через `ConfigService`, валидируются zod fail-fast ([ADR-0019](./decisions/0019-backend-architecture-conventions.md)). Секреты — вне репозитория (`.env` в `.gitignore`), на сервере — через защищённый `.env`/секрет-стор.
-`FREE_REGISTRATION=false` (прод, invite-only — [ADR-0022](./decisions/0022-concept-and-philosophy.md)), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL`, `REFRESH_TTL`, `COOKIE_SECURE=true`, `DB_*`, `INVITE_DEFAULT_QUOTA=3`, `INVITE_TTL_DAYS=3`, `SECURITY_LOG_TTL_DAYS=60`, `IP_HASH_DAILY_SALT` (ротация).
+`FREE_REGISTRATION=false` (прод, invite-only — [ADR-0022](./decisions/0022-concept-and-philosophy.md)), `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL`, `REFRESH_TTL`, `COOKIE_SECURE=true`, `DB_*`, `INVITE_DEFAULT_QUOTA=3`, `INVITE_TTL_DAYS=3`, `AVATAR_MAX_BYTES`. (security_logs не ведём — [ADR-0032](./decisions/0032-phase1-refinements.md).)
 
 ## Фоновые задачи (sweep)
-- `@nestjs/schedule` ([ADR-0023](./decisions/0023-deployment-jurisdiction.md)): удаление истёкших `invite_codes` (по `expires_at`) и `security_logs` старше 60д; ежедневная ротация соли `ip_hash`.
+- `@nestjs/schedule` ([ADR-0023](./decisions/0023-deployment-jurisdiction.md)): удаление истёкших `invite_codes` (по `expires_at`). Папка `content/` (включая `avatars/`) — в бэкапах.
 
 ## Бэкапы Postgres
 - Регулярный `pg_dump` (cron на хосте), хранение со сроком, бэкап **шифровать** (gpg/age). Стратегию частоты/ретеншена зафиксировать при настройке сервера. Восстановление тестировать.

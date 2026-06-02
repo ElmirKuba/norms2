@@ -8,7 +8,8 @@
 
 - **`Id`** — строка `uuidv7___unixmillis`; валидирует формат, не «голая строка» в домене. ([ADR-0016](./decisions/0016-primary-key-format.md))
 - **`Login`** — `^[a-zA-Z0-9_]{3,32}$`; равенство регистронезависимое; не из зарезервированного списка (`admin`,`root`,`moderator`,`mod`,`support`,`system`,`normis`,`normisy`,`null`,`me`). ([ADR-0006](./decisions/0006-registration-field-rules.md))
-- **`Alias`** — 2–32, Unicode-буквы/цифры/пробел/дефис; trim + схлоп пробелов.
+- **`Alias`** — 3–32, Unicode-буквы/цифры/пробел/дефис; trim + схлоп пробелов; **не уникален** ([ADR-0032](./decisions/0032-phase1-refinements.md)).
+- **`Password`** — 3–64 ([ADR-0032](./decisions/0032-phase1-refinements.md); ⚠️ мин 3 — слабо, осознанный риск закрытой площадки). Плейнтекст по TLS → argon2id на бэке.
 - **`SecretAnswer`** — нормализация (trim+lower+схлоп) перед хешированием.
 - **`InviteCodeValue`** — 10 символов без дефисов; визуальное форматирование — на фронте.
 
@@ -36,7 +37,7 @@
 ### `Session`
 `id`, `accountId`, `tokenHash`, `userAgent?`, `expiresAt`, `revokedAt?`. ([ADR-0018](./decisions/0018-refresh-tokens-sessions.md))
 
-> `security_logs` — инфраструктурный лог, не доменная сущность; живёт в infrastructure, без связи с доменом. ([152fz.md](./152fz.md))
+> Логи безопасности (`security_logs`) в фазе 1 **не ведём** ([ADR-0032](./decisions/0032-phase1-refinements.md)).
 
 ## Порты (интерфейсы репозиториев, в `application/`)
 

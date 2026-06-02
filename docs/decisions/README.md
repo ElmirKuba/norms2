@@ -80,7 +80,8 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0028](./0028-accent-timezone-and-domains.md) | Акцент: timezone в accounts (R6), сферы+RPG-атрибуты целей (R10) | accepted | [accent] [phase2] [db] |
 | [0029](./0029-novaskil-phase3-core.md) | НоваСкил: LMS-раздел на общем ЛК, роли N:M, контент+медиа на диске | accepted | [novaskil] [phase3] [db] |
 | [0030](./0030-stack-revision-drizzle-5layer-npm.md) | Ревизия стека: Drizzle, 5-слойная архитектура (кросс-домен вниз), npm | accepted | [architecture] [backend] [db] [tooling] |
-| [0031](./0031-file-storage-uploads.md) | Файлы на диске (платформенно); аватарки ЛК — задел, реализация позже | accepted | [platform] [files] |
+| [0031](./0031-file-storage-uploads.md) | Файлы на диске (платформенно); аватарки ЛК — задел, реализация позже | accepted (аватарки → MVP в ADR-0032) | [platform] [files] |
+| [0032](./0032-phase1-refinements.md) | Фаза 1: alias/пароль 3–64, рег-режим по клику, убрать security_logs, аватарки в MVP | accepted | [phase1] [domain] [api] |
 
 ### Ожидают решения
 

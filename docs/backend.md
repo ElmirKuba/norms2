@@ -22,7 +22,8 @@ src/
 ## Конфигурация
 - `zod`-схема всех ENV; валидация при старте (**fail-fast** — нет валидного env → не поднимаемся).
 - В коде только `ConfigService`, никогда `process.env`.
-- ENV (см. также `deployment.md`): `FREE_REGISTRATION`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL` (~15m), `REFRESH_TTL` (~30d), `DB_*`, `INVITE_DEFAULT_QUOTA`=3, `INVITE_TTL_DAYS`=3, `SECURITY_LOG_TTL_DAYS`=60, `COOKIE_SECURE` (true в проде).
+- ENV (см. также `deployment.md`): `FREE_REGISTRATION`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `ACCESS_TTL` (~15m), `REFRESH_TTL` (~30d), `DB_*`, `INVITE_DEFAULT_QUOTA`=3, `INVITE_TTL_DAYS`=3, `COOKIE_SECURE` (true в проде), `AVATAR_MAX_BYTES`.
+- **Валидация (zod):** `login` 3–32 `[A-Za-z0-9_]`, `alias` 3–32, `password` **3–64** ([ADR-0032](./decisions/0032-phase1-refinements.md); мин 3 — осознанный риск). Аватар: тип jpeg/png/webp, ≤ `AVATAR_MAX_BYTES`, приходит уже нарезанным с фронта.
 
 ## DTO и валидация
 - `nestjs-zod`: каждая DTO — zod-схема (closed shape). Пайп валидирует вход; типы выводятся из схемы. Без class-validator-декораторов.
@@ -56,4 +57,4 @@ src/
 - e2e (supertest) на ключевые сценарии (регистрация в обоих режимах, login/ban/recovery) на тестовой БД.
 
 ## Фоновые задачи
-- Sweep истёкших `invite_codes` (по `expires_at`) и `security_logs` (TTL 60д). Механизм (nest-schedule vs pg_cron) — пункт B3/E8 карты; по умолчанию `@nestjs/schedule`.
+- Sweep истёкших `invite_codes` (по `expires_at`) через `@nestjs/schedule`. (Логи безопасности не ведём — [ADR-0032](./decisions/0032-phase1-refinements.md).)

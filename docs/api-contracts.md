@@ -22,6 +22,10 @@
 Публичный. Фронт зовёт на инициализации.
 → 200 `{ "freeRegistration": boolean }` (список расширяемый).
 
+### `GET /auth/registration-mode` ([ADR-0032](./decisions/0032-phase1-refinements.md))
+Публичный, лёгкий. Фронт зовёт **в момент нажатия «Регистрация»** (не из кэша флагов) — чтобы показать актуальный экран (форма vs ввод кода), даже если флаг с главной устарел.
+→ 200 `{ "mode": "free" | "invite" }`.
+
 ---
 
 ## Auth ([ADR-0010](./decisions/0010-registration-auth-flow.md))
@@ -68,11 +72,11 @@ Body: `{ login, password }`.
 
 ## Профиль / аккаунт ([ADR-0017](./decisions/0017-account-soft-delete.md))
 
-- `GET /accounts/me` (auth) → `{ login, alias, createdAt, invitesRemaining, inviter: {login,alias}|null, banned: boolean }`.
-- `GET /accounts/:login` (auth) → публичный: `{ login, alias, createdAt }`.
+- `GET /accounts/me` (auth) → `{ login, alias, avatar: string|null, createdAt, invitesRemaining, inviter: {login,alias}|null, banned: boolean }`. (список приглашённых — отдельно `GET /invites/mine`, [ADR-0032](./decisions/0032-phase1-refinements.md))
+- `GET /accounts/:login` (auth) → публичный: `{ login, alias, avatar: string|null, createdAt }`.
 - `PATCH /accounts/me` (auth) Body `{ alias }` → 200.
 - `POST /accounts/me/deactivate` (auth) → 204. `POST /accounts/me/reactivate`. `DELETE /accounts/me` (soft, без UI-восстановления — [ADR-0017](./decisions/0017-account-soft-delete.md)) → 204.
-- _Задел (не в MVP — [ADR-0031](./decisions/0031-file-storage-uploads.md)):_ `POST /accounts/me/avatar` (multipart, изображение на диск) · `DELETE /accounts/me/avatar`.
+- **Аватар (в MVP — [ADR-0032](./decisions/0032-phase1-refinements.md)):** `POST /accounts/me/avatar` (multipart; принимает **уже нарезанное** на фронте изображение, jpeg/png/webp, лимит размера; бэк валидирует тип/размер, кладёт в `content/avatars/`, путь → `accounts.avatar`) · `DELETE /accounts/me/avatar` → 204.
 
 ---
 

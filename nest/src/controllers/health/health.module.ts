@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health.controller';
 import { GetHealthUseCase } from '../../use-cases/health/get-health.use-case';
+import { GetReadinessUseCase } from '../../use-cases/health/get-readiness.use-case';
 
 /**
- * Модуль health-проверки: контроллер + use-case живости.
+ * Модуль health-проверки: контроллер + use-cases liveness/readiness.
+ * DatabaseService для readiness берётся из глобального DatabaseModule.
  */
 @Module({
   controllers: [HealthController],
-  providers: [GetHealthUseCase],
+  providers: [GetHealthUseCase, GetReadinessUseCase],
 })
 export class HealthModule {}

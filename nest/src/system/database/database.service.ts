@@ -37,6 +37,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
    * @returns Промис, завершающийся после успешного пинга.
    */
   public async onModuleInit(): Promise<void> {
+    await this.ping();
+  }
+
+  /**
+   * Пингует БД лёгким запросом (для readiness-проверки).
+   * @returns Промис, завершающийся после успешного запроса.
+   * @throws {Error} Если соединение с БД недоступно.
+   */
+  public async ping(): Promise<void> {
     await this._pool.query('SELECT 1');
   }
 

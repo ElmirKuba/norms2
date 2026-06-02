@@ -17,7 +17,7 @@
 ### B. Bootstrap
 - [x] **B1** — `nest/` каркас ✅ (NestJS 11, npm, строгие tsconfig+eslint, JSDoc на русском, сборка зелёная) + `angular/` каркас ✅ (Angular 21, standalone+Signals, SCSS, строгий eslint согласован с nest, оболочка с router-outlet, build/lint/test зелёные).
 - [x] **B2** — ✅ docker `compose-files/docker-compose.dev.yml` (postgres+pgadmin+nest watch с volume на src), `.env.example`, Drizzle + drizzle-kit в nest (`system/database`, токен `DRIZZLE`, `db:generate/migrate/studio`), конфиг zod fail-fast (`system/config`), Makefile `db-*`. Проверено вживую: бэк стартует (хост+контейнер), пинг БД, fail-fast, hot-reload. ⚠️ Линт nest пока красный — почистить отдельно (Sonnet).
-- [ ] **B3** — health-эндпоинт `GET /api/v1/health`, CORS, глобальный exception-filter (конверт ошибок), pino. Фронт дёргает health → «OK».
+- [~] **B3** — ✅ health `GET /api/v1/health` (5-слойка: controllers/health→use-cases/health→interfaces/health, liveness status/uptime/timestamp), глобальный префикс `/api/v1`, CORS на dev-фронт. Осталось: глобальный exception-filter (конверт ошибок), pino, БД-пинг (readiness). Проверено вживую (контейнер watch → 200).
 - [ ] **B4** — utility `generateId()` (uuidv7___unixmillis) на бэке и фронте; базовые `interfaces`/`dtos` каркас 5-слойки.
 
 ### S. Схема БД (Drizzle)

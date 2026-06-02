@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
+import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import type { Env } from './system/config/env.schema';
 
 /**

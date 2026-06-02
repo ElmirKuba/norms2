@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { HealthController } from './health.controller';
-import { GetHealthUseCase } from '../../use-cases/health/get-health.use-case';
-import { GetReadinessUseCase } from '../../use-cases/health/get-readiness.use-case';
+import { HealthController } from './controllers/health.controller';
+import { GetHealthUseCase } from './use-cases/get-health.use-case';
+import { GetReadinessUseCase } from './use-cases/get-readiness.use-case';
 
 /**
  * Модуль health-проверки: контроллер + use-cases liveness/readiness.

@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { DatabaseService } from '../../system/database/database.service';
-import type { ReadinessStatus } from '../../interfaces/health/readiness-status.interface';
+import { DatabaseService } from '../../../database/client/database.service';
+import type { ReadinessStatus } from '../interfaces/readiness-status.interface';
 
 /**
  * Use-case проверки готовности сервиса (readiness): пингует БД. Если база

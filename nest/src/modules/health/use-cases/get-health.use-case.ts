@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { HealthStatus } from '../../interfaces/health/health-status.interface';
+import type { HealthStatus } from '../interfaces/health-status.interface';
 
 /**
  * Use-case проверки живости сервиса (liveness). Не ходит в БД и домен —

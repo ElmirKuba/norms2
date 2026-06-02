@@ -3,7 +3,7 @@ import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import type { Env } from '../config/env.schema';
+import type { Env } from '../../system/config/env.schema';
 import type { DrizzleDatabase } from './database.constants';
 
 /**

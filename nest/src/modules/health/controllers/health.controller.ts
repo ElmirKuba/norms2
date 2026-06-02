@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
-import { GetHealthUseCase } from '../../use-cases/health/get-health.use-case';
-import { GetReadinessUseCase } from '../../use-cases/health/get-readiness.use-case';
-import type { HealthStatus } from '../../interfaces/health/health-status.interface';
-import type { ReadinessStatus } from '../../interfaces/health/readiness-status.interface';
+import { GetHealthUseCase } from '../use-cases/get-health.use-case';
+import { GetReadinessUseCase } from '../use-cases/get-readiness.use-case';
+import type { HealthStatus } from '../interfaces/health-status.interface';
+import type { ReadinessStatus } from '../interfaces/readiness-status.interface';
 
 /**
  * Контроллер health-проверки. С учётом глобального префикса даёт

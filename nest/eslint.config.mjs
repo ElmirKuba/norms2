@@ -160,7 +160,7 @@ export default tseslint.config(
 
   // ─── Drizzle-схемы: сложные внутренние типы pgTable ──────────────────────────
   {
-    files: ['src/system/orm-schemas/*.ts'],
+    files: ['src/database/schemas/*.ts'],
     rules: {
       '@typescript-eslint/typedef': ['error', {
         arrowParameter: false,

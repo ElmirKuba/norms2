@@ -17,7 +17,7 @@
 ### B. Bootstrap
 - [x] **B1** — `nest/` каркас ✅ (NestJS 11, npm, строгие tsconfig+eslint, JSDoc на русском, сборка зелёная) + `angular/` каркас ✅ (Angular 21, standalone+Signals, SCSS, строгий eslint согласован с nest, оболочка с router-outlet, build/lint/test зелёные).
 - [x] **B2** — ✅ docker `compose-files/docker-compose.dev.yml` (postgres+pgadmin+nest watch с volume на src), `.env.example`, Drizzle + drizzle-kit в nest (`system/database`, токен `DRIZZLE`, `db:generate/migrate/studio`), конфиг zod fail-fast (`system/config`), Makefile `db-*`. Проверено вживую: бэк стартует (хост+контейнер), пинг БД, fail-fast, hot-reload. ⚠️ Линт nest пока красный — почистить отдельно (Sonnet).
-- [~] **B3** — ✅ health `GET /api/v1/health` (5-слойка: controllers/health→use-cases/health→interfaces/health, liveness status/uptime/timestamp), глобальный префикс `/api/v1`, CORS на dev-фронт. Осталось: глобальный exception-filter (конверт ошибок), pino, БД-пинг (readiness). Проверено вживую (контейнер watch → 200).
+- [x] **B3** — ✅ health `GET /api/v1/health` (liveness) + `/health/ready` (readiness, пинг БД→503 если недоступна), глобальный префикс `/api/v1`, CORS на dev-фронт, глобальный exception-filter (конверт `{error:{code,message,details?}}`, 5xx без стектрейса наружу), pino (`nestjs-pino`: request-id, redact секретов, pretty в dev, health вне autoLogging). 5-слойка: `controllers/health`→`use-cases/health`→`interfaces/health`, фильтр в `filters/`, логи в `system/logging`. Проверено вживую: health/ready→200, 404→конверт, pino-логи.
 - [ ] **B4** — utility `generateId()` (uuidv7___unixmillis) на бэке и фронте; базовые `interfaces`/`dtos` каркас 5-слойки.
 
 ### S. Схема БД (Drizzle)

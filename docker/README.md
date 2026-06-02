@@ -18,21 +18,29 @@ docker/
 
 Принцип: **dev и prod разведены** и в compose, и в Dockerfile; образы — **по сервису**; данные — в `volumes/` и вне git.
 
-## Контекст сборки
+## Контекст сборки и пути (`PROJECT_ROOT`)
 
-Монорепо без workspace → **контекст сборки = корень репозитория** (`context: ./../../`), а пути `COPY` в Dockerfile указывают внутрь `nest/` или `angular/`. Лишнее из контекста режет корневой [`.dockerignore`](../.dockerignore).
+Монорепо без workspace → **контекст сборки = корень репозитория**, а пути `COPY` в Dockerfile указывают внутрь `nest/` или `angular/`. Лишнее из контекста режет корневой [`.dockerignore`](../.dockerignore).
+
+Чтобы пути в compose были **абсолютными и читаемыми** (`${PROJECT_ROOT}/docker/...`), а не хрупкими `./../../`, корень репозитория передаётся через переменную `PROJECT_ROOT`. Её вычисляет и экспортирует корневой [`Makefile`](../Makefile) (`PROJECT_ROOT := $(shell pwd)`). Поэтому **canonical-способ запуска — через `make`**.
 
 ## Запуск (dev)
 
 Из корня репозитория:
 
 ```bash
-docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml up -d
+make dev-up      # поднять postgres + pgAdmin
+make dev-logs    # логи
+make db-psql     # psql внутрь dev-постгрес
+make dev-down    # остановить
+make help        # все команды
 ```
 
 Сейчас активны **postgres** (`localhost:${DB_PORT}`) и **pgAdmin** (`localhost:${PGADMIN_PORT}`). Бэкенд и фронт в dev обычно поднимаются на хосте (`cd nest && npm run start:dev`, `cd angular && npm start`); их сервисы в compose закомментированы и включатся после этапа B2 (Drizzle/конфиг готовы).
 
-Переменные окружения — из корневого `.env` (шаблон — [`../.env.example`](../.env.example)).
+Переменные окружения — из корневого `.env` (шаблон — [`../.env.example`](../.env.example); без inline-комментариев, чтобы `Makefile` мог `include .env`).
+
+> Прямой вызов `docker compose ...` без `make` требует заранее `export PROJECT_ROOT=$(pwd)` — иначе `${PROJECT_ROOT}` будет пустым.
 
 ## Prod
 

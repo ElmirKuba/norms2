@@ -2,10 +2,10 @@
 # Traefik терминирует TLS (Let's Encrypt/ACME) и роутит по доменам; БД наружу
 # не публикуется. Финализируется при настройке VPS: домен, ACME-почта, секреты
 # (только из защищённого .env на сервере, не из репозитория). Запуск:
-#   docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml up -d
+#   make prod-up   (Makefile экспортирует PROJECT_ROOT — корень репо)
 #
-# Drizzle-миграции прогоняются ОТДЕЛЬНЫМ шагом до старта nest (auto-push запрещён,
-# ADR-0030) — см. docs/deployment.md.
+# Пути абсолютны через ${PROJECT_ROOT}. Drizzle-миграции прогоняются ОТДЕЛЬНЫМ
+# шагом до старта nest (auto-push запрещён, ADR-0030) — см. docs/deployment.md.
 
 services:
   # ── Reverse-proxy + авто-TLS ──
@@ -30,7 +30,7 @@ services:
       - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./../volumes/letsencrypt:/letsencrypt
+      - ${PROJECT_ROOT}/docker/volumes/letsencrypt:/letsencrypt
     networks:
       - norms2_prod-net
 
@@ -44,8 +44,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./../volumes/pg_data_prod:/var/lib/postgresql/data
-      - ./../sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ${PROJECT_ROOT}/docker/volumes/pg_data_prod:/var/lib/postgresql/data
+      - ${PROJECT_ROOT}/docker/sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 10s
@@ -58,11 +58,11 @@ services:
   nest:
     container_name: norms2_nest_prod
     build:
-      context: ./../../
-      dockerfile: ./docker/dockerfiles/nest-backend/Dockerfile.production
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/nest-backend/Dockerfile.production
     restart: unless-stopped
     env_file:
-      - ./../../.env
+      - ${PROJECT_ROOT}/.env
     environment:
       NODE_ENV: production
       DB_HOST: norms2_postgres_prod
@@ -82,8 +82,8 @@ services:
   angular:
     container_name: norms2_angular_prod
     build:
-      context: ./../../
-      dockerfile: ./docker/dockerfiles/angular-frontend/Dockerfile.production
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.production
     restart: unless-stopped
     labels:
       - traefik.enable=true

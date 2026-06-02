@@ -1,7 +1,9 @@
-# Dev-окружение «Нормисов». Запуск из корня репозитория:
-#   docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml up -d
+# Dev-окружение «Нормисов». Запуск (из корня репозитория):
+#   make dev-up
+# Makefile вычисляет и экспортирует PROJECT_ROOT (корень репо), поэтому пути ниже
+# абсолютные — ${PROJECT_ROOT}/docker/... — а не хрупкие ./../.. . Прямой вызов
+# docker compose без make требует заранее: export PROJECT_ROOT=$(pwd).
 #
-# Пути относительны этому файлу (docker/compose-files/), поэтому ./../.. — корень.
 # Сейчас активны postgres + pgAdmin; бэкенд и фронт обычно поднимаются на хосте
 # (cd nest && npm run start:dev / cd angular && npm start). Сервисы nest/angular
 # ниже закомментированы — включатся, когда приложение будет к этому готово
@@ -18,8 +20,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./../volumes/pg_data:/var/lib/postgresql/data
-      - ./../sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ${PROJECT_ROOT}/docker/volumes/pg_data:/var/lib/postgresql/data
+      - ${PROJECT_ROOT}/docker/sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - '${DB_PORT}:5432'
     healthcheck:
@@ -40,7 +42,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
-      - ./../volumes/pgadmin_data:/var/lib/pgadmin
+      - ${PROJECT_ROOT}/docker/volumes/pgadmin_data:/var/lib/pgadmin
     ports:
       - '${PGADMIN_PORT}:80'
     depends_on:
@@ -53,16 +55,16 @@ services:
   # nest:
   #   container_name: norms2_nest_dev
   #   build:
-  #     context: ./../../
-  #     dockerfile: ./docker/dockerfiles/nest-backend/Dockerfile.development
+  #     context: ${PROJECT_ROOT}
+  #     dockerfile: docker/dockerfiles/nest-backend/Dockerfile.development
   #   restart: unless-stopped
   #   env_file:
-  #     - ./../../.env
+  #     - ${PROJECT_ROOT}/.env
   #   environment:
   #     DB_HOST: norms2_postgres_dev   # внутри сети — имя контейнера, не localhost
   #     CHOKIDAR_USEPOLLING: 'true'
   #   volumes:
-  #     - ./../../nest/src:/app/src:rw
+  #     - ${PROJECT_ROOT}/nest/src:/app/src:rw
   #   ports:
   #     - '${BACKEND_PORT}:3000'
   #   depends_on:
@@ -75,11 +77,11 @@ services:
   # angular:
   #   container_name: norms2_angular_dev
   #   build:
-  #     context: ./../../
-  #     dockerfile: ./docker/dockerfiles/angular-frontend/Dockerfile.development
+  #     context: ${PROJECT_ROOT}
+  #     dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.development
   #   restart: unless-stopped
   #   volumes:
-  #     - ./../../angular/src:/app/src:rw
+  #     - ${PROJECT_ROOT}/angular/src:/app/src:rw
   #   ports:
   #     - '${FRONTEND_PORT}:4200'
   #   depends_on:

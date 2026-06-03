@@ -25,7 +25,13 @@
 - [x] **S2** — ✅ первая миграция `drizzle/0000`, накатана в dev, 6 таблиц проверены в БД (psql).
 
 ### A. Модуль auth (регистрация/вход) — ядро
-- [ ] **A1** — VO Login/Alias/Password (валидация); хеш-сервис argon2id; репозиторий accounts (adapter+repository).
+- [ ] **A1** — нижние слои account (снизу вверх, каждый слой = подэтап + указание файла):
+  - [ ] **A1.1** — интерфейсы `Account`: Pure→Base→Full + Read/Create (`modules/account/interfaces/`).
+  - [ ] **A1.2** — VO `Login`/`Alias`/`Password` (валидация ADR-0006/0032) (`modules/account/value-objects/`).
+  - [ ] **A1.3** — хеш-сервис argon2id (общий для пароля/ответов) (`shared/services/hash.service.ts`).
+  - [ ] **A1.4** — порт `AccountRepositoryPort` + DI-токен `ACCOUNT_REPOSITORY` (`modules/account/adapters/`).
+  - [ ] **A1.5** — репозиторий-реализация на Drizzle: маппинг row→`AccountFull`, CAS по `version` (`database/repositories/account/`).
+  - [ ] **A1.6** — `account.module.ts` (DI: токен→репозиторий).
 - [ ] **A2** — `RegisterAccount` (use-case + domain-services accounts/invites), `/auth/register`, `/feature-flags`, `/auth/registration-mode`.
 - [ ] **A3** — `LoginAccount` + JWT (access) + sessions (refresh httpOnly), `/auth/login`, `/auth/refresh`, `/auth/logout`. Guard.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).

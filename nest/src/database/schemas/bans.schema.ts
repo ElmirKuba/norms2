@@ -1,14 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { boolean, index, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import { boolean, index, text, uniqueIndex } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
+import { defineTableWithSchema } from './define-table.helper';
+import type { BanFull } from '../../modules/bans/interfaces/ban-full.interface';
 
 /**
- * bans — баны (N:1 банивший banner, N:1 цель target). «Забанен» — производное
- * (EXISTS active). Снятие — active=false (история сохраняется). Один активный
- * бан на пару (banner, target) — partial unique.
+ * bans — баны (колонки 1:1 с BanFull). «Забанен» — производное (EXISTS active).
+ * Снятие — active=false (история сохраняется). Один активный бан на пару
+ * (banner, target) — partial unique.
  */
-export const bans = pgTable(
+export const bans = defineTableWithSchema<BanFull>()(
   'bans',
   {
     id: idColumn(),

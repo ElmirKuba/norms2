@@ -1,12 +1,14 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, text, timestamp } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
+import { defineTableWithSchema } from './define-table.helper';
+import type { SessionFull } from '../../modules/sessions/interfaces/session-full.interface';
 
 /**
- * sessions — refresh-токены/устройства (N:1 к accounts). token_hash — хеш
- * refresh-токена; ротация через CAS по token_hash (ADR-0035). Access-JWT не хранится.
+ * sessions — refresh-токены/устройства (N:1 к accounts; колонки 1:1 с SessionFull).
+ * Ротация через CAS по token_hash (ADR-0035). Access-JWT не хранится.
  */
-export const sessions = pgTable(
+export const sessions = defineTableWithSchema<SessionFull>()(
   'sessions',
   {
     id: idColumn(),

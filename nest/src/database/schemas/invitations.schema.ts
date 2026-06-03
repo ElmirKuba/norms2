@@ -1,12 +1,14 @@
-import { index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { index, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
+import { defineTableWithSchema } from './define-table.helper';
+import type { InvitationFull } from '../../modules/invites/interfaces/invitation-full.interface';
 
 /**
- * invitations — реализованное ребро дерева приглашений (1:1 к accounts через
- * UNIQUE(account_id)). У корней (free/seed) строки нет. Дерево — рекурсивный CTE.
+ * invitations — ребро дерева приглашений (1:1 к accounts через UNIQUE(account_id);
+ * колонки 1:1 с InvitationFull). У корней (free/seed) строки нет. Дерево — CTE.
  */
-export const invitations = pgTable(
+export const invitations = defineTableWithSchema<InvitationFull>()(
   'invitations',
   {
     id: idColumn(),

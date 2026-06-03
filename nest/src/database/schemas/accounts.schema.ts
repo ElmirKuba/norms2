@@ -1,12 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { bigint, check, integer, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { bigint, check, integer, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { idColumn, timestamps } from './_shared';
+import { defineTableWithSchema } from './define-table.helper';
+import type { AccountFull } from '../../modules/account/interfaces/account-full.interface';
 
 /**
  * accounts — аккаунт (идентичность + вход + квота инвайтов). Корень всех связей.
+ * Набор колонок проверяется TS на 1:1-соответствие AccountFull (ADR-0033).
  * Уникальность логина — по lower(login). version — optimistic lock (ADR-0035).
  */
-export const accounts = pgTable(
+export const accounts = defineTableWithSchema<AccountFull>()(
   'accounts',
   {
     id: idColumn(),

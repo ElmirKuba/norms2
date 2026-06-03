@@ -1,12 +1,14 @@
-import { index, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { index, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
+import { defineTableWithSchema } from './define-table.helper';
+import type { InviteCodeFull } from '../../modules/invites/interfaces/invite-code-full.interface';
 
 /**
- * invite_codes — живые (pending) коды приглашений. Применённые/отозванные/
- * истёкшие строки удаляются. code уникален; expires_at = created_at + TTL.
+ * invite_codes — живые (pending) коды приглашений (колонки 1:1 с InviteCodeFull).
+ * Применённые/отозванные/истёкшие удаляются. code уникален; expires_at = +TTL.
  */
-export const inviteCodes = pgTable(
+export const inviteCodes = defineTableWithSchema<InviteCodeFull>()(
   'invite_codes',
   {
     id: idColumn(),

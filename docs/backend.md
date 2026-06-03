@@ -41,6 +41,8 @@ src/
 
 Классы — через `implements` (DTO `implements XxxRead`/`Create`/`Update`); zod даёт рантайм-валидацию, интерфейс — форму типа. Имена: суффикс роли, **без** `I`-префикса; PK `id`, FK `xxxId`. Drizzle row-тип (`$inferSelect`) живёт в `repositories`, репозиторий маппит row→`XxxFull` (домен ORM не знает). Запрещено повторно перечислять поля вместо `extends`/`Pick`/`Omit`/`Required`/`Partial`.
 
+**Схемы Drizzle типобезопасны против контракта** ([ADR-0036](./decisions/0036-schema-typed-against-full.md)): `database/schemas` объявляются через `defineTableWithSchema<XxxFull>()(name, columns, extraConfig?)` — TS требует точного совпадения набора колонок с ключами `XxxFull` (нет лишних/недостающих), сохраняя вывод типов Drizzle. Контракты `XxxFull` — в `modules/<area>/interfaces`, импорт в схему type-only.
+
 ## Ошибки
 - Глобальный exception filter → конверт `{ error: { code, message, details? } }`.
 - Доменные ошибки — типизированы (`shared/errors`), мапятся на HTTP-статус + машинный `code` (`LOGIN_TAKEN`, `INVITE_INVALID`, `QUOTA_EXCEEDED`, `NOT_IN_SUBTREE`, `BAD_CREDENTIALS`, `ACCOUNT_BANNED`, `CONCURRENT_MODIFICATION`→409, …). Стектрейсы наружу не уходят.

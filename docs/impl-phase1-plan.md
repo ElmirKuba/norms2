@@ -27,7 +27,7 @@
 ### A. Модуль auth (регистрация/вход) — ядро
 - [ ] **A1** — нижние слои account (снизу вверх, каждый слой = подэтап + указание файла):
   - [x] **A1.1** — ✅ интерфейсы `Account`: Pure→Base→Full (+ Read=Omit secrets, Create=Base) в `modules/account/interfaces/`. Ключи Full=14 колонок, схема не сломана.
-  - [ ] **A1.2** — VO `Login`/`Alias`/`Password` (валидация ADR-0006/0032) (`modules/account/value-objects/`).
+  - [x] **A1.2** — ✅ VO `Login`/`Alias`/`Password` (`modules/account/value-objects/`) + доменные ошибки (`shared/errors/`: DomainError+ValidationError), filter мапит DomainError→конверт. Проверено вживую.
   - [ ] **A1.3** — хеш-сервис argon2id (общий для пароля/ответов) (`shared/services/hash.service.ts`).
   - [ ] **A1.4** — порт `AccountRepositoryPort` + DI-токен `ACCOUNT_REPOSITORY` (`modules/account/adapters/`).
   - [ ] **A1.5** — репозиторий-реализация на Drizzle: маппинг row→`AccountFull`, CAS по `version` (`database/repositories/account/`).

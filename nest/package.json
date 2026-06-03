@@ -27,6 +27,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "argon2": "^0.44.0",
     "drizzle-orm": "^0.45.2",
     "nestjs-pino": "^4.6.1",
     "pg": "^8.21.0",

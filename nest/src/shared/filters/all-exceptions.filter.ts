@@ -1,6 +1,7 @@
 import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
+import { DomainError } from '../errors/domain.error';
 
 /** Конверт ошибки, отдаваемый наружу (единый формат для всего API). */
 interface ErrorEnvelope {
@@ -49,8 +50,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Внутренняя ошибка сервера';
     let details: unknown;
+    let domainCode: string | undefined;
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof DomainError) {
+      status = exception.httpStatus;
+      message = exception.message;
+      domainCode = exception.code;
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const payload = exception.getResponse();
       if (typeof payload === 'string') {
@@ -70,7 +76,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    const code: string = STATUS_CODE_MAP[status] ?? 'ERROR';
+    const code: string = domainCode ?? STATUS_CODE_MAP[status] ?? 'ERROR';
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this._logger.error(

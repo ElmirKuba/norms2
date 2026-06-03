@@ -1,28 +1,15 @@
+import type { AccountBase } from './account-base.interface';
+
 /**
- * AccountFull — полный контракт строки accounts (≈ строка БД, ADR-0033).
- * Ключи 1:1 соответствуют колонкам схемы; nullable-колонки — как `| null`
- * (ключ присутствует, значение nullable), не опциональные ключи.
- * На этапе A развернём в иерархию Pure → Base → Full.
+ * AccountFull — полная строка accounts (≈ строка БД, ADR-0033): Base + PK и
+ * системные метки. Ключи 1:1 с колонками схемы (используется в
+ * defineTableWithSchema). Nullable — как `| null` (ключ присутствует).
+ * `Required<AccountBase>` — по конвенции ADR-0033 (у нас опциональных `?` нет,
+ * поэтому фактически no-op, но держим паттерн единым).
  */
-export interface AccountFull {
+export interface AccountFull extends Required<AccountBase> {
   /** PK, uuidv7___unixmillis. */
   id: string;
-  /** Логин (уникален по lower). */
-  login: string;
-  /** Отображаемое имя (не уникально). */
-  alias: string;
-  /** Путь к аватарке относительно content/ или null. */
-  avatar: string | null;
-  /** argon2id-хеш пароля. */
-  passwordHash: string;
-  /** Источник регистрации. */
-  registrationSource: 'free' | 'invite' | 'seed';
-  /** Остаток квоты инвайтов. */
-  invitesRemaining: number;
-  /** K вопросов для восстановления или null. */
-  recoveryRequiredCount: number | null;
-  /** IANA-таймзона. */
-  timezone: string;
   /** Метка обратимой деактивации или null. */
   deactivatedAt: Date | null;
   /** Метка soft-delete или null. */

@@ -21,8 +21,8 @@
 - [ ] **B4** — utility `generateId()` (uuidv7___unixmillis) на бэке и фронте; базовые `interfaces`/`dtos` каркас 5-слойки.
 
 ### S. Схема БД (Drizzle)
-- [ ] **S1** — orm-schemas: accounts, secret_qa, invite_codes, invitations, bans, sessions (6 таблиц, ADR-0032 — без security_logs).
-- [ ] **S2** — первая миграция drizzle-kit, прогон в dev, проверка таблиц.
+- [x] **S1** — ✅ S1.1 concurrency ([ADR-0035](./decisions/0035-concurrency-control.md)); S1.2 Drizzle-схемы 6 таблиц в `database/schemas/` (accounts с `version`, CHECK `registration_source`, `UNIQUE(lower(login))`; partial-unique на bans; FK `ON DELETE RESTRICT`) + relations + хелпер `_shared`.
+- [x] **S2** — ✅ первая миграция `drizzle/0000`, накатана в dev, 6 таблиц проверены в БД (psql).
 
 ### A. Модуль auth (регистрация/вход) — ядро
 - [ ] **A1** — VO Login/Alias/Password (валидация); хеш-сервис argon2id; репозиторий accounts (adapter+repository).

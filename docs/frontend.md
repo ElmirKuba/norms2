@@ -43,7 +43,7 @@ angular/src/app/
 - Типы **не шарятся** с бэком (монорепо без workspace): фронт держит в `core/interfaces/<entity>/` своё **зеркало подмножества** контракта (обычно `Read`/`Create`/`Update`), которое реально нужно UI. Источник истины формы — бэк; рассинхрон ловится на интеграции.
 
 ## Идентификаторы
-- util `generateId()` (формат `uuidv7___unixmillis`, [ADR-0016](./decisions/0016-primary-key-format.md)) — тот же, что на бэке; для случаев, когда id нужен на клиенте.
+- util `generateId()` (`core/utils/generate-id.util.ts`; формат `uuidv7___unixmillis`, [ADR-0016](./decisions/0016-primary-key-format.md)) — **параллельная копия** бэковой (типы/утилы фронта и бэка не шарятся); без зависимостей; для случаев, когда id нужен на клиенте.
 
 ## Восстановление (UI)
 - Настройки: добавить/удалить вопросы, выбрать `recovery_required_count` (K). Баннер-напоминание «настройте восстановление, иначе потеряете доступ» ([ADR-0008](./decisions/0008-account-recovery-secret-questions.md)).

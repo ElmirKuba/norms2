@@ -54,7 +54,7 @@
 
 ### I. Инвайты + дерево + баны
 - [ ] **I1** — invite_codes + invitations (квота, транзакции), снизу вверх. Механизм транзакций (Drizzle `db.transaction` vs атомарный+компенсация) — решить при кодинге.
-  - [ ] **I1.1** — interfaces+VO: `InviteCode`/`Invitation` Pure→Base→Full(+Create), VO `InviteCodeValue` (10 симв., генерация) (`modules/invites/{interfaces,value-objects}/`).
+  - [x] **I1.1** — ✅ иерархии `InviteCode`/`Invitation` Pure→Base→Full(+Create) (схема не сломана) + VO `InviteCodeValue` (generate безопасный алфавит / create нормализация+валидация). Проверено вживую.
   - [ ] **I1.2** — `InviteRepositoryPort`+токен + Drizzle-репо (createCode/findActiveCodeByValue/deleteCode/insertInvitation/listInviteesByInviter; транзакц. consume) (`modules/invites/adapters/`, `database/repositories/invite/`).
   - [ ] **I1.3** — `InviteDomainService`: CreateInvite (счётчик↓ через account + createCode), RevokeInvite (счётчик↑ + delete), ConsumeInvite (валидация+транзакция invitation+delete code), CheckInviteCode. Кросс-домен↓ account.
   - [ ] **I1.4** — DTO+use-cases+controller invites: Create/Revoke/Check/ListMyInvitees (`POST/DELETE /invites`, `POST /invites/check`, `GET /invites` под Guard) + `invites.module`+AppModule.

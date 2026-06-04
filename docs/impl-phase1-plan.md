@@ -36,7 +36,7 @@
   - [x] **A2.1** — ✅ `AccountDomainService.createAccount` (`modules/account/domain-services/`): проверка логина + хеш + `generateId` + `repo.create`, квота из ENV; `LoginTakenError` (409); экспортнут из `account.module`. Проверено вживую. TODO про гонку UNIQUE(lower(login)).
   - [x] **A2.2** — ✅ use-cases `auth` (`modules/auth/use-cases/`): `RegisterAccountUseCase` (free; raw→VO; кросс-домен вниз→account; passwordHash срезан; invite→TODO/InviteRequiredError) + `GetFeatureFlags`/`GetRegistrationMode`. Проверено вживую.
   - [x] **A2.3** — ✅ `RegisterDto` (zod `.strict()` closed-shape, `modules/auth/dtos/`) + кастомный `ZodValidationPipe` (`shared/pipes/`, без nestjs-zod). Типы ответов — FeatureFlags/RegistrationMode/AccountRead (есть). Проверено вживую (валидный/битый/лишнее поле).
-  - [ ] **A2.4** — controllers `auth`: `POST /auth/register` (без токенов, ADR-0010), `GET /auth/registration-mode`, `GET /feature-flags` (`modules/auth/controllers/`).
+  - [x] **A2.4** — ✅ controllers `auth` (`modules/auth/controllers/`): `AuthController` (POST register с zod-пайпом→RegisterResponse, GET registration-mode), `FeatureFlagsController` (GET). Прямой тест ок; HTTP live — на A2.5.
   - [ ] **A2.5** — связка: `auth.module` (controller+use-cases, import `AccountModule`) + подключить в AppModule.
 - [ ] **A3** — `LoginAccount` + JWT (access) + sessions (refresh httpOnly), `/auth/login`, `/auth/refresh`, `/auth/logout`. Guard.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).

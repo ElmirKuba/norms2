@@ -155,6 +155,7 @@ test(invites): cover ban-chain cases
 - ❌ Бизнес-логика в `app.module.ts` или `main.ts` — только bootstrap.
 - ❌ Переменные окружения в коде — только через `ConfigService`, описаны в [`docs/deployment.md`](./docs/deployment.md).
 - ❌ Импорт ORM (`drizzle`) в use-case/доменных слоях — только через adapters/repositories.
+- ❌ **Зависимость бизнес-слоёв от КОНКРЕТНЫХ инфра-реализаций.** Чистые границы (строго): controllers/use-cases/domain-services зависят **только от портов/абстракций** (интерфейс + DI-токен), НЕ от конкретных классов инфры (`DatabaseService`, репозитории, drizzle-типы, `$inferSelect`, схемы). Транзакции — через опаковый `Transaction`/`TransactionRunner`, не через сырой Drizzle-tx. **Конкретику знают только** `database/*` и `*.module.ts` (composition root — он связывает токен↔реализацию, это норма). Периодически **grep-аудитить границу** (`from 'drizzle-orm`, `from 'pg'`, `database/`, `$inferSelect`, `DrizzleExecutor` вне `src/database/`): компилятор такие утечки не ловит (типы совпадают), а домен должен оставаться заменяемым без касания.
 - ❌ Drizzle auto-push в проде — только явные миграции (drizzle-kit).
 - ❌ Стейт-менеджеры на фронте (NgRx и пр.) — только Signals + поля класса + rxjs/сервисы при необходимости.
 - ❌ `any` в TypeScript. Если тип неизвестен — `unknown` и сужение.

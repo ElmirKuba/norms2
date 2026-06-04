@@ -25,13 +25,13 @@
 - [x] **S2** — ✅ первая миграция `drizzle/0000`, накатана в dev, 6 таблиц проверены в БД (psql).
 
 ### A. Модуль auth (регистрация/вход) — ядро
-- [ ] **A1** — нижние слои account (снизу вверх, каждый слой = подэтап + указание файла):
+- [x] **A1** — ✅ нижние слои account собраны и связаны (снизу вверх, каждый слой = подэтап + файл):
   - [x] **A1.1** — ✅ интерфейсы `Account`: Pure→Base→Full (+ Read=Omit secrets, Create=Base) в `modules/account/interfaces/`. Ключи Full=14 колонок, схема не сломана.
   - [x] **A1.2** — ✅ VO `Login`/`Alias`/`Password` (`modules/account/value-objects/`) + доменные ошибки (`shared/errors/`: DomainError+ValidationError), filter мапит DomainError→конверт. Проверено вживую.
   - [x] **A1.3** — ✅ `HashService` argon2id (`shared/services/hash.service.ts`, `hash()`/`verify()`, наружу только строки) + глобальный `SharedModule` (подключён в AppModule). Проверено: build, hash→verify roundtrip, boot с DI.
   - [x] **A1.4** — ✅ порт `AccountRepositoryPort` + токен `ACCOUNT_REPOSITORY` (`modules/account/adapters/`): findById, findByLoginNormalized, existsByLoginNormalized, create, updateWithVersion (CAS), decrement/incrementInvitesRemaining. Тип `AccountMutable`. Без ORM.
   - [x] **A1.5** — ✅ `AccountRepository implements AccountRepositoryPort` (`database/repositories/account/`): find/exists/create/updateWithVersion(CAS)/decr-incr квоты, маппинг row→`AccountFull`, инъекция DRIZZLE. Проверено вживую против БД (включая CAS-конфликт и атомарный счётчик).
-  - [ ] **A1.6** — `account.module.ts` (DI: токен→репозиторий).
+  - [x] **A1.6** — ✅ `account.module.ts` (DI: `ACCOUNT_REPOSITORY`→`AccountRepository`, exports токен), подключён в AppModule. Boot проверен (DI-граф резолвится).
 - [ ] **A2** — `RegisterAccount` (use-case + domain-services accounts/invites), `/auth/register`, `/feature-flags`, `/auth/registration-mode`.
 - [ ] **A3** — `LoginAccount` + JWT (access) + sessions (refresh httpOnly), `/auth/login`, `/auth/refresh`, `/auth/logout`. Guard.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).

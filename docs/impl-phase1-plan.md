@@ -38,7 +38,13 @@
   - [x] **A2.3** — ✅ `RegisterDto` (zod `.strict()` closed-shape, `modules/auth/dtos/`) + кастомный `ZodValidationPipe` (`shared/pipes/`, без nestjs-zod). Типы ответов — FeatureFlags/RegistrationMode/AccountRead (есть). Проверено вживую (валидный/битый/лишнее поле).
   - [x] **A2.4** — ✅ controllers `auth` (`modules/auth/controllers/`): `AuthController` (POST register с zod-пайпом→RegisterResponse, GET registration-mode), `FeatureFlagsController` (GET). Прямой тест ок; HTTP live — на A2.5.
   - [x] **A2.5** — ✅ `auth.module` (controllers+use-cases, import `AccountModule`) + подключён в AppModule. Live HTTP: register 201 (полная цепочка→БД), валидация 400+details, флаги/режим 200.
-- [ ] **A3** — `LoginAccount` + JWT (access) + sessions (refresh httpOnly), `/auth/login`, `/auth/refresh`, `/auth/logout`. Guard.
+- [ ] **A3** — `LoginAccount` + JWT(access) + sessions(refresh httpOnly) + Guard, снизу вверх. Бан-чек login-allowed — на I2 (нужен bans repo); сейчас deleted/deactivated + TODO.
+  - [ ] **A3.1** — deps `@nestjs/jwt`+`cookie-parser` (нужен dev-rebuild контейнера) + `AccessTokenService` (sign/verify access-JWT, `sub=accountId`, `JWT_ACCESS_SECRET`/`ACCESS_TTL`) (`modules/auth/services/`).
+  - [ ] **A3.2** — слайс sessions: `SessionRepositoryPort`+токен (`modules/sessions/adapters/`), Drizzle-репозиторий create/findByTokenHash/rotate-CAS/revoke (`database/repositories/session/`), `SessionDomainService` (refresh+hash, ротация с reuse-detect→revoke all, revoke), `sessions.module`.
+  - [ ] **A3.3** — Login: `AccountDomainService.authenticate` (find by login + argon2 verify + login-allowed deleted/deactivated; `BadCredentialsError`; ban→TODO I2) + `LoginDto` (zod) + `LoginAccountUseCase` (VO→account↓→sessions↓→access JWT + refresh).
+  - [ ] **A3.4** — `RefreshTokensUseCase` (по refresh-cookie→sessions.rotate; reuse→revoke all; новые access+refresh) + `LogoutUseCase` (revoke) (`modules/auth/use-cases/`).
+  - [ ] **A3.5** — `AuthGuard` (Bearer access→verify→login-allowed→req.account) + `cookie-parser` в main.ts + `auth.controller`: `POST /auth/login` (refresh в httpOnly+Secure+SameSite cookie, вернуть access), `/auth/refresh`, `/auth/logout`.
+  - [ ] **A3.6** — связка: `auth.module` (JwtModule, import SessionsModule+AccountModule, providers use-cases+guard+token-service) + AppModule.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).
 
 ### I. Инвайты + дерево + баны

@@ -9,6 +9,6 @@ export interface RegisterAccountInput {
   alias: string;
   /** Пароль-плейнтекст. */
   password: string;
-  /** Код приглашения (invite-режим). */
-  inviteCode?: string;
+  /** Код приглашения (invite-режим). `| undefined` — под zod `.optional()` + exactOptional. */
+  inviteCode?: string | undefined;
 }

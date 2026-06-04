@@ -30,6 +30,13 @@ export interface InviteRepositoryPort {
   findActiveCodeByValue(code: string): Promise<InviteCodeFull | null>;
 
   /**
+   * Находит код по id (для проверки владения при отзыве).
+   * @param id Идентификатор кода.
+   * @returns Код или null.
+   */
+  findCodeById(id: string): Promise<InviteCodeFull | null>;
+
+  /**
    * Удаляет код по id.
    * @param id Идентификатор.
    * @param tx Опц. транзакция.

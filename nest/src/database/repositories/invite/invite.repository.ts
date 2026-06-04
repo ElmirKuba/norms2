@@ -55,6 +55,16 @@ export class InviteRepository implements InviteRepositoryPort {
   }
 
   /**
+   * Находит код по id.
+   * @param id Идентификатор кода.
+   * @returns Код или null.
+   */
+  public async findCodeById(id: string): Promise<InviteCodeFull | null> {
+    const rows = await this._db.select().from(inviteCodes).where(eq(inviteCodes.id, id)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  /**
    * Удаляет код по id.
    * @param id Идентификатор.
    * @param tx Опц. транзакция.

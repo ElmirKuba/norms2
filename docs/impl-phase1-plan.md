@@ -55,7 +55,7 @@
 ### I. Инвайты + дерево + баны
 - [ ] **I1** — invite_codes + invitations (квота, транзакции), снизу вверх. Механизм транзакций (Drizzle `db.transaction` vs атомарный+компенсация) — решить при кодинге.
   - [x] **I1.1** — ✅ иерархии `InviteCode`/`Invitation` Pure→Base→Full(+Create) (схема не сломана) + VO `InviteCodeValue` (generate безопасный алфавит / create нормализация+валидация). Проверено вживую.
-  - [ ] **I1.2** — `InviteRepositoryPort`+токен + Drizzle-репо (createCode/findActiveCodeByValue/deleteCode/insertInvitation/listInviteesByInviter; транзакц. consume) (`modules/invites/adapters/`, `database/repositories/invite/`).
+  - [x] **I1.2** — ✅ `InviteRepositoryPort`+Drizzle-репо (createCode/findActiveCodeByValue/deleteCode/insertInvitation/listInviteesByInviter, tx-aware). **Транзакции**: опаковый `Transaction` + `TransactionRunner` (shared-порт + Drizzle-раннер в DatabaseModule) — домен оркестрирует tx без ORM. Проверено: atomic consume + rollback.
   - [ ] **I1.3** — `InviteDomainService`: CreateInvite (счётчик↓ через account + createCode), RevokeInvite (счётчик↑ + delete), ConsumeInvite (валидация+транзакция invitation+delete code), CheckInviteCode. Кросс-домен↓ account.
   - [ ] **I1.4** — DTO+use-cases+controller invites: Create/Revoke/Check/ListMyInvitees (`POST/DELETE /invites`, `POST /invites/check`, `GET /invites` под Guard) + `invites.module`+AppModule.
   - [ ] **I1.5** — довязать invite-режим регистрации (**TODO A2.2**): `RegisterAccountUseCase` invite-ветка → ConsumeInvite в транзакции с createAccount, source='invite'.

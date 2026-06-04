@@ -53,8 +53,17 @@
   - [ ] **A4.5** — (опц.) e2e supertest на тестовой БД: register→login→refresh→logout (если будет время; иначе перенести).
 
 ### I. Инвайты + дерево + баны
-- [ ] **I1** — invite_codes + invitations: `CreateInvite`/`RevokeInvite`/`ConsumeInvite`/`CheckInviteCode`, эндпоинты, квота-счётчик, транзакции.
-- [ ] **I2** — InviteTree (рекурсивный CTE isAncestor/subtree); bans: `BanInMySubtree`/`Unban`/`ListMyBans`, эндпоинты; login учитывает бан.
+- [ ] **I1** — invite_codes + invitations (квота, транзакции), снизу вверх. Механизм транзакций (Drizzle `db.transaction` vs атомарный+компенсация) — решить при кодинге.
+  - [ ] **I1.1** — interfaces+VO: `InviteCode`/`Invitation` Pure→Base→Full(+Create), VO `InviteCodeValue` (10 симв., генерация) (`modules/invites/{interfaces,value-objects}/`).
+  - [ ] **I1.2** — `InviteRepositoryPort`+токен + Drizzle-репо (createCode/findActiveCodeByValue/deleteCode/insertInvitation/listInviteesByInviter; транзакц. consume) (`modules/invites/adapters/`, `database/repositories/invite/`).
+  - [ ] **I1.3** — `InviteDomainService`: CreateInvite (счётчик↓ через account + createCode), RevokeInvite (счётчик↑ + delete), ConsumeInvite (валидация+транзакция invitation+delete code), CheckInviteCode. Кросс-домен↓ account.
+  - [ ] **I1.4** — DTO+use-cases+controller invites: Create/Revoke/Check/ListMyInvitees (`POST/DELETE /invites`, `POST /invites/check`, `GET /invites` под Guard) + `invites.module`+AppModule.
+  - [ ] **I1.5** — довязать invite-режим регистрации (**TODO A2.2**): `RegisterAccountUseCase` invite-ветка → ConsumeInvite в транзакции с createAccount, source='invite'.
+- [ ] **I2** — InviteTree (рекурсивный CTE) + bans + бан-чек логина, снизу вверх.
+  - [ ] **I2.1** — `InviteTreeRepositoryPort` + рекурсивный CTE `isAncestor`/`subtree` по `invitations` (`database/repositories/invite-tree/`); экспорт из invites.
+  - [ ] **I2.2** — слайс bans: interfaces (Ban Pure→Base→Full+Create), `BanRepositoryPort`+Drizzle-репо (createBan/deactivateOwn/existsActiveByTarget/listByBanner; partial-unique гард), `bans.module`.
+  - [ ] **I2.3** — `BanDomainService`+use-cases+DTO+controller: BanInMySubtree (инвариант `isAncestor(me,target)`↓ через InviteTree), Unban (только своя запись), ListMyBans (`POST/DELETE /bans`, `GET /bans`, Guard).
+  - [ ] **I2.4** — login/Guard учитывают бан (**TODO A3.3/A3.5**): ban-check (`existsActiveBan`) в логине/Guard — оркестрация кросс-домена (решить расположение: use-case vs расширенный login-allowed).
 
 ### R. Восстановление + профиль + сессии
 - [ ] **R1** — secret_qa: add/remove/required-count; recovery start/complete (K-of-N).

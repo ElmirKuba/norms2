@@ -19,8 +19,10 @@ import type { Env } from '../../system/config/env.schema';
  * Модуль области auth: контроллеры + use-cases (регистрация/режим/флаги/вход/
  * refresh/logout) + access-токен + Guard. Импортирует `AccountModule` и
  * `SessionsModule` — для кросс-доменных вызовов ВНИЗ (ADR-0030). `JwtModule`
- * настроен из конфига (`JWT_ACCESS_SECRET`/`ACCESS_TTL`). `AuthGuard` экспортится
- * для защищённых роутов других областей (R-этап).
+ * настроен из конфига (`JWT_ACCESS_SECRET`/`ACCESS_TTL`). Экспортит `AuthGuard`
+ * (+ его зависимости `AccessTokenService` и реэкспорт `JwtModule`) — guard,
+ * привязанный через `@UseGuards` в контроллере чужого модуля, инстанцируется в
+ * DI-скоупе ТОГО модуля, поэтому его зависимости обязаны резолвиться там же.
  */
 @Module({
   imports: [
@@ -45,6 +47,6 @@ import type { Env } from '../../system/config/env.schema';
     RefreshTokensUseCase,
     LogoutUseCase,
   ],
-  exports: [AuthGuard],
+  exports: [AuthGuard, AccessTokenService, JwtModule],
 })
 export class AuthModule {}

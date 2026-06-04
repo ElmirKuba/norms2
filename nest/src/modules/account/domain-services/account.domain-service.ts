@@ -120,4 +120,22 @@ export class AccountDomainService {
     }
     return account;
   }
+
+  /**
+   * Атомарно списывает 1 из квоты инвайтов (для кросс-домена из invites).
+   * @param accountId Идентификатор аккаунта.
+   * @returns true, если списано; false, если квота исчерпана.
+   */
+  public async consumeInviteQuota(accountId: string): Promise<boolean> {
+    return this._accountRepository.decrementInvitesRemaining(accountId);
+  }
+
+  /**
+   * Атомарно возвращает 1 в квоту инвайтов (отзыв/компенсация).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async returnInviteQuota(accountId: string): Promise<void> {
+    await this._accountRepository.incrementInvitesRemaining(accountId);
+  }
 }

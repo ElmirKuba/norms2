@@ -6,11 +6,12 @@ import { DatabaseModule } from './database/client/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { InvitesModule } from './modules/invites/invites.module';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
- * общие сервисы (shared), БД (Drizzle), health и доменные области account/auth.
- * Прочие области (invites, ...) добавятся далее.
+ * общие сервисы (shared), БД (Drizzle), health и доменные области
+ * account/auth/invites. Прочие (bans, ...) добавятся далее.
  */
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from './modules/auth/auth.module';
     HealthModule,
     AccountModule,
     AuthModule,
+    InvitesModule,
   ],
 })
 export class AppModule {}

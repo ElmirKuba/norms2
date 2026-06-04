@@ -1,17 +1,19 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/client/database.service';
+import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { DB_HEALTH } from '../adapters/db-health.port';
+import type { DbHealthPort } from '../adapters/db-health.port';
 import type { ReadinessStatus } from '../interfaces/readiness-status.interface';
 
 /**
- * Use-case проверки готовности сервиса (readiness): пингует БД. Если база
- * недоступна — бросает 503 (готов = ok только при доступных зависимостях).
+ * Use-case проверки готовности сервиса (readiness): пингует БД через ПОРТ
+ * `DbHealthPort` (не зная про конкретный DatabaseService/ORM). Если база
+ * недоступна — 503.
  */
 @Injectable()
 export class GetReadinessUseCase {
   /**
-   * @param _databaseService Сервис БД (источник пинга).
+   * @param _dbHealth Порт проверки доступности БД (DI-токен DB_HEALTH).
    */
-  public constructor(private readonly _databaseService: DatabaseService) {}
+  public constructor(@Inject(DB_HEALTH) private readonly _dbHealth: DbHealthPort) {}
 
   /**
    * Проверяет доступность зависимостей (БД) и формирует статус готовности.
@@ -20,7 +22,7 @@ export class GetReadinessUseCase {
    */
   public async execute(): Promise<ReadinessStatus> {
     try {
-      await this._databaseService.ping();
+      await this._dbHealth.ping();
     } catch {
       throw new ServiceUnavailableException('База данных недоступна');
     }

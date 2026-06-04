@@ -5,13 +5,15 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import type { Env } from '../../system/config/env.schema';
 import type { DrizzleDatabase } from './database.constants';
+import type { DbHealthPort } from '../../modules/health/adapters/db-health.port';
 
 /**
  * Сервис подключения к PostgreSQL: владеет пулом соединений и инстансом Drizzle.
  * Пингует БД при старте (fail-fast) и аккуратно закрывает пул при остановке.
+ * Реализует `DbHealthPort` (метод `ping`) для readiness-проверки.
  */
 @Injectable()
-export class DatabaseService implements OnModuleInit, OnModuleDestroy {
+export class DatabaseService implements OnModuleInit, OnModuleDestroy, DbHealthPort {
   /** Инстанс Drizzle — точка доступа к БД для репозиториев. */
   public readonly db: DrizzleDatabase;
 

@@ -1,18 +1,12 @@
+import type { InvitationBase } from './invitation-base.interface';
+
 /**
- * InvitationFull — полный контракт строки invitations (ребро дерева, ADR-0033).
- * Ключи 1:1 с колонками схемы. На этапе I развернём в Pure → Base → Full.
+ * InvitationFull — полная строка invitations (ребро дерева, ≈ строка БД,
+ * ADR-0033): Base + PK и системные метки. Ключи 1:1 с колонками схемы.
  */
-export interface InvitationFull {
-  /** PK. */
+export interface InvitationFull extends Required<InvitationBase> {
+  /** PK, uuidv7___unixmillis. */
   id: string;
-  /** FK на accounts.id (приглашённый, уникален → 1:1). */
-  accountId: string;
-  /** FK на accounts.id (пригласивший). */
-  inviterId: string;
-  /** Причина (копия из кода при погашении). */
-  reason: string;
-  /** Момент погашения. */
-  invitedAt: Date;
   /** Когда создан. */
   createdAt: Date;
   /** Когда изменён. */

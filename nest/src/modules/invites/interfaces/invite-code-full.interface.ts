@@ -1,18 +1,12 @@
+import type { InviteCodeBase } from './invite-code-base.interface';
+
 /**
- * InviteCodeFull — полный контракт строки invite_codes (живой код, ADR-0033).
- * Ключи 1:1 с колонками схемы. На этапе I развернём в Pure → Base → Full.
+ * InviteCodeFull — полная строка invite_codes (≈ строка БД, ADR-0033): Base + PK
+ * и системные метки. Ключи 1:1 с колонками схемы (defineTableWithSchema).
  */
-export interface InviteCodeFull {
-  /** PK. */
+export interface InviteCodeFull extends Required<InviteCodeBase> {
+  /** PK, uuidv7___unixmillis. */
   id: string;
-  /** Код приглашения (10 символов, уникален). */
-  code: string;
-  /** FK на accounts.id (создатель). */
-  inviterId: string;
-  /** Причина приглашения. */
-  reason: string;
-  /** Срок жизни кода. */
-  expiresAt: Date;
   /** Когда создан. */
   createdAt: Date;
   /** Когда изменён. */

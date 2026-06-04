@@ -45,10 +45,10 @@ export class SessionDomainService {
    * Ротация: проверяет refresh-токен, выдаёт новый, отзывает старый (CAS).
    * Reuse (отозванный токен / проигранный CAS) → отзыв всех сессий аккаунта.
    * @param refreshToken Плейнтекст предъявленного refresh-токена.
-   * @returns Новый плейнтекст refresh-токена.
+   * @returns Новый плейнтекст refresh-токена и id аккаунта (для access-токена).
    * @throws {InvalidRefreshError} Если токен недействителен/истёк/reuse.
    */
-  public async rotateSession(refreshToken: string): Promise<string> {
+  public async rotateSession(refreshToken: string): Promise<{ refreshToken: string; accountId: string }> {
     const tokenHash = sha256Hex(refreshToken);
     const session = await this._sessionRepository.findByTokenHash(tokenHash);
 
@@ -79,7 +79,7 @@ export class SessionDomainService {
       await this._sessionRepository.revokeAllByAccount(session.accountId);
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
-    return newRefreshToken;
+    return { refreshToken: newRefreshToken, accountId: rotated.accountId };
   }
 
   /**

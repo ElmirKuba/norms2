@@ -8,6 +8,7 @@ import type { Alias } from '../value-objects/alias.vo';
 import type { Password } from '../value-objects/password.vo';
 import { HashService } from '../../../shared/services/hash.service';
 import { LoginTakenError } from '../../../shared/errors/login-taken.error';
+import { BadCredentialsError } from '../../../shared/errors/bad-credentials.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { Env } from '../../../system/config/env.schema';
 
@@ -73,5 +74,31 @@ export class AccountDomainService {
       recoveryRequiredCount: null,
       timezone: 'UTC',
     });
+  }
+
+  /**
+   * Аутентификация по логину+паролю. Логин/пароль — сырые строки (на входе НЕ
+   * валидируем формат VO, чтобы любые неверные данные давали единый 401, а не
+   * 400). Вход разрешён ⇔ не удалён и не деактивирован (бан — на I2).
+   * @param loginRaw Логин (любой регистр).
+   * @param passwordRaw Пароль-плейнтекст.
+   * @returns Аккаунт при успехе.
+   * @throws {BadCredentialsError} Неверные данные или вход запрещён.
+   */
+  public async authenticate(loginRaw: string, passwordRaw: string): Promise<AccountFull> {
+    const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
+    if (account === null) {
+      throw new BadCredentialsError('Неверный логин или пароль.');
+    }
+    const passwordOk = await this._hashService.verify(account.passwordHash, passwordRaw);
+    if (!passwordOk) {
+      throw new BadCredentialsError('Неверный логин или пароль.');
+    }
+    // TODO: Claude Code: 2026-06-04: бан-чек login-allowed — EXISTS active ban
+    // (нужен bans-репозиторий, этап I2). Сейчас проверяем только deleted/deactivated.
+    if (account.deletedAt !== null || account.deactivatedAt !== null) {
+      throw new BadCredentialsError('Неверный логин или пароль.');
+    }
+    return account;
   }
 }

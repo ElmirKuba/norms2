@@ -33,7 +33,7 @@
   - [x] **A1.5** — ✅ `AccountRepository implements AccountRepositoryPort` (`database/repositories/account/`): find/exists/create/updateWithVersion(CAS)/decr-incr квоты, маппинг row→`AccountFull`, инъекция DRIZZLE. Проверено вживую против БД (включая CAS-конфликт и атомарный счётчик).
   - [x] **A1.6** — ✅ `account.module.ts` (DI: `ACCOUNT_REPOSITORY`→`AccountRepository`, exports токен), подключён в AppModule. Boot проверен (DI-граф резолвится).
 - [ ] **A2** — `RegisterAccount` (free-режим) + эндпоинты флагов/режима, снизу вверх. Invite-ветка регистрации — на этапе I (нужен репозиторий инвайтов).
-  - [ ] **A2.1** — domain-service `account`: `createAccount` (проверка занятости логина + хеш argon2id + `generateId` + `repo.create`) (`modules/account/domain-services/`); `account.module` экспортит его.
+  - [x] **A2.1** — ✅ `AccountDomainService.createAccount` (`modules/account/domain-services/`): проверка логина + хеш + `generateId` + `repo.create`, квота из ENV; `LoginTakenError` (409); экспортнут из `account.module`. Проверено вживую. TODO про гонку UNIQUE(lower(login)).
   - [ ] **A2.2** — use-cases `auth`: `RegisterAccountUseCase` (free; режим по `FREE_REGISTRATION`; raw→VO; зовёт account-domain-service вниз) + `GetRegistrationMode`/`GetFeatureFlags` (`modules/auth/use-cases/`).
   - [ ] **A2.3** — DTO `auth`: `RegisterDto` (zod closed-shape: login/alias/password/inviteCode?) + типы ответов (`modules/auth/dtos/`).
   - [ ] **A2.4** — controllers `auth`: `POST /auth/register` (без токенов, ADR-0010), `GET /auth/registration-mode`, `GET /feature-flags` (`modules/auth/controllers/`).

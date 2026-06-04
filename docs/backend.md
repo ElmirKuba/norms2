@@ -3,7 +3,7 @@
 > Реализация бэкенда. Архитектура/слои — [`architecture.md`](./architecture.md) + [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md). Конвенции — [ADR-0019](./decisions/0019-backend-architecture-conventions.md) (конфиг/ошибки/логи), [ADR-0020](./decisions/0020-api-conventions.md). Домен — [`domain-model.md`](./domain-model.md). Схема — [`database.md`](./database.md). Образец — `~/coding/kuba-game/nest-backend`.
 
 ## Стек
-NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужение), **Drizzle** + drizzle-kit (явные миграции), PostgreSQL, **npm** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Зависимости: `@nestjs/config`, `zod`, `nestjs-zod`, `@nestjs/throttler`, `nestjs-pino`, `argon2`, `@nestjs/jwt`, `cookie-parser`, `drizzle-orm`, `drizzle-kit`.
+NestJS (≥10), TypeScript **strict** (без `any` — `unknown` + сужение), **Drizzle** + drizzle-kit (явные миграции), PostgreSQL, **npm** ([ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)). Зависимости: `@nestjs/config`, `zod`, `@nestjs/throttler`, `nestjs-pino`, `argon2`, `@nestjs/jwt`, `cookie-parser`, `drizzle-orm`, `drizzle-kit`.
 
 ## Структура: feature-first + вынесенный `database/` ([ADR-0034](./decisions/0034-feature-first-layout.md), детали — [architecture.md](./architecture.md))
 ```
@@ -29,7 +29,7 @@ src/
 - **Валидация (zod):** `login` 3–32 `[A-Za-z0-9_]`, `alias` 3–32, `password` **3–64** ([ADR-0032](./decisions/0032-phase1-refinements.md); мин 3 — осознанный риск). Аватар: тип jpeg/png/webp, ≤ `AVATAR_MAX_BYTES`, приходит уже нарезанным с фронта.
 
 ## DTO и валидация
-- `nestjs-zod`: каждая DTO — zod-схема (closed shape). Пайп валидирует вход; типы выводятся из схемы. Без class-validator-декораторов.
+- **Plain zod + кастомный `ZodValidationPipe`** (`shared/pipes/`) — БЕЗ `nestjs-zod` (совместимость с zod 4 + минимум зависимостей). Каждая DTO — zod-схема `.strict()` (closed-shape, лишние поля отвергаются); тип выводится `z.infer`. Пайп подключается на роуте: `@Body(new ZodValidationPipe(schema))`; на невалидном входе — BadRequest с ошибками по полям → в `details` конверта. Без class-validator-декораторов.
 
 ## Иерархия типов ([ADR-0033](./decisions/0033-type-hierarchy-convention.md))
 Каждое свойство объявляется **в одном месте**; «виды» сущности собираются из него, не переобъявляются. Слой `src/interfaces/<entity>/`:

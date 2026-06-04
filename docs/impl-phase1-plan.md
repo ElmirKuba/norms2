@@ -32,12 +32,12 @@
   - [x] **A1.4** — ✅ порт `AccountRepositoryPort` + токен `ACCOUNT_REPOSITORY` (`modules/account/adapters/`): findById, findByLoginNormalized, existsByLoginNormalized, create, updateWithVersion (CAS), decrement/incrementInvitesRemaining. Тип `AccountMutable`. Без ORM.
   - [x] **A1.5** — ✅ `AccountRepository implements AccountRepositoryPort` (`database/repositories/account/`): find/exists/create/updateWithVersion(CAS)/decr-incr квоты, маппинг row→`AccountFull`, инъекция DRIZZLE. Проверено вживую против БД (включая CAS-конфликт и атомарный счётчик).
   - [x] **A1.6** — ✅ `account.module.ts` (DI: `ACCOUNT_REPOSITORY`→`AccountRepository`, exports токен), подключён в AppModule. Boot проверен (DI-граф резолвится).
-- [ ] **A2** — `RegisterAccount` (free-режим) + эндпоинты флагов/режима, снизу вверх. Invite-ветка регистрации — на этапе I (нужен репозиторий инвайтов).
+- [x] **A2** — ✅ `RegisterAccount` (free-режим) + флаги/режим. Полная 5-слойка через HTTP проверена вживую (register 201, валидация 400, БД). Invite-ветка — на этапе I.
   - [x] **A2.1** — ✅ `AccountDomainService.createAccount` (`modules/account/domain-services/`): проверка логина + хеш + `generateId` + `repo.create`, квота из ENV; `LoginTakenError` (409); экспортнут из `account.module`. Проверено вживую. TODO про гонку UNIQUE(lower(login)).
   - [x] **A2.2** — ✅ use-cases `auth` (`modules/auth/use-cases/`): `RegisterAccountUseCase` (free; raw→VO; кросс-домен вниз→account; passwordHash срезан; invite→TODO/InviteRequiredError) + `GetFeatureFlags`/`GetRegistrationMode`. Проверено вживую.
   - [x] **A2.3** — ✅ `RegisterDto` (zod `.strict()` closed-shape, `modules/auth/dtos/`) + кастомный `ZodValidationPipe` (`shared/pipes/`, без nestjs-zod). Типы ответов — FeatureFlags/RegistrationMode/AccountRead (есть). Проверено вживую (валидный/битый/лишнее поле).
   - [x] **A2.4** — ✅ controllers `auth` (`modules/auth/controllers/`): `AuthController` (POST register с zod-пайпом→RegisterResponse, GET registration-mode), `FeatureFlagsController` (GET). Прямой тест ок; HTTP live — на A2.5.
-  - [ ] **A2.5** — связка: `auth.module` (controller+use-cases, import `AccountModule`) + подключить в AppModule.
+  - [x] **A2.5** — ✅ `auth.module` (controllers+use-cases, import `AccountModule`) + подключён в AppModule. Live HTTP: register 201 (полная цепочка→БД), валидация 400+details, флаги/режим 200.
 - [ ] **A3** — `LoginAccount` + JWT (access) + sessions (refresh httpOnly), `/auth/login`, `/auth/refresh`, `/auth/logout`. Guard.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).
 

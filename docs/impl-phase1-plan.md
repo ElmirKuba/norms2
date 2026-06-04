@@ -45,7 +45,7 @@
   - [x] **A3.4** — ✅ `RefreshTokensUseCase` (sessions.rotate↓→новый access+refresh; rotateSession отдаёт accountId) + `LogoutUseCase` (revoke). Проверено: ротация/старый refresh→401/logout→401.
   - [x] **A3.5** — ✅ `AuthGuard` (Bearer→verify→getActiveById→req.account) + `cookie-parser` + `auth.controller` login/refresh/logout (refresh в httpOnly+SameSite=Lax+Path cookie). Live HTTP проверено.
   - [x] **A3.6** — ✅ `auth.module` (JwtModule из конфига, import SessionsModule+AccountModule, providers use-cases+AccessTokenService+AuthGuard export). Роуты смаппились, флоу работает.
-- [ ] **A4** — тесты use-cases (Jest, замоканные порты). Покрытие ключевых сценариев auth (рег оба режима, login/refresh/logout). Снизу вверх по инфраструктуре тестов.
+- [⏸️] **A4** — ⏸️ **ОТЛОЖЕН: Jest/unit-тесты пока не пишем** (решение Elmir; верификация — live-прогонами node/HTTP). Подэтапы ниже — план на момент возврата. Вернуться, когда скажет Elmir.
   - [ ] **A4.1** — Jest-инфраструктура: проверить конфиг (есть в package.json), хелперы/фабрики моков портов (`AccountRepositoryPort`/`SessionRepositoryPort`), фикстуры (валидный AccountFull). `nest/test/` или `*.spec.ts` рядом.
   - [ ] **A4.2** — unit VO + utils: `Login`/`Alias`/`Password` (валидные/невалидные/normalize/equals), `parseDurationMs`, `sha256Hex`/`generateOpaqueToken`, `generateId` (формат).
   - [ ] **A4.3** — unit domain-services (моки портов): `AccountDomainService` (createAccount: LOGIN_TAKEN/квота; authenticate: BAD_CREDENTIALS/deleted/deactivated), `SessionDomainService` (create/rotate+reuse→revoke all/revoke).

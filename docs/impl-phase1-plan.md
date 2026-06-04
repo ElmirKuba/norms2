@@ -41,8 +41,8 @@
 - [ ] **A3** — `LoginAccount` + JWT(access) + sessions(refresh httpOnly) + Guard, снизу вверх. Бан-чек login-allowed — на I2 (нужен bans repo); сейчас deleted/deactivated + TODO.
   - [x] **A3.1** — ✅ deps `@nestjs/jwt`+`cookie-parser` + `AccessTokenService` (`modules/auth/services/`: sign(accountId)→JWT, verify→accountId, бросает на невалидном). Секрет/TTL — в JwtModule (A3.6). Проверено вживую.
   - [x] **A3.2** — ✅ слайс sessions: порт+токен, Drizzle-репо (create/findByTokenHash/rotate-CAS/revoke), `SessionDomainService` (token_hash=SHA-256; create/rotate+reuse-detect→revoke all/revoke), `sessions.module`. Utils token/duration, `InvalidRefreshError`. Проверено вживую. TODO: lineage для реплея старого токена.
-  - [ ] **A3.3** — Login: `AccountDomainService.authenticate` (find by login + argon2 verify + login-allowed deleted/deactivated; `BadCredentialsError`; ban→TODO I2) + `LoginDto` (zod) + `LoginAccountUseCase` (VO→account↓→sessions↓→access JWT + refresh).
-  - [ ] **A3.4** — `RefreshTokensUseCase` (по refresh-cookie→sessions.rotate; reuse→revoke all; новые access+refresh) + `LogoutUseCase` (revoke) (`modules/auth/use-cases/`).
+  - [x] **A3.3** — ✅ `AccountDomainService.authenticate` (lower(login)+argon2 verify+deleted/deactivated; `BadCredentialsError` 401; ban→TODO I2) + `LoginDto` + `LoginAccountUseCase` (account↓→access JWT+sessions↓). Проверено вживую.
+  - [x] **A3.4** — ✅ `RefreshTokensUseCase` (sessions.rotate↓→новый access+refresh; rotateSession отдаёт accountId) + `LogoutUseCase` (revoke). Проверено: ротация/старый refresh→401/logout→401.
   - [ ] **A3.5** — `AuthGuard` (Bearer access→verify→login-allowed→req.account) + `cookie-parser` в main.ts + `auth.controller`: `POST /auth/login` (refresh в httpOnly+Secure+SameSite cookie, вернуть access), `/auth/refresh`, `/auth/logout`.
   - [ ] **A3.6** — связка: `auth.module` (JwtModule, import SessionsModule+AccountModule, providers use-cases+guard+token-service) + AppModule.
 - [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).

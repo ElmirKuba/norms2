@@ -38,14 +38,19 @@
   - [x] **A2.3** — ✅ `RegisterDto` (zod `.strict()` closed-shape, `modules/auth/dtos/`) + кастомный `ZodValidationPipe` (`shared/pipes/`, без nestjs-zod). Типы ответов — FeatureFlags/RegistrationMode/AccountRead (есть). Проверено вживую (валидный/битый/лишнее поле).
   - [x] **A2.4** — ✅ controllers `auth` (`modules/auth/controllers/`): `AuthController` (POST register с zod-пайпом→RegisterResponse, GET registration-mode), `FeatureFlagsController` (GET). Прямой тест ок; HTTP live — на A2.5.
   - [x] **A2.5** — ✅ `auth.module` (controllers+use-cases, import `AccountModule`) + подключён в AppModule. Live HTTP: register 201 (полная цепочка→БД), валидация 400+details, флаги/режим 200.
-- [ ] **A3** — `LoginAccount` + JWT(access) + sessions(refresh httpOnly) + Guard, снизу вверх. Бан-чек login-allowed — на I2 (нужен bans repo); сейчас deleted/deactivated + TODO.
+- [x] **A3** — ✅ `LoginAccount` + JWT(access) + sessions(refresh httpOnly) + Guard. Весь auth-флоу через HTTP проверен (login Set-Cookie HttpOnly, refresh-ротация, reuse→401, logout). Бан-чек login-allowed — на I2 (TODO).
   - [x] **A3.1** — ✅ deps `@nestjs/jwt`+`cookie-parser` + `AccessTokenService` (`modules/auth/services/`: sign(accountId)→JWT, verify→accountId, бросает на невалидном). Секрет/TTL — в JwtModule (A3.6). Проверено вживую.
   - [x] **A3.2** — ✅ слайс sessions: порт+токен, Drizzle-репо (create/findByTokenHash/rotate-CAS/revoke), `SessionDomainService` (token_hash=SHA-256; create/rotate+reuse-detect→revoke all/revoke), `sessions.module`. Utils token/duration, `InvalidRefreshError`. Проверено вживую. TODO: lineage для реплея старого токена.
   - [x] **A3.3** — ✅ `AccountDomainService.authenticate` (lower(login)+argon2 verify+deleted/deactivated; `BadCredentialsError` 401; ban→TODO I2) + `LoginDto` + `LoginAccountUseCase` (account↓→access JWT+sessions↓). Проверено вживую.
   - [x] **A3.4** — ✅ `RefreshTokensUseCase` (sessions.rotate↓→новый access+refresh; rotateSession отдаёт accountId) + `LogoutUseCase` (revoke). Проверено: ротация/старый refresh→401/logout→401.
-  - [ ] **A3.5** — `AuthGuard` (Bearer access→verify→login-allowed→req.account) + `cookie-parser` в main.ts + `auth.controller`: `POST /auth/login` (refresh в httpOnly+Secure+SameSite cookie, вернуть access), `/auth/refresh`, `/auth/logout`.
-  - [ ] **A3.6** — связка: `auth.module` (JwtModule, import SessionsModule+AccountModule, providers use-cases+guard+token-service) + AppModule.
-- [ ] **A4** — тесты use-cases (рег оба режима, login/ban-check).
+  - [x] **A3.5** — ✅ `AuthGuard` (Bearer→verify→getActiveById→req.account) + `cookie-parser` + `auth.controller` login/refresh/logout (refresh в httpOnly+SameSite=Lax+Path cookie). Live HTTP проверено.
+  - [x] **A3.6** — ✅ `auth.module` (JwtModule из конфига, import SessionsModule+AccountModule, providers use-cases+AccessTokenService+AuthGuard export). Роуты смаппились, флоу работает.
+- [ ] **A4** — тесты use-cases (Jest, замоканные порты). Покрытие ключевых сценариев auth (рег оба режима, login/refresh/logout). Снизу вверх по инфраструктуре тестов.
+  - [ ] **A4.1** — Jest-инфраструктура: проверить конфиг (есть в package.json), хелперы/фабрики моков портов (`AccountRepositoryPort`/`SessionRepositoryPort`), фикстуры (валидный AccountFull). `nest/test/` или `*.spec.ts` рядом.
+  - [ ] **A4.2** — unit VO + utils: `Login`/`Alias`/`Password` (валидные/невалидные/normalize/equals), `parseDurationMs`, `sha256Hex`/`generateOpaqueToken`, `generateId` (формат).
+  - [ ] **A4.3** — unit domain-services (моки портов): `AccountDomainService` (createAccount: LOGIN_TAKEN/квота; authenticate: BAD_CREDENTIALS/deleted/deactivated), `SessionDomainService` (create/rotate+reuse→revoke all/revoke).
+  - [ ] **A4.4** — unit use-cases (моки domain-services): `RegisterAccount` (free / invite-only→INVITE_REQUIRED), `LoginAccount`, `Refresh` (нет cookie→401), `Logout`.
+  - [ ] **A4.5** — (опц.) e2e supertest на тестовой БД: register→login→refresh→logout (если будет время; иначе перенести).
 
 ### I. Инвайты + дерево + баны
 - [ ] **I1** — invite_codes + invitations: `CreateInvite`/`RevokeInvite`/`ConsumeInvite`/`CheckInviteCode`, эндпоинты, квота-счётчик, транзакции.

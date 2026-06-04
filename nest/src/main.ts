@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 import type { Env } from './system/config/env.schema';
@@ -24,6 +25,9 @@ async function bootstrap(): Promise<void> {
 
   // Единый конверт ошибок { error: { code, message, details? } }.
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Парсинг cookie (refresh-токен в httpOnly-cookie).
+  app.use(cookieParser());
 
   // CORS: фронт ходит с другого порта; credentials — под будущую refresh-cookie.
   const frontendPort = configService.get('FRONTEND_PORT', { infer: true });

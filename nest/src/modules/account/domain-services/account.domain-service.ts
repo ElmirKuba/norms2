@@ -101,4 +101,23 @@ export class AccountDomainService {
     }
     return account;
   }
+
+  /**
+   * Возвращает аккаунт по id, только если вход разрешён (для Guard на каждом
+   * защищённом запросе — чтобы деактивация/бан действовали в окне access-токена).
+   * @param id Идентификатор аккаунта (из access-JWT).
+   * @returns Активный аккаунт.
+   * @throws {BadCredentialsError} Если аккаунт не найден или вход запрещён.
+   */
+  public async getActiveById(id: string): Promise<AccountFull> {
+    const account = await this._accountRepository.findById(id);
+    if (account === null) {
+      throw new BadCredentialsError('Аккаунт не найден.');
+    }
+    // TODO: Claude Code: 2026-06-04: бан-чек (EXISTS active ban) — этап I2.
+    if (account.deletedAt !== null || account.deactivatedAt !== null) {
+      throw new BadCredentialsError('Вход запрещён.');
+    }
+    return account;
+  }
 }

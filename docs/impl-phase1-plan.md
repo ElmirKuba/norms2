@@ -39,7 +39,7 @@
   - [x] **A2.4** — ✅ controllers `auth` (`modules/auth/controllers/`): `AuthController` (POST register с zod-пайпом→RegisterResponse, GET registration-mode), `FeatureFlagsController` (GET). Прямой тест ок; HTTP live — на A2.5.
   - [x] **A2.5** — ✅ `auth.module` (controllers+use-cases, import `AccountModule`) + подключён в AppModule. Live HTTP: register 201 (полная цепочка→БД), валидация 400+details, флаги/режим 200.
 - [ ] **A3** — `LoginAccount` + JWT(access) + sessions(refresh httpOnly) + Guard, снизу вверх. Бан-чек login-allowed — на I2 (нужен bans repo); сейчас deleted/deactivated + TODO.
-  - [ ] **A3.1** — deps `@nestjs/jwt`+`cookie-parser` (нужен dev-rebuild контейнера) + `AccessTokenService` (sign/verify access-JWT, `sub=accountId`, `JWT_ACCESS_SECRET`/`ACCESS_TTL`) (`modules/auth/services/`).
+  - [x] **A3.1** — ✅ deps `@nestjs/jwt`+`cookie-parser` + `AccessTokenService` (`modules/auth/services/`: sign(accountId)→JWT, verify→accountId, бросает на невалидном). Секрет/TTL — в JwtModule (A3.6). Проверено вживую.
   - [ ] **A3.2** — слайс sessions: `SessionRepositoryPort`+токен (`modules/sessions/adapters/`), Drizzle-репозиторий create/findByTokenHash/rotate-CAS/revoke (`database/repositories/session/`), `SessionDomainService` (refresh+hash, ротация с reuse-detect→revoke all, revoke), `sessions.module`.
   - [ ] **A3.3** — Login: `AccountDomainService.authenticate` (find by login + argon2 verify + login-allowed deleted/deactivated; `BadCredentialsError`; ban→TODO I2) + `LoginDto` (zod) + `LoginAccountUseCase` (VO→account↓→sessions↓→access JWT + refresh).
   - [ ] **A3.4** — `RefreshTokensUseCase` (по refresh-cookie→sessions.rotate; reuse→revoke all; новые access+refresh) + `LogoutUseCase` (revoke) (`modules/auth/use-cases/`).

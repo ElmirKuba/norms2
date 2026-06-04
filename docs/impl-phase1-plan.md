@@ -34,7 +34,7 @@
   - [x] **A1.6** — ✅ `account.module.ts` (DI: `ACCOUNT_REPOSITORY`→`AccountRepository`, exports токен), подключён в AppModule. Boot проверен (DI-граф резолвится).
 - [ ] **A2** — `RegisterAccount` (free-режим) + эндпоинты флагов/режима, снизу вверх. Invite-ветка регистрации — на этапе I (нужен репозиторий инвайтов).
   - [x] **A2.1** — ✅ `AccountDomainService.createAccount` (`modules/account/domain-services/`): проверка логина + хеш + `generateId` + `repo.create`, квота из ENV; `LoginTakenError` (409); экспортнут из `account.module`. Проверено вживую. TODO про гонку UNIQUE(lower(login)).
-  - [ ] **A2.2** — use-cases `auth`: `RegisterAccountUseCase` (free; режим по `FREE_REGISTRATION`; raw→VO; зовёт account-domain-service вниз) + `GetRegistrationMode`/`GetFeatureFlags` (`modules/auth/use-cases/`).
+  - [x] **A2.2** — ✅ use-cases `auth` (`modules/auth/use-cases/`): `RegisterAccountUseCase` (free; raw→VO; кросс-домен вниз→account; passwordHash срезан; invite→TODO/InviteRequiredError) + `GetFeatureFlags`/`GetRegistrationMode`. Проверено вживую.
   - [ ] **A2.3** — DTO `auth`: `RegisterDto` (zod closed-shape: login/alias/password/inviteCode?) + типы ответов (`modules/auth/dtos/`).
   - [ ] **A2.4** — controllers `auth`: `POST /auth/register` (без токенов, ADR-0010), `GET /auth/registration-mode`, `GET /feature-flags` (`modules/auth/controllers/`).
   - [ ] **A2.5** — связка: `auth.module` (controller+use-cases, import `AccountModule`) + подключить в AppModule.

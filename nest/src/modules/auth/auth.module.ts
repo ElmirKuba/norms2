@@ -14,6 +14,10 @@ import { GetRegistrationModeUseCase } from './use-cases/get-registration-mode.us
 @Module({
   imports: [AccountModule],
   controllers: [AuthController, FeatureFlagsController],
-  providers: [RegisterAccountUseCase, GetFeatureFlagsUseCase, GetRegistrationModeUseCase],
+  providers: [
+    RegisterAccountUseCase,
+    GetFeatureFlagsUseCase,
+    GetRegistrationModeUseCase,
+  ],
 })
 export class AuthModule {}

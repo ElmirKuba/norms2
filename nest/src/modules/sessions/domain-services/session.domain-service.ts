@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { SESSION_REPOSITORY } from '../adapters/session-repository.port';
 import type { SessionRepositoryPort } from '../adapters/session-repository.port';
 import { InvalidRefreshError } from '../../../shared/errors/invalid-refresh.error';
+import { SessionNotFoundError } from '../../../shared/errors/session-not-found.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { generateOpaqueToken, sha256Hex } from '../../../shared/utility-level/token.util';
+import type { SessionFull } from '../interfaces/session-full.interface';
 import { parseDurationMs } from '../../../shared/utility-level/duration.util';
 import type { Env } from '../../../system/config/env.schema';
 
@@ -88,6 +90,28 @@ export class SessionDomainService {
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
     return { refreshToken: newRefreshToken, accountId: rotated.accountId, sessionId: rotated.id };
+  }
+
+  /**
+   * Активные сессии аккаунта (список устройств).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Активные сессии.
+   */
+  public async listActive(accountId: string): Promise<SessionFull[]> {
+    return this._sessionRepository.listActiveByAccount(accountId);
+  }
+
+  /**
+   * Отзывает СВОЮ сессию по id (отзыв конкретного устройства).
+   * @param sessionId Идентификатор сессии.
+   * @param accountId Владелец.
+   * @throws {SessionNotFoundError} Если сессия не найдена/не своя/уже отозвана.
+   */
+  public async revokeOwn(sessionId: string, accountId: string): Promise<void> {
+    const revoked = await this._sessionRepository.revokeByIdForAccount(sessionId, accountId);
+    if (!revoked) {
+      throw new SessionNotFoundError('Сессия не найдена.');
+    }
   }
 
   /**

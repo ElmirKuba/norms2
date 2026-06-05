@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { sessions } from '../../schemas/sessions.schema';
@@ -70,6 +70,25 @@ export class SessionRepository implements SessionRepositoryPort {
   }
 
   /**
+   * Активные сессии аккаунта (не отозваны и не истекли), новые сверху.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Активные сессии.
+   */
+  public async listActiveByAccount(accountId: string): Promise<SessionFull[]> {
+    return this._db
+      .select()
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.accountId, accountId),
+          isNull(sessions.revokedAt),
+          gt(sessions.expiresAt, new Date()),
+        ),
+      )
+      .orderBy(desc(sessions.createdAt));
+  }
+
+  /**
    * Отзывает сессию по id (если ещё активна).
    * @param id Идентификатор сессии.
    * @returns Промис завершения.
@@ -79,6 +98,21 @@ export class SessionRepository implements SessionRepositoryPort {
       .update(sessions)
       .set({ revokedAt: new Date() })
       .where(and(eq(sessions.id, id), isNull(sessions.revokedAt)));
+  }
+
+  /**
+   * Отзывает свою активную сессию (id + владелец).
+   * @param id Идентификатор сессии.
+   * @param accountId Владелец.
+   * @returns true, если отозвана.
+   */
+  public async revokeByIdForAccount(id: string, accountId: string): Promise<boolean> {
+    const rows = await this._db
+      .update(sessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(sessions.id, id), eq(sessions.accountId, accountId), isNull(sessions.revokedAt)))
+      .returning({ id: sessions.id });
+    return rows.length > 0;
   }
 
   /**

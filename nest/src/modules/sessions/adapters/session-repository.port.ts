@@ -49,6 +49,21 @@ export interface SessionRepositoryPort {
   revokeById(id: string): Promise<void>;
 
   /**
+   * Активные сессии аккаунта (не отозваны и не истекли) — список устройств.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Активные сессии (новые сверху).
+   */
+  listActiveByAccount(accountId: string): Promise<SessionFull[]>;
+
+  /**
+   * Отзывает СВОЮ активную сессию (id + владелец) — отзыв конкретного устройства.
+   * @param id Идентификатор сессии.
+   * @param accountId Владелец (должен совпасть).
+   * @returns true, если отозвана (была своя и активная).
+   */
+  revokeByIdForAccount(id: string, accountId: string): Promise<boolean>;
+
+  /**
    * Отзывает все активные сессии аккаунта (reuse-detect / logout-all).
    * @param accountId Идентификатор аккаунта.
    * @returns Промис завершения.

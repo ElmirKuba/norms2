@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AccountModule } from '../account/account.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { InvitesModule } from '../invites/invites.module';
+import { BanCoreModule } from '../bans/ban-core.module';
 import { AccessControlModule } from './access-control.module';
 import { AuthController } from './controllers/auth.controller';
 import { FeatureFlagsController } from './controllers/feature-flags.controller';
@@ -21,7 +22,7 @@ import { LogoutUseCase } from './use-cases/logout.use-case';
  * (ADR-0037).
  */
 @Module({
-  imports: [AccessControlModule, AccountModule, SessionsModule, InvitesModule],
+  imports: [AccessControlModule, AccountModule, SessionsModule, InvitesModule, BanCoreModule],
   controllers: [AuthController, FeatureFlagsController],
   providers: [
     RegisterAccountUseCase,

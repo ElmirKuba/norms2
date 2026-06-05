@@ -101,8 +101,8 @@ export class AccountDomainService {
     if (!passwordOk) {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
-    // TODO: Claude Code: 2026-06-04: бан-чек login-allowed — EXISTS active ban
-    // (нужен bans-репозиторий, этап I2). Сейчас проверяем только deleted/deactivated.
+    // Бан-чек — НЕ здесь (account-домен про bans не знает): его делает
+    // LoginAccountUseCase кросс-доменно (ADR-0038). Тут — только deleted/deactivated.
     if (account.deletedAt !== null || account.deactivatedAt !== null) {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
@@ -121,7 +121,7 @@ export class AccountDomainService {
     if (account === null) {
       throw new BadCredentialsError('Аккаунт не найден.');
     }
-    // TODO: Claude Code: 2026-06-04: бан-чек (EXISTS active ban) — этап I2.
+    // Бан-чек — НЕ здесь: его делает AuthGuard кросс-доменно (ADR-0038).
     if (account.deletedAt !== null || account.deactivatedAt !== null) {
       throw new BadCredentialsError('Вход запрещён.');
     }

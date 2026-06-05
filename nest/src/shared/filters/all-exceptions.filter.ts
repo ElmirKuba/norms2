@@ -56,6 +56,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.httpStatus;
       message = exception.message;
       domainCode = exception.code;
+      details = exception.details;
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const payload = exception.getResponse();

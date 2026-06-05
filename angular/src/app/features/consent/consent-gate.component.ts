@@ -13,49 +13,8 @@ import { CardComponent } from '../../shared/ui/card/card.component';
   selector: 'app-consent-gate',
   imports: [RouterLink, ButtonComponent, CardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="overlay">
-      <app-card class="gate">
-        <h1>Технические cookie</h1>
-        <p>
-          Нормисы используют только технические cookie (вход и сессия) — без рекламы и трекинга.
-          Подробнее — в <a routerLink="/privacy">политике конфиденциальности</a>.
-        </p>
-        <div class="actions">
-          <app-button (click)="accept()">Я согласен</app-button>
-          <app-button variant="ghost" (click)="leave()">Покинуть сайт</app-button>
-        </div>
-      </app-card>
-    </div>
-  `,
-  styles: [
-    `
-      .overlay {
-        position: fixed;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        padding: var(--space-4);
-        background: var(--color-bg);
-      }
-      .gate {
-        max-width: 440px;
-      }
-      h1 {
-        font-size: var(--fs-xl);
-        margin-bottom: var(--space-3);
-      }
-      p {
-        color: var(--color-text-muted);
-        margin-bottom: var(--space-5);
-      }
-      .actions {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-      }
-    `,
-  ],
+  templateUrl: './consent-gate.component.html',
+  styleUrl: './consent-gate.component.scss',
 })
 export class ConsentGateComponent {
   private readonly _consent = inject(ConsentStore);

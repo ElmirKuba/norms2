@@ -1,0 +1,40 @@
+@use 'breakpoints' as bp;
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.brand {
+  font-size: var(--fs-2xl);
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  color: var(--color-text-muted);
+  max-width: 32ch;
+  margin-bottom: var(--space-4);
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+
+  @include bp.up('sm') {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.cta .btn {
+  @include bp.up('sm') {
+    width: auto;
+    min-width: 160px;
+  }
+}

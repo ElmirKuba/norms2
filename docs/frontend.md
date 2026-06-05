@@ -5,6 +5,12 @@
 ## Стек
 Angular latest stable (≥17), **standalone-компоненты**, **Signals** (+ поля класса, rxjs где нужно — **без стейт-менеджеров/NgRx**, [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md)), **чистый SCSS/CSS** (без Tailwind/Bootstrap — свои лёгкие компоненты). **Angular Material — только `MatDialog`** для модалок ([ADR-0025](./decisions/0025-ui-ux-design-language.md)). TypeScript strict, **npm**.
 
+## Конвенция компонентов
+- **Каждый компонент — три файла:** `x.component.ts` + **`x.component.html`** (`templateUrl`) + **`x.component.scss`** (`styleUrl`). Inline `template`/`styles` НЕ используем — единообразие со scaffold/CLI и старым проектом, удобнее читать/диффить. Если стилей нет — `.scss` не создаём (только `templateUrl`).
+- **`ChangeDetectionStrategy.OnPush`** по умолчанию (кроме случаев, где нужен Default — напр. `DialogModalComponent`).
+- **Signal-inputs** (`input()`/`input.required()`), `inject()`, control-flow `@if/@for`.
+- SCSS компонента потребляет токены `var(--…)`; брейкпоинты — `@use 'breakpoints' as bp;` (includePaths `src/styles`).
+
 ## Структура
 ```
 angular/src/app/

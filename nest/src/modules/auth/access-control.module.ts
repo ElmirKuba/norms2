@@ -28,6 +28,8 @@ import type { Env } from '../../system/config/env.schema';
     }),
   ],
   providers: [AccessTokenService, AuthGuard],
-  exports: [AccessTokenService, AuthGuard, JwtModule],
+  // Реэкспорт AccountModule: guard зависит и от AccountDomainService — оно обязано
+  // резолвиться в DI-скоупе ЛЮБОГО модуля-контроллера, импортирующего этот модуль.
+  exports: [AccessTokenService, AuthGuard, JwtModule, AccountModule],
 })
 export class AccessControlModule {}

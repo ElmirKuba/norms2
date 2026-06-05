@@ -7,11 +7,12 @@ import { HealthModule } from './modules/health/health.module';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InvitesModule } from './modules/invites/invites.module';
+import { BansModule } from './modules/bans/bans.module';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
  * общие сервисы (shared), БД (Drizzle), health и доменные области
- * account/auth/invites. Прочие (bans, ...) добавятся далее.
+ * account/auth/invites/bans.
  */
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InvitesModule } from './modules/invites/invites.module';
     AccountModule,
     AuthModule,
     InvitesModule,
+    BansModule,
   ],
 })
 export class AppModule {}

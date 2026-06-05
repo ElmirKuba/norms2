@@ -1,17 +1,14 @@
+import type { BanBase } from './ban-base.interface';
+
 /**
- * BanFull — полный контракт строки bans (ADR-0033). Ключи 1:1 с колонками схемы.
- * На этапе I развернём в Pure → Base → Full.
+ * BanFull — полная строка bans (≈ строка БД, ADR-0033): Base + PK, состояние
+ * `active` и системные метки. Ключи 1:1 с колонками схемы (defineTableWithSchema).
+ * «Забанен» — производное (EXISTS active, ADR-0012); снятие — active=false.
  */
-export interface BanFull {
-  /** PK. */
+export interface BanFull extends Required<BanBase> {
+  /** PK, uuidv7___unixmillis. */
   id: string;
-  /** FK на accounts.id (банивший). */
-  bannerId: string;
-  /** FK на accounts.id (цель). */
-  targetId: string;
-  /** Причина. */
-  reason: string;
-  /** Активен ли бан (снятие — active=false). */
+  /** Активен ли бан (снятие — active=false, история сохраняется). */
   active: boolean;
   /** Когда создан. */
   createdAt: Date;

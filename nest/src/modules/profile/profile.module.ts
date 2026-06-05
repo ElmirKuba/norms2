@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from '../account/account.module';
 import { AccessControlModule } from '../auth/access-control.module';
+import { SessionsModule } from '../sessions/sessions.module';
 import { ProfileController } from './controllers/profile.controller';
 import { AVATAR_STORAGE } from './adapters/avatar-storage.port';
 import { AvatarDiskStorage } from '../../system/storage/avatar-disk.storage';
@@ -18,7 +19,7 @@ import { RemoveAvatarUseCase } from './use-cases/remove-avatar.use-case';
  * (кросс-домен вниз) и `AccessControlModule` (Guard).
  */
 @Module({
-  imports: [AccountModule, AccessControlModule],
+  imports: [AccountModule, AccessControlModule, SessionsModule],
   controllers: [ProfileController],
   providers: [
     { provide: AVATAR_STORAGE, useClass: AvatarDiskStorage },

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SecretQaDomainService } from '../domain-services/secret-qa.domain-service';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
+import { SessionDomainService } from '../../sessions/domain-services/session.domain-service';
 import { SecretAnswer } from '../value-objects/secret-answer.vo';
 import { Password } from '../../account/value-objects/password.vo';
 import { RecoveryFailedError } from '../../../shared/errors/recovery-failed.error';
@@ -27,6 +28,7 @@ export class CompleteRecoveryUseCase {
   public constructor(
     private readonly _secretQaDomainService: SecretQaDomainService,
     private readonly _accountDomainService: AccountDomainService,
+    private readonly _sessionDomainService: SessionDomainService,
   ) {}
 
   /**
@@ -54,7 +56,8 @@ export class CompleteRecoveryUseCase {
       throw new RecoveryFailedError('Восстановление не удалось.');
     }
     await this._accountDomainService.resetPassword(account.id, Password.create(newPasswordRaw));
-    // TODO: Claude Code: 2026-06-05: после сброса пароля отозвать все refresh-сессии
-    // аккаунта (кросс-домен sessions↓) — закрыть на R3 (управление сессиями).
+    // После сброса пароля — отозвать все сессии (кросс-домен sessions↓): если
+    // пароль восстанавливал не владелец, чужие активные сессии гасятся.
+    await this._sessionDomainService.revokeAllForAccount(account.id);
   }
 }

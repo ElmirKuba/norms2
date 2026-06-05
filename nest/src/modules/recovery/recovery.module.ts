@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from '../account/account.module';
 import { AccessControlModule } from '../auth/access-control.module';
+import { SessionsModule } from '../sessions/sessions.module';
 import { SECRET_QA_REPOSITORY } from './adapters/secret-qa-repository.port';
 import { SecretQaRepository } from '../../database/repositories/secret-qa/secret-qa.repository';
 import { SecretQaDomainService } from './domain-services/secret-qa.domain-service';
@@ -19,7 +20,7 @@ import { CompleteRecoveryUseCase } from './use-cases/complete-recovery.use-case'
  * публичный. Кросс-домен ВНИЗ → `AccountModule` (сброс пароля, K, поиск по логину).
  */
 @Module({
-  imports: [AccountModule, AccessControlModule],
+  imports: [AccountModule, AccessControlModule, SessionsModule],
   controllers: [RecoverySettingsController, RecoveryController],
   providers: [
     { provide: SECRET_QA_REPOSITORY, useClass: SecretQaRepository },

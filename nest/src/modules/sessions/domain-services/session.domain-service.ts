@@ -115,6 +115,26 @@ export class SessionDomainService {
   }
 
   /**
+   * Отзывает все сессии аккаунта, КРОМЕ текущей (revoke-others).
+   * @param accountId Владелец.
+   * @param keepSessionId Текущая сессия (не отзывать).
+   * @returns Промис завершения.
+   */
+  public async revokeOthers(accountId: string, keepSessionId: string): Promise<void> {
+    await this._sessionRepository.revokeAllByAccountExcept(accountId, keepSessionId);
+  }
+
+  /**
+   * Отзывает ВСЕ сессии аккаунта (кросс-домен: после deactivate/delete/сброса
+   * пароля — везде выйти).
+   * @param accountId Владелец.
+   * @returns Промис завершения.
+   */
+  public async revokeAllForAccount(accountId: string): Promise<void> {
+    await this._sessionRepository.revokeAllByAccount(accountId);
+  }
+
+  /**
    * Отзывает сессию по refresh-токену (logout). Идемпотентно.
    * @param refreshToken Плейнтекст refresh-токена.
    * @returns Промис завершения.

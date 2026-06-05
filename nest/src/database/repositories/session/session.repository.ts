@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { sessions } from '../../schemas/sessions.schema';
@@ -113,6 +113,21 @@ export class SessionRepository implements SessionRepositoryPort {
       .where(and(eq(sessions.id, id), eq(sessions.accountId, accountId), isNull(sessions.revokedAt)))
       .returning({ id: sessions.id });
     return rows.length > 0;
+  }
+
+  /**
+   * Отзывает все активные сессии аккаунта, кроме одной (revoke-others).
+   * @param accountId Идентификатор аккаунта.
+   * @param exceptId Сессия-исключение (текущая).
+   * @returns Промис завершения.
+   */
+  public async revokeAllByAccountExcept(accountId: string, exceptId: string): Promise<void> {
+    await this._db
+      .update(sessions)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(eq(sessions.accountId, accountId), ne(sessions.id, exceptId), isNull(sessions.revokedAt)),
+      );
   }
 
   /**

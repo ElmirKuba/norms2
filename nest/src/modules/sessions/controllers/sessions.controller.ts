@@ -2,6 +2,7 @@ import { Controller, Delete, Get, HttpCode, Param, Req, UseGuards } from '@nestj
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { ListMySessionsUseCase } from '../use-cases/list-my-sessions.use-case';
 import { RevokeSessionUseCase } from '../use-cases/revoke-session.use-case';
+import { RevokeOtherSessionsUseCase } from '../use-cases/revoke-other-sessions.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { SessionView } from '../interfaces/session-view.interface';
 
@@ -19,6 +20,7 @@ export class SessionsController {
   public constructor(
     private readonly _listMySessionsUseCase: ListMySessionsUseCase,
     private readonly _revokeSessionUseCase: RevokeSessionUseCase,
+    private readonly _revokeOtherSessionsUseCase: RevokeOtherSessionsUseCase,
   ) {}
 
   /**
@@ -30,6 +32,19 @@ export class SessionsController {
   @UseGuards(AuthGuard)
   public async listMine(@Req() request: AuthenticatedRequest): Promise<SessionView[]> {
     return this._listMySessionsUseCase.execute(request.account.id, request.sessionId);
+  }
+
+  /**
+   * Выход на всех остальных устройствах (кроме текущего). Объявлен ДО `:id`
+   * (иначе `others` поймался бы как параметр).
+   * @param request Запрос (аккаунт+sid из Guard).
+   * @returns Промис завершения.
+   */
+  @Delete('others')
+  @UseGuards(AuthGuard)
+  @HttpCode(204)
+  public async revokeOthers(@Req() request: AuthenticatedRequest): Promise<void> {
+    await this._revokeOtherSessionsUseCase.execute(request.account.id, request.sessionId);
   }
 
   /**

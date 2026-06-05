@@ -64,6 +64,15 @@ export interface SessionRepositoryPort {
   revokeByIdForAccount(id: string, accountId: string): Promise<boolean>;
 
   /**
+   * Отзывает все активные сессии аккаунта, КРОМЕ одной (revoke-others — выйти на
+   * остальных устройствах, оставив текущее).
+   * @param accountId Идентификатор аккаунта.
+   * @param exceptId Сессия, которую НЕ отзывать (текущая).
+   * @returns Промис завершения.
+   */
+  revokeAllByAccountExcept(accountId: string, exceptId: string): Promise<void>;
+
+  /**
    * Отзывает все активные сессии аккаунта (reuse-detect / logout-all).
    * @param accountId Идентификатор аккаунта.
    * @returns Промис завершения.

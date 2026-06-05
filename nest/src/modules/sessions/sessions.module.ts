@@ -6,6 +6,7 @@ import { SessionDomainService } from './domain-services/session.domain-service';
 import { SessionsController } from './controllers/sessions.controller';
 import { ListMySessionsUseCase } from './use-cases/list-my-sessions.use-case';
 import { RevokeSessionUseCase } from './use-cases/revoke-session.use-case';
+import { RevokeOtherSessionsUseCase } from './use-cases/revoke-other-sessions.use-case';
 
 /**
  * Модуль области sessions: биндит `SESSION_REPOSITORY` на Drizzle-реализацию,
@@ -21,6 +22,7 @@ import { RevokeSessionUseCase } from './use-cases/revoke-session.use-case';
     SessionDomainService,
     ListMySessionsUseCase,
     RevokeSessionUseCase,
+    RevokeOtherSessionsUseCase,
   ],
   exports: [SessionDomainService],
 })

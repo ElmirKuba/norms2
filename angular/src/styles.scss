@@ -3,3 +3,5 @@
 // `@use 'breakpoints' as bp;` (includePaths: src/styles в angular.json).
 @use 'tokens';
 @use 'reset';
+@use 'buttons';
+@use 'dialog';

@@ -90,6 +90,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0038](./0038-ban-check-placement.md) | Бан-чек в login+Guard (немедленно) через `BanCoreModule`; `AccountBannedError` со списком активных банов | accepted | [architecture] [backend] [domain] |
 | [0039](./0039-reactivation-flow.md) | Реактивация: login сигналит 403 `ACCOUNT_DEACTIVATED` + публичный `POST /auth/reactivate` (деактивированный не проходит Guard) | accepted | [domain] [backend] [api] |
 | [0040](./0040-avatar-storage-convention.md) | Аватарка: `accounts.avatar` за `AvatarStoragePort`, имя `generateId().<ext>` на загрузку, magic-bytes, новый→БД→старый | accepted | [backend] [files] [phase1] |
+| [0041](./0041-session-id-in-access-token.md) | `sid` (id сессии) в access-JWT — управление устройствами на access-токене; стабилен через ротацию | accepted | [backend] [security] [api] |
 
 ### Ожидают решения
 

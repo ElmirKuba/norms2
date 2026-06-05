@@ -30,7 +30,7 @@ export class RefreshTokensUseCase {
       throw new InvalidRefreshError('Refresh-токен отсутствует.');
     }
     const rotated = await this._sessionDomainService.rotateSession(refreshToken);
-    const accessToken = this._accessTokenService.sign(rotated.accountId);
+    const accessToken = this._accessTokenService.sign(rotated.accountId, rotated.sessionId);
     return { accessToken, refreshToken: rotated.refreshToken };
   }
 }

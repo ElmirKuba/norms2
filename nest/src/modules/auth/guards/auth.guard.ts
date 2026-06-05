@@ -40,8 +40,9 @@ export class AuthGuard implements CanActivate {
     }
 
     let accountId: string;
+    let sessionId: string;
     try {
-      accountId = this._accessTokenService.verify(token);
+      ({ accountId, sessionId } = this._accessTokenService.verify(token));
     } catch {
       throw new UnauthorizedException('Невалидный access-токен.');
     }
@@ -54,6 +55,7 @@ export class AuthGuard implements CanActivate {
       throw new AccountBannedError('Доступ заблокирован: вы забанены.', activeBans);
     }
     (request as AuthenticatedRequest).account = account;
+    (request as AuthenticatedRequest).sessionId = sessionId;
     return true;
   }
 

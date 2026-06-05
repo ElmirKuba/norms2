@@ -40,8 +40,8 @@ export class LoginAccountUseCase {
     if (activeBans.length > 0) {
       throw new AccountBannedError('Вход заблокирован: вы забанены.', activeBans);
     }
-    const accessToken = this._accessTokenService.sign(account.id);
-    const refreshToken = await this._sessionDomainService.createSession(account.id, input.userAgent);
-    return { accessToken, refreshToken };
+    const session = await this._sessionDomainService.createSession(account.id, input.userAgent);
+    const accessToken = this._accessTokenService.sign(account.id, session.sessionId);
+    return { accessToken, refreshToken: session.refreshToken };
   }
 }

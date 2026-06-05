@@ -5,7 +5,7 @@ import type { AccessTokenPayload } from '../interfaces/access-token-payload.inte
 /**
  * Сервис access-токена (stateless JWT). Секрет и TTL заданы в JwtModule
  * (auth.module: `JWT_ACCESS_SECRET`/`ACCESS_TTL`). Подписывает токен с `sub`=id
- * аккаунта и проверяет его. Refresh-токен — отдельно, в БД (sessions).
+ * аккаунта и `sid`=id сессии; проверяет его. Refresh-токен — отдельно, в БД.
  */
 @Injectable()
 export class AccessTokenService {
@@ -15,22 +15,23 @@ export class AccessTokenService {
   public constructor(private readonly _jwtService: JwtService) {}
 
   /**
-   * Подписывает access-токен для аккаунта.
+   * Подписывает access-токен для аккаунта и его текущей сессии.
    * @param accountId Идентификатор аккаунта.
+   * @param sessionId Идентификатор сессии (ADR-0041).
    * @returns Подписанный JWT.
    */
-  public sign(accountId: string): string {
-    return this._jwtService.sign({ sub: accountId } satisfies AccessTokenPayload);
+  public sign(accountId: string, sessionId: string): string {
+    return this._jwtService.sign({ sub: accountId, sid: sessionId } satisfies AccessTokenPayload);
   }
 
   /**
-   * Проверяет access-токен и возвращает id аккаунта.
+   * Проверяет access-токен и возвращает id аккаунта и сессии.
    * @param token JWT из заголовка Authorization.
-   * @returns Идентификатор аккаунта (claim `sub`).
+   * @returns `{ accountId, sessionId }` из claim'ов `sub`/`sid`.
    * @throws {Error} Если токен невалиден или истёк (ловит вызывающий — Guard → 401).
    */
-  public verify(token: string): string {
+  public verify(token: string): { accountId: string; sessionId: string } {
     const payload = this._jwtService.verify<AccessTokenPayload>(token);
-    return payload.sub;
+    return { accountId: payload.sub, sessionId: payload.sid };
   }
 }

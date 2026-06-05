@@ -25,30 +25,38 @@ export class SessionDomainService {
   ) {}
 
   /**
-   * Создаёт сессию и возвращает плейнтекст refresh-токена (для cookie).
+   * Создаёт сессию; возвращает плейнтекст refresh-токена (для cookie) и id сессии
+   * (для claim `sid` в access-токене, ADR-0041).
    * @param accountId Идентификатор аккаунта.
    * @param userAgent User-Agent устройства или null.
-   * @returns Плейнтекст refresh-токена.
+   * @returns `{ refreshToken, sessionId }`.
    */
-  public async createSession(accountId: string, userAgent: string | null): Promise<string> {
+  public async createSession(
+    accountId: string,
+    userAgent: string | null,
+  ): Promise<{ refreshToken: string; sessionId: string }> {
     const refreshToken = generateOpaqueToken();
-    await this._sessionRepository.create(generateId(), {
+    const sessionId = generateId();
+    await this._sessionRepository.create(sessionId, {
       accountId,
       tokenHash: sha256Hex(refreshToken),
       userAgent,
       expiresAt: this._refreshExpiry(),
     });
-    return refreshToken;
+    return { refreshToken, sessionId };
   }
 
   /**
    * Ротация: проверяет refresh-токен, выдаёт новый, отзывает старый (CAS).
    * Reuse (отозванный токен / проигранный CAS) → отзыв всех сессий аккаунта.
    * @param refreshToken Плейнтекст предъявленного refresh-токена.
-   * @returns Новый плейнтекст refresh-токена и id аккаунта (для access-токена).
+   * @returns Новый refresh-токен + id аккаунта и сессии (для access-токена). Id
+   *   сессии стабилен через ротацию (та же строка) → claim `sid` не меняется.
    * @throws {InvalidRefreshError} Если токен недействителен/истёк/reuse.
    */
-  public async rotateSession(refreshToken: string): Promise<{ refreshToken: string; accountId: string }> {
+  public async rotateSession(
+    refreshToken: string,
+  ): Promise<{ refreshToken: string; accountId: string; sessionId: string }> {
     const tokenHash = sha256Hex(refreshToken);
     const session = await this._sessionRepository.findByTokenHash(tokenHash);
 
@@ -79,7 +87,7 @@ export class SessionDomainService {
       await this._sessionRepository.revokeAllByAccount(session.accountId);
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
-    return { refreshToken: newRefreshToken, accountId: rotated.accountId };
+    return { refreshToken: newRefreshToken, accountId: rotated.accountId, sessionId: rotated.id };
   }
 
   /**

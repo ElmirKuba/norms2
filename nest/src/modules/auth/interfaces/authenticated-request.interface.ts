@@ -8,4 +8,6 @@ import type { AccountFull } from '../../account/interfaces/account-full.interfac
 export interface AuthenticatedRequest extends Request {
   /** Аккаунт, установленный Guard'ом из access-токена. */
   account: AccountFull;
+  /** Id текущей сессии из access-токена (claim `sid`, ADR-0041). */
+  sessionId: string;
 }

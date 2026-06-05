@@ -1,3 +1,4 @@
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { AccountFull } from '../interfaces/account-full.interface';
 import type { AccountCreate } from '../interfaces/account-create.interface';
 import type { AccountMutable } from '../interfaces/account-mutable.interface';
@@ -36,9 +37,10 @@ export interface AccountRepositoryPort {
    * Создаёт аккаунт (id генерит домен через generateId).
    * @param id Идентификатор аккаунта.
    * @param data Данные создания (Base).
+   * @param tx Опц. транзакция (регистрация по инвайту — атомарно с погашением кода).
    * @returns Созданная полная строка (с дефолтами БД).
    */
-  create(id: string, data: AccountCreate): Promise<AccountFull>;
+  create(id: string, data: AccountCreate, tx?: Transaction): Promise<AccountFull>;
 
   /**
    * Optimistic-lock обновление профиля (CAS по version, ADR-0035).

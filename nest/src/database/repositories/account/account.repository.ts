@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
-import type { DrizzleDatabase } from '../../client/database.constants';
+import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { accounts } from '../../schemas/accounts.schema';
 import type { AccountRepositoryPort } from '../../../modules/account/adapters/account-repository.port';
 import type { AccountCreate } from '../../../modules/account/interfaces/account-create.interface';
 import type { AccountFull } from '../../../modules/account/interfaces/account-full.interface';
 import type { AccountMutable } from '../../../modules/account/interfaces/account-mutable.interface';
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
  * Drizzle-реализация порта аккаунтов (единственное место, где про ORM знают).
@@ -64,11 +65,12 @@ export class AccountRepository implements AccountRepositoryPort {
    * Создаёт аккаунт.
    * @param id Идентификатор (генерит домен).
    * @param data Данные создания (Base).
+   * @param tx Опц. транзакция (атомарность с погашением инвайта при регистрации).
    * @returns Созданная полная строка.
    * @throws {Error} Если INSERT не вернул строку.
    */
-  public async create(id: string, data: AccountCreate): Promise<AccountFull> {
-    const rows = await this._db
+  public async create(id: string, data: AccountCreate, tx?: Transaction): Promise<AccountFull> {
+    const rows = await this._exec(tx)
       .insert(accounts)
       .values({ id, ...data })
       .returning();
@@ -137,5 +139,14 @@ export class AccountRepository implements AccountRepositoryPort {
       ...row,
       registrationSource: row.registrationSource as AccountFull['registrationSource'],
     };
+  }
+
+  /**
+   * Разрешает исполнителя: переданная транзакция или дефолтный инстанс БД.
+   * @param tx Опц. опаковая транзакция.
+   * @returns DrizzleExecutor.
+   */
+  private _exec(tx?: Transaction): DrizzleExecutor {
+    return tx === undefined ? this._db : (tx as unknown as DrizzleExecutor);
   }
 }

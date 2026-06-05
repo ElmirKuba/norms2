@@ -10,6 +10,7 @@ import { HashService } from '../../../shared/services/hash.service';
 import { LoginTakenError } from '../../../shared/errors/login-taken.error';
 import { BadCredentialsError } from '../../../shared/errors/bad-credentials.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
 
 /** Параметры создания аккаунта (валидированные VO + источник регистрации). */
@@ -43,12 +44,14 @@ export class AccountDomainService {
 
   /**
    * Создаёт аккаунт: проверяет занятость логина, хеширует пароль, генерит id,
-   * пишет строку. Квота инвайтов — из `INVITE_DEFAULT_QUOTA`.
+   * пишет строку. Квота инвайтов — из `INVITE_DEFAULT_QUOTA`. При регистрации по
+   * инвайту получает `tx` — INSERT идёт в общей транзакции с погашением кода.
    * @param params Параметры создания.
+   * @param tx Опц. транзакция.
    * @returns Созданный аккаунт.
    * @throws {LoginTakenError} Если логин уже занят.
    */
-  public async createAccount(params: CreateAccountParams): Promise<AccountFull> {
+  public async createAccount(params: CreateAccountParams, tx?: Transaction): Promise<AccountFull> {
     const { login, alias, password, registrationSource } = params;
 
     // Дружелюбная предпроверка; настоящий гард — UNIQUE(lower(login)) в БД.
@@ -64,16 +67,20 @@ export class AccountDomainService {
     const id = generateId();
     const invitesRemaining = this._configService.get('INVITE_DEFAULT_QUOTA', { infer: true });
 
-    return this._accountRepository.create(id, {
-      login: login.value,
-      alias: alias.value,
-      avatar: null,
-      passwordHash,
-      registrationSource,
-      invitesRemaining,
-      recoveryRequiredCount: null,
-      timezone: 'UTC',
-    });
+    return this._accountRepository.create(
+      id,
+      {
+        login: login.value,
+        alias: alias.value,
+        avatar: null,
+        passwordHash,
+        registrationSource,
+        invitesRemaining,
+        recoveryRequiredCount: null,
+        timezone: 'UTC',
+      },
+      tx,
+    );
   }
 
   /**

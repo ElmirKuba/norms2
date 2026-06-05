@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccountModule } from '../account/account.module';
-import { AuthModule } from '../auth/auth.module';
+import { AccessControlModule } from '../auth/access-control.module';
 import { INVITE_REPOSITORY } from './adapters/invite-repository.port';
 import { InviteRepository } from '../../database/repositories/invite/invite.repository';
 import { InviteDomainService } from './domain-services/invite.domain-service';
@@ -13,11 +13,12 @@ import { ListMyInvitesUseCase } from './use-cases/list-my-invites.use-case';
 /**
  * Модуль области invites: контроллер + use-cases + domain-service + биндинг
  * репозитория. Импортирует `AccountModule` (кросс-домен вниз: квота) и
- * `AuthModule` (AuthGuard для защищённых роутов). `InviteDomainService`
- * экспортится — пригодится регистрации по коду (I1.5).
+ * `AccessControlModule` (AuthGuard для защищённых роутов — НЕ `AuthModule`, иначе
+ * цикл: auth-флоу зависит от invites ради регистрации по коду, ADR-0037).
+ * `InviteDomainService` экспортится — его зовёт регистрация по инвайту (I1.5).
  */
 @Module({
-  imports: [AccountModule, AuthModule],
+  imports: [AccountModule, AccessControlModule],
   controllers: [InvitesController],
   providers: [
     { provide: INVITE_REPOSITORY, useClass: InviteRepository },

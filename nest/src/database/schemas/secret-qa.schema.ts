@@ -2,7 +2,7 @@ import { index, text } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
-import type { SecretQaFull } from '../../modules/auth/interfaces/secret-qa-full.interface';
+import type { SecretQaFull } from '../../modules/recovery/interfaces/secret-qa-full.interface';
 
 /**
  * secret_qa — вопросы восстановления (1:N к accounts). Колонки проверяются TS

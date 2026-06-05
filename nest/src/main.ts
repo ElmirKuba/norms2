@@ -2,8 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
+import { resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Env } from './system/config/env.schema';
 
 /**
@@ -13,7 +15,7 @@ import type { Env } from './system/config/env.schema';
  * @returns Промис, завершающийся после старта HTTP-сервера.
  */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
 
   // pino как логгер приложения (буферизованные стартовые логи тоже уйдут в pino).
   app.useLogger(app.get(Logger));
@@ -28,6 +30,11 @@ async function bootstrap(): Promise<void> {
 
   // Парсинг cookie (refresh-токен в httpOnly-cookie).
   app.use(cookieParser());
+
+  // Статика загруженных файлов (аватарки и пр.) из CONTENT_DIR под /content/
+  // (ADR-0031: хранилище — локальный диск). DB хранит путь относительно content/.
+  const contentDir = resolve(configService.get('CONTENT_DIR', { infer: true }));
+  app.useStaticAssets(contentDir, { prefix: '/content/' });
 
   // CORS: фронт ходит с другого порта; credentials — под будущую refresh-cookie.
   const frontendPort = configService.get('FRONTEND_PORT', { infer: true });

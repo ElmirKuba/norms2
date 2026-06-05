@@ -39,3 +39,6 @@ yarn-error.log*
 # System files
 .DS_Store
 Thumbs.db
+
+# Загруженные файлы (CONTENT_DIR) — не в git (бэкапятся отдельно)
+content/

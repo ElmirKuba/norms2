@@ -259,6 +259,17 @@ export class AccountDomainService {
   }
 
   /**
+   * Устанавливает/снимает путь аватарки (профиль) через optimistic-CAS. Файл на
+   * диске пишет/удаляет use-case (account-домен про fs не знает).
+   * @param accountId Идентификатор аккаунта.
+   * @param avatar Относительный путь к файлу или null (снять).
+   * @returns Обновлённый аккаунт.
+   */
+  public async setAvatar(accountId: string, avatar: string | null): Promise<AccountFull> {
+    return this._applyWithRetry(accountId, { avatar });
+  }
+
+  /**
    * Находит аккаунт по логину для recovery-флоу (узкая проекция, без секретов).
    * Удалённые не возвращает.
    * @param loginRaw Логин (любой регистр).

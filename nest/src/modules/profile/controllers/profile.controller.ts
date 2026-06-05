@@ -1,12 +1,30 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../auth/guards/auth.guard';
+import { AvatarInvalidError } from '../../../shared/errors/avatar-invalid.error';
 import { updateAliasSchema } from '../dtos/update-alias.dto';
 import type { UpdateAliasDto } from '../dtos/update-alias.dto';
 import { GetProfileByLoginUseCase } from '../use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from '../use-cases/update-alias.use-case';
 import { DeactivateMyAccountUseCase } from '../use-cases/deactivate-my-account.use-case';
 import { DeleteMyAccountUseCase } from '../use-cases/delete-my-account.use-case';
+import { UploadAvatarUseCase } from '../use-cases/upload-avatar.use-case';
+import type { AvatarUpload } from '../use-cases/upload-avatar.use-case';
+import { RemoveAvatarUseCase } from '../use-cases/remove-avatar.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { AccountRead } from '../../account/interfaces/account-read.interface';
 import type { AccountPublicView } from '../../account/interfaces/account-public-view.interface';
@@ -27,6 +45,8 @@ export class ProfileController {
     private readonly _updateAliasUseCase: UpdateAliasUseCase,
     private readonly _deactivateMyAccountUseCase: DeactivateMyAccountUseCase,
     private readonly _deleteMyAccountUseCase: DeleteMyAccountUseCase,
+    private readonly _uploadAvatarUseCase: UploadAvatarUseCase,
+    private readonly _removeAvatarUseCase: RemoveAvatarUseCase,
   ) {}
 
   /**
@@ -78,6 +98,37 @@ export class ProfileController {
   @HttpCode(204)
   public async deleteMe(@Req() request: AuthenticatedRequest): Promise<void> {
     await this._deleteMyAccountUseCase.execute(request.account.id);
+  }
+
+  /**
+   * Загружает аватарку (multipart, поле `file`). Тип проверяется по magic-bytes,
+   * размер — по `AVATAR_MAX_BYTES`. Хард-кап интерцептора (5 МБ) — защита от OOM.
+   * @param file Загруженный файл.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Обновлённый профиль без секрета.
+   */
+  @Post('me/avatar')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5_242_880 } }))
+  public async uploadAvatar(
+    @UploadedFile() file: AvatarUpload | undefined,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<AccountRead> {
+    if (file === undefined) {
+      throw new AvatarInvalidError('Файл аватарки обязателен (поле "file").');
+    }
+    return this._uploadAvatarUseCase.execute(request.account.id, request.account.avatar, file);
+  }
+
+  /**
+   * Удаляет аватарку.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Обновлённый профиль без секрета.
+   */
+  @Delete('me/avatar')
+  @UseGuards(AuthGuard)
+  public async deleteAvatar(@Req() request: AuthenticatedRequest): Promise<AccountRead> {
+    return this._removeAvatarUseCase.execute(request.account.id, request.account.avatar);
   }
 
   /**

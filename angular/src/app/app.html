@@ -1,1 +1,5 @@
-<router-outlet />
+@if (consent.granted()) {
+  <router-outlet />
+} @else {
+  <app-consent-gate />
+}

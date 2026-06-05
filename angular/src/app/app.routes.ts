@@ -8,7 +8,10 @@ import type { Routes } from '@angular/router';
  * guard аутентификации (F1.4) — на приватную ветку.
  */
 export const routes: Routes = [
-  // F2: { path: '', loadComponent: () => import('./features/home/home').then((m) => m.Home) },
-  // F2: { path: 'auth', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes) },
+  // Публичная зона (landing + auth) под `PublicLayoutComponent`.
+  {
+    path: '',
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes),
+  },
   // F3: { path: 'app', canActivate: [authGuard], loadChildren: () => import('./features/shell/shell.routes')... },
 ];

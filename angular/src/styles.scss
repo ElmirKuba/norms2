@@ -1,1 +1,5 @@
-/* You can add global styles to this file, and also import other style files */
+// Глобальные стили: дизайн-токены (CSS-переменные + темы) и базовый reset.
+// Компонентные стили потребляют токены через var(--…); брейкпоинты — через
+// `@use 'breakpoints' as bp;` (includePaths: src/styles в angular.json).
+@use 'tokens';
+@use 'reset';

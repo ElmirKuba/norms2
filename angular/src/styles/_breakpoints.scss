@@ -1,0 +1,22 @@
+// Брейкпоинты (mobile-first, ui-ux.md). Использование в компоненте:
+//   @use 'breakpoints' as bp;
+//   .x { padding: var(--space-3); @include bp.up('md') { padding: var(--space-5); } }
+@use 'sass:map';
+
+$breakpoints: (
+  'sm': 480px,   // телефон (крупнее портретного)
+  'md': 768px,   // планшет / мелкий лэндскейп
+  'lg': 1024px,  // лэптоп
+  'xl': 1280px,  // десктоп
+);
+
+/// min-width медиазапрос по имени брейкпоинта.
+@mixin up($name) {
+  $size: map.get($breakpoints, $name);
+  @if $size == null {
+    @error "Неизвестный брейкпоинт: #{$name}";
+  }
+  @media (min-width: $size) {
+    @content;
+  }
+}

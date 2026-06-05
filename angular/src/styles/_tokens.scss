@@ -1,0 +1,70 @@
+// Дизайн-токены как CSS custom properties (ADR-0025, ui-ux.md).
+// Тёмная тема — дефолт (:root); светлая — переопределение под `.theme-light`
+// на <html> (управляет ThemeStore: класс + localStorage). Смена темы = смена
+// значений переменных, компоненты их только потребляют (var(--…)).
+
+:root {
+  // — палитра (тёмная) —
+  --color-bg: #14151a;
+  --color-surface: #1d1f27;
+  --color-surface-2: #262932;
+  --color-border: #313542;
+  --color-text: #e7e9ee;
+  --color-text-muted: #9aa0ad;
+  --color-accent: #e8915b;       // тёплый акцент (ламповость)
+  --color-accent-hover: #f0a373;
+  --color-on-accent: #1a1206;    // текст на акценте
+  --color-success: #5bbd7a;
+  --color-danger: #e5645f;
+  --color-warning: #e0b15a;
+
+  // — радиусы —
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  // — шкала отступов —
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --space-10: 64px;
+
+  // — типографика —
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --lh: 1.5;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+
+  // — прочее —
+  --touch-min: 44px;             // мин. тач-таргет (Apple 44 / Google 48)
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --transition: 150ms ease;
+  --container-max: 1180px;
+}
+
+:root.theme-light {
+  --color-bg: #f6f6f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #efeee9;
+  --color-border: #e0ded7;
+  --color-text: #20232a;
+  --color-text-muted: #6b7280;
+  --color-accent: #c2693a;
+  --color-accent-hover: #ad5c31;
+  --color-on-accent: #ffffff;
+  --color-success: #2f8f50;
+  --color-danger: #c4433e;
+  --color-warning: #b3852f;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

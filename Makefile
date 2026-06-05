@@ -16,7 +16,7 @@ export PROJECT_ROOT := $(shell pwd)
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
 
-.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config
+.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config env-cleanup
 
 help: ## Показать список команд
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -67,3 +67,15 @@ prod-down: ## Остановить prod
 
 prod-config: ## Проверить prod-compose
 	$(PROD_COMPOSE) config
+
+env-cleanup: ## ОПАСНО: снести контейнеры/локальные образы/ДАННЫЕ только этого проекта (5×y чтобы удалить)
+	@printf "⚠️  Удалит контейнеры, локально собранные образы (nest/angular) и ВСЕ данные проекта\n   (docker/volumes/pg_data, pgadmin_data). Базовые образы (postgres/node/pgadmin) и чужие ресурсы НЕ трогаются. Необратимо.\n"
+	@for i in 1 2 3 4 5; do \
+		read -p "Подтверждение $$i/5 — введите 'y' (любой другой ответ отменит): " ans; \
+		if [ "$$ans" != "y" ]; then echo "Отменено — ничего не удалено."; exit 0; fi; \
+	done; \
+	echo "Удаляю окружение проекта…"; \
+	$(DEV_COMPOSE) down --rmi local --volumes --remove-orphans; \
+	$(PROD_COMPOSE) down --rmi local --volumes --remove-orphans 2>/dev/null || true; \
+	rm -rf docker/volumes/pg_data docker/volumes/pgadmin_data; \
+	echo "✅ Очищено. Новый старт: make dev-rebuild  (затем при необходимости make db-migrate)."

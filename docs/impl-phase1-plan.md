@@ -53,7 +53,7 @@
   - [ ] **A4.5** — (опц.) e2e supertest на тестовой БД: register→login→refresh→logout (если будет время; иначе перенести).
 
 ### I. Инвайты + дерево + баны
-- [ ] **I1** — invite_codes + invitations (квота, транзакции), снизу вверх. Механизм транзакций (Drizzle `db.transaction` vs атомарный+компенсация) — решить при кодинге.
+- [x] **I1** — ✅ invite_codes + invitations (квота, транзакции), снизу вверх. Решение по транзакциям: квота создания/отзыва инвайта — атомарный счётчик + компенсация; регистрация по коду — настоящая транзакция (`TransactionRunner`). Все I1.1–I1.5 закрыты и проверены вживую.
   - [x] **I1.1** — ✅ иерархии `InviteCode`/`Invitation` Pure→Base→Full(+Create) (схема не сломана) + VO `InviteCodeValue` (generate безопасный алфавит / create нормализация+валидация). Проверено вживую.
   - [x] **I1.2** — ✅ `InviteRepositoryPort`+Drizzle-репо (createCode/findActiveCodeByValue/deleteCode/insertInvitation/listInviteesByInviter, tx-aware). **Транзакции**: опаковый `Transaction` + `TransactionRunner` (shared-порт + Drizzle-раннер в DatabaseModule) — домен оркестрирует tx без ORM. Проверено: atomic consume + rollback.
   - [x] **I1.3** — ✅ `InviteDomainService`: createCode (код+срок, БЕЗ счётчика — кросс-домен у use-case), revokeCode (владение→delete), consumeCode (в tx: delete-гард одноразовости + insertInvitation), checkCode, listInvitees. `InviteInvalidError`. Проверено вживую (включая double-consume→INVITE_INVALID).

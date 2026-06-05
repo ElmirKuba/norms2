@@ -10,8 +10,17 @@ import { HashService } from '../../../shared/services/hash.service';
 import { LoginTakenError } from '../../../shared/errors/login-taken.error';
 import { BadCredentialsError } from '../../../shared/errors/bad-credentials.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
+import type { AccountMutable } from '../interfaces/account-mutable.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
+
+/** Узкая проекция аккаунта для recovery-флоу (без секретов). */
+export interface RecoveryAccount {
+  /** PK. */
+  id: string;
+  /** Сколько вопросов нужно ответить (K) или null (восстановление не настроено). */
+  recoveryRequiredCount: number | null;
+}
 
 /** Параметры создания аккаунта (валидированные VO + источник регистрации). */
 export interface CreateAccountParams {
@@ -144,5 +153,66 @@ export class AccountDomainService {
    */
   public async returnInviteQuota(accountId: string): Promise<void> {
     await this._accountRepository.incrementInvitesRemaining(accountId);
+  }
+
+  /**
+   * Сбрасывает пароль (восстановление по секретным вопросам, R1.5). Хеширует и
+   * пишет через optimistic-CAS с retry (ADR-0035).
+   * @param accountId Идентификатор аккаунта.
+   * @param password Новый пароль (VO).
+   * @returns Промис завершения.
+   */
+  public async resetPassword(accountId: string, password: Password): Promise<void> {
+    const passwordHash = await this._hashService.hash(password.value);
+    await this._applyWithRetry(accountId, { passwordHash });
+  }
+
+  /**
+   * Устанавливает K (recovery_required_count). Диапазон `1 ≤ K ≤ N` валидирует
+   * use-case (N — кросс-домен из recovery); здесь — только запись через CAS.
+   * @param accountId Идентификатор аккаунта.
+   * @param requiredCount Значение K.
+   * @returns Промис завершения.
+   */
+  public async setRecoveryRequiredCount(accountId: string, requiredCount: number): Promise<void> {
+    await this._applyWithRetry(accountId, { recoveryRequiredCount: requiredCount });
+  }
+
+  /**
+   * Находит аккаунт по логину для recovery-флоу (узкая проекция, без секретов).
+   * Удалённые не возвращает.
+   * @param loginRaw Логин (любой регистр).
+   * @returns Проекция или null (нет/удалён).
+   */
+  public async findRecoveryAccountByLogin(loginRaw: string): Promise<RecoveryAccount | null> {
+    const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
+    if (account === null || account.deletedAt !== null) {
+      return null;
+    }
+    return { id: account.id, recoveryRequiredCount: account.recoveryRequiredCount };
+  }
+
+  /**
+   * Применяет изменения через optimistic-CAS с retry (перечитывает version при
+   * конфликте, ADR-0035). Фикс. набор изменений, version берётся свежий каждый раз.
+   * @param id Идентификатор аккаунта.
+   * @param changes Изменяемые поля.
+   * @returns Обновлённый аккаунт.
+   * @throws {BadCredentialsError} Если аккаунт не найден.
+   * @throws {Error} Если конфликт версий не разрешился за N попыток.
+   */
+  private async _applyWithRetry(id: string, changes: AccountMutable): Promise<AccountFull> {
+    const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const account = await this._accountRepository.findById(id);
+      if (account === null) {
+        throw new BadCredentialsError('Аккаунт не найден.');
+      }
+      const updated = await this._accountRepository.updateWithVersion(id, account.version, changes);
+      if (updated !== null) {
+        return updated;
+      }
+    }
+    throw new Error('Конфликт версий не разрешился за отведённое число попыток.');
   }
 }

@@ -11,7 +11,7 @@ export const authRoutes: Routes = [
     path: '',
     component: PublicLayoutComponent,
     children: [
-      // F2.3: { path: '', loadComponent: () => import('./landing/landing.component').then((m) => m.LandingComponent) },
+      { path: '', loadComponent: () => import('./landing/landing.component').then((m) => m.LandingComponent) },
       // F2.4: { path: 'register', canActivate: [guestGuard], loadComponent: ... },
       // F2.5: { path: 'login', canActivate: [guestGuard], loadComponent: ... },
       // F2.6: { path: 'recover', canActivate: [guestGuard], loadComponent: ... },

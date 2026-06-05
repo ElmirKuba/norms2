@@ -88,7 +88,7 @@
 > Спека вида/адаптива/UX-форм/экранов (вкл. главную и app-shell) — [`docs/ui-ux.md`](./ui-ux.md) (дополнена анализом лучших практик 2025/26). Тех.правила — [`docs/frontend.md`](./frontend.md). Философия: минимализм/ламповость, без ПДн, тёмная+тумблер, чистый SCSS, Signals, Material только `MatDialog`. Поток: cookie-гейт → главная → auth → app-shell(разделы).
 
 - [ ] **F1** — core (невидимая инфра), снизу вверх.
-  - [ ] **F1.1** — init проекта: Angular ≥17 standalone, SCSS, TS strict, npm; `app.routes` (lazy); подключить `MatDialog`. Базовый layout публичной/приватной зон.
+  - [x] **F1.1** — ✅ проект уже был scaffold'ен (Angular 21 standalone, SCSS, strict с `exactOptionalPropertyTypes`/`noUncheckedIndexedAccess`). Добавлено: `@angular/material`+`cdk`+`animations` (21.2.x, под `MatDialog`); провайдеры `provideHttpClient(withFetch())` (под F1.4) + `provideAnimationsAsync()`; каркас lazy-`routes` (публичная/приватная зоны — заглушки под F2/F3). `ng build` зелёный.
   - [ ] **F1.2** — дизайн-токены: SCSS-переменные (палитра тёмная+светлая, радиусы, типографика, отступы), **брейкпоинт-миксины** (~480/768/1024/1280), тач-таргет ≥44; тема через класс на `<html>` + localStorage.
   - [ ] **F1.3** — `core/auth`: Signal-стор (account + access-токен **в памяти**); `generateId` util (зеркало бэка).
   - [ ] **F1.4** — HTTP-слой: interceptor (Bearer из сигнала; `401 → POST /auth/refresh → повтор`; refresh fail → login); `APP_INITIALIZER` → `GET /feature-flags` в сигнал; route-guard.

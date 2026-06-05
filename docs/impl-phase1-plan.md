@@ -85,9 +85,29 @@
   - [x] **R3.3** — ✅ revoke-others + интеграция: порт `revokeAllByAccountExcept` + domain `revokeOthers`/`revokeAllForAccount` + `DELETE /sessions/others` (Guard, `others` объявлен до `:id`). **Отложенные TODO закрыты**: deactivate/delete (ProfileModule↓ sessions) и recovery-reset (CompleteRecovery↓ sessions) отзывают все сессии — Profile/Recovery импортируют SessionsModule (цикла нет). Проверено live: 3 устройства→others→1 (current жив, остальные refresh 401); deactivate гасит все (refresh 401, в БД активных 0).
 
 ### F. Фронт ЛК
-- [ ] **F1** — core: auth-сервис (Signals), http-interceptor (401→refresh), guard, generateId, модальная система (`_shared/modal-system`).
-- [ ] **F2** — auth-экраны: cookie-гейт, register (проверка рег-режима по клику), login, recover.
-- [ ] **F3** — profile (my/user + аватар-кроп в модалке), invites (создать/отозвать/список), bans (в карточке), sessions, settings (секретные вопросы).
+> Спека вида/адаптива/UX-форм/экранов (вкл. главную и app-shell) — [`docs/ui-ux.md`](./ui-ux.md) (дополнена анализом лучших практик 2025/26). Тех.правила — [`docs/frontend.md`](./frontend.md). Философия: минимализм/ламповость, без ПДн, тёмная+тумблер, чистый SCSS, Signals, Material только `MatDialog`. Поток: cookie-гейт → главная → auth → app-shell(разделы).
+
+- [ ] **F1** — core (невидимая инфра), снизу вверх.
+  - [ ] **F1.1** — init проекта: Angular ≥17 standalone, SCSS, TS strict, npm; `app.routes` (lazy); подключить `MatDialog`. Базовый layout публичной/приватной зон.
+  - [ ] **F1.2** — дизайн-токены: SCSS-переменные (палитра тёмная+светлая, радиусы, типографика, отступы), **брейкпоинт-миксины** (~480/768/1024/1280), тач-таргет ≥44; тема через класс на `<html>` + localStorage.
+  - [ ] **F1.3** — `core/auth`: Signal-стор (account + access-токен **в памяти**); `generateId` util (зеркало бэка).
+  - [ ] **F1.4** — HTTP-слой: interceptor (Bearer из сигнала; `401 → POST /auth/refresh → повтор`; refresh fail → login); `APP_INITIALIZER` → `GET /feature-flags` в сигнал; route-guard.
+  - [ ] **F1.5** — модальная система (`shared/modal-system`, [ADR-0026](./decisions/0026-modal-system.md)): `DialogModalComponent` + `DialogModalData<T>` + доменные modal-сервисы.
+  - [ ] **F1.6** — shared UI на SCSS (без Material): button, input + **password-toggle**, card, banner, empty-state, theme-toggle, spinner; a11y-базис (фокус/aria/клавиатура).
+- [ ] **F2** — публичные экраны.
+  - [ ] **F2.1** — cookie-гейт ([ADR-0024](./decisions/0024-cookie-consent-gate.md), блокирующий) + публичный layout.
+  - [ ] **F2.2** — **главная (landing)**: вайб + 2 CTA «Войти»/«Регистрация» (контраст, ≥44, адаптив столбик/строка); без соц-входа.
+  - [ ] **F2.3** — register: invite-режим (экран кода `XXXX-XXXX-XX` → авто `POST /invites/check`, без сабмит-кнопки) → форма alias/login/password → редирект на login.
+  - [ ] **F2.4** — login: форма (пароль одним полем + show/hide); обработка `ACCOUNT_DEACTIVATED` (модалка → `POST /auth/reactivate`) и `ACCOUNT_BANNED` (экран бана с `details.bans`).
+  - [ ] **F2.5** — recover: login → `start` (K вопросов) → ответы + новый пароль → `complete` → login.
+- [ ] **F3** — аутентифицированная зона.
+  - [ ] **F3.1** — **app-shell** + навигация (десктоп боковая/верхняя, мобайл сворачиваемая) + аккаунт-меню (выход) + тумблер темы; прогрессивное раскрытие.
+  - [ ] **F3.2** — profile: my (`GET/PATCH /accounts/me`, редактирование alias) + user `/accounts/:login` (публичный вид).
+  - [ ] **F3.3** — avatar: загрузка + **кроп в модалке** (canvas свой vs лёгкая crop-либа — **F-развилка, решить**) → `POST/DELETE /accounts/me/avatar`.
+  - [ ] **F3.4** — invites: счётчик квоты, создать (reason + ПДн-предупреждение)/отозвать, список приглашённых (`GET/POST/DELETE /invites`).
+  - [ ] **F3.5** — bans: действие в карточке участника (reason + ПДн) + «мои баны»/разбан (`POST/GET/DELETE /bans`).
+  - [ ] **F3.6** — sessions: список устройств с пометкой `current`, кикнуть / выйти-везде (`GET /sessions`, `DELETE /:id`, `DELETE /others`).
+  - [ ] **F3.7** — settings: секретные вопросы (добавить/удалить) + K (`/recovery/questions`, `/required-count`) + баннер-напоминание; деактивация/удаление аккаунта; тумблер темы.
 
 ### D. Деплой
 - [ ] **D1** — docker-compose.prod, Traefik+LE, прогон миграций, деплой «для друзей».

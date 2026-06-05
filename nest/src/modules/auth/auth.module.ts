@@ -12,6 +12,7 @@ import { GetRegistrationModeUseCase } from './use-cases/get-registration-mode.us
 import { LoginAccountUseCase } from './use-cases/login-account.use-case';
 import { RefreshTokensUseCase } from './use-cases/refresh-tokens.use-case';
 import { LogoutUseCase } from './use-cases/logout.use-case';
+import { ReactivateAccountUseCase } from './use-cases/reactivate-account.use-case';
 
 /**
  * Модуль auth-флоу: контроллеры + use-cases (регистрация/режим/флаги/вход/refresh/
@@ -31,6 +32,7 @@ import { LogoutUseCase } from './use-cases/logout.use-case';
     LoginAccountUseCase,
     RefreshTokensUseCase,
     LogoutUseCase,
+    ReactivateAccountUseCase,
   ],
 })
 export class AuthModule {}

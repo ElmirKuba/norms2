@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { updateAliasSchema } from '../dtos/update-alias.dto';
 import type { UpdateAliasDto } from '../dtos/update-alias.dto';
 import { GetProfileByLoginUseCase } from '../use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from '../use-cases/update-alias.use-case';
+import { DeactivateMyAccountUseCase } from '../use-cases/deactivate-my-account.use-case';
+import { DeleteMyAccountUseCase } from '../use-cases/delete-my-account.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { AccountRead } from '../../account/interfaces/account-read.interface';
 import type { AccountPublicView } from '../../account/interfaces/account-public-view.interface';
@@ -23,6 +25,8 @@ export class ProfileController {
   public constructor(
     private readonly _getProfileByLoginUseCase: GetProfileByLoginUseCase,
     private readonly _updateAliasUseCase: UpdateAliasUseCase,
+    private readonly _deactivateMyAccountUseCase: DeactivateMyAccountUseCase,
+    private readonly _deleteMyAccountUseCase: DeleteMyAccountUseCase,
   ) {}
 
   /**
@@ -50,6 +54,30 @@ export class ProfileController {
     @Req() request: AuthenticatedRequest,
   ): Promise<AccountRead> {
     return this._updateAliasUseCase.execute(request.account.id, body.alias);
+  }
+
+  /**
+   * Деактивирует свой аккаунт (обратимая пауза, ADR-0017).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Промис завершения.
+   */
+  @Post('me/deactivate')
+  @UseGuards(AuthGuard)
+  @HttpCode(204)
+  public async deactivate(@Req() request: AuthenticatedRequest): Promise<void> {
+    await this._deactivateMyAccountUseCase.execute(request.account.id);
+  }
+
+  /**
+   * Удаляет (soft) свой аккаунт (ADR-0017, восстановления нет).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Промис завершения.
+   */
+  @Delete('me')
+  @UseGuards(AuthGuard)
+  @HttpCode(204)
+  public async deleteMe(@Req() request: AuthenticatedRequest): Promise<void> {
+    await this._deleteMyAccountUseCase.execute(request.account.id);
   }
 
   /**

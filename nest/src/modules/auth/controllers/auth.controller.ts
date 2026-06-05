@@ -11,6 +11,7 @@ import { GetRegistrationModeUseCase } from '../use-cases/get-registration-mode.u
 import { LoginAccountUseCase } from '../use-cases/login-account.use-case';
 import { RefreshTokensUseCase } from '../use-cases/refresh-tokens.use-case';
 import { LogoutUseCase } from '../use-cases/logout.use-case';
+import { ReactivateAccountUseCase } from '../use-cases/reactivate-account.use-case';
 import { parseDurationMs } from '../../../shared/utility-level/duration.util';
 import type { RegisterResponse } from '../interfaces/register-response.interface';
 import type { RegistrationMode } from '../interfaces/registration-mode.interface';
@@ -33,6 +34,7 @@ export class AuthController {
    * @param _loginAccountUseCase Вход.
    * @param _refreshTokensUseCase Обновление токенов.
    * @param _logoutUseCase Выход.
+   * @param _reactivateAccountUseCase Реактивация деактивированного.
    * @param _configService Конфиг (COOKIE_SECURE/REFRESH_TTL).
    */
   public constructor(
@@ -41,6 +43,7 @@ export class AuthController {
     private readonly _loginAccountUseCase: LoginAccountUseCase,
     private readonly _refreshTokensUseCase: RefreshTokensUseCase,
     private readonly _logoutUseCase: LogoutUseCase,
+    private readonly _reactivateAccountUseCase: ReactivateAccountUseCase,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
 
@@ -87,6 +90,20 @@ export class AuthController {
     });
     this._setRefreshCookie(response, tokens.refreshToken);
     return { accessToken: tokens.accessToken };
+  }
+
+  /**
+   * Реактивация деактивированного аккаунта по логину+паролю (публично, ADR-0039):
+   * деактивированный не проходит Guard. Токенов не выдаёт — после успеха вход обычный.
+   * @param body Логин+пароль (та же схема, что login).
+   * @returns Промис завершения (204).
+   */
+  @Post('reactivate')
+  @HttpCode(204)
+  public async reactivate(
+    @Body(new ZodValidationPipe(loginSchema)) body: LoginDto,
+  ): Promise<void> {
+    await this._reactivateAccountUseCase.execute(body.login, body.password);
   }
 
   /**

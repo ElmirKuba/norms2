@@ -10,6 +10,7 @@ import type { Password } from '../value-objects/password.vo';
 import { HashService } from '../../../shared/services/hash.service';
 import { LoginTakenError } from '../../../shared/errors/login-taken.error';
 import { BadCredentialsError } from '../../../shared/errors/bad-credentials.error';
+import { AccountDeactivatedError } from '../../../shared/errors/account-deactivated.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { AccountMutable } from '../interfaces/account-mutable.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
@@ -112,11 +113,65 @@ export class AccountDomainService {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
     // Бан-чек — НЕ здесь (account-домен про bans не знает): его делает
-    // LoginAccountUseCase кросс-доменно (ADR-0038). Тут — только deleted/deactivated.
-    if (account.deletedAt !== null || account.deactivatedAt !== null) {
+    // LoginAccountUseCase кросс-доменно (ADR-0038).
+    // Удалён — терминально, единый 401 (не раскрываем). Деактивирован — отдельный
+    // сигнал 403, чтобы фронт предложил реактивацию (ADR-0017/0039).
+    if (account.deletedAt !== null) {
+      throw new BadCredentialsError('Неверный логин или пароль.');
+    }
+    if (account.deactivatedAt !== null) {
+      throw new AccountDeactivatedError('Аккаунт деактивирован.');
+    }
+    return account;
+  }
+
+  /**
+   * Проверяет учётные данные для реактивации (деактивированный не проходит Guard,
+   * поэтому путь — публичный по логину+паролю, ADR-0039). Деактивированный
+   * допускается; удалённый — нет.
+   * @param loginRaw Логин (любой регистр).
+   * @param passwordRaw Пароль-плейнтекст.
+   * @returns Аккаунт (возможно деактивированный).
+   * @throws {BadCredentialsError} Неверные данные или аккаунт удалён.
+   */
+  public async authenticateForReactivation(loginRaw: string, passwordRaw: string): Promise<AccountFull> {
+    const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
+    if (account === null) {
+      throw new BadCredentialsError('Неверный логин или пароль.');
+    }
+    const passwordOk = await this._hashService.verify(account.passwordHash, passwordRaw);
+    if (!passwordOk || account.deletedAt !== null) {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
     return account;
+  }
+
+  /**
+   * Деактивирует аккаунт (обратимая пауза по желанию, ADR-0017) — CAS.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async deactivate(accountId: string): Promise<void> {
+    await this._applyWithRetry(accountId, { deactivatedAt: new Date() });
+  }
+
+  /**
+   * Реактивирует аккаунт (снимает паузу) — CAS.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async reactivate(accountId: string): Promise<void> {
+    await this._applyWithRetry(accountId, { deactivatedAt: null });
+  }
+
+  /**
+   * Soft-delete: помечает удалённым (физического удаления нет — узел дерева,
+   * ADR-0017). Необратимо на практике. CAS.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async softDelete(accountId: string): Promise<void> {
+    await this._applyWithRetry(accountId, { deletedAt: new Date() });
   }
 
   /**

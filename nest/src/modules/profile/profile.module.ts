@@ -4,6 +4,8 @@ import { AccessControlModule } from '../auth/access-control.module';
 import { ProfileController } from './controllers/profile.controller';
 import { GetProfileByLoginUseCase } from './use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from './use-cases/update-alias.use-case';
+import { DeactivateMyAccountUseCase } from './use-cases/deactivate-my-account.use-case';
+import { DeleteMyAccountUseCase } from './use-cases/delete-my-account.use-case';
 
 /**
  * Фича-модуль profile: HTTP-доступ к профилю поверх домена account. Вынесен из
@@ -14,6 +16,11 @@ import { UpdateAliasUseCase } from './use-cases/update-alias.use-case';
 @Module({
   imports: [AccountModule, AccessControlModule],
   controllers: [ProfileController],
-  providers: [GetProfileByLoginUseCase, UpdateAliasUseCase],
+  providers: [
+    GetProfileByLoginUseCase,
+    UpdateAliasUseCase,
+    DeactivateMyAccountUseCase,
+    DeleteMyAccountUseCase,
+  ],
 })
 export class ProfileModule {}

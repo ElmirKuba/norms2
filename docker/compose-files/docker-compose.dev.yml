@@ -4,10 +4,11 @@
 # абсолютные — ${PROJECT_ROOT}/docker/... — а не хрупкие ./../.. . Прямой вызов
 # docker compose без make требует заранее: export PROJECT_ROOT=$(pwd).
 #
-# Сейчас активны postgres + pgAdmin; бэкенд и фронт обычно поднимаются на хосте
-# (cd nest && npm run start:dev / cd angular && npm start). Сервисы nest/angular
-# ниже закомментированы — включатся, когда приложение будет к этому готово
-# (после подключения Drizzle/конфига, этап B2+).
+# Весь стек поднимается одной командой `make dev-rebuild` (или `make dev-up`):
+# postgres + pgAdmin + nest + angular. Бэк и фронт — в watch-режиме с монтированием
+# src (`nest/src`, `angular/src`) → hot-reload без пересборки образа (пересборка
+# нужна только при смене зависимостей/Dockerfile). Можно по-прежнему гонять nest/
+# angular на хосте, если нужно, — но дефолт теперь «всё в докере».
 
 services:
   # ── PostgreSQL ──
@@ -73,21 +74,21 @@ services:
     networks:
       - norms2_dev-net
 
-  # ── Angular frontend (включить после этапа B2) ──
-  # angular:
-  #   container_name: norms2_angular_dev
-  #   build:
-  #     context: ${PROJECT_ROOT}
-  #     dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.development
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ${PROJECT_ROOT}/angular/src:/app/src:rw
-  #   ports:
-  #     - '${FRONTEND_PORT}:4200'
-  #   depends_on:
-  #     - nest
-  #   networks:
-  #     - norms2_dev-net
+  # ── Angular frontend (dev-server, watch, монтируем src) ──
+  angular:
+    container_name: norms2_angular_dev
+    build:
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.development
+    restart: unless-stopped
+    volumes:
+      - ${PROJECT_ROOT}/angular/src:/app/src:rw
+    ports:
+      - '${FRONTEND_PORT}:4200'
+    depends_on:
+      - nest
+    networks:
+      - norms2_dev-net
 
 networks:
   norms2_dev-net:

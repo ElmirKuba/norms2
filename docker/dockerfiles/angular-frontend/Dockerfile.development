@@ -7,7 +7,11 @@ FROM node:24
 WORKDIR /app
 
 COPY angular/package.json angular/package-lock.json ./
-RUN npm ci
+# npm install (не ci): lockfile генерится на macOS-хосте и не содержит linux-
+# вариантов опциональных нативных пакетов (esbuild/rollup/lightningcss); install
+# доставит их под платформу контейнера. Прод-образ — детерминированный npm ci
+# (lock соберём на linux на D1), как и у nest.
+RUN npm install
 
 COPY angular/ ./
 

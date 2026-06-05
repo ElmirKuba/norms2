@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ACCOUNT_REPOSITORY } from '../adapters/account-repository.port';
 import type { AccountRepositoryPort } from '../adapters/account-repository.port';
 import type { AccountFull } from '../interfaces/account-full.interface';
+import type { AccountPublicView } from '../interfaces/account-public-view.interface';
 import type { Login } from '../value-objects/login.vo';
 import type { Alias } from '../value-objects/alias.vo';
 import type { Password } from '../value-objects/password.vo';
@@ -176,6 +177,30 @@ export class AccountDomainService {
    */
   public async setRecoveryRequiredCount(accountId: string, requiredCount: number): Promise<void> {
     await this._applyWithRetry(accountId, { recoveryRequiredCount: requiredCount });
+  }
+
+  /**
+   * Публичная проекция профиля по логину (для `GET /accounts/:login`). Удалённых
+   * не показывает; деактивированные видны (пауза обратима, ADR-0017).
+   * @param loginRaw Логин (любой регистр).
+   * @returns Публичная проекция или null (нет/удалён).
+   */
+  public async getPublicByLogin(loginRaw: string): Promise<AccountPublicView | null> {
+    const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
+    if (account === null || account.deletedAt !== null) {
+      return null;
+    }
+    return { login: account.login, alias: account.alias, avatar: account.avatar };
+  }
+
+  /**
+   * Меняет псевдоним (профиль) через optimistic-CAS с retry (ADR-0035).
+   * @param accountId Идентификатор аккаунта.
+   * @param alias Новый псевдоним (VO).
+   * @returns Обновлённый аккаунт.
+   */
+  public async updateAlias(accountId: string, alias: Alias): Promise<AccountFull> {
+    return this._applyWithRetry(accountId, { alias: alias.value });
   }
 
   /**

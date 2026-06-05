@@ -87,6 +87,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0035](./0035-concurrency-control.md) | Конкуренция: optimistic `version` на accounts + retry, атомарный счётчик/CAS сессий, READ COMMITTED | accepted | [architecture] [backend] [db] [concurrency] |
 | [0036](./0036-schema-typed-against-full.md) | Схемы Drizzle типобезопасны против `XxxFull` через `defineTableWithSchema` (сохраняет вывод типов) | accepted | [architecture] [backend] [db] [conventions] |
 | [0037](./0037-access-control-module-split.md) | Контроль доступа (guard+access-token) вынесен в `AccessControlModule` — разрывает цикл auth⇄invites при регистрации по коду | accepted | [architecture] [backend] [conventions] |
+| [0038](./0038-ban-check-placement.md) | Бан-чек в login+Guard (немедленно) через `BanCoreModule`; `AccountBannedError` со списком активных банов | accepted | [architecture] [backend] [domain] |
 
 ### Ожидают решения
 

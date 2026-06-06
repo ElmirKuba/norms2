@@ -1,0 +1,51 @@
+<section class="register">
+  <h1>Регистрация</h1>
+
+  @if (step() === 'code') {
+    <p class="hint">Система для своих. Введите код приглашения.</p>
+    <app-text-field
+      [control]="codeControl"
+      label="Код приглашения"
+      placeholder="XXXXXXXXXX"
+      autocomplete="off"
+      [error]="codeState() === 'invalid' ? 'Код недействителен или истёк.' : null"
+    />
+    @if (codeState() === 'checking') {
+      <p class="status">Проверяем код…</p>
+    }
+    <p class="alt">Уже свой? <a routerLink="/login">Войти</a></p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <app-text-field
+        [control]="form.controls.login"
+        label="Логин"
+        autocomplete="username"
+        [required]="true"
+        [error]="errorFor(form.controls.login, 'login')"
+      />
+      <app-text-field
+        [control]="form.controls.alias"
+        label="Псевдоним"
+        autocomplete="nickname"
+        [required]="true"
+        [error]="errorFor(form.controls.alias, 'alias')"
+      />
+      <app-text-field
+        [control]="form.controls.password"
+        label="Пароль"
+        type="password"
+        autocomplete="new-password"
+        hint="Минимум 3 символа."
+        [required]="true"
+        [error]="errorFor(form.controls.password, 'password')"
+      />
+
+      @if (formError()) {
+        <app-banner tone="danger">{{ formError() }}</app-banner>
+      }
+
+      <app-button type="submit" [block]="true" [loading]="submitting()">Создать аккаунт</app-button>
+    </form>
+    <p class="alt">Уже свой? <a routerLink="/login">Войти</a></p>
+  }
+</section>

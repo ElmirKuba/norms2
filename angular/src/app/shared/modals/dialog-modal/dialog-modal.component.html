@@ -1,0 +1,37 @@
+<app-modal-header [classIcon]="data.classIcon" [textCenter]="!!data.textCenter">
+  <span [innerHTML]="data.title"></span>
+</app-modal-header>
+
+@if (data.text || data.component) {
+  <app-modal-content>
+    @if (data.text) {
+      <div [class.center]="data.textCenter" [innerHTML]="data.text"></div>
+    } @else if (data.component) {
+      <ng-container
+        [ngComponentOutlet]="data.component"
+        [ngComponentOutletInputs]="{ data: data.componentData }"
+      />
+    }
+  </app-modal-content>
+}
+
+<app-modal-footer
+  [vertically]="!!data.isFooterButtonsVertically"
+  [reversed]="!!data.isButtonsOrderReversed"
+>
+  @if (data.isConfirmModal) {
+    <button
+      class="btn"
+      [class.btn-danger]="data.confirmBtnDanger"
+      [disabled]="isConfirmDisabled()"
+      (click)="onConfirm()"
+    >
+      {{ data.confirmBtnText || 'Да' }}
+    </button>
+    <button class="btn btn-ghost" (click)="onCancel()">{{ data.cancelBtnText || 'Нет' }}</button>
+  } @else {
+    <button class="btn" [class.btn-ghost]="!data.isAccentCloseBtn" (click)="onClose()">
+      {{ data.closeBtnText || 'Закрыть' }}
+    </button>
+  }
+</app-modal-footer>

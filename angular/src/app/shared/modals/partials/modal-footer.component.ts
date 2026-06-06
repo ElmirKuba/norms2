@@ -6,11 +6,7 @@ import { MatDialogModule } from '@angular/material/dialog';
   selector: 'app-modal-footer',
   imports: [MatDialogModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <mat-dialog-actions [class.vertically]="vertically()" [class.reverse]="reversed()">
-      <ng-content />
-    </mat-dialog-actions>
-  `,
+  templateUrl: './modal-footer.component.html',
 })
 export class ModalFooterComponent {
   /** Кнопки столбиком. */

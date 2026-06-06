@@ -6,6 +6,6 @@ import { MatDialogModule } from '@angular/material/dialog';
   selector: 'app-modal-content',
   imports: [MatDialogModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<mat-dialog-content><ng-content /></mat-dialog-content>`,
+  templateUrl: './modal-content.component.html',
 })
 export class ModalContentComponent {}

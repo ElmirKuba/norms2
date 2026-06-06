@@ -1,0 +1,32 @@
+<label class="field">
+  @if (label()) {
+    <span class="label">{{ label() }}@if (required()) {<span class="req" aria-hidden="true"> *</span>}</span>
+  }
+  <span class="control">
+    <input
+      [type]="effectiveType()"
+      [formControl]="control()"
+      [attr.autocomplete]="autocomplete() ?? null"
+      [attr.placeholder]="placeholder() ?? null"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? describedById : null"
+    />
+    @if (type() === 'password') {
+      <button
+        type="button"
+        class="reveal"
+        (click)="toggleReveal()"
+        [attr.aria-pressed]="reveal()"
+        aria-label="Показать или скрыть пароль"
+      >
+        {{ reveal() ? '🙈' : '👁' }}
+      </button>
+    }
+  </span>
+  @if (hint() && !error()) {
+    <span class="hint">{{ hint() }}</span>
+  }
+  @if (error()) {
+    <span class="error" [id]="describedById">{{ error() }}</span>
+  }
+</label>

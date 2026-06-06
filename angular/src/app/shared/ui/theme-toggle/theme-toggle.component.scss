@@ -1,0 +1,11 @@
+.toggle {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 1.1rem;
+
+  &:hover {
+    background: var(--color-surface-2);
+  }
+}

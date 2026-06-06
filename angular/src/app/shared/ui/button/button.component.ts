@@ -4,41 +4,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'app-button',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <button
-      class="btn"
-      [class.btn-ghost]="variant() === 'ghost'"
-      [class.btn-danger]="variant() === 'danger'"
-      [class.btn-block]="block()"
-      [type]="type()"
-      [disabled]="disabled() || loading()"
-    >
-      @if (loading()) {
-        <span class="spinner" aria-hidden="true"></span>
-      }
-      <ng-content />
-    </button>
-  `,
-  styles: [
-    `
-      :host {
-        display: contents;
-      }
-      .spinner {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        border: 2px solid currentColor;
-        border-top-color: transparent;
-        animation: btn-spin 0.7s linear infinite;
-      }
-      @keyframes btn-spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    `,
-  ],
+  templateUrl: './button.component.html',
+  styleUrl: './button.component.scss',
 })
 export class ButtonComponent {
   /** Визуальный вариант. */

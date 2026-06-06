@@ -1,0 +1,3 @@
+<button type="button" class="toggle" (click)="theme.toggle()" [attr.aria-label]="label()" [title]="label()">
+  {{ theme.mode() === 'dark' ? '☀' : '🌙' }}
+</button>

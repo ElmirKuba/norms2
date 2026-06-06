@@ -1,0 +1,32 @@
+<section class="recover">
+  <h1>Восстановление</h1>
+
+  @if (step() === 'login') {
+    <p class="hint">Введите логин — покажем ваши секретные вопросы.</p>
+    <app-text-field [control]="loginControl" label="Логин" autocomplete="username" [required]="true" />
+    @if (stepError()) {
+      <app-banner tone="danger">{{ stepError() }}</app-banner>
+    }
+    <app-button [block]="true" [loading]="busy()" (click)="requestQuestions()">Далее</app-button>
+  } @else {
+    <form [formGroup]="answerForm" (ngSubmit)="complete()">
+      @for (question of questions(); track question.id; let i = $index) {
+        <app-text-field [control]="answersArray.at(i)" [label]="question.question" [required]="true" />
+      }
+      <app-text-field
+        [control]="answerForm.controls.newPassword"
+        label="Новый пароль"
+        type="password"
+        autocomplete="new-password"
+        hint="Минимум 3 символа."
+        [required]="true"
+      />
+      @if (stepError()) {
+        <app-banner tone="danger">{{ stepError() }}</app-banner>
+      }
+      <app-button type="submit" [block]="true" [loading]="busy()">Сменить пароль</app-button>
+    </form>
+  }
+
+  <p class="alt">Вспомнили? <a routerLink="/login">Войти</a></p>
+</section>

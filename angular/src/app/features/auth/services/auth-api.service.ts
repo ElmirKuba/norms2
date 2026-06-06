@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
+import type { AccountRead } from '../../../core/interfaces/account-read.interface';
 import type {
   AccessTokenResponse,
   CheckInviteResponse,
@@ -30,6 +31,11 @@ export class AuthApiService {
   /** Вход (access в теле, refresh в cookie). */
   public login(credentials: LoginCredentials): Observable<AccessTokenResponse> {
     return this._http.post<AccessTokenResponse>(`${API_PREFIX}/auth/login`, credentials);
+  }
+
+  /** Текущий аккаунт (после login/refresh — наполнить AuthStore). */
+  public me(): Observable<AccountRead> {
+    return this._http.get<AccountRead>(`${API_PREFIX}/accounts/me`);
   }
 
   /** Выход (отзыв сессии + очистка cookie). */

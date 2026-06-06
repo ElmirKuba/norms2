@@ -18,8 +18,16 @@ export const authRoutes: Routes = [
         canActivate: [guestGuard],
         loadComponent: () => import('./register/register.component').then((m) => m.RegisterComponent),
       },
-      // F2.5: { path: 'login', canActivate: [guestGuard], loadComponent: ... },
-      // F2.6: { path: 'recover', canActivate: [guestGuard], loadComponent: ... },
+      {
+        path: 'login',
+        canActivate: [guestGuard],
+        loadComponent: () => import('./login/login.component').then((m) => m.LoginComponent),
+      },
+      {
+        path: 'recover',
+        canActivate: [guestGuard],
+        loadComponent: () => import('./recover/recover.component').then((m) => m.RecoverComponent),
+      },
     ],
   },
 ];

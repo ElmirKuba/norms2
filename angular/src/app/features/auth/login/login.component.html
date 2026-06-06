@@ -1,0 +1,23 @@
+<section class="login">
+  <h1>Вход</h1>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <app-text-field [control]="form.controls.login" label="Логин" autocomplete="username" [required]="true" />
+    <app-text-field
+      [control]="form.controls.password"
+      label="Пароль"
+      type="password"
+      autocomplete="current-password"
+      [required]="true"
+    />
+
+    @if (formError()) {
+      <app-banner tone="danger">{{ formError() }}</app-banner>
+    }
+
+    <app-button type="submit" [block]="true" [loading]="submitting()">Войти</app-button>
+  </form>
+
+  <p class="alt">Забыли пароль? <a routerLink="/recover">Восстановить</a></p>
+  <p class="alt">Нет аккаунта? <a routerLink="/register">Регистрация</a></p>
+</section>

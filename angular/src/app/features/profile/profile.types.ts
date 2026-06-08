@@ -2,6 +2,8 @@
 
 /** Публичная проекция чужого профиля (`GET /accounts/:login`). */
 export interface AccountPublicView {
+  /** PK (не ПДн) — нужен как `targetId` для бана. */
+  id: string;
   /** Логин. */
   login: string;
   /** Псевдоним. */

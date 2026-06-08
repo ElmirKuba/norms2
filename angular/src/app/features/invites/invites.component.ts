@@ -13,13 +13,17 @@ import { BannerComponent } from '../../shared/ui/banner/banner.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
+import { BansComponent } from '../bans/bans.component';
 import type { InviteeRead, InviteCodeRead } from './invites.types';
 
+/** Активная вкладка раздела. */
+type InvitesTab = 'invites' | 'bans';
+
 /**
- * Раздел «Приглашения» (`/app/invites`). Показывает остаток квоты (из `AuthStore`),
- * форму создания кода (reason + предупреждение про ПДн), список невыданных кодов
- * с копированием и отзывом, список уже зарегистрировавшихся приглашённых. Квота
- * меняется на бэке при создании/отзыве — после операций обновляем `me()`.
+ * Раздел «Приглашения» (`/app/invites`) — две вкладки (IA): **Мои инвайты** (квота,
+ * создание/копирование/отзыв кодов, список приглашённых) и **Баны** (`app-bans` —
+ * список своих банов + разбан). Квота меняется на бэке при создании/отзыве — после
+ * операций обновляем `me()`.
  */
 @Component({
   selector: 'app-invites',
@@ -32,12 +36,16 @@ import type { InviteeRead, InviteCodeRead } from './invites.types';
     CardComponent,
     EmptyStateComponent,
     SpinnerComponent,
+    BansComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invites.component.html',
   styleUrl: './invites.component.scss',
 })
 export class InvitesComponent {
+  /** Активная вкладка. */
+  protected readonly tab = signal<InvitesTab>('invites');
+
   private readonly _api = inject(InvitesApiService);
   private readonly _authApi = inject(AuthApiService);
   private readonly _authStore = inject(AuthStore);

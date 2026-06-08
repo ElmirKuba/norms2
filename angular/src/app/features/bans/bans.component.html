@@ -1,0 +1,25 @@
+@if (loading()) {
+  <app-spinner />
+} @else if (bans().length === 0) {
+  <app-empty-state title="Вы никого не банили" text="Забанить участника можно из его профиля." />
+} @else {
+  <ul class="list">
+    @for (ban of bans(); track ban.id) {
+      <li class="row" [class.row--inactive]="!ban.active">
+        <div class="row__main">
+          <a class="row__name" [routerLink]="['/app/u', ban.targetLogin]">{{ ban.targetAlias }}</a>
+          <span class="row__meta">
+            &#64;{{ ban.targetLogin }} · {{ ban.reason }} · {{ ban.createdAt | date: 'dd.MM.yyyy' }}
+          </span>
+        </div>
+        <div class="row__side">
+          @if (ban.active) {
+            <app-button type="button" variant="ghost" (click)="unban(ban)">Снять бан</app-button>
+          } @else {
+            <span class="badge">снят</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+}

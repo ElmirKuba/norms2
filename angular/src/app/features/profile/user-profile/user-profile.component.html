@@ -20,5 +20,36 @@
         <p class="login">&#64;{{ p.login }}</p>
       </div>
     </section>
+
+    @if (!isOwnProfile()) {
+      <div class="moderation">
+        @if (banned()) {
+          <app-banner tone="success">Участник забанен.</app-banner>
+        } @else if (banFormOpen()) {
+          <app-text-field
+            [control]="reasonControl"
+            label="Причина бана"
+            placeholder="например: спам в общих разделах"
+            [required]="true"
+          />
+          <app-banner tone="warning">
+            Не указывайте персональные данные — только понятную причину.
+          </app-banner>
+          @if (banError(); as err) {
+            <app-banner tone="danger">{{ err }}</app-banner>
+          }
+          <div class="moderation__actions">
+            <app-button type="button" variant="danger" [loading]="banSubmitting()" (click)="submitBan()">
+              Забанить
+            </app-button>
+            <app-button type="button" variant="ghost" [disabled]="banSubmitting()" (click)="cancelBan()">
+              Отмена
+            </app-button>
+          </div>
+        } @else {
+          <app-button type="button" variant="ghost" (click)="openBanForm()">Забанить</app-button>
+        }
+      </div>
+    }
   </app-card>
 }

@@ -1,10 +1,35 @@
 <section class="invites">
   <header class="head">
     <h1>Приглашения</h1>
-    <p class="quota">
-      Осталось приглашений: <strong>{{ invitesRemaining() }}</strong>
-    </p>
+    @if (tab() === 'invites') {
+      <p class="quota">
+        Осталось приглашений: <strong>{{ invitesRemaining() }}</strong>
+      </p>
+    }
   </header>
+
+  <nav class="tabs" role="tablist">
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'invites'"
+      (click)="tab.set('invites')"
+    >
+      Мои инвайты
+    </button>
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'bans'"
+      (click)="tab.set('bans')"
+    >
+      Баны
+    </button>
+  </nav>
+
+  @if (tab() === 'bans') {
+    <app-bans />
+  } @else {
 
   <app-card>
     <div class="create-form">
@@ -83,5 +108,7 @@
         </ul>
       }
     </section>
+  }
+
   }
 </section>

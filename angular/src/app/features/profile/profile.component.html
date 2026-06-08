@@ -93,7 +93,7 @@
               <a [routerLink]="['/app/u', inv.inviterLogin]">{{ inv.inviterAlias }}</a>
               <span class="muted">&#64;{{ inv.inviterLogin }} · {{ inv.reason }} · {{ inv.invitedAt | date: 'dd.MM.yyyy' }}</span>
             } @else {
-              <span class="muted">{{ sourceLabel(me.registrationSource) }}</span>
+              —
             }
           </dd>
         </div>

@@ -72,9 +72,9 @@ Body: `{ login, password }`.
 
 ## Профиль / аккаунт ([ADR-0017](./decisions/0017-account-soft-delete.md))
 
-- `GET /accounts/me` (auth) → `{ login, alias, avatar: string|null, createdAt, invitesRemaining, inviter: {login,alias}|null, banned: boolean }`. (список приглашённых — отдельно `GET /invites/mine`, [ADR-0032](./decisions/0032-phase1-refinements.md))
-- `GET /accounts/:login` (auth) → публичный: `{ login, alias, avatar: string|null, createdAt }`.
-- `PATCH /accounts/me` (auth) Body `{ alias }` → 200.
+- `GET /accounts/me` (auth) → `AccountRead` (полная строка БЕЗ `passwordHash`): `{ id, login, alias, avatar: string|null, timezone, registrationSource: 'free'|'invite'|'seed', invitesRemaining, recoveryRequiredCount: number|null, deactivatedAt: string|null, deletedAt: string|null, version, createdAt, updatedAt }`. «Кто пригласил» — отдельно `GET /invites/my-inviter`; статус бана — не поле, а реакция Guard/login-флоу (ADR-0038). Список приглашённых — `GET /invites`.
+- `GET /accounts/:login` (auth) → `AccountPublicView` = `{ login, alias, avatar: string|null }` (приватное — квота/K/таймзона/метки/даты — наружу не уходит).
+- `PATCH /accounts/me` (auth) Body `{ alias }` → 200 `AccountRead` (обновлённый).
 - `POST /accounts/me/deactivate` (auth) → 204. `POST /accounts/me/reactivate`. `DELETE /accounts/me` (soft, без UI-восстановления — [ADR-0017](./decisions/0017-account-soft-delete.md)) → 204.
 - **Аватар (в MVP — [ADR-0032](./decisions/0032-phase1-refinements.md)):** `POST /accounts/me/avatar` (multipart; принимает **уже нарезанное** на фронте изображение, jpeg/png/webp, лимит размера; бэк валидирует тип/размер, кладёт в `content/avatars/`, путь → `accounts.avatar`) · `DELETE /accounts/me/avatar` → 204.
 

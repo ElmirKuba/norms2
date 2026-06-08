@@ -13,24 +13,24 @@
   gap: var(--space-4);
 }
 
-.avatar-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .avatar {
   position: relative;
   flex: 0 0 auto;
   width: 96px;
   height: 96px;
+  border: 0;
+  padding: 0;
   border-radius: var(--radius-full, 50%);
   overflow: hidden;
   background: var(--color-surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
 
   &__img {
     width: 100%;
@@ -44,6 +44,26 @@
     color: var(--color-text-muted);
   }
 
+  // Подсказка-плашка снизу, проявляется по наведению/фокусу.
+  &__hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: var(--space-1) 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: var(--fs-xs);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &:hover .avatar__hint,
+  &:focus-visible .avatar__hint {
+    opacity: 1;
+  }
+
   &__overlay {
     position: absolute;
     inset: 0;
@@ -52,13 +72,6 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.35);
   }
-}
-
-.avatar-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .visually-hidden {

@@ -4,7 +4,9 @@ import { FormControl, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { AccountApiService } from './services/account-api.service';
+import { AvatarCropService } from './services/avatar-crop.service';
 import { InvitesApiService } from '../invites/services/invites-api.service';
+import { ModalService } from '../../shared/modals/modal.service';
 import { avatarUrl } from '../../core/http/avatar-url.util';
 import { errorMessage } from '../../core/http/error-message.util';
 import { TextFieldComponent } from '../../shared/ui/text-field/text-field.component';
@@ -46,8 +48,15 @@ const SOURCE_LABELS: Readonly<Record<AccountRead['registrationSource'], string>>
 export class ProfileComponent {
   private readonly _accountApi = inject(AccountApiService);
   private readonly _invitesApi = inject(InvitesApiService);
+  private readonly _avatarCrop = inject(AvatarCropService);
+  private readonly _modal = inject(ModalService);
   /** Текущий аккаунт (из стора). */
   protected readonly authStore = inject(AuthStore);
+
+  /** Идёт загрузка/удаление аватара. */
+  protected readonly avatarBusy = signal(false);
+  /** Ошибка операции с аватаром. */
+  protected readonly avatarError = signal<string | null>(null);
 
   /** Пригласивший (или null) и флаг завершённой загрузки. */
   protected readonly inviter = signal<InviterRead | null>(null);
@@ -84,6 +93,68 @@ export class ProfileComponent {
   /** RU-подпись источника регистрации. */
   protected sourceLabel(source: AccountRead['registrationSource']): string {
     return SOURCE_LABELS[source];
+  }
+
+  /** Выбор файла → кроп в модалке → загрузка нарезанного квадрата. */
+  protected async onAvatarFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = ''; // сброс — чтобы повторный выбор того же файла сработал
+    if (file === null) {
+      return;
+    }
+    this.avatarError.set(null);
+    if (!file.type.startsWith('image/')) {
+      this.avatarError.set('Нужен файл изображения (JPEG, PNG или WEBP).');
+      return;
+    }
+    const blob = await this._avatarCrop.open(file);
+    if (blob === null) {
+      return;
+    }
+    this._uploadAvatar(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+  }
+
+  /** Удаляет аватар (с подтверждением). */
+  protected async removeAvatar(): Promise<void> {
+    const confirmed = await this._modal.confirm({
+      title: 'Удалить аватар?',
+      text: 'Вернётся плейсхолдер с первой буквой псевдонима.',
+      confirmText: 'Удалить',
+      cancelText: 'Отмена',
+      danger: true,
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.avatarBusy.set(true);
+    this.avatarError.set(null);
+    this._accountApi.removeAvatar().subscribe({
+      next: (account) => {
+        this.authStore.setAccount(account);
+        this.avatarBusy.set(false);
+      },
+      error: (error: unknown) => {
+        this.avatarError.set(errorMessage(error));
+        this.avatarBusy.set(false);
+      },
+    });
+  }
+
+  /** Отправляет нарезанный аватар на бэк → обновляет стор. */
+  private _uploadAvatar(file: File): void {
+    this.avatarBusy.set(true);
+    this.avatarError.set(null);
+    this._accountApi.uploadAvatar(file).subscribe({
+      next: (account) => {
+        this.authStore.setAccount(account);
+        this.avatarBusy.set(false);
+      },
+      error: (error: unknown) => {
+        this.avatarError.set(errorMessage(error));
+        this.avatarBusy.set(false);
+      },
+    });
   }
 
   /** Первая буква псевдонима (для плейсхолдера аватара). */

@@ -1,0 +1,43 @@
+<div class="crop">
+  <h2 class="crop__title">Кадрирование аватара</h2>
+
+  <div class="stage" [style.width.px]="viewport" [style.height.px]="viewport">
+    <canvas
+      #canvas
+      class="stage__canvas"
+      [width]="viewport"
+      [height]="viewport"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp()"
+      (pointercancel)="onPointerUp()"
+    ></canvas>
+    <div class="stage__mask" aria-hidden="true"></div>
+    @if (loading()) {
+      <div class="stage__overlay"><app-spinner /></div>
+    }
+  </div>
+
+  @if (error(); as e) {
+    <p class="crop__error">{{ e }}</p>
+  } @else {
+    <label class="zoom">
+      <span class="zoom__label">Масштаб</span>
+      <input
+        type="range"
+        min="1"
+        [max]="maxZoom"
+        step="0.01"
+        [value]="zoom()"
+        [disabled]="loading()"
+        (input)="onZoom($event)"
+      />
+    </label>
+    <p class="crop__hint">Перетаскивайте изображение, ползунком меняйте масштаб.</p>
+  }
+
+  <div class="crop__actions">
+    <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
+    <app-button (click)="confirm()" [disabled]="loading() || error() !== null">Сохранить</app-button>
+  </div>
+</div>

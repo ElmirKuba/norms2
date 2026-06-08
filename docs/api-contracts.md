@@ -85,6 +85,7 @@ Body: `{ login, password }`.
 - `POST /invites` (auth) Body `{ reason }` → 201 `{ id, code, reason, expiresAt }`. Ошибки: `FORBIDDEN` (`QUOTA_EXCEEDED` при `invitesRemaining=0`).
 - `DELETE /invites/:id` (auth) → отзыв своего pending → 204 (`invitesRemaining += 1`).
 - `GET /invites` (auth) → `InviteeRead[]` = `[{ accountId, login, alias, reason, invitedAt }]` (мои приглашённые; login/alias — из accounts через join).
+- `GET /invites/codes` (auth) → `InviteCodeRead[]` = `[{ id, code, reason, expiresAt }]` (мои активные невыданные коды — для отзыва/обзора; истёкшие не возвращаются).
 - `GET /invites/my-inviter` (auth) → `InviterRead | null` = `{ inviterLogin, inviterAlias, reason, invitedAt } | null` — «кто меня пригласил» (обратное ребро). `null` у корней дерева (`free`/`seed`).
 
 ---

@@ -27,6 +27,7 @@ export class InvitesController {
    * @param _revokeInviteUseCase Отзыв.
    * @param _checkInviteCodeUseCase Проверка.
    * @param _listMyInvitesUseCase Список приглашённых.
+   * @param _getMyInviterUseCase Кто меня пригласил.
    */
   public constructor(
     private readonly _createInviteUseCase: CreateInviteUseCase,

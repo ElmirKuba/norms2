@@ -23,8 +23,11 @@
 
     @if (!isOwnProfile()) {
       <div class="moderation">
-        @if (banned()) {
-          <app-banner tone="success">Участник забанен.</app-banner>
+        @if (myBan(); as ban) {
+          <app-banner tone="warning">Забанен вами: {{ ban.reason }}</app-banner>
+          <div class="moderation__actions">
+            <app-button type="button" variant="ghost" (click)="unban()">Разбанить</app-button>
+          </div>
         } @else if (banFormOpen()) {
           <app-text-field
             [control]="reasonControl"

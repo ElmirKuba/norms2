@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AccountApiService } from '../services/account-api.service';
 import { BansApiService } from '../../bans/services/bans-api.service';
 import { AuthStore } from '../../../core/auth/auth-store.service';
+import { ModalService } from '../../../shared/modals/modal.service';
 import { avatarUrl } from '../../../core/http/avatar-url.util';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -14,13 +15,14 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { BannerComponent } from '../../../shared/ui/banner/banner.component';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
 import type { AccountPublicView } from '../profile.types';
+import type { BanListItem } from '../../bans/bans.types';
 
 /**
  * Публичный профиль участника (`/app/u/:login`). Читает `GET /accounts/:login`
- * (id/login/alias/avatar; id — как `targetId` для бана). Реагирует на смену
- * параметра. Действие **«Забанить»** (`POST /bans`, инлайн-форма с причиной +
- * предупреждением про ПДн): доступно не на своём профиле; `BAN_FORBIDDEN` (себя/
- * вне поддерева) → понятное сообщение. `ACCOUNT_NOT_FOUND` → «не найдено».
+ * (id/login/alias/avatar). **Осведомлён о бане:** при загрузке тянет `GET /bans` и,
+ * если этот участник забанен мной (активная запись), показывает «Забанен вами» +
+ * **«Разбанить»**; иначе — действие **«Забанить»** (инлайн-форма с причиной + ПДн-
+ * предупреждением, `POST /bans`; `BAN_FORBIDDEN` → понятно). Не на своём профиле.
  */
 @Component({
   selector: 'app-user-profile',
@@ -40,6 +42,7 @@ export class UserProfileComponent {
   private readonly _accountApi = inject(AccountApiService);
   private readonly _bansApi = inject(BansApiService);
   private readonly _authStore = inject(AuthStore);
+  private readonly _modal = inject(ModalService);
   private readonly _route = inject(ActivatedRoute);
 
   /** Загруженный профиль или null. */
@@ -49,14 +52,15 @@ export class UserProfileComponent {
   /** Участник не найден. */
   protected readonly notFound = signal(false);
 
+  /** Моя активная запись бана на этого участника (или null). */
+  protected readonly myBan = signal<BanListItem | null>(null);
+
   /** Открыта ли форма бана. */
   protected readonly banFormOpen = signal(false);
   /** Идёт отправка бана. */
   protected readonly banSubmitting = signal(false);
-  /** Ошибка бана. */
+  /** Ошибка действия с баном. */
   protected readonly banError = signal<string | null>(null);
-  /** Бан успешно поставлен (в этой сессии просмотра). */
-  protected readonly banned = signal(false);
 
   /** Контрол причины бана (зеркало бэка: 1–500). */
   protected readonly reasonControl = new FormControl('', {
@@ -67,7 +71,7 @@ export class UserProfileComponent {
   /** URL аватара или null. */
   protected readonly avatarSrc = computed(() => avatarUrl(this.profile()?.avatar ?? null));
 
-  /** Это мой собственный профиль (банить нельзя — кнопку прячем). */
+  /** Это мой собственный профиль (модерация скрыта). */
   protected readonly isOwnProfile = computed(() => {
     const me = this._authStore.account();
     const them = this.profile();
@@ -118,10 +122,15 @@ export class UserProfileComponent {
     this.banSubmitting.set(true);
     this.banError.set(null);
     this._bansApi.create(target.id, this.reasonControl.getRawValue()).subscribe({
-      next: () => {
+      next: (ban) => {
         this.banSubmitting.set(false);
         this.banFormOpen.set(false);
-        this.banned.set(true);
+        // Карточка сразу переходит в состояние «забанен вами».
+        this.myBan.set({
+          ...ban,
+          targetLogin: target.login,
+          targetAlias: target.alias,
+        });
       },
       error: (error: unknown) => {
         this.banSubmitting.set(false);
@@ -130,21 +139,55 @@ export class UserProfileComponent {
     });
   }
 
-  /** Загружает публичный профиль по логину. */
+  /** Снимает свой бан с этого участника (с подтверждением). */
+  protected async unban(): Promise<void> {
+    const ban = this.myBan();
+    if (ban === null) {
+      return;
+    }
+    const confirmed = await this._modal.confirm({
+      title: 'Снять бан?',
+      text: 'Участник снова получит доступ.',
+      confirmText: 'Снять',
+      cancelText: 'Отмена',
+    });
+    if (!confirmed) {
+      return;
+    }
+    this._bansApi.unban(ban.id).subscribe({
+      next: () => this.myBan.set(null),
+      error: (error: unknown) => this._modal.error('Не удалось снять бан', errorMessage(error)),
+    });
+  }
+
+  /** Загружает публичный профиль по логину + статус моего бана. */
   private _load(login: string): void {
     this.loading.set(true);
     this.notFound.set(false);
     this.profile.set(null);
+    this.myBan.set(null);
     this.banFormOpen.set(false);
-    this.banned.set(false);
     this._accountApi.getByLogin(login).subscribe({
       next: (profile) => {
         this.profile.set(profile);
         this.loading.set(false);
+        this._loadMyBan(profile.id);
       },
       error: () => {
         this.notFound.set(true);
         this.loading.set(false);
+      },
+    });
+  }
+
+  /** Подтягивает мою активную запись бана на данного участника (если есть). */
+  private _loadMyBan(targetId: string): void {
+    this._bansApi.listMine().subscribe({
+      next: (bans) => {
+        this.myBan.set(bans.find((ban) => ban.targetId === targetId && ban.active) ?? null);
+      },
+      error: () => {
+        /* не критично — карточка просто покажет «Забанить» */
       },
     });
   }

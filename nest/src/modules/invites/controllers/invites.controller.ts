@@ -9,12 +9,14 @@ import { CreateInviteUseCase } from '../use-cases/create-invite.use-case';
 import { RevokeInviteUseCase } from '../use-cases/revoke-invite.use-case';
 import { CheckInviteCodeUseCase } from '../use-cases/check-invite-code.use-case';
 import { ListMyInvitesUseCase } from '../use-cases/list-my-invites.use-case';
+import { ListMyCodesUseCase } from '../use-cases/list-my-codes.use-case';
 import { GetMyInviterUseCase } from '../use-cases/get-my-inviter.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { CreateInviteResponse } from '../interfaces/create-invite-response.interface';
 import type { CheckInviteResponse } from '../interfaces/check-invite-response.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
+import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 
 /**
  * Контроллер инвайтов (`/api/v1/invites/*`). Создание/отзыв/список — под Guard
@@ -27,6 +29,7 @@ export class InvitesController {
    * @param _revokeInviteUseCase Отзыв.
    * @param _checkInviteCodeUseCase Проверка.
    * @param _listMyInvitesUseCase Список приглашённых.
+   * @param _listMyCodesUseCase Список своих невыданных кодов.
    * @param _getMyInviterUseCase Кто меня пригласил.
    */
   public constructor(
@@ -34,6 +37,7 @@ export class InvitesController {
     private readonly _revokeInviteUseCase: RevokeInviteUseCase,
     private readonly _checkInviteCodeUseCase: CheckInviteCodeUseCase,
     private readonly _listMyInvitesUseCase: ListMyInvitesUseCase,
+    private readonly _listMyCodesUseCase: ListMyCodesUseCase,
     private readonly _getMyInviterUseCase: GetMyInviterUseCase,
   ) {}
 
@@ -91,6 +95,17 @@ export class InvitesController {
   @UseGuards(AuthGuard)
   public async listMine(@Req() request: AuthenticatedRequest): Promise<InviteeRead[]> {
     return this._listMyInvitesUseCase.execute(request.account.id);
+  }
+
+  /**
+   * Список своих активных невыданных кодов (для отзыва/обзора).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекции кодов.
+   */
+  @Get('codes')
+  @UseGuards(AuthGuard)
+  public async listMyCodes(@Req() request: AuthenticatedRequest): Promise<InviteCodeRead[]> {
+    return this._listMyCodesUseCase.execute(request.account.id);
   }
 
   /**

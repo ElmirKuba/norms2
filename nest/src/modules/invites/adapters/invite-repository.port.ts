@@ -5,6 +5,7 @@ import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InvitationCreate } from '../interfaces/invitation-create.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
+import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 
 /** DI-токен порта репозитория инвайтов. */
 export const INVITE_REPOSITORY = Symbol('INVITE_REPOSITORY');
@@ -30,6 +31,13 @@ export interface InviteRepositoryPort {
    * @returns Код или null (нет/истёк).
    */
   findActiveCodeByValue(code: string): Promise<InviteCodeFull | null>;
+
+  /**
+   * Список СВОИХ активных невыданных кодов (для отзыва/обзора).
+   * @param inviterId Идентификатор создателя.
+   * @returns Проекции кодов.
+   */
+  listCodesByInviter(inviterId: string): Promise<InviteCodeRead[]>;
 
   /**
    * Находит код по id (для проверки владения при отзыве).

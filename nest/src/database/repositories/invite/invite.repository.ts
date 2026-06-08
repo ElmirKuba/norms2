@@ -12,6 +12,7 @@ import type { InvitationFull } from '../../../modules/invites/interfaces/invitat
 import type { InvitationCreate } from '../../../modules/invites/interfaces/invitation-create.interface';
 import type { InviterRead } from '../../../modules/invites/interfaces/inviter-read.interface';
 import type { InviteeRead } from '../../../modules/invites/interfaces/invitee-read.interface';
+import type { InviteCodeRead } from '../../../modules/invites/interfaces/invite-code-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
@@ -55,6 +56,23 @@ export class InviteRepository implements InviteRepositoryPort {
       .where(and(eq(inviteCodes.code, code), gt(inviteCodes.expiresAt, new Date())))
       .limit(1);
     return rows[0] ?? null;
+  }
+
+  /**
+   * Список СВОИХ активных (не истёкших) невыданных кодов.
+   * @param inviterId Идентификатор создателя.
+   * @returns Проекции кодов (id/code/reason/expiresAt).
+   */
+  public async listCodesByInviter(inviterId: string): Promise<InviteCodeRead[]> {
+    return this._db
+      .select({
+        id: inviteCodes.id,
+        code: inviteCodes.code,
+        reason: inviteCodes.reason,
+        expiresAt: inviteCodes.expiresAt,
+      })
+      .from(inviteCodes)
+      .where(and(eq(inviteCodes.inviterId, inviterId), gt(inviteCodes.expiresAt, new Date())));
   }
 
   /**

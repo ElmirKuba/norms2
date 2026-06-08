@@ -9,6 +9,7 @@ import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
+import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
 
@@ -112,6 +113,15 @@ export class InviteDomainService {
    */
   public async listInvitees(inviterId: string): Promise<InviteeRead[]> {
     return this._inviteRepository.listInviteesByInviter(inviterId);
+  }
+
+  /**
+   * Список СВОИХ активных невыданных кодов (для отзыва/обзора).
+   * @param inviterId Идентификатор создателя.
+   * @returns Проекции кодов.
+   */
+  public async listMyCodes(inviterId: string): Promise<InviteCodeRead[]> {
+    return this._inviteRepository.listCodesByInviter(inviterId);
   }
 
   /**

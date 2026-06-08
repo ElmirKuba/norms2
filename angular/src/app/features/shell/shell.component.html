@@ -1,0 +1,15 @@
+<header class="bar">
+  <span class="brand">Нормисы</span>
+  <div class="right">
+    <app-theme-toggle />
+    @if (authStore.account(); as me) {
+      <span class="who">{{ me.alias }}</span>
+    }
+    <app-button variant="ghost" (click)="logout()">Выйти</app-button>
+  </div>
+</header>
+
+<main class="content">
+  <h1>Вы вошли 🎉</h1>
+  <p>Разделы ЛК (профиль, приглашения, баны, сессии, настройки) — в разработке (F3).</p>
+</main>

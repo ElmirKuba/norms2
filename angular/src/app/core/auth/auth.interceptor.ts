@@ -8,8 +8,17 @@ import { environment } from '../../../environments/environment';
 import { API_PREFIX } from '../config/api.constants';
 import { AuthStore } from './auth-store.service';
 
-/** Путь refresh — для него НЕ запускаем повторный refresh (иначе рекурсия). */
-const REFRESH_PATH = `${API_PREFIX}/auth/refresh`;
+/**
+ * Credential-эндпоинты: на их 401 НЕ запускаем refresh — это «неверные данные»,
+ * а не истёкший токен (иначе login/register с плохими данными уходил бы в refresh
+ * вместо нормальной ошибки; для refresh — защита от рекурсии).
+ */
+const NO_REFRESH_PATHS = [
+  `${API_PREFIX}/auth/login`,
+  `${API_PREFIX}/auth/register`,
+  `${API_PREFIX}/auth/reactivate`,
+  `${API_PREFIX}/auth/refresh`,
+];
 
 /** Single-flight: общий поток refresh для всех параллельных 401. */
 let refresh$: Observable<string> | null = null;
@@ -62,11 +71,11 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const http = inject(HttpClient);
   const apiBase = environment.apiBase;
-  const isRefreshCall = request.url.includes(REFRESH_PATH);
+  const skipRefresh = NO_REFRESH_PATHS.some((path) => request.url.includes(path));
 
   return next(decorate(request, authStore.accessToken(), apiBase)).pipe(
     catchError((error: unknown) => {
-      if (!(error instanceof HttpErrorResponse) || error.status !== 401 || isRefreshCall) {
+      if (!(error instanceof HttpErrorResponse) || error.status !== 401 || skipRefresh) {
         return throwError(() => error);
       }
       return runRefresh(http, apiBase, authStore, router).pipe(

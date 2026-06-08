@@ -13,6 +13,7 @@ export const authRoutes: Routes = [
     component: PublicLayoutComponent,
     children: [
       { path: '', loadComponent: () => import('./landing/landing.component').then((m) => m.LandingComponent) },
+      { path: 'privacy', loadComponent: () => import('../legal/privacy.component').then((m) => m.PrivacyComponent) },
       {
         path: 'register',
         canActivate: [guestGuard],

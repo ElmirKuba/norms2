@@ -12,6 +12,7 @@ import { CreateInviteUseCase } from './use-cases/create-invite.use-case';
 import { RevokeInviteUseCase } from './use-cases/revoke-invite.use-case';
 import { CheckInviteCodeUseCase } from './use-cases/check-invite-code.use-case';
 import { ListMyInvitesUseCase } from './use-cases/list-my-invites.use-case';
+import { GetMyInviterUseCase } from './use-cases/get-my-inviter.use-case';
 
 /**
  * Модуль области invites: контроллер + use-cases + domain-service + биндинг
@@ -33,6 +34,7 @@ import { ListMyInvitesUseCase } from './use-cases/list-my-invites.use-case';
     RevokeInviteUseCase,
     CheckInviteCodeUseCase,
     ListMyInvitesUseCase,
+    GetMyInviterUseCase,
   ],
   exports: [InviteDomainService, InviteTreeDomainService],
 })

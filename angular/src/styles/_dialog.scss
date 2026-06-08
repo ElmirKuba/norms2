@@ -1,5 +1,13 @@
 // Переопределения MatDialog (единственная часть Material) под наши токены —
 // без подключения Material-темы. Глобально, т.к. таргетим сгенерированные классы.
+// MDC красит заголовок/текст своими переменными — переопределяем их на токены,
+// иначе текст рендерится дефолтным (тёмным) цветом на нашей тёмной подложке.
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--color-surface);
+  --mdc-dialog-subhead-color: var(--color-text);
+  --mdc-dialog-supporting-text-color: var(--color-text);
+}
+
 .mat-mdc-dialog-surface,
 .mat-mdc-dialog-container .mdc-dialog__surface {
   background: var(--color-surface) !important;
@@ -9,8 +17,12 @@
   box-shadow: var(--shadow-1);
 }
 
+.mat-mdc-dialog-title {
+  color: var(--color-text) !important;
+}
+
 .mat-mdc-dialog-content {
-  color: var(--color-text);
+  color: var(--color-text) !important;
   padding: 0 !important;
   margin: var(--space-3) 0 !important;
   max-height: 70vh;

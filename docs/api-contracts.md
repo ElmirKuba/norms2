@@ -93,7 +93,7 @@ Body: `{ login, password }`.
 ## Баны ([ADR-0003](./decisions/0003-ban-semantics.md), [ADR-0012](./decisions/0012-bans-derived-status.md))
 
 - `POST /bans` (auth) Body `{ targetId, reason }` → 201 `BanView` = `{ id, targetId, reason, active, createdAt }`. Право: `isAncestor(me, target)` и `target ≠ me`; иначе `FORBIDDEN` (`BAN_FORBIDDEN`). Идемпотентно (повтор активной пары обновляет причину).
-- `DELETE /bans/:id` (auth) → снять **свою** запись по id бана → 204 (чужой/несуществующий/уже снятый — тоже 204, no-op).
+- `DELETE /bans/:id` (auth) → снять **свою** запись по id бана → 204. Если запись не найдена / не ваша / уже снята → 404 (`BAN_NOT_FOUND`).
 - `GET /bans` (auth) → `BanListItem[]` = `[{ id, targetId, targetLogin, targetAlias, reason, active, createdAt }]` (мои баны, вкл. историю снятых, новые сверху; login/alias цели — из accounts через join).
 
 ---

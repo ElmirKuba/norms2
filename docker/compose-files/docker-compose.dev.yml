@@ -69,6 +69,10 @@ services:
       CHOKIDAR_USEPOLLING: 'true'    # надёжный hot-reload по смонтированному src
     volumes:
       - ${PROJECT_ROOT}/nest/src:/app/src:rw
+      # Загруженный контент (аватары и пр., CONTENT_DIR=content → /app/content).
+      # Bind-mount, чтобы файлы ПЕРЕЖИВАЛИ dev-rebuild/пересоздание контейнера и
+      # были видны на хосте. Папка в .gitignore (docker/volumes/*) — в git не идёт.
+      - ${PROJECT_ROOT}/docker/volumes/content:/app/content:rw
     ports:
       - '${BACKEND_PORT}:3000'
     depends_on:

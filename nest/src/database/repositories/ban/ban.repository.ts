@@ -3,9 +3,11 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { bans } from '../../schemas/bans.schema';
+import { accounts } from '../../schemas/accounts.schema';
 import type { BanRepositoryPort } from '../../../modules/bans/adapters/ban-repository.port';
 import type { BanCreate } from '../../../modules/bans/interfaces/ban-create.interface';
 import type { BanFull } from '../../../modules/bans/interfaces/ban-full.interface';
+import type { BanListItem } from '../../../modules/bans/interfaces/ban-list-item.interface';
 
 /**
  * Drizzle-реализация порта банов (единственное место, где про ORM знают). Строки
@@ -87,14 +89,24 @@ export class BanRepository implements BanRepositoryPort {
   }
 
   /**
-   * Баны данного банившего (вкл. снятые), новые сверху.
+   * Баны данного банившего (вкл. снятые), новые сверху. INNER JOIN accounts за
+   * login/alias цели (проекция BanListItem для списка «мои баны»).
    * @param bannerId Идентификатор банившего.
-   * @returns Записи.
+   * @returns Проекции банов с именем цели.
    */
-  public async listByBanner(bannerId: string): Promise<BanFull[]> {
+  public async listByBanner(bannerId: string): Promise<BanListItem[]> {
     return this._db
-      .select()
+      .select({
+        id: bans.id,
+        targetId: bans.targetId,
+        targetLogin: accounts.login,
+        targetAlias: accounts.alias,
+        reason: bans.reason,
+        active: bans.active,
+        createdAt: bans.createdAt,
+      })
       .from(bans)
+      .innerJoin(accounts, eq(accounts.id, bans.targetId))
       .where(eq(bans.bannerId, bannerId))
       .orderBy(desc(bans.createdAt));
   }

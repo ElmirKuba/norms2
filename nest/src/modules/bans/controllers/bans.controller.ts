@@ -8,6 +8,7 @@ import { UnbanUserUseCase } from '../use-cases/unban-user.use-case';
 import { ListMyBansUseCase } from '../use-cases/list-my-bans.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { BanView } from '../interfaces/ban-view.interface';
+import type { BanListItem } from '../interfaces/ban-list-item.interface';
 
 /**
  * Контроллер банов (`/api/v1/bans/*`) — всё под Guard (нужен аккаунт-банящий).
@@ -65,7 +66,7 @@ export class BansController {
    */
   @Get()
   @UseGuards(AuthGuard)
-  public async listMine(@Req() request: AuthenticatedRequest): Promise<BanView[]> {
+  public async listMine(@Req() request: AuthenticatedRequest): Promise<BanListItem[]> {
     return this._listMyBansUseCase.execute(request.account.id);
   }
 }

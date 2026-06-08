@@ -1,5 +1,6 @@
 import type { BanFull } from '../interfaces/ban-full.interface';
 import type { BanCreate } from '../interfaces/ban-create.interface';
+import type { BanListItem } from '../interfaces/ban-list-item.interface';
 
 /** DI-токен порта репозитория банов (биндится в bans.module). */
 export const BAN_REPOSITORY = Symbol('BAN_REPOSITORY');
@@ -41,9 +42,9 @@ export interface BanRepositoryPort {
   listActiveByTarget(targetId: string): Promise<BanFull[]>;
 
   /**
-   * Баны, выданные данным аккаунтом («мои баны»).
+   * Баны, выданные данным аккаунтом («мои баны»), с login/alias цели (join accounts).
    * @param bannerId Идентификатор банившего.
-   * @returns Записи (вкл. историю снятых).
+   * @returns Проекции (вкл. историю снятых), новые сверху.
    */
-  listByBanner(bannerId: string): Promise<BanFull[]>;
+  listByBanner(bannerId: string): Promise<BanListItem[]>;
 }

@@ -4,6 +4,7 @@ import type { BanRepositoryPort } from '../adapters/ban-repository.port';
 import { BanNotFoundError } from '../../../shared/errors/ban-not-found.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { BanFull } from '../interfaces/ban-full.interface';
+import type { BanListItem } from '../interfaces/ban-list-item.interface';
 
 /**
  * Domain-service области bans: логика записей бана. Право банить (isAncestor) —
@@ -55,7 +56,7 @@ export class BanDomainService {
    * @param bannerId Банивший.
    * @returns Записи.
    */
-  public async listMine(bannerId: string): Promise<BanFull[]> {
+  public async listMine(bannerId: string): Promise<BanListItem[]> {
     return this._banRepository.listByBanner(bannerId);
   }
 }

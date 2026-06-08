@@ -82,9 +82,10 @@ Body: `{ login, password }`.
 
 ## Приглашения ([ADR-0007](./decisions/0007-invite-quota-counter.md), [ADR-0013](./decisions/0013-invites-lifecycle-cleanup.md))
 
-- `POST /invites` (auth) Body `{ reason }` → 201 `{ code }`. Ошибки: `FORBIDDEN` (`QUOTA_EXCEEDED` при `invitesRemaining=0`).
+- `POST /invites` (auth) Body `{ reason }` → 201 `{ id, code, reason, expiresAt }`. Ошибки: `FORBIDDEN` (`QUOTA_EXCEEDED` при `invitesRemaining=0`).
 - `DELETE /invites/:id` (auth) → отзыв своего pending → 204 (`invitesRemaining += 1`).
-- `GET /invites/mine` (auth) → `{ invitesRemaining, invitees: [{ login, alias, reason, invitedAt }] }`.
+- `GET /invites` (auth) → `InviteeRead[]` = `[{ accountId, reason, invitedAt }]` (мои приглашённые). login/alias приглашённого — F3.4·БЭК (join accounts).
+- `GET /invites/my-inviter` (auth) → `InviterRead | null` = `{ inviterLogin, inviterAlias, reason, invitedAt } | null` — «кто меня пригласил» (обратное ребро). `null` у корней дерева (`free`/`seed`).
 
 ---
 

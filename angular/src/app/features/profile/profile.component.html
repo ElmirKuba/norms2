@@ -8,23 +8,44 @@
         accept="image/png,image/jpeg,image/webp"
         (change)="onAvatarFile($event)"
       />
-      <button
-        type="button"
-        class="avatar"
-        [disabled]="avatarBusy()"
-        [title]="me.avatar ? 'Сменить фото' : 'Загрузить фото'"
-        (click)="avatarInput.click()"
-      >
-        @if (avatarSrc(); as url) {
-          <img class="avatar__img" [src]="url" [alt]="me.alias" />
-        } @else {
-          <span class="avatar__fallback" aria-hidden="true">{{ initial(me.alias) }}</span>
+      <div class="avatar-menu">
+        <button
+          type="button"
+          class="avatar"
+          [disabled]="avatarBusy()"
+          [attr.aria-expanded]="avatarMenuOpen()"
+          aria-haspopup="menu"
+          title="Действия с аватаром"
+          (click)="toggleAvatarMenu()"
+        >
+          @if (avatarSrc(); as url) {
+            <img class="avatar__img" [src]="url" [alt]="me.alias" />
+          } @else {
+            <span class="avatar__fallback" aria-hidden="true">{{ initial(me.alias) }}</span>
+          }
+          <span class="avatar__hint">Фото ▾</span>
+          @if (avatarBusy()) {
+            <span class="avatar__overlay"><app-spinner [size]="20" /></span>
+          }
+        </button>
+
+        @if (avatarMenuOpen()) {
+          <button type="button" class="backdrop" aria-label="Закрыть меню" (click)="closeAvatarMenu()"></button>
+          <div class="avatar-menu__list" role="menu">
+            @if (me.avatar) {
+              <button type="button" role="menuitem" (click)="closeAvatarMenu(); viewAvatar()">Посмотреть</button>
+            }
+            <button type="button" role="menuitem" (click)="closeAvatarMenu(); avatarInput.click()">
+              {{ me.avatar ? 'Сменить' : 'Загрузить' }}
+            </button>
+            @if (me.avatar) {
+              <button type="button" role="menuitem" class="danger" (click)="closeAvatarMenu(); removeAvatar()">
+                Удалить
+              </button>
+            }
+          </div>
         }
-        <span class="avatar__hint">{{ me.avatar ? 'Сменить' : 'Загрузить' }}</span>
-        @if (avatarBusy()) {
-          <span class="avatar__overlay"><app-spinner [size]="20" /></span>
-        }
-      </button>
+      </div>
 
       <div class="ident">
         @if (editing()) {
@@ -41,11 +62,6 @@
           <p class="login">&#64;{{ me.login }}</p>
           <div class="actions">
             <app-button type="button" variant="ghost" (click)="startEdit()">Изменить псевдоним</app-button>
-            @if (me.avatar) {
-              <app-button type="button" variant="ghost" [disabled]="avatarBusy()" (click)="removeAvatar()">
-                Удалить фото
-              </app-button>
-            }
           </div>
           @if (avatarError(); as err) {
             <app-banner tone="danger">{{ err }}</app-banner>

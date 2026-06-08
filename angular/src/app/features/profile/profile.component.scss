@@ -13,6 +13,11 @@
   gap: var(--space-4);
 }
 
+.avatar-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
 .avatar {
   position: relative;
   flex: 0 0 auto;
@@ -71,6 +76,51 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.35);
+  }
+}
+
+// Прозрачный слой для закрытия меню по клику вне (как в shell).
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+
+.avatar-menu__list {
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 11;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+
+  button {
+    display: block;
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    min-height: var(--touch-min);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-surface-2);
+    }
+
+    &.danger {
+      color: var(--color-danger, #c0392b);
+    }
   }
 }
 

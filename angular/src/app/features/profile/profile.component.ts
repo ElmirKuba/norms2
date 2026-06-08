@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { AccountApiService } from './services/account-api.service';
 import { AvatarCropService } from './services/avatar-crop.service';
+import { AvatarViewService } from './services/avatar-view.service';
 import { InvitesApiService } from '../invites/services/invites-api.service';
 import { ModalService } from '../../shared/modals/modal.service';
 import { avatarUrl } from '../../core/http/avatar-url.util';
@@ -49,6 +50,7 @@ export class ProfileComponent {
   private readonly _accountApi = inject(AccountApiService);
   private readonly _invitesApi = inject(InvitesApiService);
   private readonly _avatarCrop = inject(AvatarCropService);
+  private readonly _avatarView = inject(AvatarViewService);
   private readonly _modal = inject(ModalService);
   /** Текущий аккаунт (из стора). */
   protected readonly authStore = inject(AuthStore);
@@ -57,6 +59,8 @@ export class ProfileComponent {
   protected readonly avatarBusy = signal(false);
   /** Ошибка операции с аватаром. */
   protected readonly avatarError = signal<string | null>(null);
+  /** Открыто ли меню действий аватара. */
+  protected readonly avatarMenuOpen = signal(false);
 
   /** Пригласивший (или null) и флаг завершённой загрузки. */
   protected readonly inviter = signal<InviterRead | null>(null);
@@ -93,6 +97,26 @@ export class ProfileComponent {
   /** RU-подпись источника регистрации. */
   protected sourceLabel(source: AccountRead['registrationSource']): string {
     return SOURCE_LABELS[source];
+  }
+
+  /** Переключает меню действий аватара. */
+  protected toggleAvatarMenu(): void {
+    this.avatarMenuOpen.update((open) => !open);
+  }
+
+  /** Закрывает меню действий аватара. */
+  protected closeAvatarMenu(): void {
+    this.avatarMenuOpen.set(false);
+  }
+
+  /** Открывает аватар в модалке просмотра. */
+  protected viewAvatar(): void {
+    const url = this.avatarSrc();
+    const me = this.authStore.account();
+    if (url === null || me === null) {
+      return;
+    }
+    this._avatarView.open(url, me.alias);
   }
 
   /** Выбор файла → кроп в модалке → загрузка нарезанного квадрата. */

@@ -10,9 +10,20 @@
   <div class="right">
     <app-theme-toggle />
     @if (authStore.account(); as me) {
-      <span class="who">{{ me.alias }}</span>
+      <div class="account">
+        <button type="button" class="account-btn" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()">
+          {{ me.alias }} <span class="caret" aria-hidden="true">▾</span>
+        </button>
+        @if (menuOpen()) {
+          <button type="button" class="backdrop" aria-label="Закрыть меню" (click)="closeMenu()"></button>
+          <div class="menu" role="menu">
+            <a routerLink="profile" (click)="closeMenu()">Профиль</a>
+            <a routerLink="settings" (click)="closeMenu()">Настройки</a>
+            <button type="button" (click)="logout()">Выйти</button>
+          </div>
+        }
+      </div>
     }
-    <app-button variant="ghost" (click)="logout()">Выйти</app-button>
   </div>
 </header>
 

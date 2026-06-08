@@ -1,2 +1,83 @@
-<h1>Приглашения</h1>
-<p>Раздел в разработке (F3.4).</p>
+<section class="invites">
+  <header class="head">
+    <h1>Приглашения</h1>
+    <p class="quota">
+      Осталось приглашений: <strong>{{ invitesRemaining() }}</strong>
+    </p>
+  </header>
+
+  <app-card>
+    <h2 class="card-title">Создать приглашение</h2>
+    <app-text-field
+      [control]="reasonControl"
+      label="Причина (для кого / зачем)"
+      placeholder="например: друг с универа"
+      [required]="true"
+    />
+    <app-banner tone="warning">
+      Не указывайте персональные данные (ФИО, телефон, реальный email) — только понятную вам пометку.
+    </app-banner>
+    @if (createError(); as err) {
+      <app-banner tone="danger">{{ err }}</app-banner>
+    }
+    <app-button
+      type="button"
+      [loading]="creating()"
+      [disabled]="invitesRemaining() <= 0"
+      (click)="createCode()"
+    >
+      Создать код
+    </app-button>
+    @if (invitesRemaining() <= 0) {
+      <p class="hint">Квота исчерпана — отзовите неиспользованный код, чтобы освободить место.</p>
+    }
+  </app-card>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else {
+    <section class="block">
+      <h2 class="card-title">Невыданные коды</h2>
+      @if (codes().length === 0) {
+        <app-empty-state title="Нет активных кодов" text="Создайте приглашение выше и поделитесь кодом." />
+      } @else {
+        <ul class="list">
+          @for (code of codes(); track code.id) {
+            <li class="row">
+              <div class="row__main">
+                <code class="code">{{ code.code }}</code>
+                <span class="row__meta">{{ code.reason }} · до {{ code.expiresAt | date: 'dd.MM.yyyy' }}</span>
+              </div>
+              <div class="row__actions">
+                <app-button type="button" variant="ghost" (click)="copyCode(code)">
+                  {{ copiedId() === code.id ? '✓ Скопировано' : 'Копировать' }}
+                </app-button>
+                <app-button type="button" variant="ghost" (click)="revokeCode(code)">Отозвать</app-button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="block">
+      <h2 class="card-title">Приглашённые</h2>
+      @if (invitees().length === 0) {
+        <app-empty-state title="Пока никого" text="Здесь появятся те, кто присоединился по вашим кодам." />
+      } @else {
+        <ul class="list">
+          @for (invitee of invitees(); track invitee.accountId) {
+            <li class="row">
+              <div class="row__main">
+                <a class="row__name" [routerLink]="['/app/u', invitee.login]">{{ invitee.alias }}</a>
+                <span class="row__meta">
+                  &#64;{{ invitee.login }} · {{ invitee.reason }} · {{ invitee.invitedAt | date: 'dd.MM.yyyy' }}
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</section>

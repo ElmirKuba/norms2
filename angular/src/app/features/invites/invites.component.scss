@@ -27,6 +27,20 @@
   font-size: var(--fs-lg);
 }
 
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  .card-title {
+    margin: 0; // отступы внутри формы держит gap
+  }
+
+  &__submit {
+    display: flex;
+  }
+}
+
 .hint {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-sm);

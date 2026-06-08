@@ -7,30 +7,34 @@
   </header>
 
   <app-card>
-    <h2 class="card-title">Создать приглашение</h2>
-    <app-text-field
-      [control]="reasonControl"
-      label="Причина (для кого / зачем)"
-      placeholder="например: друг с универа"
-      [required]="true"
-    />
-    <app-banner tone="warning">
-      Не указывайте персональные данные (ФИО, телефон, реальный email) — только понятную вам пометку.
-    </app-banner>
-    @if (createError(); as err) {
-      <app-banner tone="danger">{{ err }}</app-banner>
-    }
-    <app-button
-      type="button"
-      [loading]="creating()"
-      [disabled]="invitesRemaining() <= 0"
-      (click)="createCode()"
-    >
-      Создать код
-    </app-button>
-    @if (invitesRemaining() <= 0) {
-      <p class="hint">Квота исчерпана — отзовите неиспользованный код, чтобы освободить место.</p>
-    }
+    <div class="create-form">
+      <h2 class="card-title">Создать приглашение</h2>
+      <app-text-field
+        [control]="reasonControl"
+        label="Причина (для кого / зачем)"
+        placeholder="например: друг с универа"
+        [required]="true"
+      />
+      <app-banner tone="warning">
+        Не указывайте персональные данные (ФИО, телефон, реальный email) — только понятную вам пометку.
+      </app-banner>
+      @if (createError(); as err) {
+        <app-banner tone="danger">{{ err }}</app-banner>
+      }
+      <div class="create-form__submit">
+        <app-button
+          type="button"
+          [loading]="creating()"
+          [disabled]="invitesRemaining() <= 0"
+          (click)="createCode()"
+        >
+          Создать код
+        </app-button>
+      </div>
+      @if (invitesRemaining() <= 0) {
+        <p class="hint">Квота исчерпана — отзовите неиспользованный код, чтобы освободить место.</p>
+      }
+    </div>
   </app-card>
 
   @if (loading()) {

@@ -1,2 +1,62 @@
-<h1>Профиль</h1>
-<p>Раздел в разработке (F3.2).</p>
+@if (authStore.account(); as me) {
+  <section class="profile">
+    <header class="head">
+      <div class="avatar">
+        @if (avatarSrc(); as url) {
+          <img class="avatar__img" [src]="url" [alt]="me.alias" />
+        } @else {
+          <span class="avatar__fallback" aria-hidden="true">{{ initial(me.alias) }}</span>
+        }
+      </div>
+
+      <div class="ident">
+        @if (editing()) {
+          <app-text-field [control]="aliasControl" label="Псевдоним" [required]="true" autocomplete="off" />
+          @if (formError(); as err) {
+            <app-banner tone="danger">{{ err }}</app-banner>
+          }
+          <div class="actions">
+            <app-button type="button" (click)="saveAlias()" [loading]="saving()">Сохранить</app-button>
+            <app-button type="button" variant="ghost" [disabled]="saving()" (click)="cancelEdit()">Отмена</app-button>
+          </div>
+        } @else {
+          <h1 class="alias">{{ me.alias }}</h1>
+          <p class="login">&#64;{{ me.login }}</p>
+          <app-button type="button" variant="ghost" (click)="startEdit()">Изменить псевдоним</app-button>
+        }
+      </div>
+    </header>
+
+    <app-card>
+      <dl class="facts">
+        <div class="fact">
+          <dt>В системе с</dt>
+          <dd>{{ me.createdAt | date: 'dd.MM.yyyy' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Как присоединился</dt>
+          <dd>{{ sourceLabel(me.registrationSource) }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Осталось приглашений</dt>
+          <dd>{{ me.invitesRemaining }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Кто пригласил</dt>
+          <dd>
+            @if (!inviterLoaded()) {
+              <app-spinner [size]="16" />
+            } @else if (inviter(); as inv) {
+              <a [routerLink]="['/app/u', inv.inviterLogin]">{{ inv.inviterAlias }}</a>
+              <span class="muted">&#64;{{ inv.inviterLogin }} · {{ inv.reason }} · {{ inv.invitedAt | date: 'dd.MM.yyyy' }}</span>
+            } @else {
+              <span class="muted">{{ sourceLabel(me.registrationSource) }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+    </app-card>
+  </section>
+} @else {
+  <app-spinner />
+}

@@ -14,6 +14,7 @@ export const shellRoutes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       { path: 'overview', loadComponent: () => import('../overview/overview.component').then((m) => m.OverviewComponent) },
       { path: 'profile', loadComponent: () => import('../profile/profile.component').then((m) => m.ProfileComponent) },
+      { path: 'u/:login', loadComponent: () => import('../profile/user-profile/user-profile.component').then((m) => m.UserProfileComponent) },
       { path: 'invites', loadComponent: () => import('../invites/invites.component').then((m) => m.InvitesComponent) },
       { path: 'sessions', loadComponent: () => import('../sessions/sessions.component').then((m) => m.SessionsComponent) },
       { path: 'settings', loadComponent: () => import('../settings/settings.component').then((m) => m.SettingsComponent) },

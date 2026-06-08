@@ -1,0 +1,24 @@
+@if (loading()) {
+  <app-spinner />
+} @else if (notFound()) {
+  <app-empty-state
+    title="Участник не найден"
+    text="Возможно, логин неверный или участник покинул «Нормисы»."
+  />
+} @else if (profile(); as p) {
+  <app-card>
+    <section class="user">
+      <div class="avatar">
+        @if (avatarSrc(); as url) {
+          <img class="avatar__img" [src]="url" [alt]="p.alias" />
+        } @else {
+          <span class="avatar__fallback" aria-hidden="true">{{ initial(p.alias) }}</span>
+        }
+      </div>
+      <div class="ident">
+        <h1 class="alias">{{ p.alias }}</h1>
+        <p class="login">&#64;{{ p.login }}</p>
+      </div>
+    </section>
+  </app-card>
+}

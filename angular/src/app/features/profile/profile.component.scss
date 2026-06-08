@@ -1,0 +1,96 @@
+@use 'breakpoints' as bp;
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 640px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full, 50%);
+  overflow: hidden;
+  background: var(--color-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__fallback {
+    font-size: var(--fs-2xl, 2rem);
+    font-weight: var(--fw-bold);
+    color: var(--color-text-muted);
+  }
+}
+
+.ident {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.alias {
+  margin: 0;
+}
+
+.login {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+
+  @include bp.up('sm') {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  dt {
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  dd {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}

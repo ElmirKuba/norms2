@@ -1,5 +1,12 @@
 <header class="bar">
-  <span class="brand">Нормисы</span>
+  <a class="brand" routerLink="/app">Нормисы</a>
+
+  <nav class="nav">
+    @for (item of nav; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+    }
+  </nav>
+
   <div class="right">
     <app-theme-toggle />
     @if (authStore.account(); as me) {
@@ -10,6 +17,5 @@
 </header>
 
 <main class="content">
-  <h1>Вы вошли 🎉</h1>
-  <p>Разделы ЛК (профиль, приглашения, баны, сессии, настройки) — в разработке (F3).</p>
+  <router-outlet />
 </main>

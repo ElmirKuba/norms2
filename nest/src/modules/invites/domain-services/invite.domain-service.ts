@@ -8,6 +8,7 @@ import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
+import type { InviteeRead } from '../interfaces/invitee-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
 
@@ -105,11 +106,11 @@ export class InviteDomainService {
   }
 
   /**
-   * Список приглашённых данным аккаунтом.
+   * Список приглашённых данным аккаунтом (с login/alias из accounts).
    * @param inviterId Идентификатор пригласившего.
-   * @returns Рёбра приглашений.
+   * @returns Проекции приглашённых.
    */
-  public async listInvitees(inviterId: string): Promise<InvitationFull[]> {
+  public async listInvitees(inviterId: string): Promise<InviteeRead[]> {
     return this._inviteRepository.listInviteesByInviter(inviterId);
   }
 

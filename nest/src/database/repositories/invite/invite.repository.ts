@@ -11,6 +11,7 @@ import type { InviteCodeCreate } from '../../../modules/invites/interfaces/invit
 import type { InvitationFull } from '../../../modules/invites/interfaces/invitation-full.interface';
 import type { InvitationCreate } from '../../../modules/invites/interfaces/invitation-create.interface';
 import type { InviterRead } from '../../../modules/invites/interfaces/inviter-read.interface';
+import type { InviteeRead } from '../../../modules/invites/interfaces/invitee-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
@@ -98,12 +99,23 @@ export class InviteRepository implements InviteRepositoryPort {
   }
 
   /**
-   * Список приглашённых данным аккаунтом.
+   * Список приглашённых данным аккаунтом. INNER JOIN с accounts за login/alias
+   * приглашённого (денормализованная проекция InviteeRead).
    * @param inviterId Идентификатор пригласившего.
-   * @returns Рёбра приглашений.
+   * @returns Проекции приглашённых.
    */
-  public async listInviteesByInviter(inviterId: string): Promise<InvitationFull[]> {
-    return this._db.select().from(invitations).where(eq(invitations.inviterId, inviterId));
+  public async listInviteesByInviter(inviterId: string): Promise<InviteeRead[]> {
+    return this._db
+      .select({
+        accountId: invitations.accountId,
+        login: accounts.login,
+        alias: accounts.alias,
+        reason: invitations.reason,
+        invitedAt: invitations.invitedAt,
+      })
+      .from(invitations)
+      .innerJoin(accounts, eq(accounts.id, invitations.accountId))
+      .where(eq(invitations.inviterId, inviterId));
   }
 
   /**

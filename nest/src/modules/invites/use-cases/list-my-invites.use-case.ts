@@ -18,13 +18,6 @@ export class ListMyInvitesUseCase {
    * @returns Список приглашённых.
    */
   public async execute(inviterId: string): Promise<InviteeRead[]> {
-    const invitations = await this._inviteDomainService.listInvitees(inviterId);
-    // TODO: Claude Code: 2026-06-05: обогатить alias приглашённого (join accounts) —
-    // domain-model «ListMyInvitees + alias». Сейчас отдаём accountId/reason/invitedAt.
-    return invitations.map((invitation): InviteeRead => ({
-      accountId: invitation.accountId,
-      reason: invitation.reason,
-      invitedAt: invitation.invitedAt,
-    }));
+    return this._inviteDomainService.listInvitees(inviterId);
   }
 }

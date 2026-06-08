@@ -7,6 +7,16 @@ import type { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PREFIX } from '../config/api.constants';
 import { AuthStore } from './auth-store.service';
+import { ModalService } from '../../shared/modals/modal.service';
+
+/** Деталь активного бана из конверта `ACCOUNT_BANNED.details.bans`. */
+interface BannedDetail {
+  bannerId: string;
+  reason: string;
+}
+
+/** Single-flight: не показывать модалку бана дважды на пачку параллельных 403. */
+let bannedHandling = false;
 
 /**
  * Credential-эндпоинты: на их 401 НЕ запускаем refresh — это «неверные данные»,
@@ -22,6 +32,50 @@ const NO_REFRESH_PATHS = [
 
 /** Single-flight: общий поток refresh для всех параллельных 401. */
 let refresh$: Observable<string> | null = null;
+
+/** Машинный код ошибки из конверта `{error:{code}}` или null. */
+function errorCodeOf(error: HttpErrorResponse): string | null {
+  if (error.error !== null && typeof error.error === 'object') {
+    return (error.error as { error?: { code?: string } }).error?.code ?? null;
+  }
+  return null;
+}
+
+/** Список банов из `ACCOUNT_BANNED.details.bans`. */
+function extractBans(error: HttpErrorResponse): BannedDetail[] {
+  if (error.error !== null && typeof error.error === 'object') {
+    const details = (error.error as { error?: { details?: { bans?: BannedDetail[] } } }).error?.details;
+    return details?.bans ?? [];
+  }
+  return [];
+}
+
+/**
+ * Реакция на бан (403 `ACCOUNT_BANNED` на любом защищённом запросе, ADR-0038):
+ * сбрасывает сессию, уводит на главную и показывает «вы забанены: за что». Покрывает
+ * и восстановление сессии забаненным, и мгновенный бан в процессе работы. Single-
+ * flight — на пачку параллельных 403 модалка одна.
+ */
+function handleBanned(
+  error: HttpErrorResponse,
+  authStore: AuthStore,
+  router: Router,
+  modal: ModalService,
+): void {
+  if (bannedHandling) {
+    return;
+  }
+  bannedHandling = true;
+  authStore.clear();
+  void router.navigate(['/']);
+  const bans = extractBans(error);
+  const text =
+    bans.length > 0 ? bans.map((ban) => `• ${ban.reason}`).join('<br>') : 'Доступ к аккаунту закрыт.';
+  modal.error('Вы забанены', text);
+  setTimeout(() => {
+    bannedHandling = false;
+  }, 1000);
+}
 
 /**
  * Достраивает запрос: относительный `/api/...` → абсолютный (`apiBase`), вешает
@@ -51,7 +105,7 @@ function runRefresh(http: HttpClient, apiBase: string, authStore: AuthStore, rou
       }),
       catchError((error: unknown) => {
         authStore.clear();
-        void router.navigate(['/auth/login']);
+        void router.navigate(['/login']);
         return throwError(() => error);
       }),
       finalize(() => {
@@ -70,11 +124,23 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authStore = inject(AuthStore);
   const router = inject(Router);
   const http = inject(HttpClient);
+  const modal = inject(ModalService);
   const apiBase = environment.apiBase;
   const skipRefresh = NO_REFRESH_PATHS.some((path) => request.url.includes(path));
 
   return next(decorate(request, authStore.accessToken(), apiBase)).pipe(
     catchError((error: unknown) => {
+      // Бан на ЗАЩИЩЁННОМ запросе (me, инвайты и т.п.) — глобально. На credential-
+      // эндпоинтах (login/register/reactivate) бан показывает сам компонент.
+      if (
+        !skipRefresh &&
+        error instanceof HttpErrorResponse &&
+        error.status === 403 &&
+        errorCodeOf(error) === 'ACCOUNT_BANNED'
+      ) {
+        handleBanned(error, authStore, router, modal);
+        return throwError(() => error);
+      }
       if (!(error instanceof HttpErrorResponse) || error.status !== 401 || skipRefresh) {
         return throwError(() => error);
       }

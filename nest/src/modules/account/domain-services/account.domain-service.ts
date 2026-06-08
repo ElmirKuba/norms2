@@ -245,7 +245,7 @@ export class AccountDomainService {
     if (account?.deletedAt !== null) {
       return null;
     }
-    return { login: account.login, alias: account.alias, avatar: account.avatar };
+    return { id: account.id, login: account.login, alias: account.alias, avatar: account.avatar };
   }
 
   /**

@@ -23,7 +23,7 @@ export class AccountBannedError extends DomainError {
    * @param message Человекочитаемое сообщение.
    * @param activeBans Активные баны на аккаунт (берём только banner+reason).
    */
-  public constructor(message: string, activeBans: ReadonlyArray<BannedDetail>) {
+  public constructor(message: string, activeBans: readonly BannedDetail[]) {
     // TODO: Claude Code: 2026-06-05: обогатить alias банившего (join accounts) —
     // сейчас в details только bannerId; фронт резолвит имя отдельно.
     super(message, { bans: activeBans.map((ban) => ({ bannerId: ban.bannerId, reason: ban.reason })) });

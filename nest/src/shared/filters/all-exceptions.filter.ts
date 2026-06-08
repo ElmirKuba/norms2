@@ -5,6 +5,9 @@ import { DomainError } from '../errors/domain.error';
 
 /** Конверт ошибки, отдаваемый наружу (единый формат для всего API). */
 interface ErrorEnvelope {
+  /**
+   *
+   */
   error: {
     /** Машинный код ошибки (для клиента/i18n). */
     code: string;

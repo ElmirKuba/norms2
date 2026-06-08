@@ -36,7 +36,13 @@ export class SessionDomainService {
   public async createSession(
     accountId: string,
     userAgent: string | null,
-  ): Promise<{ refreshToken: string; sessionId: string }> {
+  ): Promise<{ /**
+                *
+                */
+  refreshToken: string; /**
+                         *
+                         */
+  sessionId: string }> {
     const refreshToken = generateOpaqueToken();
     const sessionId = generateId();
     await this._sessionRepository.create(sessionId, {
@@ -58,7 +64,16 @@ export class SessionDomainService {
    */
   public async rotateSession(
     refreshToken: string,
-  ): Promise<{ refreshToken: string; accountId: string; sessionId: string }> {
+  ): Promise<{ /**
+                *
+                */
+  refreshToken: string; /**
+                         *
+                         */
+  accountId: string; /**
+                      *
+                      */
+  sessionId: string }> {
     const tokenHash = sha256Hex(refreshToken);
     const session = await this._sessionRepository.findByTokenHash(tokenHash);
 

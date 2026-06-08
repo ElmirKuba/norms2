@@ -92,8 +92,8 @@ export class SecretQaDomainService {
     // Fisher–Yates (не криптостойко — безопасность в знании ответов, не в выборке).
     for (let i = all.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      const tmp = all[i] as SecretQaFull;
-      all[i] = all[j] as SecretQaFull;
+      const tmp = all[i]!;
+      all[i] = all[j]!;
       all[j] = tmp;
     }
     return all.slice(0, k).map((row) => ({ id: row.id, question: row.question }));

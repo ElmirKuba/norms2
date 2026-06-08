@@ -6,7 +6,10 @@ import { timestamp, varchar } from 'drizzle-orm/pg-core';
 /** PK id: строка формата uuidv7___unixmillis (varchar(52), ADR-0016). */
 export const idColumn = () => varchar('id', { length: 52 }).primaryKey();
 
-/** FK-колонка на accounts.id (varchar(52)); .references навешивается в таблице. */
+/**
+ * FK-колонка на accounts.id (varchar(52)); .references навешивается в таблице.
+ * @param name
+ */
 export const fkColumn = (name: string) => varchar(name, { length: 52 });
 
 /** created_at + updated_at (timestamptz, not null); updated_at автообновляется (ADR-0011). */

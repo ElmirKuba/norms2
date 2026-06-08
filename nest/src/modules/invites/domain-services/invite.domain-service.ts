@@ -54,7 +54,7 @@ export class InviteDomainService {
    */
   public async revokeCode(codeId: string, requesterId: string): Promise<void> {
     const code = await this._inviteRepository.findCodeById(codeId);
-    if (code === null || code.inviterId !== requesterId) {
+    if (code?.inviterId !== requesterId) {
       throw new InviteInvalidError('Код не найден.');
     }
     const deleted = await this._inviteRepository.deleteCode(codeId);

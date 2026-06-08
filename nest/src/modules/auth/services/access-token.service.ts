@@ -30,7 +30,13 @@ export class AccessTokenService {
    * @returns `{ accountId, sessionId }` из claim'ов `sub`/`sid`.
    * @throws {Error} Если токен невалиден или истёк (ловит вызывающий — Guard → 401).
    */
-  public verify(token: string): { accountId: string; sessionId: string } {
+  public verify(token: string): { /**
+                                   *
+                                   */
+  accountId: string; /**
+                      *
+                      */
+  sessionId: string } {
     const payload = this._jwtService.verify<AccessTokenPayload>(token);
     return { accountId: payload.sub, sessionId: payload.sid };
   }

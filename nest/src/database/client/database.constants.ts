@@ -7,7 +7,7 @@ export const DRIZZLE = Symbol('DRIZZLE');
  * Тип инстанса Drizzle для PostgreSQL (node-postgres). Дженерик схемы пока
  * пустой — таблицы появятся на этапе S1 (src/system/orm-schemas).
  */
-export type DrizzleDatabase = NodePgDatabase<Record<string, never>>;
+export type DrizzleDatabase = NodePgDatabase;
 
 /**
  * Исполнитель запросов: сам инстанс БД ИЛИ транзакция (у обоих одинаковый

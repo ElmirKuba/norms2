@@ -242,7 +242,7 @@ export class AccountDomainService {
    */
   public async getPublicByLogin(loginRaw: string): Promise<AccountPublicView | null> {
     const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
-    if (account === null || account.deletedAt !== null) {
+    if (account?.deletedAt !== null) {
       return null;
     }
     return { login: account.login, alias: account.alias, avatar: account.avatar };
@@ -277,7 +277,7 @@ export class AccountDomainService {
    */
   public async findRecoveryAccountByLogin(loginRaw: string): Promise<RecoveryAccount | null> {
     const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
-    if (account === null || account.deletedAt !== null) {
+    if (account?.deletedAt !== null) {
       return null;
     }
     return { id: account.id, recoveryRequiredCount: account.recoveryRequiredCount };

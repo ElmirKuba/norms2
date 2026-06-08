@@ -82,7 +82,10 @@ export class AuthController {
     @Body(new ZodValidationPipe(loginSchema)) body: LoginDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ /**
+                *
+                */
+  accessToken: string }> {
     const tokens = await this._loginAccountUseCase.execute({
       login: body.login,
       password: body.password,
@@ -117,7 +120,10 @@ export class AuthController {
   public async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ /**
+                *
+                */
+  accessToken: string }> {
     const tokens = await this._refreshTokensUseCase.execute(request.cookies[REFRESH_COOKIE]);
     this._setRefreshCookie(response, tokens.refreshToken);
     return { accessToken: tokens.accessToken };

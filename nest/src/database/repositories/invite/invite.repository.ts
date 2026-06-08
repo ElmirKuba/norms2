@@ -4,11 +4,13 @@ import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { inviteCodes } from '../../schemas/invite-codes.schema';
 import { invitations } from '../../schemas/invitations.schema';
+import { accounts } from '../../schemas/accounts.schema';
 import type { InviteRepositoryPort } from '../../../modules/invites/adapters/invite-repository.port';
 import type { InviteCodeFull } from '../../../modules/invites/interfaces/invite-code-full.interface';
 import type { InviteCodeCreate } from '../../../modules/invites/interfaces/invite-code-create.interface';
 import type { InvitationFull } from '../../../modules/invites/interfaces/invitation-full.interface';
 import type { InvitationCreate } from '../../../modules/invites/interfaces/invitation-create.interface';
+import type { InviterRead } from '../../../modules/invites/interfaces/inviter-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
@@ -102,6 +104,27 @@ export class InviteRepository implements InviteRepositoryPort {
    */
   public async listInviteesByInviter(inviterId: string): Promise<InvitationFull[]> {
     return this._db.select().from(invitations).where(eq(invitations.inviterId, inviterId));
+  }
+
+  /**
+   * Обратное ребро: «кто пригласил данный аккаунт». INNER JOIN с accounts за
+   * login/alias пригласившего. accountId уникален в invitations → ≤1 строки.
+   * @param accountId Идентификатор приглашённого.
+   * @returns Проекция пригласившего или null (корень дерева: free/seed).
+   */
+  public async findInvitationByAccount(accountId: string): Promise<InviterRead | null> {
+    const rows = await this._db
+      .select({
+        inviterLogin: accounts.login,
+        inviterAlias: accounts.alias,
+        reason: invitations.reason,
+        invitedAt: invitations.invitedAt,
+      })
+      .from(invitations)
+      .innerJoin(accounts, eq(accounts.id, invitations.inviterId))
+      .where(eq(invitations.accountId, accountId))
+      .limit(1);
+    return rows[0] ?? null;
   }
 
   /**

@@ -7,6 +7,7 @@ import { InviteInvalidError } from '../../../shared/errors/invite-invalid.error'
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 import type { InvitationFull } from '../interfaces/invitation-full.interface';
+import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
 
@@ -110,5 +111,15 @@ export class InviteDomainService {
    */
   public async listInvitees(inviterId: string): Promise<InvitationFull[]> {
     return this._inviteRepository.listInviteesByInviter(inviterId);
+  }
+
+  /**
+   * «Кто пригласил данный аккаунт» (обратное ребро). null у корней (free/seed).
+   * Эндпоинт-обёртка — F3.2·БЭК.2.
+   * @param accountId Идентификатор приглашённого.
+   * @returns Проекция пригласившего или null.
+   */
+  public async getInviterOf(accountId: string): Promise<InviterRead | null> {
+    return this._inviteRepository.findInvitationByAccount(accountId);
   }
 }

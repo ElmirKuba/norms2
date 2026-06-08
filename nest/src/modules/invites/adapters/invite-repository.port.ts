@@ -3,6 +3,7 @@ import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 import type { InviteCodeCreate } from '../interfaces/invite-code-create.interface';
 import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InvitationCreate } from '../interfaces/invitation-create.interface';
+import type { InviterRead } from '../interfaces/inviter-read.interface';
 
 /** DI-токен порта репозитория инвайтов. */
 export const INVITE_REPOSITORY = Symbol('INVITE_REPOSITORY');
@@ -59,4 +60,12 @@ export interface InviteRepositoryPort {
    * @returns Рёбра приглашений.
    */
   listInviteesByInviter(inviterId: string): Promise<InvitationFull[]>;
+
+  /**
+   * Обратное ребро: «кто пригласил данный аккаунт». Join с accounts за
+   * login/alias пригласившего.
+   * @param accountId Идентификатор приглашённого.
+   * @returns Проекция пригласившего или null (корень дерева: free/seed).
+   */
+  findInvitationByAccount(accountId: string): Promise<InviterRead | null>;
 }

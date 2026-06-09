@@ -59,10 +59,10 @@ Body: `{ login, password }`.
 ## Recovery ([ADR-0008](./decisions/0008-account-recovery-secret-questions.md))
 
 Настройка — для аутентифицированного:
-- `GET /recovery/questions` → `[{ id, question }]` (без хешей).
-- `POST /recovery/questions` Body `{ question, answer }` → 201 `{ id }`. (свой вопрос валидируется чёрным списком тем)
-- `DELETE /recovery/questions/:id` → 204.
-- `PUT /recovery/required-count` Body `{ count }` (1 ≤ count ≤ N) → 200.
+- `GET /recovery/questions` (auth) → `SecretQaView[]` = `[{ id, question }]` (без хешей).
+- `POST /recovery/questions` (auth) Body `{ question, answer }` (по 1–300) → 201 `SecretQaView` = `{ id, question }`.
+- `DELETE /recovery/questions/:id` (auth) → 204.
+- `PUT /recovery/required-count` (auth) Body `{ requiredCount }` (целое; домен проверяет 1 ≤ K ≤ N) → 204; вне диапазона → 422 (`RECOVERY_REQUIRED_COUNT_INVALID`). Текущее K — в `accounts.recoveryRequiredCount` (видно в `GET /accounts/me`).
 
 Восстановление (публичное) 🛡:
 - `POST /recovery/start` Body `{ login }` → 200 `{ questions: [{ id, question }] }` (K случайных). _Анти-энумерация: единообразный ответ/тайминг._

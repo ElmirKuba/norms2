@@ -39,6 +39,12 @@
   }
 }
 
+.security {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
 .account {
   display: flex;
   flex-direction: column;

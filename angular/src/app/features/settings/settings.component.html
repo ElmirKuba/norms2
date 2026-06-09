@@ -30,7 +30,10 @@
 
   @switch (tab()) {
     @case ('security') {
-      <app-sessions />
+      <div class="security">
+        <app-recovery-settings />
+        <app-sessions />
+      </div>
     }
     @case ('account') {
       <app-card>

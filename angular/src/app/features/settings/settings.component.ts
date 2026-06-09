@@ -8,6 +8,7 @@ import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { SessionsComponent } from '../sessions/sessions.component';
+import { RecoverySettingsComponent } from './recovery-settings/recovery-settings.component';
 
 /** Активная вкладка настроек. */
 type SettingsTab = 'security' | 'account' | 'theme';
@@ -20,7 +21,7 @@ type SettingsTab = 'security' | 'account' | 'theme';
  */
 @Component({
   selector: 'app-settings',
-  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent],
+  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent, RecoverySettingsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',

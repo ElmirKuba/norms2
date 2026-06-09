@@ -4,6 +4,7 @@ import type { Request } from 'express';
 import { AccessTokenService } from '../services/access-token.service';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { BanDomainService } from '../../bans/domain-services/ban.domain-service';
+import { SessionDomainService } from '../../sessions/domain-services/session.domain-service';
 import { AccountBannedError } from '../../../shared/errors/account-banned.error';
 import type { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
@@ -19,11 +20,13 @@ export class AuthGuard implements CanActivate {
    * @param _accessTokenService Сервис проверки access-JWT.
    * @param _accountDomainService Domain-service account (загрузка активного аккаунта).
    * @param _banDomainService Domain-service bans (бан-чек на каждый запрос).
+   * @param _sessionDomainService Domain-service sessions (проверка живости сессии).
    */
   public constructor(
     private readonly _accessTokenService: AccessTokenService,
     private readonly _accountDomainService: AccountDomainService,
     private readonly _banDomainService: BanDomainService,
+    private readonly _sessionDomainService: SessionDomainService,
   ) {}
 
   /**
@@ -45,6 +48,12 @@ export class AuthGuard implements CanActivate {
       ({ accountId, sessionId } = this._accessTokenService.verify(token));
     } catch {
       throw new UnauthorizedException('Невалидный access-токен.');
+    }
+
+    // Сессия должна быть жива: отзыв устройства действует немедленно, не дожидаясь
+    // истечения access-токена (ADR-0043). Отозванный refresh уже отвергается отдельно.
+    if (!(await this._sessionDomainService.isActive(sessionId))) {
+      throw new UnauthorizedException('Сессия завершена.');
     }
 
     // Бросит BadCredentialsError (401), если аккаунт удалён/деактивирован.

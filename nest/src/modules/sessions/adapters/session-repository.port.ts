@@ -56,6 +56,13 @@ export interface SessionRepositoryPort {
   listActiveByAccount(accountId: string): Promise<SessionFull[]>;
 
   /**
+   * Жива ли сессия по id (есть, не отозвана, не истекла) — для Guard (ADR-0043).
+   * @param id Идентификатор сессии (sid из access-токена).
+   * @returns true, если активна.
+   */
+  existsActiveById(id: string): Promise<boolean>;
+
+  /**
    * Отзывает СВОЮ активную сессию (id + владелец) — отзыв конкретного устройства.
    * @param id Идентификатор сессии.
    * @param accountId Владелец (должен совпасть).

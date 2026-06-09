@@ -89,6 +89,21 @@ export class SessionRepository implements SessionRepositoryPort {
   }
 
   /**
+   * Жива ли сессия по id (есть, не отозвана, не истекла) — для проверки в Guard
+   * (немедленный отзыв доступа на отозванном устройстве, ADR-0043).
+   * @param id Идентификатор сессии (sid из access-токена).
+   * @returns true, если сессия активна.
+   */
+  public async existsActiveById(id: string): Promise<boolean> {
+    const rows = await this._db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(and(eq(sessions.id, id), isNull(sessions.revokedAt), gt(sessions.expiresAt, new Date())))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  /**
    * Отзывает сессию по id (если ещё активна).
    * @param id Идентификатор сессии.
    * @returns Промис завершения.

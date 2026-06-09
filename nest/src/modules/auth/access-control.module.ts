@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AccountModule } from '../account/account.module';
 import { BanCoreModule } from '../bans/ban-core.module';
+import { SessionCoreModule } from '../sessions/session-core.module';
 import { AccessTokenService } from './services/access-token.service';
 import { AuthGuard } from './guards/auth.guard';
 import type { Env } from '../../system/config/env.schema';
@@ -21,6 +22,7 @@ import type { Env } from '../../system/config/env.schema';
   imports: [
     AccountModule,
     BanCoreModule,
+    SessionCoreModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService<Env, true>) => ({
@@ -33,6 +35,6 @@ import type { Env } from '../../system/config/env.schema';
   // Реэкспорт AccountModule + BanCoreModule: guard зависит от AccountDomainService
   // и BanDomainService — они обязаны резолвиться в DI-скоупе ЛЮБОГО модуля-
   // контроллера, импортирующего этот модуль (guard инстанцируется в его scope).
-  exports: [AccessTokenService, AuthGuard, JwtModule, AccountModule, BanCoreModule],
+  exports: [AccessTokenService, AuthGuard, JwtModule, AccountModule, BanCoreModule, SessionCoreModule],
 })
 export class AccessControlModule {}

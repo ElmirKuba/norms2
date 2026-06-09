@@ -117,6 +117,16 @@ export class SessionDomainService {
   }
 
   /**
+   * Жива ли сессия по id (для проверки в Guard — немедленный отзыв доступа на
+   * отозванном устройстве, ADR-0043).
+   * @param sessionId Идентификатор сессии (sid из access-токена).
+   * @returns true, если активна.
+   */
+  public async isActive(sessionId: string): Promise<boolean> {
+    return this._sessionRepository.existsActiveById(sessionId);
+  }
+
+  /**
    * Отзывает СВОЮ сессию по id (отзыв конкретного устройства).
    * @param sessionId Идентификатор сессии.
    * @param accountId Владелец.

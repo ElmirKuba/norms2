@@ -25,4 +25,13 @@ export class InviteTreeDomainService {
   public async isAncestor(ancestorId: string, descendantId: string): Promise<boolean> {
     return this._inviteTreeRepository.isAncestor(ancestorId, descendantId);
   }
+
+  /**
+   * Считает всех потомков узла (транзитивно) — для overview (F4).
+   * @param rootId Корень поддерева.
+   * @returns Число потомков.
+   */
+  public async countDescendants(rootId: string): Promise<number> {
+    return this._inviteTreeRepository.countDescendants(rootId);
+  }
 }

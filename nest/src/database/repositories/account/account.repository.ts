@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { accounts } from '../../schemas/accounts.schema';
@@ -20,6 +20,18 @@ export class AccountRepository implements AccountRepositoryPort {
    * @param _db Инстанс Drizzle (DI-токен DRIZZLE).
    */
   public constructor(@Inject(DRIZZLE) private readonly _db: DrizzleDatabase) {}
+
+  /**
+   * Считает активных (не удалённых) пользователей — для overview (F4).
+   * @returns Число аккаунтов с `deleted_at IS NULL`.
+   */
+  public async countActive(): Promise<number> {
+    const rows = await this._db
+      .select({ value: count() })
+      .from(accounts)
+      .where(isNull(accounts.deletedAt));
+    return rows[0]?.value ?? 0;
+  }
 
   /**
    * Находит аккаунт по PK.

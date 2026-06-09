@@ -10,11 +10,12 @@ import { InvitesModule } from './modules/invites/invites.module';
 import { BansModule } from './modules/bans/bans.module';
 import { RecoveryModule } from './modules/recovery/recovery.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { StatsModule } from './modules/stats/stats.module';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
  * общие сервисы (shared), БД (Drizzle), health и доменные области
- * account/auth/invites/bans/recovery/profile.
+ * account/auth/invites/bans/recovery/profile/stats.
  */
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ProfileModule } from './modules/profile/profile.module';
     BansModule,
     RecoveryModule,
     ProfileModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

@@ -41,4 +41,26 @@ export class InviteTreeRepository implements InviteTreeRepositoryPort {
     `);
     return result.rows.length > 0;
   }
+
+  /**
+   * Считает ВСЕХ потомков узла (транзитивно, прямые + косвенные) — спускается по
+   * `inviter_id` вниз. Для кубика «всего в поддереве» (F4).
+   * @param rootId Корень поддерева (текущий пользователь).
+   * @returns Число потомков.
+   */
+  public async countDescendants(rootId: string): Promise<number> {
+    const result = await this._db.execute<{ total: number }>(sql`
+      WITH RECURSIVE subtree AS (
+        SELECT account_id
+          FROM invitations
+         WHERE inviter_id = ${rootId}
+        UNION ALL
+        SELECT i.account_id
+          FROM invitations i
+          JOIN subtree s ON i.inviter_id = s.account_id
+      )
+      SELECT count(*)::int AS total FROM subtree
+    `);
+    return result.rows[0]?.total ?? 0;
+  }
 }

@@ -32,5 +32,7 @@ import { CompleteRecoveryUseCase } from './use-cases/complete-recovery.use-case'
     StartRecoveryUseCase,
     CompleteRecoveryUseCase,
   ],
+  // Экспорт для кросс-домена вниз (статистика overview считает вопросы, F4).
+  exports: [SecretQaDomainService],
 })
 export class RecoveryModule {}

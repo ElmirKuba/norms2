@@ -14,4 +14,11 @@ export interface InviteTreeRepositoryPort {
    * @returns true, если есть путь вверх от потомка к предку; false, если равны/нет пути.
    */
   isAncestor(ancestorId: string, descendantId: string): Promise<boolean>;
+
+  /**
+   * Считает всех потомков узла (транзитивно) — для кубика «всего в поддереве» (F4).
+   * @param rootId Корень поддерева.
+   * @returns Число потомков.
+   */
+  countDescendants(rootId: string): Promise<number>;
 }

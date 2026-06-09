@@ -68,4 +68,10 @@ export interface AccountRepositoryPort {
    * @returns Промис завершения.
    */
   incrementInvitesRemaining(id: string): Promise<void>;
+
+  /**
+   * Считает активных (не удалённых) пользователей — для overview (F4).
+   * @returns Число аккаунтов с `deleted_at IS NULL`.
+   */
+  countActive(): Promise<number>;
 }

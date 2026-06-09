@@ -175,6 +175,14 @@ export class AccountDomainService {
   }
 
   /**
+   * Число активных (не удалённых) пользователей — для overview (F4).
+   * @returns Количество.
+   */
+  public async countActiveUsers(): Promise<number> {
+    return this._accountRepository.countActive();
+  }
+
+  /**
    * Возвращает аккаунт по id, только если вход разрешён (для Guard на каждом
    * защищённом запросе — чтобы деактивация/бан действовали в окне access-токена).
    * @param id Идентификатор аккаунта (из access-JWT).

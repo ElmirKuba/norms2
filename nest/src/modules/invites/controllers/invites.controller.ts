@@ -10,11 +10,13 @@ import { RevokeInviteUseCase } from '../use-cases/revoke-invite.use-case';
 import { CheckInviteCodeUseCase } from '../use-cases/check-invite-code.use-case';
 import { ListMyInvitesUseCase } from '../use-cases/list-my-invites.use-case';
 import { ListMyCodesUseCase } from '../use-cases/list-my-codes.use-case';
+import { ListNodeInviteesUseCase } from '../use-cases/list-node-invitees.use-case';
 import { GetMyInviterUseCase } from '../use-cases/get-my-inviter.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { CreateInviteResponse } from '../interfaces/create-invite-response.interface';
 import type { CheckInviteResponse } from '../interfaces/check-invite-response.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
+import type { InviteeNode } from '../interfaces/invitee-node.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 
@@ -30,6 +32,7 @@ export class InvitesController {
    * @param _checkInviteCodeUseCase Проверка.
    * @param _listMyInvitesUseCase Список приглашённых.
    * @param _listMyCodesUseCase Список своих невыданных кодов.
+   * @param _listNodeInviteesUseCase Дети узла дерева (ленивое раскрытие).
    * @param _getMyInviterUseCase Кто меня пригласил.
    */
   public constructor(
@@ -38,6 +41,7 @@ export class InvitesController {
     private readonly _checkInviteCodeUseCase: CheckInviteCodeUseCase,
     private readonly _listMyInvitesUseCase: ListMyInvitesUseCase,
     private readonly _listMyCodesUseCase: ListMyCodesUseCase,
+    private readonly _listNodeInviteesUseCase: ListNodeInviteesUseCase,
     private readonly _getMyInviterUseCase: GetMyInviterUseCase,
   ) {}
 
@@ -106,6 +110,22 @@ export class InvitesController {
   @UseGuards(AuthGuard)
   public async listMyCodes(@Req() request: AuthenticatedRequest): Promise<InviteCodeRead[]> {
     return this._listMyCodesUseCase.execute(request.account.id);
+  }
+
+  /**
+   * Прямые дети узла дерева (ленивое раскрытие, F3.Д). Доступ — свой узел или узел
+   * в своём поддереве, иначе `SUBTREE_FORBIDDEN`.
+   * @param accountId Узел, чьих детей раскрываем.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Дети узла (+ флаг bannedByMe).
+   */
+  @Get('of/:accountId')
+  @UseGuards(AuthGuard)
+  public async listNodeInvitees(
+    @Param('accountId') accountId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<InviteeNode[]> {
+    return this._listNodeInviteesUseCase.execute(request.account.id, accountId);
   }
 
   /**

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { inviteCodes } from '../../schemas/invite-codes.schema';
 import { invitations } from '../../schemas/invitations.schema';
 import { accounts } from '../../schemas/accounts.schema';
+import { bans } from '../../schemas/bans.schema';
 import type { InviteRepositoryPort } from '../../../modules/invites/adapters/invite-repository.port';
 import type { InviteCodeFull } from '../../../modules/invites/interfaces/invite-code-full.interface';
 import type { InviteCodeCreate } from '../../../modules/invites/interfaces/invite-code-create.interface';
@@ -12,6 +13,7 @@ import type { InvitationFull } from '../../../modules/invites/interfaces/invitat
 import type { InvitationCreate } from '../../../modules/invites/interfaces/invitation-create.interface';
 import type { InviterRead } from '../../../modules/invites/interfaces/inviter-read.interface';
 import type { InviteeRead } from '../../../modules/invites/interfaces/invitee-read.interface';
+import type { InviteeNode } from '../../../modules/invites/interfaces/invitee-node.interface';
 import type { InviteCodeRead } from '../../../modules/invites/interfaces/invite-code-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
@@ -134,6 +136,33 @@ export class InviteRepository implements InviteRepositoryPort {
       .from(invitations)
       .innerJoin(accounts, eq(accounts.id, invitations.accountId))
       .where(eq(invitations.inviterId, inviterId));
+  }
+
+  /**
+   * Прямые дети узла дерева (для ленивого раскрытия, F3.Д). INNER JOIN accounts
+   * за login/alias (soft-deleted скрыты), LEFT JOIN bans → флаг `bannedByMe`
+   * (есть ли активный бан смотрящего на этого участника).
+   * @param nodeId Узел, чьих детей берём.
+   * @param viewerId Смотрящий (для флага bannedByMe).
+   * @returns Прямые приглашённые узла.
+   */
+  public async listInviteesOf(nodeId: string, viewerId: string): Promise<InviteeNode[]> {
+    return this._db
+      .select({
+        accountId: invitations.accountId,
+        login: accounts.login,
+        alias: accounts.alias,
+        reason: invitations.reason,
+        invitedAt: invitations.invitedAt,
+        bannedByMe: sql<boolean>`${bans.id} is not null`,
+      })
+      .from(invitations)
+      .innerJoin(accounts, and(eq(accounts.id, invitations.accountId), isNull(accounts.deletedAt)))
+      .leftJoin(
+        bans,
+        and(eq(bans.targetId, invitations.accountId), eq(bans.bannerId, viewerId), eq(bans.active, true)),
+      )
+      .where(eq(invitations.inviterId, nodeId));
   }
 
   /**

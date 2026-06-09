@@ -9,6 +9,7 @@ import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
+import type { InviteeNode } from '../interfaces/invitee-node.interface';
 import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { Env } from '../../../system/config/env.schema';
@@ -113,6 +114,17 @@ export class InviteDomainService {
    */
   public async listInvitees(inviterId: string): Promise<InviteeRead[]> {
     return this._inviteRepository.listInviteesByInviter(inviterId);
+  }
+
+  /**
+   * Прямые дети узла дерева (ленивое раскрытие, F3.Д) + флаг `bannedByMe`. Право
+   * на просмотр проверяет use-case (кросс-домен с invite-tree).
+   * @param nodeId Узел, чьих детей берём.
+   * @param viewerId Смотрящий (для флага bannedByMe).
+   * @returns Прямые приглашённые узла.
+   */
+  public async listInviteesOf(nodeId: string, viewerId: string): Promise<InviteeNode[]> {
+    return this._inviteRepository.listInviteesOf(nodeId, viewerId);
   }
 
   /**

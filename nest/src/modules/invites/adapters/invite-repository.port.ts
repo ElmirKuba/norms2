@@ -5,6 +5,7 @@ import type { InvitationFull } from '../interfaces/invitation-full.interface';
 import type { InvitationCreate } from '../interfaces/invitation-create.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
+import type { InviteeNode } from '../interfaces/invitee-node.interface';
 import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 
 /** DI-токен порта репозитория инвайтов. */
@@ -69,6 +70,14 @@ export interface InviteRepositoryPort {
    * @returns Проекции приглашённых.
    */
   listInviteesByInviter(inviterId: string): Promise<InviteeRead[]>;
+
+  /**
+   * Прямые дети узла дерева (ленивое раскрытие) + флаг `bannedByMe` смотрящего.
+   * @param nodeId Узел, чьих детей берём.
+   * @param viewerId Смотрящий (для флага bannedByMe).
+   * @returns Прямые приглашённые узла.
+   */
+  listInviteesOf(nodeId: string, viewerId: string): Promise<InviteeNode[]>;
 
   /**
    * Обратное ребро: «кто пригласил данный аккаунт». Join с accounts за

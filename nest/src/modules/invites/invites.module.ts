@@ -13,6 +13,7 @@ import { RevokeInviteUseCase } from './use-cases/revoke-invite.use-case';
 import { CheckInviteCodeUseCase } from './use-cases/check-invite-code.use-case';
 import { ListMyInvitesUseCase } from './use-cases/list-my-invites.use-case';
 import { ListMyCodesUseCase } from './use-cases/list-my-codes.use-case';
+import { ListNodeInviteesUseCase } from './use-cases/list-node-invitees.use-case';
 import { GetMyInviterUseCase } from './use-cases/get-my-inviter.use-case';
 
 /**
@@ -36,6 +37,7 @@ import { GetMyInviterUseCase } from './use-cases/get-my-inviter.use-case';
     CheckInviteCodeUseCase,
     ListMyInvitesUseCase,
     ListMyCodesUseCase,
+    ListNodeInviteesUseCase,
     GetMyInviterUseCase,
   ],
   exports: [InviteDomainService, InviteTreeDomainService],

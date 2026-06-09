@@ -1,6 +1,79 @@
-<h1>Обзор</h1>
-<p>
-  Здесь появится краткая статистика по твоим сервисам — кубики вроде «Моих целей: N»,
-  «Задач на день: M, сделано: K», «Музыка: N треков». Карточки добавятся по мере
-  подключения разделов (этап F4).
-</p>
+<section class="overview">
+  <header class="head">
+    <h1>Обзор</h1>
+    @if (authStore.account(); as me) {
+      <p class="greet">Привет, {{ me.alias }} 👋</p>
+    }
+  </header>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (stats(); as s) {
+    <div class="grid">
+      <div class="card card--accent">
+        <span class="card__label">Нас всего</span>
+        <span class="card__value">{{ s.totalUsers }}</span>
+      </div>
+
+      <div class="card">
+        <span class="card__label">Вы пригласили</span>
+        <span class="card__value">{{ s.invitedDirect }}</span>
+        <span class="card__sub">в поддереве: {{ s.subtreeTotal }}</span>
+      </div>
+
+      <div class="card">
+        <span class="card__label">Осталось приглашений</span>
+        <span class="card__value">{{ s.invitesRemaining }}</span>
+        @if (s.pendingCodes > 0) {
+          <span class="card__sub">невыданных кодов: {{ s.pendingCodes }}</span>
+        }
+      </div>
+
+      <div class="card">
+        <span class="card__label">Активных устройств</span>
+        <span class="card__value">{{ s.activeSessions }}</span>
+        <a class="card__link" routerLink="/app/settings">управлять</a>
+      </div>
+
+      <div class="card">
+        <span class="card__label">Восстановление</span>
+        <span class="card__value card__value--sm">{{ recoveryConfigured() ? 'Настроено' : 'Не настроено' }}</span>
+        @if (recoveryConfigured()) {
+          <span class="card__sub">{{ s.recoveryQuestions }} вопрос(ов) · спрашиваем {{ s.recoveryRequiredCount }}</span>
+        } @else {
+          <a class="card__link" routerLink="/app/settings">настроить</a>
+        }
+      </div>
+
+      <div class="card card--wide">
+        <span class="card__label">Полезность приглашённых</span>
+        @if (usefulPercent() === null) {
+          <p class="card__empty">Вы пока никого не пригласили.</p>
+        } @else {
+          <div class="useful">
+            <div class="donut">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="donut__track" cx="60" cy="60" r="52" />
+                <circle
+                  class="donut__arc"
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  [attr.stroke-dasharray]="donutActiveLength() + ' ' + circumference"
+                  transform="rotate(-90 60 60)"
+                />
+              </svg>
+              <span class="donut__center">{{ usefulPercent() }}%</span>
+            </div>
+            <ul class="legend">
+              <li><span class="dot dot--active"></span> Активны: {{ activeInvitees() }}</li>
+              <li><span class="dot dot--banned"></span> Забанено вами: {{ s.inviteesBannedByMe }}</li>
+            </ul>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="error">Не удалось загрузить статистику.</p>
+  }
+</section>

@@ -30,12 +30,10 @@ interface StackItem {
   styleUrl: './about.component.scss',
 })
 export class AboutComponent {
-  // TODO: Claude Code: 2026-06-09: подставить реальный Telegram (Elmir пришлёт @username).
-  /** Контакт в Telegram (плейсхолдер до уточнения). */
-  protected readonly telegram = '@your_telegram';
+  /** Контакт в Telegram. */
+  protected readonly telegram = '@elmir_kuba';
   /** Ссылка на Telegram. */
-  protected readonly telegramUrl = 'https://t.me/your_telegram';
-  // TODO: Claude Code: 2026-06-09: подтвердить публичный URL репозитория.
+  protected readonly telegramUrl = 'https://t.me/elmir_kuba';
   /** Публичный репозиторий. */
   protected readonly githubUrl = 'https://github.com/ElmirKuba/norms2';
 

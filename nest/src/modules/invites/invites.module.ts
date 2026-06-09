@@ -14,6 +14,7 @@ import { CheckInviteCodeUseCase } from './use-cases/check-invite-code.use-case';
 import { ListMyInvitesUseCase } from './use-cases/list-my-invites.use-case';
 import { ListMyCodesUseCase } from './use-cases/list-my-codes.use-case';
 import { ListNodeInviteesUseCase } from './use-cases/list-node-invitees.use-case';
+import { CanBanUseCase } from './use-cases/can-ban.use-case';
 import { GetMyInviterUseCase } from './use-cases/get-my-inviter.use-case';
 
 /**
@@ -38,6 +39,7 @@ import { GetMyInviterUseCase } from './use-cases/get-my-inviter.use-case';
     ListMyInvitesUseCase,
     ListMyCodesUseCase,
     ListNodeInviteesUseCase,
+    CanBanUseCase,
     GetMyInviterUseCase,
   ],
   exports: [InviteDomainService, InviteTreeDomainService],

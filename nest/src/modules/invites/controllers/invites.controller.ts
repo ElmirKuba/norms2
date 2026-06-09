@@ -11,12 +11,14 @@ import { CheckInviteCodeUseCase } from '../use-cases/check-invite-code.use-case'
 import { ListMyInvitesUseCase } from '../use-cases/list-my-invites.use-case';
 import { ListMyCodesUseCase } from '../use-cases/list-my-codes.use-case';
 import { ListNodeInviteesUseCase } from '../use-cases/list-node-invitees.use-case';
+import { CanBanUseCase } from '../use-cases/can-ban.use-case';
 import { GetMyInviterUseCase } from '../use-cases/get-my-inviter.use-case';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 import type { CreateInviteResponse } from '../interfaces/create-invite-response.interface';
 import type { CheckInviteResponse } from '../interfaces/check-invite-response.interface';
 import type { InviteeRead } from '../interfaces/invitee-read.interface';
 import type { InviteeNode } from '../interfaces/invitee-node.interface';
+import type { CanBanResponse } from '../interfaces/can-ban-response.interface';
 import type { InviterRead } from '../interfaces/inviter-read.interface';
 import type { InviteCodeRead } from '../interfaces/invite-code-read.interface';
 
@@ -33,6 +35,7 @@ export class InvitesController {
    * @param _listMyInvitesUseCase Список приглашённых.
    * @param _listMyCodesUseCase Список своих невыданных кодов.
    * @param _listNodeInviteesUseCase Дети узла дерева (ленивое раскрытие).
+   * @param _canBanUseCase Право забанить (для UI).
    * @param _getMyInviterUseCase Кто меня пригласил.
    */
   public constructor(
@@ -42,6 +45,7 @@ export class InvitesController {
     private readonly _listMyInvitesUseCase: ListMyInvitesUseCase,
     private readonly _listMyCodesUseCase: ListMyCodesUseCase,
     private readonly _listNodeInviteesUseCase: ListNodeInviteesUseCase,
+    private readonly _canBanUseCase: CanBanUseCase,
     private readonly _getMyInviterUseCase: GetMyInviterUseCase,
   ) {}
 
@@ -126,6 +130,21 @@ export class InvitesController {
     @Req() request: AuthenticatedRequest,
   ): Promise<InviteeNode[]> {
     return this._listNodeInviteesUseCase.execute(request.account.id, accountId);
+  }
+
+  /**
+   * Вправе ли я забанить этот аккаунт (для видимости кнопки на карточке, F3.Д).
+   * @param accountId Цель.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns { allowed }.
+   */
+  @Get('can-ban/:accountId')
+  @UseGuards(AuthGuard)
+  public async canBan(
+    @Param('accountId') accountId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<CanBanResponse> {
+    return this._canBanUseCase.execute(request.account.id, accountId);
   }
 
   /**

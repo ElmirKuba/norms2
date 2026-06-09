@@ -102,6 +102,6 @@ Body: `{ login, password }`.
 
 ## Сессии ([ADR-0018](./decisions/0018-refresh-tokens-sessions.md))
 
-- `GET /sessions` (auth) → `[{ id, userAgent, createdAt, current: boolean }]`.
-- `DELETE /sessions/:id` (auth) → кикнуть любую сессию своего аккаунта → 204.
-- `POST /sessions/revoke-others` (auth) → отозвать все, кроме текущей → 204.
+- `GET /sessions` (auth) → `SessionView[]` = `[{ id, userAgent: string|null, createdAt, expiresAt, current: boolean }]`. `current` помечает сервер по `sid` из access-JWT (ADR-0041).
+- `DELETE /sessions/:id` (auth) → завершить свою сессию по id → 204; если не найдена/не ваша → 404 (`SESSION_NOT_FOUND`).
+- `DELETE /sessions/others` (auth) → завершить все, кроме текущей → 204.

@@ -1,2 +1,71 @@
-<h1>Настройки</h1>
-<p>Раздел в разработке (F3.7).</p>
+<section class="settings">
+  <h1>Настройки</h1>
+
+  <nav class="tabs" role="tablist">
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'security'"
+      (click)="tab.set('security')"
+    >
+      Безопасность
+    </button>
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'account'"
+      (click)="tab.set('account')"
+    >
+      Аккаунт
+    </button>
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'theme'"
+      (click)="tab.set('theme')"
+    >
+      Тема
+    </button>
+  </nav>
+
+  @switch (tab()) {
+    @case ('security') {
+      <app-sessions />
+    }
+    @case ('account') {
+      <app-card>
+        <div class="account">
+          <div class="account__row">
+            <div class="account__text">
+              <h2>Деактивировать аккаунт</h2>
+              <p>Пауза: выйдет на всех устройствах, вход восстановит аккаунт. Обратимо.</p>
+            </div>
+            <app-button type="button" variant="ghost" [disabled]="busy()" (click)="deactivate()">
+              Деактивировать
+            </app-button>
+          </div>
+          <div class="account__row">
+            <div class="account__text">
+              <h2>Удалить аккаунт</h2>
+              <p>Необратимо — восстановления через интерфейс нет (ADR-0017).</p>
+            </div>
+            <app-button type="button" variant="danger" [disabled]="busy()" (click)="deleteAccount()">
+              Удалить
+            </app-button>
+          </div>
+        </div>
+      </app-card>
+    }
+    @case ('theme') {
+      <app-card>
+        <div class="theme">
+          <div class="theme__text">
+            <h2>Тема оформления</h2>
+            <p>Светлая или тёмная — переключается мгновенно, выбор запоминается.</p>
+          </div>
+          <app-theme-toggle />
+        </div>
+      </app-card>
+    }
+  }
+</section>

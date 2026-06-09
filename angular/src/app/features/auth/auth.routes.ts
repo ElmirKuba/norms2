@@ -14,6 +14,8 @@ export const authRoutes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./landing/landing.component').then((m) => m.LandingComponent) },
       { path: 'privacy', loadComponent: () => import('../legal/privacy.component').then((m) => m.PrivacyComponent) },
+      { path: 'terms', loadComponent: () => import('../legal/terms.component').then((m) => m.TermsComponent) },
+      { path: 'about', loadComponent: () => import('../legal/about.component').then((m) => m.AboutComponent) },
       {
         path: 'register',
         canActivate: [guestGuard],

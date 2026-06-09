@@ -1,6 +1,14 @@
 <header class="bar">
+  <a class="brand" routerLink="/">Нормисы</a>
   <app-theme-toggle />
 </header>
 <main class="content">
   <router-outlet />
 </main>
+<footer class="foot">
+  <nav class="foot__links">
+    <a routerLink="/about">О проекте</a>
+    <a routerLink="/terms">Условия использования</a>
+    <a routerLink="/privacy">Политика конфиденциальности</a>
+  </nav>
+</footer>

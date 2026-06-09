@@ -6,8 +6,8 @@ import { ThemeStore } from './core/theme/theme-store.service';
 import { ConsentStore } from './core/consent/consent-store.service';
 import { ConsentGateComponent } from './features/consent/consent-gate.component';
 
-/** Пути, доступные ДО cookie-согласия (политику читают до «Я согласен»). */
-const PRE_CONSENT_PATHS = ['/privacy'];
+/** Пути, доступные ДО cookie-согласия (правовое/about читают до «Я согласен»). */
+const PRE_CONSENT_PATHS = ['/privacy', '/terms', '/about'];
 
 /**
  * Корневой компонент-оболочка. Блокирующий cookie-гейт (ADR-0024): пока согласие

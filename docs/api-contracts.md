@@ -87,6 +87,7 @@ Body: `{ login, password }`.
 - `GET /invites` (auth) → `InviteeRead[]` = `[{ accountId, login, alias, reason, invitedAt }]` (мои приглашённые; login/alias — из accounts через join).
 - `GET /invites/codes` (auth) → `InviteCodeRead[]` = `[{ id, code, reason, expiresAt }]` (мои активные невыданные коды — для отзыва/обзора; истёкшие не возвращаются).
 - `GET /invites/of/:accountId` (auth) → `InviteeNode[]` = `[{ accountId, login, alias, reason, invitedAt, bannedByMe }]` — **прямые дети узла дерева** (ленивое раскрытие, F3.Д); `bannedByMe` = есть ли мой активный бан на этого участника. Доступ: `accountId` = я **или** в моём поддереве (`isAncestor`), иначе 403 (`SUBTREE_FORBIDDEN`). Soft-deleted потомки скрыты.
+- `GET /invites/can-ban/:accountId` (auth) → `{ allowed: boolean }` — вправе ли я забанить этот аккаунт (та же граница, что у `POST /bans`: цель ≠ я И в моём поддереве). Для видимости кнопки бана на карточке (не заменяет серверную проверку).
 - `GET /invites/my-inviter` (auth) → `InviterRead | null` = `{ inviterLogin, inviterAlias, reason, invitedAt } | null` — «кто меня пригласил» (обратное ребро). `null` у корней дерева (`free`/`seed`).
 
 ---

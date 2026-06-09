@@ -1,4 +1,4 @@
-// Общий стиль публичных текстовых страниц (terms/about; privacy — свой файл).
+// Общий стиль публичных текстовых страниц (privacy/terms/about).
 .legal {
   display: flex;
   flex-direction: column;
@@ -10,13 +10,49 @@
     margin: 0;
   }
 
-  .lead {
+  h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-lg);
+  }
+
+  p {
     margin: 0;
+    line-height: 1.55;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    line-height: 1.5;
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  a {
+    color: var(--color-accent);
+  }
+
+  .meta {
+    color: var(--color-text-muted);
+    font-size: var(--fs-sm);
+  }
+
+  .lead {
     color: var(--color-text);
   }
 
+  .muted {
+    color: var(--color-text-muted);
+  }
+
   .todo {
-    margin: 0;
     color: var(--color-text-muted);
     font-style: italic;
   }

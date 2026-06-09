@@ -25,7 +25,8 @@
   justify-content: safe center;
   padding: var(--space-5) var(--space-4);
   width: 100%;
-  max-width: 480px;
+  // Широкая колонка: about использует всю; формы и правовые сами сужаются ниже.
+  max-width: 920px;
   margin: 0 auto;
 }
 

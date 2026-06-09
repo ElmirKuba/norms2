@@ -1,0 +1,90 @@
+@use 'breakpoints' as bp;
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  text-align: left;
+}
+
+.hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+
+  h1 {
+    margin: 0;
+    font-size: var(--fs-3xl, 2.4rem);
+  }
+
+  &__mission {
+    margin: 0 auto;
+    max-width: 560px;
+    color: var(--color-text-muted);
+    font-size: var(--fs-lg);
+    line-height: 1.5;
+  }
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  h2 {
+    margin: 0;
+    font-size: var(--fs-xl);
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  &__lead {
+    color: var(--color-text-muted);
+  }
+
+  a:not(.btn) {
+    color: var(--color-accent);
+  }
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
+
+  @include bp.up('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include bp.up('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--color-surface);
+
+  &__title {
+    margin: 0;
+    font-size: var(--fs-md, 1rem);
+  }
+
+  &__text {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+}

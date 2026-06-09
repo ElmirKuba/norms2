@@ -1,2 +1,36 @@
-<h1>Устройства</h1>
-<p>Раздел в разработке (F3.6).</p>
+<section class="sessions">
+  <header class="head">
+    <h1>Устройства</h1>
+    @if (hasOthers()) {
+      <app-button type="button" variant="ghost" (click)="revokeOthers()">Выйти на остальных</app-button>
+    }
+  </header>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (sessions().length === 0) {
+    <app-empty-state title="Нет активных сессий" text="Здесь появятся устройства, с которых вы вошли." />
+  } @else {
+    <ul class="list">
+      @for (session of sessions(); track session.id) {
+        <li class="row" [class.row--current]="session.current">
+          <div class="row__main">
+            <span class="row__name">
+              {{ deviceName(session) }}
+              @if (session.current) {
+                <span class="badge">это устройство</span>
+              }
+            </span>
+            <span class="row__meta">
+              вход {{ session.createdAt | date: 'dd.MM.yyyy HH:mm' }} · действует до
+              {{ session.expiresAt | date: 'dd.MM.yyyy' }}
+            </span>
+          </div>
+          @if (!session.current) {
+            <app-button type="button" variant="ghost" (click)="revoke(session)">Завершить</app-button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

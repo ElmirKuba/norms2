@@ -105,3 +105,9 @@ Body: `{ login, password }`.
 - `GET /sessions` (auth) → `SessionView[]` = `[{ id, userAgent: string|null, createdAt, expiresAt, current: boolean }]`. `current` помечает сервер по `sid` из access-JWT (ADR-0041).
 - `DELETE /sessions/:id` (auth) → завершить свою сессию по id → 204; если не найдена/не ваша → 404 (`SESSION_NOT_FOUND`).
 - `DELETE /sessions/others` (auth) → завершить все, кроме текущей → 204.
+
+---
+
+## Статистика (overview, F4)
+
+- `GET /stats/overview` (auth) → `OverviewStats` = `{ totalUsers, invitedDirect, subtreeTotal, inviteesBannedByMe, bansActive, pendingCodes, invitesRemaining, activeSessions, recoveryQuestions, recoveryRequiredCount: number|null }`. Только агрегаты (счётчики), без ПДн/списков; точечные значения «здесь и сейчас» (без истории/трендов). Сервер считает за один запрос (новые `COUNT`: пользователи active, поддерево CTE; остальное — длина существующих списков).

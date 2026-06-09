@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
-import type { InviterRead, InviteeRead, InviteCodeRead } from '../invites.types';
+import type {
+  InviterRead,
+  InviteeRead,
+  InviteCodeRead,
+  InviteeNode,
+  CanBanResponse,
+} from '../invites.types';
 
 /**
  * API-сервис области invites (`/api/v1/invites/*`): кто пригласил (F3.2) +
@@ -35,5 +41,15 @@ export class InvitesApiService {
   /** Отозвать свой невыданный код (возвращает квоту). */
   public revoke(id: string): Observable<void> {
     return this._http.delete<void>(`${API_PREFIX}/invites/${encodeURIComponent(id)}`);
+  }
+
+  /** Прямые дети узла дерева (ленивое раскрытие; узел = я или моё поддерево). */
+  public listOf(accountId: string): Observable<InviteeNode[]> {
+    return this._http.get<InviteeNode[]>(`${API_PREFIX}/invites/of/${encodeURIComponent(accountId)}`);
+  }
+
+  /** Вправе ли я забанить этот аккаунт (для видимости кнопки). */
+  public canBan(accountId: string): Observable<CanBanResponse> {
+    return this._http.get<CanBanResponse>(`${API_PREFIX}/invites/can-ban/${encodeURIComponent(accountId)}`);
   }
 }

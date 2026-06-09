@@ -21,7 +21,7 @@
       </div>
     </section>
 
-    @if (!isOwnProfile()) {
+    @if (!isOwnProfile() && (myBan() || canBanTarget())) {
       <div class="moderation">
         @if (myBan(); as ban) {
           <app-banner tone="warning">Забанен вами: {{ ban.reason }}</app-banner>

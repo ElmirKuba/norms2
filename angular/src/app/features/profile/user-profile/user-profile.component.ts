@@ -4,6 +4,7 @@ import { FormControl, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AccountApiService } from '../services/account-api.service';
 import { BansApiService } from '../../bans/services/bans-api.service';
+import { InvitesApiService } from '../../invites/services/invites-api.service';
 import { AuthStore } from '../../../core/auth/auth-store.service';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { avatarUrl } from '../../../core/http/avatar-url.util';
@@ -41,6 +42,7 @@ import type { BanListItem } from '../../bans/bans.types';
 export class UserProfileComponent {
   private readonly _accountApi = inject(AccountApiService);
   private readonly _bansApi = inject(BansApiService);
+  private readonly _invitesApi = inject(InvitesApiService);
   private readonly _authStore = inject(AuthStore);
   private readonly _modal = inject(ModalService);
   private readonly _route = inject(ActivatedRoute);
@@ -54,6 +56,8 @@ export class UserProfileComponent {
 
   /** Моя активная запись бана на этого участника (или null). */
   protected readonly myBan = signal<BanListItem | null>(null);
+  /** Вправе ли я забанить этого участника (в моём поддереве). */
+  protected readonly canBanTarget = signal(false);
 
   /** Открыта ли форма бана. */
   protected readonly banFormOpen = signal(false);
@@ -166,12 +170,14 @@ export class UserProfileComponent {
     this.notFound.set(false);
     this.profile.set(null);
     this.myBan.set(null);
+    this.canBanTarget.set(false);
     this.banFormOpen.set(false);
     this._accountApi.getByLogin(login).subscribe({
       next: (profile) => {
         this.profile.set(profile);
         this.loading.set(false);
         this._loadMyBan(profile.id);
+        this._loadCanBan(profile.id);
       },
       error: () => {
         this.notFound.set(true);
@@ -187,8 +193,16 @@ export class UserProfileComponent {
         this.myBan.set(bans.find((ban) => ban.targetId === targetId && ban.active) ?? null);
       },
       error: () => {
-        /* не критично — карточка просто покажет «Забанить» */
+        /* не критично — кнопку бана решает canBanTarget */
       },
+    });
+  }
+
+  /** Узнаёт, вправе ли я забанить (для видимости кнопки — без фантом-кнопки). */
+  private _loadCanBan(targetId: string): void {
+    this._invitesApi.canBan(targetId).subscribe({
+      next: (response) => this.canBanTarget.set(response.allowed),
+      error: () => this.canBanTarget.set(false),
     });
   }
 }

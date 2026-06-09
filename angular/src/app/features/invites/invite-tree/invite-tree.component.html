@@ -1,0 +1,41 @@
+@if (loading()) {
+  <app-spinner />
+} @else if (rows().length === 0) {
+  <app-empty-state
+    title="Вы никого не пригласили"
+    text="Создайте код во вкладке «Мои инвайты» и поделитесь — приглашённые появятся здесь."
+  />
+} @else {
+  <ul class="tree">
+    @for (row of rows(); track row.accountId) {
+      <li class="node" [style.--depth]="row.depth">
+        <button
+          type="button"
+          class="node__toggle"
+          [attr.aria-expanded]="row.expanded"
+          aria-label="Развернуть/свернуть"
+          (click)="toggle(row)"
+        >
+          {{ row.expanded ? '▾' : '▸' }}
+        </button>
+        <div class="node__body">
+          <div class="node__head">
+            <a class="node__name" [routerLink]="['/app/u', row.login]">{{ row.alias }}</a>
+            @if (row.bannedByMe) {
+              <span class="badge">забанен вами</span>
+            }
+            @if (row.loading) {
+              <app-spinner [size]="14" />
+            }
+          </div>
+          <span class="node__meta">
+            &#64;{{ row.login }} · {{ row.reason }} · {{ row.invitedAt | date: 'dd.MM.yyyy' }}
+          </span>
+          @if (row.expanded && row.emptyChildren) {
+            <span class="node__empty">никого не пригласил</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+}

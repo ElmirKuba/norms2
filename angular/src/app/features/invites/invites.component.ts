@@ -14,16 +14,17 @@ import { CardComponent } from '../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { BansComponent } from '../bans/bans.component';
+import { InviteTreeComponent } from './invite-tree/invite-tree.component';
 import type { InviteeRead, InviteCodeRead } from './invites.types';
 
 /** Активная вкладка раздела. */
-type InvitesTab = 'invites' | 'bans';
+type InvitesTab = 'invites' | 'bans' | 'tree';
 
 /**
- * Раздел «Приглашения» (`/app/invites`) — две вкладки (IA): **Мои инвайты** (квота,
- * создание/копирование/отзыв кодов, список приглашённых) и **Баны** (`app-bans` —
- * список своих банов + разбан). Квота меняется на бэке при создании/отзыве — после
- * операций обновляем `me()`.
+ * Раздел «Приглашения» (`/app/invites`) — три вкладки (IA): **Мои инвайты** (квота,
+ * создание/копирование/отзыв кодов, список приглашённых), **Баны** (`app-bans`) и
+ * **Дерево** (`app-invite-tree` — поддерево приглашений, ленивое раскрытие). Квота
+ * меняется на бэке при создании/отзыве — после операций обновляем `me()`.
  */
 @Component({
   selector: 'app-invites',
@@ -37,6 +38,7 @@ type InvitesTab = 'invites' | 'bans';
     EmptyStateComponent,
     SpinnerComponent,
     BansComponent,
+    InviteTreeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invites.component.html',

@@ -25,10 +25,20 @@
     >
       Баны
     </button>
+    <button
+      type="button"
+      class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'tree'"
+      (click)="tab.set('tree')"
+    >
+      Дерево
+    </button>
   </nav>
 
   @if (tab() === 'bans') {
     <app-bans />
+  } @else if (tab() === 'tree') {
+    <app-invite-tree />
   } @else {
 
   <app-card>

@@ -26,6 +26,10 @@
 Публичный, лёгкий. Фронт зовёт **в момент нажатия «Регистрация»** (не из кэша флагов) — чтобы показать актуальный экран (форма vs ввод кода), даже если флаг с главной устарел.
 → 200 `{ "mode": "free" | "invite" }`.
 
+### `GET /version` ([ADR-0044](./decisions/0044-versioning-strategy.md))
+Публичный (футер виден до входа). Версия развёрнутого билда.
+→ 200 `{ "product": string, "backend": string, "commit": string }` — `product` из `.env` (`PRODUCT_VERSION`, единый source of truth), `backend` из `nest/package.json`, `commit` — git-SHA билда (пусто в dev). Версию фронта добавляет сам фронт (из `angular/package.json`).
+
 ---
 
 ## Auth ([ADR-0010](./decisions/0010-registration-auth-flow.md))

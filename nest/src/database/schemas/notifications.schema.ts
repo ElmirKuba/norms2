@@ -4,6 +4,7 @@ import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type { NotificationFull } from '../../modules/notifications/interfaces/notification-full.interface';
+import type { NotificationKind } from '../../modules/notifications/interfaces/notification-pure.interface';
 
 /**
  * notifications — уведомления (колонки 1:1 с NotificationFull). `account_id` NULL =
@@ -16,7 +17,7 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
   'notifications',
   {
     id: idColumn(),
-    kind: varchar('kind', { length: 16 }).notNull(),
+    kind: varchar('kind', { length: 16 }).$type<NotificationKind>().notNull(),
     accountId: fkColumn('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
     title: varchar('title', { length: 200 }).notNull(),
     body: text('body'),

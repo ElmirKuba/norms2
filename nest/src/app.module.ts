@@ -12,12 +12,13 @@ import { BansModule } from './modules/bans/bans.module';
 import { RecoveryModule } from './modules/recovery/recovery.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RateLimitGuard } from './shared/guards/rate-limit.guard';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
  * общие сервисы (shared), БД (Drizzle), health и доменные области
- * account/auth/invites/bans/recovery/profile/stats. Глобальный `RateLimitGuard`
+ * account/auth/invites/bans/recovery/profile/stats/notifications. Глобальный `RateLimitGuard`
  * (anti-brute-force) действует только на роуты с `@RateLimit`.
  */
 @Module({
@@ -34,6 +35,7 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
     RecoveryModule,
     ProfileModule,
     StatsModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],
 })

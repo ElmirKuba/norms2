@@ -3,6 +3,7 @@ import { AccountModule } from '../account/account.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { InvitesModule } from '../invites/invites.module';
 import { BanCoreModule } from '../bans/ban-core.module';
+import { NotificationCoreModule } from '../notifications/notification-core.module';
 import { AccessControlModule } from './access-control.module';
 import { AuthController } from './controllers/auth.controller';
 import { FeatureFlagsController } from './controllers/feature-flags.controller';
@@ -23,7 +24,14 @@ import { ReactivateAccountUseCase } from './use-cases/reactivate-account.use-cas
  * (ADR-0037).
  */
 @Module({
-  imports: [AccessControlModule, AccountModule, SessionsModule, InvitesModule, BanCoreModule],
+  imports: [
+    AccessControlModule,
+    AccountModule,
+    SessionsModule,
+    InvitesModule,
+    BanCoreModule,
+    NotificationCoreModule,
+  ],
   controllers: [AuthController, FeatureFlagsController],
   providers: [
     RegisterAccountUseCase,

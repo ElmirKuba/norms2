@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { InviteDomainService } from '../../invites/domain-services/invite.domain-service';
+import { NotificationDomainService } from '../../notifications/domain-services/notification.domain-service';
 import { Login } from '../../account/value-objects/login.vo';
 import { Alias } from '../../account/value-objects/alias.vo';
 import { Password } from '../../account/value-objects/password.vo';
@@ -25,12 +26,14 @@ export class RegisterAccountUseCase {
   /**
    * @param _accountDomainService Domain-service области account (создание аккаунта).
    * @param _inviteDomainService Domain-service области invites (погашение кода).
+   * @param _notificationDomainService Domain-service уведомлений (хук пригласившему).
    * @param _transactionRunner Раннер транзакций (атомарность invite-регистрации).
    * @param _configService Конфиг (режим регистрации).
    */
   public constructor(
     private readonly _accountDomainService: AccountDomainService,
     private readonly _inviteDomainService: InviteDomainService,
+    private readonly _notificationDomainService: NotificationDomainService,
     @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
@@ -86,14 +89,24 @@ export class RegisterAccountUseCase {
     const alias = Alias.create(input.alias);
     const password = Password.create(input.password);
 
-    return this._transactionRunner.run(async (tx) => {
-      const account = await this._accountDomainService.createAccount(
+    const { account, inviterId } = await this._transactionRunner.run(async (tx) => {
+      const created = await this._accountDomainService.createAccount(
         { login, alias, password, registrationSource: 'invite' },
         tx,
       );
       // Бросит InviteInvalidError при плохом коде → откат (аккаунт не сохранится).
-      await this._inviteDomainService.consumeCode(rawCode, account.id, tx);
-      return account;
+      const invitation = await this._inviteDomainService.consumeCode(rawCode, created.id, tx);
+      return { account: created, inviterId: invitation.inviterId };
     });
+
+    // Best-effort хук пригласившему — ВНЕ транзакции: сбой уведомления не должен
+    // ронять успешную регистрацию (кросс-домен вниз: auth → notifications↓).
+    try {
+      await this._notificationDomainService.notifyInviteAccepted(inviterId, account.login);
+    } catch {
+      // Намеренно проглатываем: уведомление вторично к регистрации.
+    }
+
+    return account;
   }
 }

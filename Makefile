@@ -20,7 +20,7 @@ export GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
 
-.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-up prod-down prod-config env-cleanup
+.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio prod-build prod-migrate prod-up prod-down prod-config env-cleanup
 
 help: ## Показать список команд
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -63,7 +63,10 @@ db-studio: ## drizzle-kit: GUI по БД
 prod-build: ## Собрать prod-образы
 	$(PROD_COMPOSE) build
 
-prod-up: ## Поднять prod
+prod-migrate: ## Накатить миграции в prod (one-shot, до старта nest)
+	$(PROD_COMPOSE) run --rm migrate
+
+prod-up: ## Поднять prod (миграции прогоняются гейтом migrate перед nest)
 	$(PROD_COMPOSE) up -d
 
 prod-down: ## Остановить prod

@@ -17,6 +17,9 @@ ENV NODE_ENV=production
 COPY nest/package.json nest/package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
+# SQL-миграции (+ meta/journal) для one-shot мигратора `node dist/migrate.js` (D1.2):
+# drizzle-kit в рантайм-образе нет, но drizzle-orm/migrator читает эти файлы.
+COPY --from=build /app/drizzle ./drizzle
 # Авторские seed-файлы релиз-нот (F7) — сид копирует их в CONTENT_DIR при старте.
 COPY nest/seed-content ./seed-content
 

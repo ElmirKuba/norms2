@@ -31,6 +31,7 @@ export const authRoutes: Routes = [
         canActivate: [guestGuard],
         loadComponent: () => import('./recover/recover.component').then((m) => m.RecoverComponent),
       },
+      { path: '**', loadComponent: () => import('../not-found/not-found.component').then((m) => m.NotFoundComponent) },
     ],
   },
 ];

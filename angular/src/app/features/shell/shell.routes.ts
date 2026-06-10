@@ -18,6 +18,7 @@ export const shellRoutes: Routes = [
       { path: 'invites', loadComponent: () => import('../invites/invites.component').then((m) => m.InvitesComponent) },
       { path: 'sessions', loadComponent: () => import('../sessions/sessions.component').then((m) => m.SessionsComponent) },
       { path: 'settings', loadComponent: () => import('../settings/settings.component').then((m) => m.SettingsComponent) },
+      { path: '**', loadComponent: () => import('../not-found/not-found.component').then((m) => m.NotFoundComponent) },
     ],
   },
 ];

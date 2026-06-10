@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -39,4 +39,12 @@ export class App {
   protected readonly showRoutes = computed(
     () => this.consent.granted() || PRE_CONSENT_PATHS.some((path) => this._url().startsWith(path)),
   );
+
+  /** Есть ли соединение (для offline-баннера). */
+  protected readonly online = signal(navigator.onLine);
+
+  public constructor() {
+    globalThis.addEventListener('online', () => this.online.set(true));
+    globalThis.addEventListener('offline', () => this.online.set(false));
+  }
 }

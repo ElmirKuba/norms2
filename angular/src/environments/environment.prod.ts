@@ -5,4 +5,5 @@
 export const environment = {
   production: true,
   apiBase: '',
+  appVersion: '1.0.0-beta',
 };

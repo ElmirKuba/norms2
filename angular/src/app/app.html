@@ -1,3 +1,6 @@
+@if (!online()) {
+  <div class="offline" role="status">Нет соединения с интернетом — некоторые действия недоступны.</div>
+}
 @if (showRoutes()) {
   <router-outlet />
 } @else {

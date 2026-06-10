@@ -22,6 +22,9 @@ export const envSchema = z.object({
   BACKEND_PORT: z.coerce.number().int().positive().default(3000),
   FRONTEND_PORT: z.coerce.number().int().positive().default(4200),
 
+  // CORS-origin фронта (dev). Пусто → CORS выключен (прод same-origin за Traefik).
+  CORS_ORIGIN: z.string().default(''),
+
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),
   ACCESS_TTL: z.string().min(1).default('15m'),

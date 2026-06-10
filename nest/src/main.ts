@@ -10,8 +10,9 @@ import type { Env } from './system/config/env.schema';
 
 /**
  * Точка входа: создаёт Nest-приложение, ставит pino-логгер, общий префикс API
- * `/api/v1`, глобальный фильтр ошибок и CORS для dev-фронта; порт берёт из
- * конфига (ConfigService, не process.env) и слушает на всех интерфейсах (Docker).
+ * `/api/v1`, глобальный фильтр ошибок, CORS (config-driven) и trust proxy (за
+ * Traefik в проде); порт берёт из конфига (ConfigService, не process.env) и
+ * слушает на всех интерфейсах (Docker).
  * @returns Промис, завершающийся после старта HTTP-сервера.
  */
 async function bootstrap(): Promise<void> {
@@ -22,6 +23,13 @@ async function bootstrap(): Promise<void> {
 
   const configService = app.get<ConfigService<Env, true>>(ConfigService);
 
+  // За reverse-proxy (Traefik) доверяем первому хопу: корректные req.secure
+  // (Secure-cookie по X-Forwarded-Proto) и req.ip (X-Forwarded-For → rate-limit).
+  // Прод — same-origin за Traefik; dev — прямое подключение, прокси нет.
+  if (configService.get('NODE_ENV', { infer: true }) === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // Все REST-эндпоинты под /api/v1 (ADR-0020).
   app.setGlobalPrefix('api/v1');
 
@@ -31,16 +39,16 @@ async function bootstrap(): Promise<void> {
   // Парсинг cookie (refresh-токен в httpOnly-cookie).
   app.use(cookieParser());
 
-  // CORS: фронт ходит с другого порта; credentials — под refresh-cookie.
+  // CORS — config-driven (ADR-0020/D1): включаем ТОЛЬКО если задан CORS_ORIGIN
+  // (dev: фронт на другом порту). В проде same-origin (Traefik path-based) →
+  // CORS_ORIGIN пуст → CORS выключен, лишних заголовков нет.
   // ВАЖНО: до useStaticAssets — иначе express.static отдаёт файл и завершает ответ
   // РАНЬШЕ cors-middleware, и на GET /content/* нет Access-Control-Allow-Origin →
-  // браузерный fetch (центр уведомлений, рич-контент .md) блокируется. <img> CORS не
-  // требует, поэтому аватарки работали и при обратном порядке.
-  const frontendPort = configService.get('FRONTEND_PORT', { infer: true });
-  app.enableCors({
-    origin: `http://localhost:${String(frontendPort)}`,
-    credentials: true,
-  });
+  // браузерный fetch (центр уведомлений, рич-контент .md) блокируется (только dev).
+  const corsOrigin = configService.get('CORS_ORIGIN', { infer: true });
+  if (corsOrigin !== '') {
+    app.enableCors({ origin: corsOrigin, credentials: true });
+  }
 
   // Статика загруженных файлов (аватарки и пр.) из CONTENT_DIR под /content/
   // (ADR-0031: хранилище — локальный диск). DB хранит путь относительно content/.

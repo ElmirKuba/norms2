@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { AuthApiService } from '../auth/services/auth-api.service';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
+import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
+import { NotificationsStore } from '../notifications/services/notifications-store.service';
 
 /** Пункт навигации ЛК. */
 interface NavItem {
@@ -20,16 +22,27 @@ interface NavItem {
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent, NotificationBellComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit, OnDestroy {
   private readonly _api = inject(AuthApiService);
   private readonly _router = inject(Router);
+  private readonly _notifications = inject(NotificationsStore);
   /** Текущий аккаунт (из стора). */
   protected readonly authStore = inject(AuthStore);
+
+  /** Запускает поллинг уведомлений на время жизни ЛК. */
+  public ngOnInit(): void {
+    this._notifications.startPolling();
+  }
+
+  /** Останавливает поллинг при выходе из ЛК. */
+  public ngOnDestroy(): void {
+    this._notifications.stopPolling();
+  }
 
   /** Верхнее меню — только фичи. */
   protected readonly nav: readonly NavItem[] = [{ path: 'invites', label: 'Приглашения' }];

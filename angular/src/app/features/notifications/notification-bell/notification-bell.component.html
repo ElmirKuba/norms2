@@ -1,0 +1,47 @@
+<div class="bell">
+  <button
+    type="button"
+    class="bell__btn"
+    (click)="toggle()"
+    [attr.aria-expanded]="open()"
+    aria-label="Уведомления"
+  >
+    <span class="bell__icon" aria-hidden="true">🔔</span>
+    @if (store.unread() > 0) {
+      <span class="bell__badge">{{ store.unread() > 99 ? '99+' : store.unread() }}</span>
+    }
+  </button>
+
+  @if (open()) {
+    <button type="button" class="bell__backdrop" aria-label="Закрыть" (click)="close()"></button>
+    <div class="panel" role="menu">
+      <div class="panel__head">
+        <span class="panel__title">Уведомления</span>
+        @if (store.unread() > 0) {
+          <button type="button" class="panel__action" (click)="markAll()">Прочитать все</button>
+        }
+      </div>
+
+      <div class="panel__list">
+        @if (store.loading()) {
+          <div class="panel__state">Загрузка…</div>
+        } @else if (store.items().length === 0) {
+          <div class="panel__state">Уведомлений пока нет</div>
+        } @else {
+          @for (item of store.items(); track item.id) {
+            <button type="button" class="row" [class.row--unread]="!item.read" (click)="select(item)">
+              <span class="row__dot" aria-hidden="true"></span>
+              <span class="row__main">
+                <span class="row__title">{{ item.title }}</span>
+                @if (item.body) {
+                  <span class="row__preview">{{ item.body }}</span>
+                }
+                <span class="row__date">{{ formatDate(item.createdAt) }}</span>
+              </span>
+            </button>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

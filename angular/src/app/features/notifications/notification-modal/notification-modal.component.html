@@ -1,0 +1,19 @@
+<div class="modal">
+  <header class="modal__head">
+    <h2 class="modal__title">{{ title() }}</h2>
+  </header>
+
+  <div class="modal__body">
+    @if (loading()) {
+      <div class="modal__center"><app-spinner /></div>
+    } @else if (failed()) {
+      <p class="modal__error">Не удалось загрузить содержимое. Попробуйте позже.</p>
+    } @else if (html(); as content) {
+      <div class="md" [innerHTML]="content"></div>
+    }
+  </div>
+
+  <footer class="modal__foot">
+    <app-button variant="ghost" (click)="close()">Закрыть</app-button>
+  </footer>
+</div>

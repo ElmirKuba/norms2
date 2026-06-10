@@ -54,12 +54,15 @@ services:
     networks:
       - norms2_prod-net
 
-  # ── NestJS backend (API на api.${DOMAIN}) ──
+  # ── NestJS backend (API /api + статика /content — same-origin path-based) ──
   nest:
     container_name: norms2_nest_prod
     build:
       context: ${PROJECT_ROOT}
       dockerfile: docker/dockerfiles/nest-backend/Dockerfile.production
+      args:
+        # git-SHA билда для GET /version (ADR-0044); Makefile экспортит GIT_COMMIT.
+        GIT_COMMIT: ${GIT_COMMIT:-}
     restart: unless-stopped
     env_file:
       - ${PROJECT_ROOT}/.env
@@ -68,7 +71,10 @@ services:
       DB_HOST: norms2_postgres_prod
     labels:
       - traefik.enable=true
-      - traefik.http.routers.norms2-api.rule=Host(`api.${DOMAIN}`)
+      # Тот же Host, что и фронт; на nest уходят /api (REST) и /content (аватары +
+      # релиз-ноты, ADR-0031/F7). Приоритет выше web-роутера — матчатся первыми.
+      - 'traefik.http.routers.norms2-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/content`))'
+      - traefik.http.routers.norms2-api.priority=10
       - traefik.http.routers.norms2-api.entrypoints=websecure
       - traefik.http.routers.norms2-api.tls.certresolver=le
       - traefik.http.services.norms2-api.loadbalancer.server.port=3000
@@ -87,7 +93,10 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
+      # Весь остальной трафик того же Host (SPA). Приоритет ниже nest-роутера, чтобы
+      # /api и /content уходили на nest, а не сюда.
       - traefik.http.routers.norms2-web.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.norms2-web.priority=1
       - traefik.http.routers.norms2-web.entrypoints=websecure
       - traefik.http.routers.norms2-web.tls.certresolver=le
       - traefik.http.services.norms2-web.loadbalancer.server.port=80

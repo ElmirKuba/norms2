@@ -13,6 +13,10 @@ endif
 # Корень репозитория. := фиксирует значение один раз. export — отдать в env.
 export PROJECT_ROOT := $(shell pwd)
 
+# git-SHA для прод-сборки nest (build ARG → GET /version, ADR-0044). В dev не
+# используется (там бэк читает .git живьём). Пусто вне git-репо.
+export GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
+
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
 

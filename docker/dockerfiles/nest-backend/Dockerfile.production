@@ -20,6 +20,11 @@ COPY --from=build /app/dist ./dist
 # Авторские seed-файлы релиз-нот (F7) — сид копирует их в CONTENT_DIR при старте.
 COPY nest/seed-content ./seed-content
 
+# git-SHA билда для GET /version (ADR-0044). В проде .git нет — SHA только отсюда.
+# Прокидывать при сборке: --build-arg GIT_COMMIT=$(git rev-parse --short HEAD).
+ARG GIT_COMMIT=""
+ENV GIT_COMMIT=$GIT_COMMIT
+
 EXPOSE 3000
 
 CMD ["node", "dist/main.js"]

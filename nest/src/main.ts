@@ -31,17 +31,21 @@ async function bootstrap(): Promise<void> {
   // Парсинг cookie (refresh-токен в httpOnly-cookie).
   app.use(cookieParser());
 
-  // Статика загруженных файлов (аватарки и пр.) из CONTENT_DIR под /content/
-  // (ADR-0031: хранилище — локальный диск). DB хранит путь относительно content/.
-  const contentDir = resolve(configService.get('CONTENT_DIR', { infer: true }));
-  app.useStaticAssets(contentDir, { prefix: '/content/' });
-
-  // CORS: фронт ходит с другого порта; credentials — под будущую refresh-cookie.
+  // CORS: фронт ходит с другого порта; credentials — под refresh-cookie.
+  // ВАЖНО: до useStaticAssets — иначе express.static отдаёт файл и завершает ответ
+  // РАНЬШЕ cors-middleware, и на GET /content/* нет Access-Control-Allow-Origin →
+  // браузерный fetch (центр уведомлений, рич-контент .md) блокируется. <img> CORS не
+  // требует, поэтому аватарки работали и при обратном порядке.
   const frontendPort = configService.get('FRONTEND_PORT', { infer: true });
   app.enableCors({
     origin: `http://localhost:${String(frontendPort)}`,
     credentials: true,
   });
+
+  // Статика загруженных файлов (аватарки и пр.) из CONTENT_DIR под /content/
+  // (ADR-0031: хранилище — локальный диск). DB хранит путь относительно content/.
+  const contentDir = resolve(configService.get('CONTENT_DIR', { infer: true }));
+  app.useStaticAssets(contentDir, { prefix: '/content/' });
 
   const port = configService.get('BACKEND_PORT', { infer: true });
   await app.listen(port, '0.0.0.0');

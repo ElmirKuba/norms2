@@ -5,6 +5,7 @@ import { AuthApiService } from '../auth/services/auth-api.service';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 import { NotificationsStore } from '../notifications/services/notifications-store.service';
+import { environment } from '../../../environments/environment';
 
 /** Пункт навигации ЛК. */
 interface NavItem {
@@ -16,9 +17,11 @@ interface NavItem {
 
 /**
  * Каркас аутентифицированной зоны (`/app`): шапка (бренд + верхнее меню фич +
- * тема + аккаунт-дропдаун) и `router-outlet`. Верхнее меню — только «контентные»
- * фичи (Приглашения; баны — вкладкой внутри); аккаунт-стафф (Профиль/Настройки/
- * Выйти) — в дропдауне по клику на имя. Разделы — дочерние lazy-роуты.
+ * колокол уведомлений + тема + аккаунт-дропдаун) и `router-outlet`. Верхнее меню —
+ * только «контентные» фичи (Приглашения; баны — вкладкой внутри); аккаунт-стафф
+ * (Профиль/Настройки/Выйти) + правовые ссылки (О проекте/Условия/Политика, в новой
+ * вкладке — публичная зона) и версия — в дропдауне по клику на имя. Разделы —
+ * дочерние lazy-роуты.
  */
 @Component({
   selector: 'app-shell',
@@ -46,6 +49,9 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   /** Верхнее меню — только фичи. */
   protected readonly nav: readonly NavItem[] = [{ path: 'invites', label: 'Приглашения' }];
+
+  /** Версия приложения (футер аккаунт-дропдауна). */
+  protected readonly version = environment.appVersion;
 
   /** Открыт ли аккаунт-дропдаун. */
   protected readonly menuOpen = signal(false);

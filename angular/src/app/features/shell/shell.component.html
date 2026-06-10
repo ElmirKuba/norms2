@@ -21,6 +21,11 @@
             <a routerLink="profile" (click)="closeMenu()">Профиль</a>
             <a routerLink="settings" (click)="closeMenu()">Настройки</a>
             <button type="button" (click)="logout()">Выйти</button>
+            <div class="menu__sep" role="separator"></div>
+            <a routerLink="/about" target="_blank" rel="noopener" (click)="closeMenu()">О проекте</a>
+            <a routerLink="/terms" target="_blank" rel="noopener" (click)="closeMenu()">Условия использования</a>
+            <a routerLink="/privacy" target="_blank" rel="noopener" (click)="closeMenu()">Политика конфиденциальности</a>
+            <p class="menu__version">Нормисы · v{{ version }}</p>
           </div>
         }
       </div>

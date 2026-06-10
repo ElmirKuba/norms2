@@ -5,7 +5,7 @@ import { AuthApiService } from '../auth/services/auth-api.service';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 import { NotificationsStore } from '../notifications/services/notifications-store.service';
-import { environment } from '../../../environments/environment';
+import { VersionService } from '../../core/version/version.service';
 
 /** Пункт навигации ЛК. */
 interface NavItem {
@@ -50,8 +50,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   /** Верхнее меню — только фичи. */
   protected readonly nav: readonly NavItem[] = [{ path: 'invites', label: 'Приглашения' }];
 
-  /** Версия приложения (футер аккаунт-дропдауна). */
-  protected readonly version = environment.appVersion;
+  /** Версия приложения (продукт + диагностика) для аккаунт-дропдауна. */
+  protected readonly ver = inject(VersionService);
 
   /** Открыт ли аккаунт-дропдаун. */
   protected readonly menuOpen = signal(false);

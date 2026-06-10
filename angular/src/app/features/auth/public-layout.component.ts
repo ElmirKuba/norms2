@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
-import { environment } from '../../../environments/environment';
+import { VersionService } from '../../core/version/version.service';
 
 /**
  * Публичный layout (главная + auth + правовые/about): шапка (бренд → главная +
@@ -17,6 +17,6 @@ import { environment } from '../../../environments/environment';
   styleUrl: './public-layout.component.scss',
 })
 export class PublicLayoutComponent {
-  /** Версия приложения (для футера). */
-  protected readonly version = environment.appVersion;
+  /** Версия приложения (продукт + диагностика) для футера. */
+  protected readonly ver = inject(VersionService);
 }

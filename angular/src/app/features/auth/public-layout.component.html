@@ -11,5 +11,6 @@
     <a routerLink="/terms">Условия использования</a>
     <a routerLink="/privacy">Политика конфиденциальности</a>
   </nav>
-  <p class="foot__version">Нормисы · v{{ version }}</p>
+  <p class="foot__version">Нормисы · v{{ ver.product() }}</p>
+  <p class="foot__diag">{{ ver.diagnostics() }}</p>
 </footer>

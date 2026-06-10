@@ -5,3 +5,5 @@ export * from './invite-codes.schema';
 export * from './invitations.schema';
 export * from './bans.schema';
 export * from './sessions.schema';
+export * from './notifications.schema';
+export * from './notification-reads.schema';

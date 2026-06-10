@@ -5,6 +5,8 @@ import { inviteCodes } from '../schemas/invite-codes.schema';
 import { invitations } from '../schemas/invitations.schema';
 import { bans } from '../schemas/bans.schema';
 import { sessions } from '../schemas/sessions.schema';
+import { notifications } from '../schemas/notifications.schema';
+import { notificationReads } from '../schemas/notification-reads.schema';
 
 // Drizzle relations — сахар для relational query API. На миграции не влияют.
 // Неоднозначные связи (две FK на accounts) разведены через relationName.
@@ -21,6 +23,21 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
   invitesGiven: many(invitations, { relationName: 'inviter' }),
   bansGiven: many(bans, { relationName: 'banner' }),
   bansReceived: many(bans, { relationName: 'target' }),
+  notifications: many(notifications),
+  notificationReads: many(notificationReads),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one, many }) => ({
+  account: one(accounts, { fields: [notifications.accountId], references: [accounts.id] }),
+  reads: many(notificationReads),
+}));
+
+export const notificationReadsRelations = relations(notificationReads, ({ one }) => ({
+  account: one(accounts, { fields: [notificationReads.accountId], references: [accounts.id] }),
+  notification: one(notifications, {
+    fields: [notificationReads.notificationId],
+    references: [notifications.id],
+  }),
 }));
 
 export const secretQaRelations = relations(secretQa, ({ one }) => ({

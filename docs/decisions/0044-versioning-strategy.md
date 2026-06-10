@@ -28,8 +28,10 @@
   `readBackendVersion`, кэш, fallback `'0.0.0'`). Отдаётся в `GET /version`.
 - **Версия фронта** — из `angular/package.json` (build-time `import { version }`,
   включён `resolveJsonModule`); кладётся в `environment.frontendVersion`.
-- **commit** — короткий git-SHA, env `GIT_COMMIT`; **инжектится при сборке/деплоя**
-  (D1: docker build ARG → env). В dev пусто → в выводе опускается.
+- **commit** — короткий git-SHA. Приоритет: **env `GIT_COMMIT`** (прод — фикс на
+  сборке, docker build ARG, D1) → если он задан, берём его; **иначе живое чтение
+  `.git` HEAD** (dev — `.git` смонтирован ro, SHA отражает текущий `git checkout` и
+  меняется сразу, без пересоздания контейнера). Нет ни env, ни `.git` → `''`.
 
 Версии фронта и бэка **могут различаться** (деплой может быть рассинхронным) — потому
 и показываем обе. `GET /version` = `{ product, backend, commit }`; фронт добавляет
@@ -38,11 +40,16 @@
 ## Последствия
 
 - Бэк: `+PRODUCT_VERSION`, `+GIT_COMMIT` в env-схеме; `modules/version` (публичный
-  `GET /version`); `readBackendVersion` util. Релиз-сид F7 берёт `PRODUCT_VERSION`.
+  `GET /version`); `readBackendVersion` (fs, кэш) + `readGitCommit` (живое чтение
+  `.git`, без кэша). Релиз-сид F7 берёт `PRODUCT_VERSION`.
 - Фронт: `resolveJsonModule: true`; `environment.frontendVersion`; `VersionService`
   (грузит `/version`, signal, computed `product`/`diagnostics`); футер + дропдаун.
-- **D1:** прокинуть `GIT_COMMIT` в прод-сборку (docker build ARG `git rev-parse
-  --short HEAD` → env контейнера) — тогда в UI появится SHA. До этого commit пуст.
-- `angular`/`nest` `package.json` версии (0.0.0 / 0.0.1) — поднять под реальный релиз
-  отдельным решением (редакторская правка, на усмотрение Elmir).
+- **Dev (live-отражение исходника):** в `docker-compose.dev.yml` для nest примонтированы
+  ro `${PROJECT_ROOT}/.git` (commit текущего checkout) и `nest/package.json` (версия
+  бэка без rebuild); для angular — `angular/package.json` (версия фронта без rebuild).
+  Иначе значения брались бы из запечённых в образ копий (bind-mount только `src/`).
+- **D1 (прод):** прокинуть `GIT_COMMIT` в прод-сборку (docker build ARG `git rev-parse
+  --short HEAD` → env контейнера). В проде `.git` нет — commit берётся только из env.
+- `angular`/`nest` `package.json` подняты до `1.0.0` под релиз 1.0 (дальше могут
+  расходиться независимо).
 - Старое поле `environment.appVersion` удалено (дубль убран).

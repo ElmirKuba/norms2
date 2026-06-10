@@ -111,3 +111,16 @@ Body: `{ login, password }`.
 ## Статистика (overview, F4)
 
 - `GET /stats/overview` (auth) → `OverviewStats` = `{ totalUsers, invitedDirect, subtreeTotal, inviteesBannedByMe, bansActive, pendingCodes, invitesRemaining, activeSessions, recoveryQuestions, recoveryRequiredCount: number|null }`. Только агрегаты (счётчики), без ПДн/списков; точечные значения «здесь и сейчас» (без истории/трендов). Сервер считает за один запрос (новые `COUNT`: пользователи active, поддерево CTE; остальное — длина существующих списков).
+
+---
+
+## Уведомления (центр уведомлений, F5.6)
+
+Модель «fan-out-on-read»: уведомление адресовано ИЛИ всем (broadcast, `accountId=null`), ИЛИ персонально (`accountId` задан). «Прочитано» — наличие строки в `notification_reads` для смотрящего; непрочитанные = адресованные мне уведомления без моей отметки. Контент: ИЛИ inline `body`, ИЛИ `contentFile` (путь к `.md` относительно `content/`, раздаётся бэком как статика — для богатого текста релизов). Все роуты — под Guard (уведомления адресные).
+
+- `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, createdAt, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
+- `GET /notifications/unread-count` (auth) → `{ count: number }`. Для бейджа колокольчика.
+- `POST /notifications/:id/read` (auth) → 204. Идемпотентно; чужое персональное (адресовано не мне) → no-op (без утечки, без read-строки).
+- `POST /notifications/read-all` (auth) → 204. Отмечает все мои непрочитанные.
+
+Персональный хук: при регистрации по чьему-то коду пригласившему создаётся персональное уведомление «По вашему коду присоединился @<login>» (кросс-домен вниз `auth → notifications`, best-effort вне транзакции — сбой уведомления не роняет регистрацию).

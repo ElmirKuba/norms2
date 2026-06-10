@@ -91,4 +91,11 @@
   strong {
     font-weight: var(--fw-bold);
   }
+
+  hr {
+    height: 1px;
+    border: 0;
+    margin: var(--space-4) 0;
+    background: var(--color-border);
+  }
 }

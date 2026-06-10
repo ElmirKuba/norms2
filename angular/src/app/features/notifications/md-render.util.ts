@@ -1,7 +1,7 @@
 /**
  * Мини-рендер ограниченного Markdown → безопасный HTML (без внешних либ, F5.6).
- * Поддержка: заголовки `#`/`##`/`###`, списки `-`/`*`, абзацы, `**жирный**`,
- * `*курсив*`, ссылки `[текст](url)`. Сначала экранируем ВСЁ (XSS-щит), затем
+ * Поддержка: заголовки `#`/`##`/`###`, списки `-`/`*`, разделитель `---`, абзацы,
+ * `**жирный**`, `*курсив*`, ссылки `[текст](url)`. Сначала экранируем ВСЁ (XSS-щит), затем
  * накладываем разметку — пользовательский текст не может породить теги. Результат
  * биндится через `[innerHTML]`; Angular дополнительно санитайзит.
  */
@@ -50,8 +50,13 @@ export function renderMarkdown(source: string): string {
     const line = raw.trimEnd();
     const heading = /^(#{1,3})\s+(.*)$/.exec(line);
     const item = /^[-*]\s+(.*)$/.exec(line);
+    const rule = /^(-{3,}|\*{3,}|_{3,})$/.test(line.trim());
 
-    if (heading) {
+    if (rule) {
+      flushList();
+      flushParagraph();
+      blocks.push('<hr>');
+    } else if (heading) {
       flushList();
       flushParagraph();
       const level = (heading[1] ?? '').length;

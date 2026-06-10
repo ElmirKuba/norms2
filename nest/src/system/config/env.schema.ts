@@ -34,6 +34,10 @@ export const envSchema = z.object({
   AVATAR_MAX_BYTES: z.coerce.number().int().positive().default(512_000),
   CONTENT_DIR: z.string().min(1).default('content'),
   OPTIMISTIC_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(3),
+
+  // Версия продукта (единый source of truth, ADR-0044) + git-SHA билда (деплой).
+  PRODUCT_VERSION: z.string().min(1).default('0.0.0'),
+  GIT_COMMIT: z.string().default(''),
 });
 
 /** Тип валидированного окружения (выводится из схемы). */

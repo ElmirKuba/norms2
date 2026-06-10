@@ -81,6 +81,8 @@ services:
       # package.json (ro) — версия бэка в GET /version из исходника, а не из запечённой
       # в образ копии (иначе bump версии не виден без dev-rebuild).
       - ${PROJECT_ROOT}/nest/package.json:/app/package.json:ro
+      # Авторские seed-файлы релиз-нот (ro) — сид копирует их в content/ при старте (F7).
+      - ${PROJECT_ROOT}/nest/seed-content:/app/seed-content:ro
     ports:
       - '${BACKEND_PORT}:3000'
     depends_on:

@@ -73,6 +73,14 @@ services:
       # Bind-mount, чтобы файлы ПЕРЕЖИВАЛИ dev-rebuild/пересоздание контейнера и
       # были видны на хосте. Папка в .gitignore (docker/volumes/*) — в git не идёт.
       - ${PROJECT_ROOT}/docker/volumes/content:/app/content:rw
+      # .git (ro) — бэк читает текущий HEAD живьём для GET /version (ADR-0044):
+      # в dev SHA отражает реальный checkout рабочего дерева и меняется сразу после
+      # git checkout, без пересоздания контейнера. В проде .git нет — там GIT_COMMIT
+      # из build ARG (D1).
+      - ${PROJECT_ROOT}/.git:/app/.git:ro
+      # package.json (ro) — версия бэка в GET /version из исходника, а не из запечённой
+      # в образ копии (иначе bump версии не виден без dev-rebuild).
+      - ${PROJECT_ROOT}/nest/package.json:/app/package.json:ro
     ports:
       - '${BACKEND_PORT}:3000'
     depends_on:
@@ -90,6 +98,9 @@ services:
     restart: unless-stopped
     volumes:
       - ${PROJECT_ROOT}/angular/src:/app/src:rw
+      # package.json (ro) — frontendVersion в бандле берётся из исходника, а не из
+      # запечённой в образ копии (ADR-0044: иначе bump версии фронта не виден без rebuild).
+      - ${PROJECT_ROOT}/angular/package.json:/app/package.json:ro
     ports:
       - '${FRONTEND_PORT}:4200'
     depends_on:

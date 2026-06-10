@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
+import { RateLimit } from '../../../shared/guards/rate-limit.decorator';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { createInviteSchema } from '../dtos/create-invite.dto';
 import type { CreateInviteDto } from '../dtos/create-invite.dto';
@@ -88,6 +89,7 @@ export class InvitesController {
    */
   @Post('check')
   @HttpCode(200)
+  @RateLimit(30, 300_000)
   public async check(
     @Body(new ZodValidationPipe(checkInviteSchema)) body: CheckInviteDto,
   ): Promise<CheckInviteResponse> {

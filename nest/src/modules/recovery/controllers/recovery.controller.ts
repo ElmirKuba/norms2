@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
+import { RateLimit } from '../../../shared/guards/rate-limit.decorator';
 import { startRecoverySchema } from '../dtos/start-recovery.dto';
 import type { StartRecoveryDto } from '../dtos/start-recovery.dto';
 import { completeRecoverySchema } from '../dtos/complete-recovery.dto';
@@ -36,6 +37,7 @@ export class RecoveryController {
    */
   @Post('start')
   @HttpCode(200)
+  @RateLimit(5, 600_000)
   public async start(
     @Body(new ZodValidationPipe(startRecoverySchema)) body: StartRecoveryDto,
   ): Promise<StartRecoveryResponse> {
@@ -50,6 +52,7 @@ export class RecoveryController {
    */
   @Post('complete')
   @HttpCode(204)
+  @RateLimit(10, 600_000)
   public async complete(
     @Body(new ZodValidationPipe(completeRecoverySchema)) body: CompleteRecoveryDto,
   ): Promise<void> {

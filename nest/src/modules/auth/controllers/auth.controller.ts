@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
+import { RateLimit } from '../../../shared/guards/rate-limit.decorator';
 import { registerSchema } from '../dtos/register.dto';
 import type { RegisterDto } from '../dtos/register.dto';
 import { loginSchema } from '../dtos/login.dto';
@@ -53,6 +54,7 @@ export class AuthController {
    * @returns Минимум о созданном аккаунте.
    */
   @Post('register')
+  @RateLimit(5, 600_000)
   public async register(
     @Body(new ZodValidationPipe(registerSchema)) body: RegisterDto,
   ): Promise<RegisterResponse> {
@@ -78,6 +80,7 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(200)
+  @RateLimit(10, 300_000)
   public async login(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginDto,
     @Req() request: Request,
@@ -103,6 +106,7 @@ export class AuthController {
    */
   @Post('reactivate')
   @HttpCode(204)
+  @RateLimit(10, 300_000)
   public async reactivate(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginDto,
   ): Promise<void> {

@@ -160,4 +160,17 @@ export class NotificationRepository implements NotificationRepositoryPort {
         target: [notificationReads.accountId, notificationReads.notificationId],
       });
   }
+
+  /**
+   * Идемпотентный сид по `key` (ON CONFLICT DO NOTHING по unique `key`).
+   * @param id PK (используется только при вставке).
+   * @param data Данные (с непустым `key`).
+   * @returns Промис завершения.
+   */
+  public async createIfAbsentByKey(id: string, data: NotificationBase): Promise<void> {
+    await this._db
+      .insert(notifications)
+      .values({ id, ...data })
+      .onConflictDoNothing({ target: notifications.key });
+  }
 }

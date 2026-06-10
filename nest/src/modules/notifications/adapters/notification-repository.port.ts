@@ -71,4 +71,14 @@ export interface NotificationRepositoryPort {
    * @returns Промис завершения.
    */
   insertReads(rows: NotificationReadInsert[]): Promise<void>;
+
+  /**
+   * Создаёт уведомление, только если его `key` ещё нет (ON CONFLICT DO NOTHING по
+   * unique `key`). Идемпотентный сид релиз-нот (ADR-0044/F7): повторный старт не
+   * плодит дублей.
+   * @param id Идентификатор (используется только при вставке).
+   * @param data Данные (обязателен непустой `key`).
+   * @returns Промис завершения.
+   */
+  createIfAbsentByKey(id: string, data: NotificationBase): Promise<void>;
 }

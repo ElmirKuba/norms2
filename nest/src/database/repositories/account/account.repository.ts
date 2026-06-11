@@ -150,10 +150,11 @@ export class AccountRepository implements AccountRepositoryPort {
   /**
    * Атомарно списывает 1 из квоты (`WHERE invites_remaining > 0`).
    * @param id Идентификатор.
+   * @param tx Опц. транзакция (атомарность с созданием кода).
    * @returns true, если списано; false, если квота исчерпана.
    */
-  public async decrementInvitesRemaining(id: string): Promise<boolean> {
-    const rows = await this._db
+  public async decrementInvitesRemaining(id: string, tx?: Transaction): Promise<boolean> {
+    const rows = await this._exec(tx)
       .update(accounts)
       .set({ invitesRemaining: sql`${accounts.invitesRemaining} - 1` })
       .where(and(eq(accounts.id, id), gt(accounts.invitesRemaining, 0)))
@@ -164,10 +165,11 @@ export class AccountRepository implements AccountRepositoryPort {
   /**
    * Атомарно возвращает 1 в квоту (отзыв кода).
    * @param id Идентификатор.
+   * @param tx Опц. транзакция (атомарность с отзывом кода).
    * @returns Промис завершения.
    */
-  public async incrementInvitesRemaining(id: string): Promise<void> {
-    await this._db
+  public async incrementInvitesRemaining(id: string, tx?: Transaction): Promise<void> {
+    await this._exec(tx)
       .update(accounts)
       .set({ invitesRemaining: sql`${accounts.invitesRemaining} + 1` })
       .where(eq(accounts.id, id));

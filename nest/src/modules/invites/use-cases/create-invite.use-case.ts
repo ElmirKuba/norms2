@@ -1,22 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { InviteDomainService } from '../domain-services/invite.domain-service';
 import { QuotaExceededError } from '../../../shared/errors/quota-exceeded.error';
+import { TRANSACTION_RUNNER } from '../../../shared/transactions/transaction-runner.port';
+import type { TransactionRunnerPort } from '../../../shared/transactions/transaction-runner.port';
 import type { InviteCodeFull } from '../interfaces/invite-code-full.interface';
 
 /**
- * Use-case создания инвайта (оркестрация кросс-домена). Списывает квоту (account↓),
- * затем создаёт код (invites↓). Если код не создался — возвращает квоту (компенсация).
+ * Use-case создания инвайта (оркестрация кросс-домена) — в ОДНОЙ транзакции:
+ * списывает квоту (account↓) и создаёт код (invites↓). Не списалось → QuotaExceeded
+ * (откат пуст). Код не создался → исключение откатывает и списание квоты (атомарно,
+ * без ручной компенсации).
  */
 @Injectable()
 export class CreateInviteUseCase {
   /**
    * @param _accountDomainService Domain-service account (квота).
    * @param _inviteDomainService Domain-service invites (код).
+   * @param _transactionRunner Раннер транзакций (атомарность списание+создание).
    */
   public constructor(
     private readonly _accountDomainService: AccountDomainService,
     private readonly _inviteDomainService: InviteDomainService,
+    @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
   ) {}
 
   /**
@@ -27,18 +33,12 @@ export class CreateInviteUseCase {
    * @throws {QuotaExceededError} Если квота исчерпана.
    */
   public async execute(inviterId: string, reason: string): Promise<InviteCodeFull> {
-    const consumed = await this._accountDomainService.consumeInviteQuota(inviterId);
-    if (!consumed) {
-      throw new QuotaExceededError('Квота приглашений исчерпана.');
-    }
-    try {
-      return await this._inviteDomainService.createCode(inviterId, reason);
-    } catch (error) {
-      // Код не создался — возвращаем списанную квоту.
-      // TODO: Claude Code: 2026-06-05: компенсация неатомарна (краш между decrement и
-      // createCode потеряет слот квоты). При желании — обернуть в транзакцию tx-aware.
-      await this._accountDomainService.returnInviteQuota(inviterId);
-      throw error;
-    }
+    return this._transactionRunner.run(async (tx) => {
+      const consumed = await this._accountDomainService.consumeInviteQuota(inviterId, tx);
+      if (!consumed) {
+        throw new QuotaExceededError('Квота приглашений исчерпана.');
+      }
+      return this._inviteDomainService.createCode(inviterId, reason, tx);
+    });
   }
 }

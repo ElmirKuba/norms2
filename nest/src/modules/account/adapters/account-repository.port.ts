@@ -58,16 +58,18 @@ export interface AccountRepositoryPort {
   /**
    * Атомарно списывает 1 из квоты инвайтов (`WHERE invites_remaining > 0`).
    * @param id Идентификатор аккаунта.
+   * @param tx Опц. транзакция (атомарность с созданием кода, create-invite).
    * @returns true, если списано; false, если квота исчерпана.
    */
-  decrementInvitesRemaining(id: string): Promise<boolean>;
+  decrementInvitesRemaining(id: string, tx?: Transaction): Promise<boolean>;
 
   /**
    * Атомарно возвращает 1 в квоту инвайтов (отзыв кода).
    * @param id Идентификатор аккаунта.
+   * @param tx Опц. транзакция (атомарность с отзывом кода, revoke-invite).
    * @returns Промис завершения.
    */
-  incrementInvitesRemaining(id: string): Promise<void>;
+  incrementInvitesRemaining(id: string, tx?: Transaction): Promise<void>;
 
   /**
    * Считает активных (не удалённых) пользователей — для overview (F4).

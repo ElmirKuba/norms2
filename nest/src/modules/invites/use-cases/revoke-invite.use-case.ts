@@ -1,20 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { InviteDomainService } from '../domain-services/invite.domain-service';
+import { TRANSACTION_RUNNER } from '../../../shared/transactions/transaction-runner.port';
+import type { TransactionRunnerPort } from '../../../shared/transactions/transaction-runner.port';
 
 /**
- * Use-case отзыва инвайта: удаляет СВОЙ pending-код (invites↓), затем возвращает
- * квоту (account↑). Если код не свой/не найден — revokeCode бросит, квота не тронута.
+ * Use-case отзыва инвайта — в ОДНОЙ транзакции: удаляет СВОЙ pending-код (invites↓)
+ * и возвращает квоту (account↑). Код не свой/не найден → revokeCode бросит → откат
+ * (квота не тронута). Атомарно, без ручной компенсации.
  */
 @Injectable()
 export class RevokeInviteUseCase {
   /**
    * @param _inviteDomainService Domain-service invites (отзыв кода).
    * @param _accountDomainService Domain-service account (возврат квоты).
+   * @param _transactionRunner Раннер транзакций (атомарность отзыв+возврат).
    */
   public constructor(
     private readonly _inviteDomainService: InviteDomainService,
     private readonly _accountDomainService: AccountDomainService,
+    @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
   ) {}
 
   /**
@@ -25,9 +30,9 @@ export class RevokeInviteUseCase {
    * @throws {InviteInvalidError} Если код не найден или не принадлежит запросившему.
    */
   public async execute(codeId: string, requesterId: string): Promise<void> {
-    await this._inviteDomainService.revokeCode(codeId, requesterId);
-    // TODO: Claude Code: 2026-06-05: возврат квоты после delete неатомарен (краш
-    // потеряет слот). При желании — транзакция (revoke+increment) tx-aware методами.
-    await this._accountDomainService.returnInviteQuota(requesterId);
+    await this._transactionRunner.run(async (tx) => {
+      await this._inviteDomainService.revokeCode(codeId, requesterId, tx);
+      await this._accountDomainService.returnInviteQuota(requesterId, tx);
+    });
   }
 }

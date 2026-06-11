@@ -202,19 +202,21 @@ export class AccountDomainService {
   /**
    * Атомарно списывает 1 из квоты инвайтов (для кросс-домена из invites).
    * @param accountId Идентификатор аккаунта.
+   * @param tx Опц. транзакция (атомарность с созданием кода).
    * @returns true, если списано; false, если квота исчерпана.
    */
-  public async consumeInviteQuota(accountId: string): Promise<boolean> {
-    return this._accountRepository.decrementInvitesRemaining(accountId);
+  public async consumeInviteQuota(accountId: string, tx?: Transaction): Promise<boolean> {
+    return this._accountRepository.decrementInvitesRemaining(accountId, tx);
   }
 
   /**
-   * Атомарно возвращает 1 в квоту инвайтов (отзыв/компенсация).
+   * Атомарно возвращает 1 в квоту инвайтов (отзыв кода).
    * @param accountId Идентификатор аккаунта.
+   * @param tx Опц. транзакция (атомарность с отзывом кода).
    * @returns Промис завершения.
    */
-  public async returnInviteQuota(accountId: string): Promise<void> {
-    await this._accountRepository.incrementInvitesRemaining(accountId);
+  public async returnInviteQuota(accountId: string, tx?: Transaction): Promise<void> {
+    await this._accountRepository.incrementInvitesRemaining(accountId, tx);
   }
 
   /**

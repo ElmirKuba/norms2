@@ -37,30 +37,40 @@ export class InviteDomainService {
    * Создаёт pending-код (генерит значение и срок). Квоту списывает use-case.
    * @param inviterId Идентификатор создателя.
    * @param reason Причина приглашения.
+   * @param tx Опц. транзакция (атомарность со списанием квоты, create-invite).
    * @returns Созданный код.
    */
-  public async createCode(inviterId: string, reason: string): Promise<InviteCodeFull> {
+  public async createCode(
+    inviterId: string,
+    reason: string,
+    tx?: Transaction,
+  ): Promise<InviteCodeFull> {
     const ttlDays = this._configService.get('INVITE_TTL_DAYS', { infer: true });
-    return this._inviteRepository.createCode(generateId(), {
-      code: InviteCodeValue.generate().value,
-      inviterId,
-      reason,
-      expiresAt: new Date(Date.now() + ttlDays * DAY_MS),
-    });
+    return this._inviteRepository.createCode(
+      generateId(),
+      {
+        code: InviteCodeValue.generate().value,
+        inviterId,
+        reason,
+        expiresAt: new Date(Date.now() + ttlDays * DAY_MS),
+      },
+      tx,
+    );
   }
 
   /**
    * Отзывает СВОЙ pending-код. Квоту возвращает use-case при успехе.
    * @param codeId Идентификатор кода.
    * @param requesterId Идентификатор запросившего (должен быть создателем).
+   * @param tx Опц. транзакция (атомарность с возвратом квоты, revoke-invite).
    * @throws {InviteInvalidError} Если код не найден или не принадлежит запросившему.
    */
-  public async revokeCode(codeId: string, requesterId: string): Promise<void> {
+  public async revokeCode(codeId: string, requesterId: string, tx?: Transaction): Promise<void> {
     const code = await this._inviteRepository.findCodeById(codeId);
     if (code?.inviterId !== requesterId) {
       throw new InviteInvalidError('Код не найден.');
     }
-    const deleted = await this._inviteRepository.deleteCode(codeId);
+    const deleted = await this._inviteRepository.deleteCode(codeId, tx);
     if (!deleted) {
       throw new InviteInvalidError('Код не найден.');
     }

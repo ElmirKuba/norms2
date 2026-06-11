@@ -1,0 +1,26 @@
+# Динамические маршруты Traefik (file-провайдер). Явная замена docker-лейблам:
+# Traefik НЕ ходит в docker.sock (безопаснее для интернет-facing прокси и не зависит
+# от версии docker-API демона). Same-origin path-based: /api и /content → nest,
+# остальное → angular (SPA). TLS — дефолт entrypoint websecure (серт для ${DOMAIN}
+# через ACME; локально ACME не выпишет → Traefik отдаёт self-signed).
+http:
+  routers:
+    norms2-api:
+      rule: "PathPrefix(`/api`) || PathPrefix(`/content`)"
+      priority: 10
+      entryPoints: ['websecure']
+      service: norms2-api
+    norms2-web:
+      rule: "PathPrefix(`/`)"
+      priority: 1
+      entryPoints: ['websecure']
+      service: norms2-web
+  services:
+    norms2-api:
+      loadBalancer:
+        servers:
+          - url: 'http://norms2_nest_prod:3000'
+    norms2-web:
+      loadBalancer:
+        servers:
+          - url: 'http://norms2_angular_prod:80'

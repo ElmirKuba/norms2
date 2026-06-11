@@ -18,13 +18,20 @@ services:
     image: traefik:v3.3
     restart: unless-stopped
     command:
-      - --providers.docker=true
-      - --providers.docker.exposedByDefault=false
+      # File-провайдер (не docker): маршруты из dynamic/, без доступа к docker.sock
+      # (безопаснее + не зависит от версии docker-API демона).
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       # HTTP → HTTPS
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      # TLS по умолчанию для всех websecure-роутеров: серт ${DOMAIN} через ACME
+      # (локально ACME не выпишет example.com → Traefik отдаёт self-signed).
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certResolver=le
+      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
       # Let's Encrypt (TLS-ALPN)
       - --certificatesresolvers.le.acme.tlschallenge=true
       - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
@@ -33,7 +40,7 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PROJECT_ROOT}/docker/traefik/dynamic:/etc/traefik/dynamic:ro
       - ${PROJECT_ROOT}/docker/volumes/letsencrypt:/letsencrypt
     networks:
       - norms2_prod-net
@@ -93,15 +100,8 @@ services:
     environment:
       NODE_ENV: production
       DB_HOST: norms2_postgres_prod
-    labels:
-      - traefik.enable=true
-      # Тот же Host, что и фронт; на nest уходят /api (REST) и /content (аватары +
-      # релиз-ноты, ADR-0031/F7). Приоритет выше web-роутера — матчатся первыми.
-      - 'traefik.http.routers.norms2-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/content`))'
-      - traefik.http.routers.norms2-api.priority=10
-      - traefik.http.routers.norms2-api.entrypoints=websecure
-      - traefik.http.routers.norms2-api.tls.certresolver=le
-      - traefik.http.services.norms2-api.loadbalancer.server.port=3000
+    # Маршрутизация — в Traefik file-провайдере (docker/traefik/dynamic/routes.yml):
+    # /api и /content → этот сервис (norms2_nest_prod:3000). Лейблы не нужны.
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,22 +110,15 @@ services:
     networks:
       - norms2_prod-net
 
-  # ── Angular frontend (статика nginx на ${DOMAIN}) ──
+  # ── Angular frontend (статика nginx; раздаётся как SPA) ──
   angular:
     container_name: norms2_angular_prod
     build:
       context: ${PROJECT_ROOT}
       dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.production
     restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      # Весь остальной трафик того же Host (SPA). Приоритет ниже nest-роутера, чтобы
-      # /api и /content уходили на nest, а не сюда.
-      - traefik.http.routers.norms2-web.rule=Host(`${DOMAIN}`)
-      - traefik.http.routers.norms2-web.priority=1
-      - traefik.http.routers.norms2-web.entrypoints=websecure
-      - traefik.http.routers.norms2-web.tls.certresolver=le
-      - traefik.http.services.norms2-web.loadbalancer.server.port=80
+    # Маршрутизация — в Traefik file-провайдере: весь трафик кроме /api и /content
+    # → этот сервис (norms2_angular_prod:80, SPA history-fallback в nginx).
     depends_on:
       - nest
     networks:

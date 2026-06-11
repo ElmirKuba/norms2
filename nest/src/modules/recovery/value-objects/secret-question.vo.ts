@@ -26,8 +26,9 @@ export class SecretQuestion {
     if (normalized.length < MIN_LENGTH || normalized.length > MAX_LENGTH) {
       throw new ValidationError(`Вопрос: ${MIN_LENGTH}–${MAX_LENGTH} символов.`);
     }
-    // TODO: Claude Code: 2026-06-05: чёрный список тем вопросов (ADR-0006) —
-    // согласовать конкретный список запрещённых тем с Elmir, затем добавить проверку.
+    // Чёрного списка тем на бэке нет (реш. Elmir 2026-06-11): на free-text он
+    // хрупок и обходится перефразом, а ответ хешируется (argon2). Вместо запрета —
+    // мягкая UI-подсказка в форме (не использовать паспорт/ФИО/публично известное).
     return new SecretQuestion(normalized);
   }
 }

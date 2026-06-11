@@ -26,8 +26,11 @@ export class StartRecoveryUseCase {
    * @throws {RecoveryNotAvailableError} Если аккаунт/K не настроены или вопросов < K.
    */
   public async execute(login: string): Promise<RecoveryQuestion[]> {
-    // TODO: Claude Code: 2026-06-05: анти-энумерация логинов — сейчас 409 раскрывает,
-    // настроено ли восстановление. Закрыть rate-limit'ом + единым ответом на F5.
+    // Анти-энумерацию НЕ делаем (реш. Elmir 2026-06-11): логины публичны by design
+    // (псевдонимы; профиль открыт по /accounts/:login, занятость видна при реге),
+    // площадка инвайт-онли, на /recovery/start стоит rate-limit (F5.5). Доп-сигнал
+    // «настроено ли восстановление» маргинален, а «единый ответ» ломал бы UX (нужно
+    // показать реальные вопросы) → 409 «недоступно» приемлемо.
     const account = await this._accountDomainService.findRecoveryAccountByLogin(login);
     if (account === null || account.recoveryRequiredCount === null) {
       throw new RecoveryNotAvailableError('Восстановление для этого аккаунта недоступно.');

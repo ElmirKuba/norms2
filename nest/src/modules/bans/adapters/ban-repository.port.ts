@@ -47,4 +47,12 @@ export interface BanRepositoryPort {
    * @returns Проекции (вкл. историю снятых), новые сверху.
    */
   listByBanner(bannerId: string): Promise<BanListItem[]>;
+
+  /**
+   * Активные баны на множество целей (для overview-полезности, F4): по каждой
+   * активной записи — кто цель и кто банивший. Пустой список целей → пустой результат.
+   * @param targetIds Идентификаторы целей.
+   * @returns Пары {targetId, bannerId} активных банов (может быть >1 на цель).
+   */
+  listActiveBansForTargets(targetIds: string[]): Promise<Pick<BanFull, 'targetId' | 'bannerId'>[]>;
 }

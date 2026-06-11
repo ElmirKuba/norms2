@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { bans } from '../../schemas/bans.schema';
@@ -109,5 +109,24 @@ export class BanRepository implements BanRepositoryPort {
       .innerJoin(accounts, eq(accounts.id, bans.targetId))
       .where(eq(bans.bannerId, bannerId))
       .orderBy(desc(bans.createdAt));
+  }
+
+  /**
+   * Активные баны на множество целей (overview-полезность, F4). Пустой список —
+   * сразу [] (без запроса). Возвращает {targetId, bannerId} по каждой активной
+   * записи — use-case делит на «забанено мной» и «забанено вышестоящим».
+   * @param targetIds Идентификаторы целей.
+   * @returns Пары цель→банивший активных банов.
+   */
+  public async listActiveBansForTargets(
+    targetIds: string[],
+  ): Promise<Pick<BanFull, 'targetId' | 'bannerId'>[]> {
+    if (targetIds.length === 0) {
+      return [];
+    }
+    return this._db
+      .select({ targetId: bans.targetId, bannerId: bans.bannerId })
+      .from(bans)
+      .where(and(eq(bans.active, true), inArray(bans.targetId, targetIds)));
   }
 }

@@ -59,4 +59,15 @@ export class BanDomainService {
   public async listMine(bannerId: string): Promise<BanListItem[]> {
     return this._banRepository.listByBanner(bannerId);
   }
+
+  /**
+   * Активные баны на множество целей (overview-полезность, F4): {targetId, bannerId}.
+   * @param targetIds Идентификаторы целей.
+   * @returns Пары цель→банивший активных банов.
+   */
+  public async listActiveBansForTargets(
+    targetIds: string[],
+  ): Promise<Pick<BanFull, 'targetId' | 'bannerId'>[]> {
+    return this._banRepository.listActiveBansForTargets(targetIds);
+  }
 }

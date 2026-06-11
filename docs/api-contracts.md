@@ -114,7 +114,7 @@ Body: `{ login, password }`.
 
 ## Статистика (overview, F4)
 
-- `GET /stats/overview` (auth) → `OverviewStats` = `{ totalUsers, invitedDirect, subtreeTotal, inviteesBannedByMe, bansActive, pendingCodes, invitesRemaining, activeSessions, recoveryQuestions, recoveryRequiredCount: number|null }`. Только агрегаты (счётчики), без ПДн/списков; точечные значения «здесь и сейчас» (без истории/трендов). Сервер считает за один запрос (новые `COUNT`: пользователи active, поддерево CTE; остальное — длина существующих списков).
+- `GET /stats/overview` (auth) → `OverviewStats` = `{ totalUsers, invitedDirect, subtreeTotal, inviteesBannedByMe, inviteesBannedByAncestor, bansActive, pendingCodes, invitesRemaining, activeSessions, recoveryQuestions, recoveryRequiredCount: number|null }`. Только агрегаты (счётчики), без ПДн/списков; точечные значения «здесь и сейчас» (без истории/трендов). `inviteesBannedByMe`/`inviteesBannedByAncestor` — прямые приглашённые с активным баном от меня / от вышестоящего по дереву (взаимоисключающе: забанен и мной, и вышестоящим → к «мной»); «полезность» = `invitedDirect − оба`. Сервер считает за один запрос (новые `COUNT`: пользователи active, поддерево CTE; остальное — длина существующих списков).
 
 ---
 

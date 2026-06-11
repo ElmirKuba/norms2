@@ -53,8 +53,22 @@ export class GetOverviewStatsUseCase {
       ]);
 
     const activeBanTargets = new Set(bans.filter((ban) => ban.active).map((ban) => ban.targetId));
-    const inviteesBannedByMe = invitees.filter((invitee) =>
-      activeBanTargets.has(invitee.accountId),
+
+    // Полезность приглашённых: делим активные баны на МОИХ прямых приглашённых на
+    // «забанено мной» и «забанено вышестоящим» (бан против моего приглашённого
+    // бывает только от меня или от предка по дереву — isAncestor, ADR-0012/0038).
+    const activeBansOnInvitees = await this._banDomainService.listActiveBansForTargets(
+      invitees.map((invitee) => invitee.accountId),
+    );
+    const bannedByMe = new Set<string>();
+    const bannedByOther = new Set<string>();
+    for (const ban of activeBansOnInvitees) {
+      (ban.bannerId === me ? bannedByMe : bannedByOther).add(ban.targetId);
+    }
+    // Взаимно исключающе: забанен и мной, и вышестоящим → относим к «мной».
+    const inviteesBannedByMe = bannedByMe.size;
+    const inviteesBannedByAncestor = [...bannedByOther].filter(
+      (targetId) => !bannedByMe.has(targetId),
     ).length;
 
     return {
@@ -62,6 +76,7 @@ export class GetOverviewStatsUseCase {
       invitedDirect: invitees.length,
       subtreeTotal,
       inviteesBannedByMe,
+      inviteesBannedByAncestor,
       bansActive: activeBanTargets.size,
       pendingCodes: codes.length,
       invitesRemaining: account.invitesRemaining,

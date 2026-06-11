@@ -4,6 +4,10 @@ import { DomainError } from './domain.error';
 export interface BannedDetail {
   /** FK банившего. */
   bannerId: string;
+  /** Логин банившего. */
+  bannerLogin: string;
+  /** Псевдоним банившего. */
+  bannerAlias: string;
   /** Причина бана. */
   reason: string;
 }
@@ -21,11 +25,16 @@ export class AccountBannedError extends DomainError {
 
   /**
    * @param message Человекочитаемое сообщение.
-   * @param activeBans Активные баны на аккаунт (берём только banner+reason).
+   * @param activeBans Активные баны на аккаунт (кто/за что: banner id/login/alias + причина).
    */
   public constructor(message: string, activeBans: readonly BannedDetail[]) {
-    // TODO: Claude Code: 2026-06-05: обогатить alias банившего (join accounts) —
-    // сейчас в details только bannerId; фронт резолвит имя отдельно.
-    super(message, { bans: activeBans.map((ban) => ({ bannerId: ban.bannerId, reason: ban.reason })) });
+    super(message, {
+      bans: activeBans.map((ban) => ({
+        bannerId: ban.bannerId,
+        bannerLogin: ban.bannerLogin,
+        bannerAlias: ban.bannerAlias,
+        reason: ban.reason,
+      })),
+    });
   }
 }

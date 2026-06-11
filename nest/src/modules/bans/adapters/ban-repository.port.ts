@@ -1,6 +1,7 @@
 import type { BanFull } from '../interfaces/ban-full.interface';
 import type { BanCreate } from '../interfaces/ban-create.interface';
 import type { BanListItem } from '../interfaces/ban-list-item.interface';
+import type { ActiveBanDetail } from '../interfaces/active-ban-detail.interface';
 
 /** DI-токен порта репозитория банов (биндится в bans.module). */
 export const BAN_REPOSITORY = Symbol('BAN_REPOSITORY');
@@ -35,11 +36,12 @@ export interface BanRepositoryPort {
   existsActiveByTarget(targetId: string): Promise<boolean>;
 
   /**
-   * Активные баны на цель (для сообщения «кто/за что» при логине, ADR-0012).
+   * Активные баны на цель с именем банившего (join accounts) — для экрана
+   * «вы забанены»: кто/за что (ADR-0012).
    * @param targetId Идентификатор цели.
-   * @returns Активные записи.
+   * @returns Активные баны с login/alias банившего.
    */
-  listActiveByTarget(targetId: string): Promise<BanFull[]>;
+  listActiveByTarget(targetId: string): Promise<ActiveBanDetail[]>;
 
   /**
    * Баны, выданные данным аккаунтом («мои баны»), с login/alias цели (join accounts).

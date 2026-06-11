@@ -49,7 +49,7 @@ Body: `{ alias, login, password, inviteCode? }`.
 ### `POST /auth/login` 🛡
 Body: `{ login, password }`.
 → 200 `{ accessToken }` + ставит refresh в httpOnly cookie; создаёт `session`.
-Ошибки: `UNAUTHORIZED` (`BAD_CREDENTIALS`); `FORBIDDEN` (`ACCOUNT_BANNED` — с деталями кто/за что; `ACCOUNT_DEACTIVATED`; `ACCOUNT_DELETED`).
+Ошибки: `UNAUTHORIZED` (`BAD_CREDENTIALS`); `FORBIDDEN` (`ACCOUNT_BANNED` — `details.bans: { bannerId, bannerLogin, bannerAlias, reason }[]` (кто/за что, ADR-0012); `ACCOUNT_DEACTIVATED`; `ACCOUNT_DELETED`).
 
 ### `POST /auth/refresh`
 Использует refresh-cookie → новый access + ротация refresh.

@@ -5,6 +5,7 @@ import { BanNotFoundError } from '../../../shared/errors/ban-not-found.error';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { BanFull } from '../interfaces/ban-full.interface';
 import type { BanListItem } from '../interfaces/ban-list-item.interface';
+import type { ActiveBanDetail } from '../interfaces/active-ban-detail.interface';
 
 /**
  * Domain-service области bans: логика записей бана. Право банить (isAncestor) —
@@ -43,11 +44,11 @@ export class BanDomainService {
   }
 
   /**
-   * Активные баны на цель (для login-сообщения, ADR-0012).
+   * Активные баны на цель с именем банившего (для экрана «вы забанены», ADR-0012).
    * @param targetId Цель.
-   * @returns Активные записи.
+   * @returns Активные баны с login/alias банившего.
    */
-  public async listActiveAgainst(targetId: string): Promise<BanFull[]> {
+  public async listActiveAgainst(targetId: string): Promise<ActiveBanDetail[]> {
     return this._banRepository.listActiveByTarget(targetId);
   }
 

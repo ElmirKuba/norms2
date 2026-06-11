@@ -8,6 +8,7 @@ import type { BanRepositoryPort } from '../../../modules/bans/adapters/ban-repos
 import type { BanCreate } from '../../../modules/bans/interfaces/ban-create.interface';
 import type { BanFull } from '../../../modules/bans/interfaces/ban-full.interface';
 import type { BanListItem } from '../../../modules/bans/interfaces/ban-list-item.interface';
+import type { ActiveBanDetail } from '../../../modules/bans/interfaces/active-ban-detail.interface';
 
 /**
  * Drizzle-реализация порта банов (единственное место, где про ORM знают). Строки
@@ -77,14 +78,21 @@ export class BanRepository implements BanRepositoryPort {
   }
 
   /**
-   * Активные баны на цель.
+   * Активные баны на цель с именем банившего (INNER JOIN accounts по bannerId) —
+   * для экрана «вы забанены»: кто/за что (ADR-0012).
    * @param targetId Идентификатор цели.
-   * @returns Активные записи.
+   * @returns Активные баны с login/alias банившего.
    */
-  public async listActiveByTarget(targetId: string): Promise<BanFull[]> {
+  public async listActiveByTarget(targetId: string): Promise<ActiveBanDetail[]> {
     return this._db
-      .select()
+      .select({
+        bannerId: bans.bannerId,
+        bannerLogin: accounts.login,
+        bannerAlias: accounts.alias,
+        reason: bans.reason,
+      })
       .from(bans)
+      .innerJoin(accounts, eq(accounts.id, bans.bannerId))
       .where(and(eq(bans.targetId, targetId), eq(bans.active, true)));
   }
 

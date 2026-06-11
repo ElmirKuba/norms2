@@ -65,11 +65,9 @@ export class AccountDomainService {
   public async createAccount(params: CreateAccountParams, tx?: Transaction): Promise<AccountFull> {
     const { login, alias, password, registrationSource } = params;
 
-    // Дружелюбная предпроверка; настоящий гард — UNIQUE(lower(login)) в БД.
-    // TODO: Claude Code: 2026-06-04: гонка — два параллельных register с одним
-    // логином оба проходят existsByLoginNormalized, второй упадёт на
-    // UNIQUE(lower(login)) → сейчас 500. Поймать unique-violation (pg 23505) в
-    // AccountRepository.create и бросить LoginTakenError (409).
+    // Дружелюбная предпроверка; настоящий гард — UNIQUE(lower(login)) в БД. Гонку
+    // (два параллельных register с одним логином: оба проходят предпроверку, второй
+    // нарушит UNIQUE) ловит AccountRepository.create → LoginTakenError (409), не 500.
     if (await this._accountRepository.existsByLoginNormalized(login.normalized)) {
       throw new LoginTakenError('Логин уже занят.');
     }

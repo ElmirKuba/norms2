@@ -8,6 +8,28 @@ import type { AccountCreate } from '../../../modules/account/interfaces/account-
 import type { AccountFull } from '../../../modules/account/interfaces/account-full.interface';
 import type { AccountMutable } from '../../../modules/account/interfaces/account-mutable.interface';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
+import { LoginTakenError } from '../../../shared/errors/login-taken.error';
+
+/** Код ошибки PostgreSQL «unique_violation» (нарушение UNIQUE-ограничения). */
+const PG_UNIQUE_VIOLATION = '23505';
+
+/**
+ * pg-ошибка нарушения UNIQUE? Drizzle ОБОРАЧИВАЕТ pg-ошибку (DrizzleQueryError
+ * «Failed query: …»), оригинал с `code='23505'` лежит в `.cause` → идём по цепочке
+ * cause (узкое сужение `unknown`, без `any`).
+ * @param error Пойманная ошибка.
+ * @returns true, если где-то в цепочке unique_violation (код 23505).
+ */
+function isUniqueViolation(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && typeof current === 'object' && current !== null; depth++) {
+    if ('code' in current && (current as { code: unknown }).code === PG_UNIQUE_VIOLATION) {
+      return true;
+    }
+    current = 'cause' in current ? (current as { cause: unknown }).cause : null;
+  }
+  return false;
+}
 
 /**
  * Drizzle-реализация порта аккаунтов (единственное место, где про ORM знают).
@@ -79,13 +101,24 @@ export class AccountRepository implements AccountRepositoryPort {
    * @param data Данные создания (Base).
    * @param tx Опц. транзакция (атомарность с погашением инвайта при регистрации).
    * @returns Созданная полная строка.
+   * @throws {LoginTakenError} На гонке: параллельный INSERT того же логина нарушит
+   *   UNIQUE(lower(login)) (pg 23505) → переводим в доменную 409 вместо 500.
+   *   `accounts` имеет единственный UNIQUE — по логину, поэтому маппинг однозначен.
    * @throws {Error} Если INSERT не вернул строку.
    */
   public async create(id: string, data: AccountCreate, tx?: Transaction): Promise<AccountFull> {
-    const rows = await this._exec(tx)
-      .insert(accounts)
-      .values({ id, ...data })
-      .returning();
+    let rows;
+    try {
+      rows = await this._exec(tx)
+        .insert(accounts)
+        .values({ id, ...data })
+        .returning();
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new LoginTakenError('Логин уже занят.');
+      }
+      throw error;
+    }
     const row = rows[0];
     if (!row) {
       throw new Error('INSERT accounts не вернул строку.');

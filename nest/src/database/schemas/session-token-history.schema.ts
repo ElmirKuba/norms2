@@ -8,7 +8,7 @@ import type { SessionTokenHistoryFull } from '../../modules/sessions/interfaces/
  * session_token_history — архив ротированных хешей refresh-токенов (колонки 1:1 с
  * SessionTokenHistoryFull). Append-only: при ротации старый хеш падает сюда. Если
  * предъявлен токен, чей хеш есть здесь, — это реплей уже ротированного токена →
- * reuse-detect (отзыв всех сессий аккаунта, TODO #4 / ADR-0035). Без меток-update
+ * reuse-detect (отзыв всех сессий аккаунта, ADR-0046/0035). Без меток-update
  * (запись неизменяема) — потому НЕ `timestamps()`, только created_at.
  */
 export const sessionTokenHistory = defineTableWithSchema<SessionTokenHistoryFull>()(

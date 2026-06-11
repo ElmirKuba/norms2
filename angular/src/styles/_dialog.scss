@@ -55,3 +55,12 @@
 .modal-fullscreen .mat-mdc-dialog-surface {
   border-radius: 0 !important;
 }
+
+// Модалки с собственной full-bleed вёрсткой (свои head/body/foot с паддингами и
+// бордерами): surface не должен добавлять свой паддинг и не должен скроллиться —
+// высоту держит внутренний .modal, скролл уходит в .modal__body. Иначе surface
+// (запаженный) перерастает maxHeight диалога и скроллится «рамка» (видно на мобилке).
+.modal-flush .mat-mdc-dialog-surface {
+  padding: 0 !important;
+  overflow: hidden !important;
+}

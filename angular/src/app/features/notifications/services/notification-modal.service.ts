@@ -26,6 +26,10 @@ export class NotificationModalService {
       width: MODAL_LARGE_WIDTH,
       maxWidth: MODAL_VIEWPORT_MAX_WIDTH,
       maxHeight: MODAL_VIEWPORT_MAX_HEIGHT,
+      // full-bleed вёрстка (head/body/foot со своими паддингами+бордерами) —
+      // surface не должен добавлять свой паддинг, иначе .modal вылезает за него
+      // и скроллится сама рамка, а не внутренний .modal__body.
+      panelClass: 'modal-flush',
       data: { notification },
     });
   }

@@ -10,6 +10,8 @@ export interface OverviewStats {
   subtreeTotal: number;
   /** Из прямых приглашённых забанено мной (активно). */
   inviteesBannedByMe: number;
+  /** Из прямых приглашённых забанено вышестоящими по дереву (не мной, активно). */
+  inviteesBannedByAncestor: number;
   /** Всего моих активных банов. */
   bansActive: number;
   /** Невыданных активных кодов. */

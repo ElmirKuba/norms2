@@ -54,20 +54,27 @@
             <div class="donut">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <circle class="donut__track" cx="60" cy="60" r="52" />
-                <circle
-                  class="donut__arc"
-                  cx="60"
-                  cy="60"
-                  r="52"
-                  [attr.stroke-dasharray]="donutActiveLength() + ' ' + circumference"
-                  transform="rotate(-90 60 60)"
-                />
+                @for (seg of donutSegments(); track $index) {
+                  <circle
+                    [class]="'donut__arc ' + seg.klass"
+                    cx="60"
+                    cy="60"
+                    r="52"
+                    [attr.stroke-dasharray]="seg.length + ' ' + circumference"
+                    [attr.stroke-dashoffset]="seg.offset"
+                    transform="rotate(-90 60 60)"
+                  />
+                }
               </svg>
               <span class="donut__center">{{ usefulPercent() }}%</span>
             </div>
             <ul class="legend">
               <li><span class="dot dot--active"></span> Активны: {{ activeInvitees() }}</li>
-              <li><span class="dot dot--banned"></span> Забанено вами: {{ s.inviteesBannedByMe }}</li>
+              <li><span class="dot dot--banned-me"></span> Забанено вами: {{ s.inviteesBannedByMe }}</li>
+              <li>
+                <span class="dot dot--banned-ancestor"></span> Забанено вышестоящими:
+                {{ s.inviteesBannedByAncestor }}
+              </li>
             </ul>
           </div>
         }

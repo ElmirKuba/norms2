@@ -8,6 +8,13 @@ import type { OverviewStats } from './overview.types';
 /** Длина окружности доната (r=52). */
 const DONUT_CIRCUMFERENCE = 2 * Math.PI * 52;
 
+/** Сегмент-дуга доната: длина, смещение старта по окружности и CSS-класс цвета. */
+interface DonutSegment {
+  length: number;
+  offset: number;
+  klass: string;
+}
+
 /**
  * Главный экран ЛК (обзор, F4). Сетка метрик-карточек (большое число + подпись) +
  * SVG-донат «полезность приглашённых» (активны/забанено, без либ). Данные — один
@@ -33,10 +40,10 @@ export class OverviewComponent {
   /** Длина окружности доната (для шаблона). */
   protected readonly circumference = DONUT_CIRCUMFERENCE;
 
-  /** Активных приглашённых (не забанены мной). */
+  /** Активных приглашённых (без активного бана — ни от меня, ни от вышестоящих). */
   protected readonly activeInvitees = computed(() => {
     const s = this.stats();
-    return s === null ? 0 : s.invitedDirect - s.inviteesBannedByMe;
+    return s === null ? 0 : s.invitedDirect - s.inviteesBannedByMe - s.inviteesBannedByAncestor;
   });
 
   /** Процент полезных или null (если никого не пригласил). */
@@ -48,10 +55,30 @@ export class OverviewComponent {
     return Math.round((this.activeInvitees() / s.invitedDirect) * 100);
   });
 
-  /** Длина зелёной дуги доната. */
-  protected readonly donutActiveLength = computed(() => {
-    const percent = this.usefulPercent();
-    return ((percent ?? 0) / 100) * DONUT_CIRCUMFERENCE;
+  /**
+   * Сегменты доната (активны → забанено мной → забанено вышестоящими): дуги по
+   * долям от invitedDirect, уложенные встык. `offset` = -накопленная_длина (старт
+   * дуги по окружности). Нулевые сегменты дают дугу нулевой длины (не рисуются).
+   */
+  protected readonly donutSegments = computed<DonutSegment[]>(() => {
+    const s = this.stats();
+    if (s === null || s.invitedDirect === 0) {
+      return [];
+    }
+    const total = s.invitedDirect;
+    const parts: ReadonlyArray<{ count: number; klass: string }> = [
+      { count: this.activeInvitees(), klass: 'donut__arc--active' },
+      { count: s.inviteesBannedByMe, klass: 'donut__arc--banned-me' },
+      { count: s.inviteesBannedByAncestor, klass: 'donut__arc--banned-ancestor' },
+    ];
+    const segments: DonutSegment[] = [];
+    let cumulative = 0;
+    for (const part of parts) {
+      const length = (part.count / total) * DONUT_CIRCUMFERENCE;
+      segments.push({ length, offset: -cumulative, klass: part.klass });
+      cumulative += length;
+    }
+    return segments;
   });
 
   /** Настроено ли восстановление. */

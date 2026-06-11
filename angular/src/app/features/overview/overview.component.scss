@@ -112,16 +112,29 @@
 
   &__track {
     fill: none;
-    stroke: color-mix(in srgb, var(--color-danger, #c0392b) 35%, transparent);
+    stroke: var(--color-border);
     stroke-width: 12;
   }
 
+  // Сегменты-дуги уложены встык (butt-cap, иначе round-капы соседних сегментов
+  // перекрываются на границах). Цвет — по модификатору сегмента.
   &__arc {
     fill: none;
-    stroke: var(--color-success, #2ecc71);
     stroke-width: 12;
-    stroke-linecap: round;
+    stroke-linecap: butt;
     transition: stroke-dasharray 0.4s ease;
+
+    &--active {
+      stroke: var(--color-success, #2ecc71);
+    }
+
+    &--banned-me {
+      stroke: var(--color-danger, #c0392b);
+    }
+
+    &--banned-ancestor {
+      stroke: var(--color-warning, #e0b15a);
+    }
   }
 
   &__center {
@@ -161,8 +174,12 @@
     background: var(--color-success, #2ecc71);
   }
 
-  &--banned {
+  &--banned-me {
     background: var(--color-danger, #c0392b);
+  }
+
+  &--banned-ancestor {
+    background: var(--color-warning, #e0b15a);
   }
 }
 

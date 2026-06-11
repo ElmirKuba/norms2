@@ -1,11 +1,24 @@
 <header class="bar">
   <a class="brand" routerLink="/app">Нормисы</a>
 
-  <nav class="nav">
+  <button
+    type="button"
+    class="burger"
+    (click)="toggleNav()"
+    [attr.aria-expanded]="navOpen()"
+    aria-label="Меню навигации"
+  >
+    <span aria-hidden="true">☰</span>
+  </button>
+
+  <nav class="nav" [class.nav--open]="navOpen()">
     @for (item of nav; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+      <a [routerLink]="item.path" routerLinkActive="active" (click)="closeNav()">{{ item.label }}</a>
     }
   </nav>
+  @if (navOpen()) {
+    <button type="button" class="backdrop" aria-label="Закрыть меню" (click)="closeNav()"></button>
+  }
 
   <div class="right">
     <app-notification-bell />

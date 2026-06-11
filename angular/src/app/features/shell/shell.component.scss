@@ -13,6 +13,7 @@
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
+  position: relative; // для абсолютного дропдауна навигации на мобилке
 }
 
 .brand {
@@ -20,11 +21,57 @@
   color: var(--color-text);
 }
 
+// Бургер — только на мобилке (< md); на десктопе меню инлайн.
+.burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--fs-lg);
+
+  &:hover {
+    background: var(--color-surface-2);
+  }
+
+  @include bp.up('md') {
+    display: none;
+  }
+}
+
 .nav {
-  display: flex;
-  gap: var(--space-1);
-  flex: 1;
-  overflow-x: auto;
+  // Мобилка: скрыто; открывается дропдауном на всю ширину под шапкой.
+  display: none;
+
+  &.nav--open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 11;
+    padding: var(--space-1);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-1);
+  }
+
+  // Десктоп (≥ md): инлайн-ряд, как было.
+  @include bp.up('md') {
+    display: flex;
+    flex-direction: row;
+    position: static;
+    flex: 1;
+    gap: var(--space-1);
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    overflow-x: auto;
+  }
 
   a {
     display: inline-flex;

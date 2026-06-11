@@ -63,5 +63,7 @@ export interface RecoveryCompleteInput {
 /** Деталь активного бана (из `ACCOUNT_BANNED.details.bans`). */
 export interface BannedDetail {
   bannerId: string;
+  bannerLogin: string;
+  bannerAlias: string;
   reason: string;
 }

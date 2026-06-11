@@ -116,7 +116,7 @@ export class LoginComponent {
     const bans = this._extractBans(error);
     const text =
       bans.length > 0
-        ? bans.map((ban) => `• ${ban.reason}`).join('<br>')
+        ? bans.map((ban) => `• ${ban.bannerAlias} (@${ban.bannerLogin}): ${ban.reason}`).join('<br>')
         : 'Доступ к аккаунту закрыт.';
     this._modal.error('Вы забанены', text);
   }

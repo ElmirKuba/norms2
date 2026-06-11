@@ -12,6 +12,8 @@ import { ModalService } from '../../shared/modals/modal.service';
 /** Деталь активного бана из конверта `ACCOUNT_BANNED.details.bans`. */
 interface BannedDetail {
   bannerId: string;
+  bannerLogin: string;
+  bannerAlias: string;
   reason: string;
 }
 
@@ -70,7 +72,9 @@ function handleBanned(
   void router.navigate(['/']);
   const bans = extractBans(error);
   const text =
-    bans.length > 0 ? bans.map((ban) => `• ${ban.reason}`).join('<br>') : 'Доступ к аккаунту закрыт.';
+    bans.length > 0
+      ? bans.map((ban) => `• ${ban.bannerAlias} (@${ban.bannerLogin}): ${ban.reason}`).join('<br>')
+      : 'Доступ к аккаунту закрыт.';
   modal.error('Вы забанены', text);
   setTimeout(() => {
     bannedHandling = false;

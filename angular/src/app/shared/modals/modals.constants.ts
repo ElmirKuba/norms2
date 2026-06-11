@@ -6,7 +6,7 @@ export const MODAL_SMALL_WIDTH = '440px';
 export const MODAL_MEDIUM_WIDTH = '640px';
 export const MODAL_LARGE_WIDTH = '770px';
 export const MODAL_VIEWPORT_MAX_WIDTH = 'calc(100vw - 32px)';
-export const MODAL_VIEWPORT_MAX_HEIGHT = 'calc(100vh - 32px)';
+export const MODAL_VIEWPORT_MAX_HEIGHT = 'calc(100dvh - 32px)';
 
 /** Параметры полноэкранной модалки (Способ B: кроп аватара и т.п.). */
 export const FULL_SCREEN_MODAL_PARAMS = {

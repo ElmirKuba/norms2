@@ -1,6 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MODAL_LARGE_WIDTH, MODAL_VIEWPORT_MAX_WIDTH } from '../../../shared/modals/modals.constants';
+import {
+  MODAL_LARGE_WIDTH,
+  MODAL_VIEWPORT_MAX_WIDTH,
+  MODAL_VIEWPORT_MAX_HEIGHT,
+} from '../../../shared/modals/modals.constants';
 import { NotificationModalComponent } from '../notification-modal/notification-modal.component';
 import type { NotificationModalData } from '../notification-modal/notification-modal.component';
 import type { NotificationView } from '../notifications.types';
@@ -21,6 +25,7 @@ export class NotificationModalService {
     this._dialog.open<NotificationModalComponent, NotificationModalData>(NotificationModalComponent, {
       width: MODAL_LARGE_WIDTH,
       maxWidth: MODAL_VIEWPORT_MAX_WIDTH,
+      maxHeight: MODAL_VIEWPORT_MAX_HEIGHT,
       data: { notification },
     });
   }

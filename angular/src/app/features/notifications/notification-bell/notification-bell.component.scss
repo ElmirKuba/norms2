@@ -1,6 +1,13 @@
+@use 'breakpoints' as bp;
+
 .bell {
-  position: relative;
+  position: static;
   display: inline-flex;
+
+  // Десктоп: панель якорится к колоколу. Мобилка: к шапке (.bar), см. .panel.
+  @include bp.up('md') {
+    position: relative;
+  }
 }
 
 .bell__btn {
@@ -49,11 +56,14 @@
 }
 
 .panel {
+  // Мобилка: якорится к шапке (.bar — `.bell` static), падает на всю ширину под
+  // ней. Иначе при right:0 относительно колокола (он не у края) 360px-панель
+  // вылезала за левый край экрана.
   position: absolute;
-  right: 0;
-  top: calc(100% + var(--space-1));
+  top: 100%;
+  left: var(--space-3);
+  right: var(--space-3);
   z-index: 11;
-  width: min(360px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
@@ -61,6 +71,14 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-1);
   overflow: hidden;
+
+  // Десктоп: якорится к колоколу, фикс. ширина.
+  @include bp.up('md') {
+    top: calc(100% + var(--space-1));
+    right: 0;
+    left: auto;
+    width: min(360px, calc(100vw - 32px));
+  }
 }
 
 .panel__head {

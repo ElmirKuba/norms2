@@ -95,6 +95,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0043](./0043-session-liveness-in-guard.md) | Guard проверяет живость сессии (`sid`) — немедленный отзыв устройства; `SessionCoreModule` (без цикла) | accepted | [backend] [security] [phase1] |
 | [0044](./0044-versioning-strategy.md) | Версия продукта (`.env` → `GET /version`) + версии фронта/бэка (package.json) + git-SHA (деплой) | accepted | [backend] [frontend] [ops] [phase1] |
 | [0045](./0045-traefik-file-provider.md) | Traefik на file-провайдере (явные маршруты), без docker.sock — безопаснее и без квирков docker-API | accepted | [ops] [deploy] [phase1] |
+| [0046](./0046-refresh-reuse-detection-and-recovery-posture.md) | Reuse-detect реплея ротированного refresh-токена (архив хешей) + posture восстановления (#2 анти-энумерацию не делаем, #3 без бэк-блэклиста) | accepted | [backend] [security] [phase1] |
 
 ### Ожидают решения
 

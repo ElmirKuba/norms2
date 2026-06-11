@@ -15,6 +15,13 @@
       "when": 1781073706246,
       "tag": "0001_skinny_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781201898267,
+      "tag": "0002_futuristic_living_mummy",
+      "breakpoints": true
     }
   ]
 }

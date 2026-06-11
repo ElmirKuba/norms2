@@ -3,6 +3,7 @@ import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { sessions } from '../../schemas/sessions.schema';
+import { sessionTokenHistory } from '../../schemas/session-token-history.schema';
 import type { SessionRepositoryPort } from '../../../modules/sessions/adapters/session-repository.port';
 import type { SessionCreate } from '../../../modules/sessions/interfaces/session-create.interface';
 import type { SessionFull } from '../../../modules/sessions/interfaces/session-full.interface';
@@ -48,11 +49,15 @@ export class SessionRepository implements SessionRepositoryPort {
   }
 
   /**
-   * CAS-ротация token_hash (только если хеш совпал и сессия не отозвана).
+   * CAS-ротация token_hash (только если хеш совпал и сессия не отозвана) +
+   * атомарная архивация старого хеша в session_token_history (одна транзакция):
+   * выиграл CAS → старый хеш уходит в архив (для reuse-detect реплея). Проиграл
+   * CAS (null) → архивацию не делаем.
    * @param id Идентификатор сессии.
-   * @param oldTokenHash Ожидаемый текущий хеш.
+   * @param oldTokenHash Ожидаемый текущий хеш (архивируется при успехе).
    * @param newTokenHash Новый хеш.
    * @param newExpiresAt Новый срок.
+   * @param historyId Идентификатор архивной записи.
    * @returns Обновлённая сессия или null.
    */
   public async rotate(
@@ -60,13 +65,41 @@ export class SessionRepository implements SessionRepositoryPort {
     oldTokenHash: string,
     newTokenHash: string,
     newExpiresAt: Date,
+    historyId: string,
   ): Promise<SessionFull | null> {
+    return this._db.transaction(async (tx) => {
+      const rows = await tx
+        .update(sessions)
+        .set({ tokenHash: newTokenHash, expiresAt: newExpiresAt })
+        .where(
+          and(eq(sessions.id, id), eq(sessions.tokenHash, oldTokenHash), isNull(sessions.revokedAt)),
+        )
+        .returning();
+      const row = rows[0];
+      if (!row) {
+        return null;
+      }
+      await tx
+        .insert(sessionTokenHistory)
+        .values({ id: historyId, sessionId: id, tokenHash: oldTokenHash });
+      return row;
+    });
+  }
+
+  /**
+   * Аккаунт по архивному хешу токена (join history → sessions) — reuse-detect
+   * реплея уже ротированного токена.
+   * @param tokenHash SHA-256 предъявленного токена.
+   * @returns accountId или null.
+   */
+  public async findAccountIdByHistoricalTokenHash(tokenHash: string): Promise<string | null> {
     const rows = await this._db
-      .update(sessions)
-      .set({ tokenHash: newTokenHash, expiresAt: newExpiresAt })
-      .where(and(eq(sessions.id, id), eq(sessions.tokenHash, oldTokenHash), isNull(sessions.revokedAt)))
-      .returning();
-    return rows[0] ?? null;
+      .select({ accountId: sessions.accountId })
+      .from(sessionTokenHistory)
+      .innerJoin(sessions, eq(sessions.id, sessionTokenHistory.sessionId))
+      .where(eq(sessionTokenHistory.tokenHash, tokenHash))
+      .limit(1);
+    return rows[0]?.accountId ?? null;
   }
 
   /**

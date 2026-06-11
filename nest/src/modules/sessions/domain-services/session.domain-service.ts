@@ -78,9 +78,13 @@ export class SessionDomainService {
     const session = await this._sessionRepository.findByTokenHash(tokenHash);
 
     if (session === null) {
-      // TODO: Claude Code: 2026-06-04: реплей СТАРОГО (уже ротированного) токена даёт
-      // null — аккаунт не опознать → revoke-all невозможен. Добавить lineage/family-id
-      // в sessions для полного reuse-detect (отзыв всех при реплее старого токена).
+      // Нет среди активных. Если хеш есть в архиве — это реплей УЖЕ РОТИРОВАННОГО
+      // токена (украден и предъявлен после ротации) → reuse → отзыв всех сессий
+      // аккаунта. Нет нигде — просто неизвестный токен.
+      const accountId = await this._sessionRepository.findAccountIdByHistoricalTokenHash(tokenHash);
+      if (accountId !== null) {
+        await this._sessionRepository.revokeAllByAccount(accountId);
+      }
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
     if (session.revokedAt !== null) {
@@ -98,6 +102,7 @@ export class SessionDomainService {
       tokenHash,
       sha256Hex(newRefreshToken),
       this._refreshExpiry(),
+      generateId(),
     );
     if (rotated === null) {
       // CAS не прошёл (параллельная ротация тем же токеном) → reuse → отзыв всех.

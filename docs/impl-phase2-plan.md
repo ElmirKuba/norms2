@@ -13,9 +13,9 @@
 - **R0 (вычитка) ЗАВЕРШЁН:** README ✅ · domain-model ✅ · gamification ✅ ·
   api-contracts ✅ · ui-ux ✅. Все решения — в журнале; дорожная карта 2.0.0→2.11
   зафиксирована; карта таблиц БД и схемные развилки собраны.
-- **Следующее — R1** (разбит на подэтапы, см. раздел «R1» ниже): R1a.1→R1a.5
-  (финализация по файлам, коммит на файл) → R1b.1→R1b.4 (сквозной аудит).
-  **Начать с `R1a.1 · domain-model.md`.**
+- **R1 в работе** (см. раздел «R1»): **R1a.1 domain-model ✅**. **Следующее —
+  `R1a.2 · gamification.md`** (терминология в тексте/таблицах/событиях). Дальше
+  R1a.3 api → R1a.4 ui-ux → R1a.5 README → R1b.1–4 аудит.
 - **Затем R2: ADR-0047** — конвенция имён раздела + сводка ключевых решений R0.
 - **Потом — код:** старт подфазы `2.0.0` (каркас).
 - Частичные правки уже применены по ходу (структурные следствия merge/нумерации):
@@ -107,9 +107,10 @@ Quest→`Task`(oneOff). Routes: `/power-ups`→`/micro-wins`, `/bad-guys`→`/ob
 `/allies`→`/supporters`. Компоненты: `PowerUpChip`→`MicroWinChip` и т.п.
 
 ### R1a — применить решения к ТЕКСТУ (по файлам; коммит на файл)
-- [ ] **R1a.1 · domain-model.md** — терминология + **merge** (убрать `DailyMetric`/
-  `MetricRepository` из §0/§10/§12, тренды из CheckIn) + пометка состояний #3
-  (`StateResolver` старт упрощённый) + `parent_goal_id?` и конфиг-глубина в §4 (+§13).
+- [x] **R1a.1 · domain-model.md** ✅ — терминология (MicroWin/Obstacle/Supporter/
+  Identity/Task) + **merge** (DailyMetric убрана из §0/§10/§12, тренды из CheckIn) +
+  состояния #3 (StateResolver старт упрощённый) + `parentGoalId?`/конфиг-глубина §4/§13.
+  grep: ноль старых имён (кроме исторических пометок про DailyMetric).
 - [ ] **R1a.2 · gamification.md** — терминология в тексте/таблицах/событиях
   (`power_up`→`micro_win` source, PowerUp→MicroWin); проверить, что правила не задеты.
 - [ ] **R1a.3 · api-contracts.md** — routes (`/power-ups`→`/micro-wins`,

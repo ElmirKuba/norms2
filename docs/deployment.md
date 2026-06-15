@@ -63,8 +63,8 @@ DOMAIN=xn--h1ahceki4e.xn--p1ai  # punycode!
 ACME_EMAIL=<реальная почта для LE>
 DB_PASSWORD=<сильный>         # БД наружу не публикуется, но пароль всё равно сильный
 JWT_ACCESS_SECRET / JWT_REFRESH_SECRET=<сильные, разные>
-PRODUCT_VERSION=1.0.0
 ```
+- **Версия продукта** — в файле `VERSION` в корне репо (не в `.env`); бэк читает его и отдаёт в `GET /version`. Бамп версии = правка `VERSION` + коммит (ADR-0044).
 - `GIT_COMMIT` в `.env` **не задавать** — он инжектится в образ как build-arg (Makefile: `git rev-parse --short HEAD`); пустой `.env`-вариант перебил бы его.
 - Все ENV валидируются zod fail-fast ([ADR-0019](./decisions/0019-backend-architecture-conventions.md)) — кривой/недостающий → бэк не стартует.
 

@@ -53,3 +53,24 @@
 - `angular`/`nest` `package.json` подняты до `1.0.0` под релиз 1.0 (дальше могут
   расходиться независимо).
 - Старое поле `environment.appVersion` удалено (дубль убран).
+
+## Пересмотр (2026-06-15, реш. Elmir)
+
+Три версии (продукт · фронт · бэк) на практике путали: фронт и бэк всё равно
+держатся на `1.0.0` и по отдельности не несут смысла. **Упростили до ОДНОЙ значимой
+версии — продукта.**
+
+- **Источник истины — файл `VERSION` в корне репо** (коммитимый; бамп = обычный
+  коммit, версия в git-истории, одно место для всех сред). Был `.env` `PRODUCT_VERSION`
+  (gitignored, бампился руками на сервере) — убран из env-схемы и всех `.env*`.
+- **Версии фронта/бэка зафиксированы на `1.0.0`** и больше не вычисляются/не
+  показываются. Убрано: `readBackendVersion` (fs-чтение `nest/package.json`),
+  `environment.frontendVersion` (+ build-time import версии), dev-монтирования обоих
+  `package.json`. `resolveJsonModule` в `angular/tsconfig.json` оставлен (безвреден).
+- **`GET /version` = `{ product, commit }`** (поле `backend` убрано). Бэк читает
+  `VERSION` через `readProductVersion` (fs, кэш, fallback `'0.0.0'`); путь —
+  `process.cwd()/VERSION` (прод: `COPY VERSION ./VERSION`; dev: bind-mount
+  `${PROJECT_ROOT}/VERSION:/app/VERSION:ro`).
+- **UI:** футер/дропдаун — «Нормисы · v{product}» + `commit` как диагностика (front·back
+  больше не показываем). `commit`-механика (env `GIT_COMMIT` ⟶ иначе живое чтение
+  `.git`) — без изменений.

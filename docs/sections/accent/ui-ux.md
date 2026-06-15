@@ -32,14 +32,13 @@
 ## 4. Карта экранов (lazy feature `accent`)
 ```
 /accent                       дашборд (главный)
-/accent/checkin               быстрый чек-ин состояния
+/accent/checkin               чек-ин состояния + тренды самочувствия 7/30/90 (из CheckIn)
 /accent/goals  /goals/:id     цели (список / деталь: donut, график, прогноз, вехи)
 /accent/habits                привычки + дневной чеклист (вкладки Сегодня / Шаблоны)
 /accent/power-ups             микро-победы (быстрый список «сделать сейчас»)
 /accent/anti-habits  /:id     анти-привычки (живой таймер дн:ч:мин:сек)
 /accent/bad-guys              препятствия + контрмеры
 /accent/weekly                недельный планер
-/accent/metrics               метрики самочувствия + тренды
 /accent/lessons               журнал уроков (якорь)
 /accent/stats                 очки, уровень, серии, достижения
 /accent/allies                круг доверия (MVP — реестр)

@@ -22,6 +22,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 # Авторские seed-файлы релиз-нот (F7) — сид копирует их в CONTENT_DIR при старте.
 COPY nest/seed-content ./seed-content
+# Версия продукта (единый source of truth, ADR-0044) — бэк читает в GET /version.
+COPY VERSION ./VERSION
 
 # git-SHA билда для GET /version (ADR-0044). В проде .git нет — SHA только отсюда.
 # Прокидывать при сборке: --build-arg GIT_COMMIT=$(git rev-parse --short HEAD).

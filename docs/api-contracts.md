@@ -28,7 +28,7 @@
 
 ### `GET /version` ([ADR-0044](./decisions/0044-versioning-strategy.md))
 Публичный (футер виден до входа). Версия развёрнутого билда.
-→ 200 `{ "product": string, "backend": string, "commit": string }` — `product` из `.env` (`PRODUCT_VERSION`, единый source of truth), `backend` из `nest/package.json`, `commit` — git-SHA билда (пусто в dev). Версию фронта добавляет сам фронт (из `angular/package.json`).
+→ 200 `{ "product": string, "commit": string }` — `product` из файла `VERSION` в корне репо (единый source of truth), `commit` — git-SHA билда (пусто в dev). Версии фронта/бэка зафиксированы на `1.0.0` и не отдаются (пересмотр ADR-0044 от 2026-06-15).
 
 ---
 

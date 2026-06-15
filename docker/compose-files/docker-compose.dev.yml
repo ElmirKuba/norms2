@@ -83,9 +83,9 @@ services:
       # git checkout, без пересоздания контейнера. В проде .git нет — там GIT_COMMIT
       # из build ARG (D1).
       - ${PROJECT_ROOT}/.git:/app/.git:ro
-      # package.json (ro) — версия бэка в GET /version из исходника, а не из запечённой
-      # в образ копии (иначе bump версии не виден без dev-rebuild).
-      - ${PROJECT_ROOT}/nest/package.json:/app/package.json:ro
+      # VERSION (ro) — версия продукта в GET /version из файла-исходника, а не из
+      # запечённой в образ копии (bump версии виден без dev-rebuild). ADR-0044.
+      - ${PROJECT_ROOT}/VERSION:/app/VERSION:ro
       # Авторские seed-файлы релиз-нот (ro) — сид копирует их в content/ при старте (F7).
       - ${PROJECT_ROOT}/nest/seed-content:/app/seed-content:ro
     ports:
@@ -105,9 +105,6 @@ services:
     restart: unless-stopped
     volumes:
       - ${PROJECT_ROOT}/angular/src:/app/src:rw
-      # package.json (ro) — frontendVersion в бандле берётся из исходника, а не из
-      # запечённой в образ копии (ADR-0044: иначе bump версии фронта не виден без rebuild).
-      - ${PROJECT_ROOT}/angular/package.json:/app/package.json:ro
     ports:
       - '${FRONTEND_PORT}:4200'
     depends_on:

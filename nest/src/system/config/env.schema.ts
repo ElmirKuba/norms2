@@ -38,8 +38,7 @@ export const envSchema = z.object({
   CONTENT_DIR: z.string().min(1).default('content'),
   OPTIMISTIC_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(3),
 
-  // Версия продукта (единый source of truth, ADR-0044) + git-SHA билда (деплой).
-  PRODUCT_VERSION: z.string().min(1).default('0.0.0'),
+  // git-SHA билда (деплой); версия продукта — в файле VERSION (ADR-0044, пересмотр).
   GIT_COMMIT: z.string().default(''),
 });
 

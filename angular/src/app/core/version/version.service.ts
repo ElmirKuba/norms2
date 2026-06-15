@@ -1,40 +1,25 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { API_PREFIX } from '../config/api.constants';
-import { environment } from '../../../environments/environment';
 import type { VersionInfo } from './version.types';
 
 /**
- * Версия приложения (ADR-0044). Заголовок — версия **продукта** (из `.env` бэка,
- * через `GET /version`). В скобках — диагностика: версия фронта (из его
- * `package.json`, build-time) + версия бэка + git-SHA (runtime, что развёрнуто).
- * Грузится один раз при первом обращении (singleton); до ответа показывает версию
- * фронта как fallback продукта.
+ * Версия приложения (ADR-0044, пересмотр 2026-06-15). Единственная значимая
+ * версия — продукта «Нормисы» (файл `VERSION` на бэке, через `GET /version`).
+ * `commit` — диагностика (что реально развёрнуто). Версии фронта/бэка
+ * зафиксированы на 1.0.0 и не показываются. Грузится один раз (singleton).
  */
 @Injectable({ providedIn: 'root' })
 export class VersionService {
   private readonly _http = inject(HttpClient);
 
-  /** Версия фронта из его package.json (build-time). */
-  public readonly frontendVersion = environment.frontendVersion;
-
   private readonly _info = signal<VersionInfo | null>(null);
 
-  /** Версия продукта (из бэка) или версия фронта как fallback. */
-  public readonly product = computed(() => this._info()?.product ?? this.frontendVersion);
+  /** Версия продукта (из бэка) или '' до загрузки. */
+  public readonly product = computed(() => this._info()?.product ?? '');
 
-  /** Диагностическая строка: front X · back Y · commit (что есть). */
-  public readonly diagnostics = computed(() => {
-    const parts = [`front ${this.frontendVersion}`];
-    const info = this._info();
-    if (info !== null) {
-      parts.push(`back ${info.backend}`);
-      if (info.commit !== '') {
-        parts.push(info.commit);
-      }
-    }
-    return parts.join(' · ');
-  });
+  /** Диагностика: git-SHA развёрнутого билда (или '' — нет/не загружено). */
+  public readonly diagnostics = computed(() => this._info()?.commit ?? '');
 
   public constructor() {
     this._load();

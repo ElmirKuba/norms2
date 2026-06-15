@@ -27,6 +27,9 @@
 ## 3. CheckIn / состояние
 - `POST /accent/checkins` Body `{ occurredOn, mood?, energy?, pain?, sleepHours?, anxiety?, focus?, note? }` → 201. Уник `(account, occurredOn)` — повтор обновляет (`PUT`-семантика upsert).
 - `GET /accent/checkins?from&to` → массив.
+- `GET /accent/checkins/trends?range=7|30|90` → тренды mood/energy/sleep. **CheckIn —
+  единый дневной снимок** (бывш. DailyMetric слита сюда, реш. 2026-06-15); трендов из
+  отдельных метрик нет.
 - `GET /accent/state` → `{ state, basis }` — текущий UserState (вычисляется `StateResolver`).
 - `GET /accent/recommendations` → `{ actions: [...] }` — 1–3 микро-действия по состоянию (`Recommender`).
 
@@ -66,13 +69,13 @@
 
 ## 9. Allies (MVP — реестр)
 - `GET/POST /accent/allies` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.
-- _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — волна 2.1+._
+- _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — поздняя волна 2.12+._
 
 ## 10. Недельный слой и журналы
 - `GET/POST/DELETE /accent/weekly-goals?week=YYYY-Www` (+ items: `PATCH /accent/weekly-goals/:id` toggle done).
 - `GET /accent/weekly-stats?week=YYYY-Www` → `{ bestDay, worstDay, avgPercent, tasksDone }`.
-- `GET/PUT /accent/metrics?date=YYYY-MM-DD` (upsert; уник account+date). `GET /accent/metrics/trends?range=7|30|90`.
 - `GET/PUT /accent/lessons?date=YYYY-MM-DD` (урок-якорь). `GET /accent/lessons?tag=`.
+- _(Дневные метрики самочувствия — это `CheckIn` (§3), отдельного `/accent/metrics` нет — слили.)_
 
 ## 11. Геймификация / статистика
 - `GET /accent/stats` → `{ totalXP, level, nextLevelXP, currentStreaks, longestStreaks, recentAchievements }`.

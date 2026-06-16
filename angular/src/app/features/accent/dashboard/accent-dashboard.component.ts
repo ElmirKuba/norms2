@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { AccentApiService } from '../services/accent-api.service';
 
@@ -19,7 +19,7 @@ import { AccentApiService } from '../services/accent-api.service';
           <p>Раздел активен.</p>
           <app-button [loading]="busy()" (click)="pause()">Поставить на паузу</app-button>
         } @else {
-          <p>На паузе с {{ pausedFrom() }} — серии и ролловер заморожены.</p>
+          <p>На паузе с {{ pausedLabel() }} — серии и ролловер заморожены.</p>
           <app-button [loading]="busy()" (click)="resume()">Снять паузу</app-button>
         }
       </div>
@@ -46,6 +46,20 @@ export class AccentDashboardComponent {
   protected readonly pausedFrom = signal<string | null>(null);
   /** Идёт запрос паузы/снятия. */
   protected readonly busy = signal(false);
+
+  /** Человекочитаемая дата начала паузы (ru-RU) или null — нативный Intl, без либ. */
+  protected readonly pausedLabel = computed(() => {
+    const iso = this.pausedFrom();
+    return iso === null
+      ? null
+      : new Date(iso).toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+  });
 
   public constructor() {
     this._load();

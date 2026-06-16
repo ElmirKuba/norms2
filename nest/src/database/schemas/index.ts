@@ -8,3 +8,4 @@ export * from './sessions.schema';
 export * from './session-token-history.schema';
 export * from './notifications.schema';
 export * from './notification-reads.schema';
+export * from './accent-settings.schema';

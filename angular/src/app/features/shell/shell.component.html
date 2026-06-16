@@ -11,14 +11,12 @@
     <span aria-hidden="true">☰</span>
   </button>
 
-  <nav class="nav" [class.nav--open]="navOpen()">
+  <nav class="nav" [class.nav--open]="navOpen()" (click)="closeNav()">
+    <button type="button" class="nav__close" aria-label="Закрыть меню">✕</button>
     @for (item of nav; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active" (click)="closeNav()">{{ item.label }}</a>
+      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
     }
   </nav>
-  @if (navOpen()) {
-    <button type="button" class="backdrop" aria-label="Закрыть меню" (click)="closeNav()"></button>
-  }
 
   <div class="right">
     <app-notification-bell />

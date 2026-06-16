@@ -41,36 +41,82 @@
   }
 }
 
+// Крестик закрытия — только в полноэкранном мобильном оверлее.
+.nav__close {
+  display: none;
+}
+
 .nav {
-  // Мобилка: скрыто; открывается дропдауном на всю ширину под шапкой.
+  // Мобилка: скрыто; открывается ПОЛНОЭКРАННЫМ оверлеем с блюром фона.
   display: none;
 
   &.nav--open {
     display: flex;
     flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 11;
-    padding: var(--space-1);
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: var(--shadow-1);
+    justify-content: center;
+    gap: var(--space-2);
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    padding: var(--space-6) var(--space-5);
+    background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    .nav__close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-4);
+      min-width: var(--touch-min);
+      min-height: var(--touch-min);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: var(--fs-xl);
+
+      &:hover {
+        background: var(--color-surface-2);
+      }
+    }
+
+    a {
+      justify-content: center;
+      font-size: var(--fs-lg);
+      min-height: calc(var(--touch-min) + var(--space-2));
+    }
   }
 
-  // Десктоп (≥ md): инлайн-ряд, как было.
+  // Десктоп (≥ md): инлайн-ряд, как было (оверлей/крестик сброшены).
   @include bp.up('md') {
     display: flex;
     flex-direction: row;
     position: static;
+    inset: auto;
+    z-index: auto;
     flex: 1;
     gap: var(--space-1);
     padding: 0;
     background: none;
+    backdrop-filter: none;
     border: none;
     box-shadow: none;
     overflow-x: auto;
+
+    &.nav--open {
+      position: static;
+      inset: auto;
+      z-index: auto;
+      padding: 0;
+      background: none;
+      backdrop-filter: none;
+      justify-content: flex-start;
+    }
+
+    .nav__close {
+      display: none;
+    }
   }
 
   a {

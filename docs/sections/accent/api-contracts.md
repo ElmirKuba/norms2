@@ -20,6 +20,11 @@
 - `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200.
 - `POST /accent/pause` / `POST /accent/resume` — пауза-режим (заморозка серий) → 204.
 
+## 1a. Справочники (сферы, атрибуты)
+- `GET /accent/domains` → `[{ key, title, … }]` — сферы жизни (`DomainKey`, подфаза 2.1; справочник, не enum в БД).
+- `GET /accent/attributes` → `[{ key, title, … }]` — RPG-атрибуты ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)); наполняют селекторы целей/привычек и `AttributeRadar`.
+- Read-only для клиента (наполнение/сид — на бэке).
+
 ## 2. Identity
 - `GET /accent/identity` → `{ heroName, archetype?, motto?, valuesText? }` (heroName по умолчанию = alias).
 - `PUT /accent/identity` Body `{ heroName?, archetype?, motto?, valuesText? }` → 200 (предупреждение про ПДн на свободных полях).
@@ -35,7 +40,7 @@
 
 ## 4. Goals + Entries + Milestones
 - `GET /accent/goals?status&domain` → массив (с вычисляемыми `currentValue/percentage/daysLeft/pace/forecast`).
-- `POST /accent/goals` Body `{ title, whyItMatters?, domainKey?, unit, targetValue, deadline?, fallbackVersion? }` → 201.
+- `POST /accent/goals` Body `{ title, whyItMatters?, domainKey?, attributes?, parentGoalId?, unit, targetValue, deadline?, fallbackVersion? }` → 201. `parentGoalId` → подцель (глубина ≤ `ACCENT_GOAL_MAX_DEPTH`, иначе `GOAL_MAX_DEPTH_REACHED` 422).
 - `GET /accent/goals/:id` · `PATCH /accent/goals/:id` · `POST /accent/goals/:id/archive` · `/restore`.
 - `POST /accent/goals/:id/pause` · `/resume` (пауза не принимает entries).
 - `POST /accent/goals/:id/entries` Body `{ value, occurredOn?, note? }` → 201. Ошибка `GOAL_PAUSED` (409). Триггерит прогресс + возможный `goal.completed`/`milestone.reached`.
@@ -43,7 +48,7 @@
 - `POST /accent/goals/:id/milestones` Body `{ title, thresholdValue }` · `GET .../milestones` · `DELETE .../milestones/:mid` (только не достигнутые).
 
 ## 5. Habits (TaskTemplate) + Tasks + лесенка
-- `GET /accent/habits` · `POST /accent/habits` Body `{ title, description?, icon?, domainKey?, goalId?, priority?, kind, recurrence, ladder:{minTarget,currentTarget,goalTarget?,step?,policy}, minVersion? }` → 201.
+- `GET /accent/habits` · `POST /accent/habits` Body `{ title, description?, icon?, domainKey?, attributes?, goalId?, priority?, kind, recurrence, ladder:{minTarget,currentTarget,goalTarget?,step?,policy}, minVersion? }` → 201.
 - `GET/PATCH /accent/habits/:id` · `POST /accent/habits/:id/deactivate`.
 - `GET /accent/tasks?date=YYYY-MM-DD` → задачи дня (материализованные + разовые).
 - `GET /accent/tasks/overdue` · `GET /accent/tasks/due-today` (для разовых с deadline).

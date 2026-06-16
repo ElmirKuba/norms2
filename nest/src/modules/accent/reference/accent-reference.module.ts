@@ -6,13 +6,14 @@ import { AccentReferenceDomainService } from './domain-services/accent-reference
 import { AccentReferenceController } from './controllers/accent-reference.controller';
 import { ListDomainsUseCase } from './use-cases/list-domains.use-case';
 import { ListAttributesUseCase } from './use-cases/list-attributes.use-case';
+import { AccentReferenceSeedService } from './seed/accent-reference-seed.service';
 
 /**
  * Область справочников раздела «Акцент» (мультимодуль, ADR-0050): сферы + RPG-атрибуты.
  * Порт `ACCENT_REFERENCE_REPOSITORY` → Drizzle-репо, `AccentReferenceDomainService`
  * (read-only каталоги), контроллер `GET /accent/domains|/attributes` под AuthGuard
- * (импорт `AccessControlModule`). Экспортит domain-service для кросс-домена вниз
- * (селекторы целей/привычек). Сид дефолтов — 2.1·4.
+ * (импорт `AccessControlModule`), сид дефолтов на старте (`AccentReferenceSeedService`,
+ * идемпотентно). Экспортит domain-service для кросс-домена вниз (селекторы целей/привычек).
  */
 @Module({
   imports: [AccessControlModule],
@@ -22,6 +23,7 @@ import { ListAttributesUseCase } from './use-cases/list-attributes.use-case';
     AccentReferenceDomainService,
     ListDomainsUseCase,
     ListAttributesUseCase,
+    AccentReferenceSeedService,
   ],
   exports: [AccentReferenceDomainService],
 })

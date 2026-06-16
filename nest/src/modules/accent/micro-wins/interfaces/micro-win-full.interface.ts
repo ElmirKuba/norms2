@@ -1,29 +1,38 @@
 /**
- * Категория микро-победы — тип телесно-психической нагрузки (для подбора по состоянию
- * и баланса). Хранится строкой-ключом (varchar), как и `DomainKey`/`Attribute`.
+ * Категории микро-победы — тип телесно-психической нагрузки (для подбора по состоянию
+ * и баланса). Единый источник для валидации (domain-service) и DTO (контроллер).
+ * Хранится строкой-ключом (varchar), как и `DomainKey`/`Attribute`.
  */
-export type MicroWinCategory =
-  | 'physical'
-  | 'mental'
-  | 'emotional'
-  | 'social'
-  | 'sensory'
-  | 'household';
+export const MICRO_WIN_CATEGORIES = [
+  'physical',
+  'mental',
+  'emotional',
+  'social',
+  'sensory',
+  'household',
+] as const;
+
+/** Категория микро-победы (производна от `MICRO_WIN_CATEGORIES`). */
+export type MicroWinCategory = (typeof MICRO_WIN_CATEGORIES)[number];
 
 /**
- * UserState — состояние пользователя (выводится `StateResolver` из CheckIn + активности,
- * НЕ хранится как «правда»; domain-model §2). Здесь используется только как значения
+ * UserState — состояния пользователя (выводятся `StateResolver` из CheckIn + активности,
+ * НЕ хранятся как «правда»; domain-model §2). Здесь нужны только как значения
  * `disabledForStates` (в каких состояниях скрывать микро-победу).
  * TODO: Claude Code: 2026-06-16: при появлении StateResolver (подфаза 2.7) перенести
  * канонический `UserState` в общий accent-модуль и импортировать его здесь.
  */
-export type UserState =
-  | 'survival'
-  | 'recovery'
-  | 'stability'
-  | 'growth'
-  | 'sprint'
-  | 'maintenance';
+export const USER_STATES = [
+  'survival',
+  'recovery',
+  'stability',
+  'growth',
+  'sprint',
+  'maintenance',
+] as const;
+
+/** Состояние пользователя (производно от `USER_STATES`). */
+export type UserState = (typeof USER_STATES)[number];
 
 /**
  * MicroWinFull — микро-победа (быстрое действие 10 сек–5 мин, доступное даже в плохой

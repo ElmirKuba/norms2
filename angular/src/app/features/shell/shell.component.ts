@@ -49,7 +49,10 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   /** Верхнее меню — только фичи. */
-  protected readonly nav: readonly NavItem[] = [{ path: 'invites', label: 'Приглашения' }];
+  protected readonly nav: readonly NavItem[] = [
+    { path: 'invites', label: 'Приглашения' },
+    { path: 'accent', label: 'Акцент' },
+  ];
 
   /** Версия приложения (продукт + диагностика) для аккаунт-дропдауна. */
   protected readonly ver = inject(VersionService);

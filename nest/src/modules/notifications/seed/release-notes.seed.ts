@@ -22,4 +22,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 1.0 — что уже внутри',
     contentFile: 'notifications/release-1.0.0.md',
   },
+  {
+    key: 'release-2.0.0',
+    title: 'Нормисы 2.0 — раздел «Акцент»',
+    contentFile: 'notifications/release-2.0.0.md',
+  },
 ];

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccentSettingsModule } from './settings/accent-settings.module';
+import { AccentReferenceModule } from './reference/accent-reference.module';
 
 /**
  * Зонтик раздела «Акцент» (фаза 2, мультимодуль — ADR-0050): импортит area-модули
@@ -9,6 +10,6 @@ import { AccentSettingsModule } from './settings/accent-settings.module';
  * Имена — ADR-0047. Кросс-домен/кросс-фаза — только вниз через domain-service.
  */
 @Module({
-  imports: [AccentSettingsModule],
+  imports: [AccentSettingsModule, AccentReferenceModule],
 })
 export class AccentModule {}

@@ -99,7 +99,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0047](./0047-accent-naming-convention.md) | «Акцент»: конвенция имён — нейтрально-EN код/БД/routes + RU UI; маппинг (Epic Win→Goal, PowerUp→MicroWin, BadGuy→Obstacle, Ally→Supporter, …) | accepted | [accent] [phase2] |
 | [0048](./0048-accent-domain-refinements.md) | «Акцент»: доменные уточнения R0/R1 — merge CheckIn↔DailyMetric; иерархия целей C+ (конфиг-глубина); StateResolver упрощённый старт; самодостаточные подфазы | accepted | [accent] [phase2] |
 | [0049](./0049-accent-product-principles.md) | «Акцент»: принципы Внешняя память (GTD/Second Brain) + Самокомандование (commitment device/SDT) | accepted | [accent] [phase2] [product] |
-| [0050](./0050-accent-module-architecture.md) | «Акцент»: единый `AccentModule` + фича-папки (избегаем цикл-боли многомодульности ф.1) + правило слоёв (контроллер→use-case всегда; кросс-домен вниз через domain-service; свой порт/ds по необходимости) | accepted | [accent] [phase2] [backend] [architecture] |
+| [0050](./0050-accent-module-architecture.md) | «Акцент»: мультимодуль (область = модуль, как ф.1) + тонкий зонтик `AccentModule` + правило слоёв (контроллер→use-case всегда; кросс-домен/кросс-фаза вниз через domain-service; свой порт/ds по необходимости) | accepted | [accent] [phase2] [backend] [architecture] |
 
 ### Ожидают решения
 

@@ -96,6 +96,9 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0044](./0044-versioning-strategy.md) | Версия продукта — файл `VERSION` (→ `GET /version` `{product,commit}`); фронт/бэк фикс 1.0.0; конвенция: фаза=мажор, подфаза=минор, фикс=патч | accepted | [backend] [frontend] [ops] |
 | [0045](./0045-traefik-file-provider.md) | Traefik на file-провайдере (явные маршруты), без docker.sock — безопаснее и без квирков docker-API | accepted | [ops] [deploy] [phase1] |
 | [0046](./0046-refresh-reuse-detection-and-recovery-posture.md) | Reuse-detect реплея ротированного refresh-токена (архив хешей) + posture восстановления (#2 анти-энумерацию не делаем, #3 без бэк-блэклиста) | accepted | [backend] [security] [phase1] |
+| [0047](./0047-accent-naming-convention.md) | «Акцент»: конвенция имён — нейтрально-EN код/БД/routes + RU UI; маппинг (Epic Win→Goal, PowerUp→MicroWin, BadGuy→Obstacle, Ally→Supporter, …) | accepted | [accent] [phase2] |
+| [0048](./0048-accent-domain-refinements.md) | «Акцент»: доменные уточнения R0/R1 — merge CheckIn↔DailyMetric; иерархия целей C+ (конфиг-глубина); StateResolver упрощённый старт; самодостаточные подфазы | accepted | [accent] [phase2] |
+| [0049](./0049-accent-product-principles.md) | «Акцент»: принципы Внешняя память (GTD/Second Brain) + Самокомандование (commitment device/SDT) | accepted | [accent] [phase2] [product] |
 
 ### Ожидают решения
 

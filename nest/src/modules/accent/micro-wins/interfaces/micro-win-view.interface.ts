@@ -1,0 +1,48 @@
+import type {
+  MicroWinCategory,
+  MicroWinFull,
+  UserState,
+} from './micro-win-full.interface';
+
+/**
+ * MicroWinView — проекция микро-победы наружу (CRUD-эндпоинты). Без `accountId`/
+ * `isActive`/таймстампов (служебное). `completedToday` — выполнена ли сегодня
+ * (для дневного фидбэка на UI); реальное вычисление по логам — подфаза 2.2·4.
+ */
+export interface MicroWinView {
+  /** Идентификатор. */
+  id: string;
+  /** Название действия. */
+  title: string;
+  /** Категория нагрузки. */
+  category: MicroWinCategory;
+  /** Длительность в секундах. */
+  durationSeconds: number;
+  /** Цена энергии 1..3. */
+  energyCost: number;
+  /** Ожидаемый эффект или null. */
+  effect: string | null;
+  /** Состояния, в которых скрывать, или null. */
+  disabledForStates: UserState[] | null;
+  /** Выполнена ли сегодня (дневной лимит/фидбэк). */
+  completedToday: boolean;
+}
+
+/**
+ * Проецирует доменную микро-победу в наружную view.
+ * @param full Доменная сущность.
+ * @param completedToday Выполнена ли сегодня (по логам; 2.2·4).
+ * @returns Проекция наружу.
+ */
+export function toMicroWinView(full: MicroWinFull, completedToday: boolean): MicroWinView {
+  return {
+    id: full.id,
+    title: full.title,
+    category: full.category,
+    durationSeconds: full.durationSeconds,
+    energyCost: full.energyCost,
+    effect: full.effect,
+    disabledForStates: full.disabledForStates,
+    completedToday,
+  };
+}

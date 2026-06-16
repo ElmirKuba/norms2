@@ -94,21 +94,32 @@ export class AccentMicroWinDomainService {
     accountId: string,
     patch: MicroWinUpdateData,
   ): Promise<MicroWinFull> {
-    const clean: MicroWinUpdateData = { ...patch };
+    // Собираем чистый патч только из переданных ключей (без утечки undefined в Drizzle .set()).
+    const clean: MicroWinUpdateData = {};
     if (patch.title !== undefined) {
       clean.title = this._validateTitle(patch.title);
     }
     if (patch.category !== undefined) {
       this._validateCategory(patch.category);
+      clean.category = patch.category;
     }
     if (patch.durationSeconds !== undefined) {
       this._validateDuration(patch.durationSeconds);
+      clean.durationSeconds = patch.durationSeconds;
     }
     if (patch.energyCost !== undefined) {
       this._validateEnergy(patch.energyCost);
+      clean.energyCost = patch.energyCost;
+    }
+    if (patch.effect !== undefined) {
+      clean.effect = patch.effect;
     }
     if (patch.disabledForStates !== undefined) {
       this._validateStates(patch.disabledForStates);
+      clean.disabledForStates = patch.disabledForStates;
+    }
+    if (patch.isActive !== undefined) {
+      clean.isActive = patch.isActive;
     }
     const updated = await this._repository.update(id, accountId, clean);
     if (!updated) {

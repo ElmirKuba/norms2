@@ -25,15 +25,19 @@ export interface MicroWinCreateData {
   disabledForStates?: UserState[] | null;
 }
 
-/** Частичный патч микро-победы (только переданные поля; владение проверяет домен). */
+/**
+ * Частичный патч микро-победы (только переданные поля; владение проверяет домен).
+ * Поля допускают `undefined` (совместимость с zod `.partial()`); domain-service
+ * собирает чистый объект только из определённых ключей перед отправкой в репозиторий.
+ */
 export interface MicroWinUpdateData {
-  title?: string;
-  category?: MicroWinCategory;
-  durationSeconds?: number;
-  energyCost?: number;
-  effect?: string | null;
-  disabledForStates?: UserState[] | null;
-  isActive?: boolean;
+  title?: string | undefined;
+  category?: MicroWinCategory | undefined;
+  durationSeconds?: number | undefined;
+  energyCost?: number | undefined;
+  effect?: string | null | undefined;
+  disabledForStates?: UserState[] | null | undefined;
+  isActive?: boolean | undefined;
 }
 
 /**

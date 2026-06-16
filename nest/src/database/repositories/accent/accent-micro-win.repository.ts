@@ -3,6 +3,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { microWins } from '../../schemas/micro-wins.schema';
+import { microWinLogs } from '../../schemas/micro-win-logs.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type {
   AccentMicroWinRepositoryPort,
@@ -110,5 +111,39 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
       .where(and(eq(microWins.id, id), eq(microWins.accountId, accountId)))
       .returning({ id: microWins.id });
     return rows.length > 0;
+  }
+
+  /**
+   * Идемпотентный лог выполнения за день (ON CONFLICT по `(micro_win_id, occurred_on)`).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param microWinId Идентификатор микро-победы.
+   * @param occurredOn Локальная дата `YYYY-MM-DD`.
+   * @returns true если лог создан впервые, false если уже был (no-op).
+   */
+  public async logCompletion(
+    accountId: string,
+    microWinId: string,
+    occurredOn: string,
+  ): Promise<boolean> {
+    const rows = await this._db
+      .insert(microWinLogs)
+      .values({ id: generateId(), accountId, microWinId, occurredOn })
+      .onConflictDoNothing()
+      .returning({ id: microWinLogs.id });
+    return rows.length > 0;
+  }
+
+  /**
+   * Идентификаторы микро-побед, по которым есть лог за указанный день.
+   * @param accountId Идентификатор аккаунта.
+   * @param occurredOn Локальная дата `YYYY-MM-DD`.
+   * @returns Список `microWinId`.
+   */
+  public async listLoggedOn(accountId: string, occurredOn: string): Promise<string[]> {
+    const rows = await this._db
+      .select({ microWinId: microWinLogs.microWinId })
+      .from(microWinLogs)
+      .where(and(eq(microWinLogs.accountId, accountId), eq(microWinLogs.occurredOn, occurredOn)));
+    return rows.map((row) => row.microWinId);
   }
 }

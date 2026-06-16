@@ -142,6 +142,37 @@ export class AccentMicroWinDomainService {
   }
 
   /**
+   * Отмечает выполнение микро-победы за день (идемпотентно по дню — дневной лимит).
+   * @param id Идентификатор микро-победы.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param occurredOn Локальная дата `YYYY-MM-DD` (вычисляет use-case по TZ аккаунта).
+   * @returns Победа и флаг `newlyCompleted` (false если уже было сегодня).
+   * @throws {MicroWinNotFoundError} Если нет / не ваша.
+   */
+  public async complete(
+    id: string,
+    accountId: string,
+    occurredOn: string,
+  ): Promise<{ microWin: MicroWinFull; newlyCompleted: boolean }> {
+    const microWin = await this.getOwned(id, accountId);
+    const newlyCompleted = await this._repository.logCompletion(accountId, id, occurredOn);
+    // TODO: Claude Code: 2026-06-16: 2.8 (геймификация) — при newlyCompleted эмитить
+    // доменное событие `micro_win.completed`; листенер начислит очки. Сейчас механизма
+    // событий нет (event-emitter не подключён) → начисление отложено до 2.8.
+    return { microWin, newlyCompleted };
+  }
+
+  /**
+   * Идентификаторы микро-побед, выполненных аккаунтом в указанный день.
+   * @param accountId Идентификатор аккаунта.
+   * @param occurredOn Локальная дата `YYYY-MM-DD`.
+   * @returns Множество `microWinId` с логом за день.
+   */
+  public async completedIdsOn(accountId: string, occurredOn: string): Promise<Set<string>> {
+    return new Set(await this._repository.listLoggedOn(accountId, occurredOn));
+  }
+
+  /**
    * Валидирует и нормализует название.
    * @param value Сырое название.
    * @returns Обрезанное название.

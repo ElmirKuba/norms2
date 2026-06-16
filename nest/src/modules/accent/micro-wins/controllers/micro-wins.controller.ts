@@ -5,10 +5,13 @@ import { createMicroWinSchema } from '../dtos/create-micro-win.dto';
 import type { CreateMicroWinDto } from '../dtos/create-micro-win.dto';
 import { updateMicroWinSchema } from '../dtos/update-micro-win.dto';
 import type { UpdateMicroWinDto } from '../dtos/update-micro-win.dto';
+import { completeMicroWinSchema } from '../dtos/complete-micro-win.dto';
+import type { CompleteMicroWinDto } from '../dtos/complete-micro-win.dto';
 import { ListMicroWinsUseCase } from '../use-cases/list-micro-wins.use-case';
 import { CreateMicroWinUseCase } from '../use-cases/create-micro-win.use-case';
 import { UpdateMicroWinUseCase } from '../use-cases/update-micro-win.use-case';
 import { DeleteMicroWinUseCase } from '../use-cases/delete-micro-win.use-case';
+import { CompleteMicroWinUseCase } from '../use-cases/complete-micro-win.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { MicroWinView } from '../interfaces/micro-win-view.interface';
 
@@ -31,16 +34,17 @@ export class MicroWinsController {
     private readonly _create: CreateMicroWinUseCase,
     private readonly _update: UpdateMicroWinUseCase,
     private readonly _delete: DeleteMicroWinUseCase,
+    private readonly _complete: CompleteMicroWinUseCase,
   ) {}
 
   /**
-   * Список активных микро-побед аккаунта.
+   * Список активных микро-побед аккаунта (с дневным `completedToday`).
    * @param request Запрос (аккаунт из Guard).
    * @returns Проекции микро-побед.
    */
   @Get('micro-wins')
   public list(@Req() request: AuthenticatedRequest): Promise<MicroWinView[]> {
-    return this._list.execute(request.account.id);
+    return this._list.execute(request.account.id, request.account.timezone);
   }
 
   /**
@@ -86,5 +90,21 @@ export class MicroWinsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     await this._delete.execute(id, request.account.id);
+  }
+
+  /**
+   * Отмечает выполнение микро-победы (идемпотентно по дню — дневной лимит).
+   * @param id Идентификатор микро-победы.
+   * @param body Тело (опц. `occurredOn`).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция с актуальным `completedToday` (201).
+   */
+  @Post('micro-wins/:id/complete')
+  public complete(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(completeMicroWinSchema)) body: CompleteMicroWinDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MicroWinView> {
+    return this._complete.execute(id, request.account.id, request.account.timezone, body.occurredOn);
   }
 }

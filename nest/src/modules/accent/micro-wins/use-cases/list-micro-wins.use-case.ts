@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
 import { AccentMicroWinDomainService } from '../domain-services/accent-micro-win.domain-service';
 import { toMicroWinView } from '../interfaces/micro-win-view.interface';
 import type { MicroWinView } from '../interfaces/micro-win-view.interface';
 
 /**
- * Use-case списка микро-побед (`GET /accent/micro-wins`). Тонкий: domain → проекции.
+ * Use-case списка микро-побед (`GET /accent/micro-wins`). Тонкий: domain → проекции
+ * с `completedToday` (по логам за сегодня в TZ аккаунта — дневной фидбэк).
  */
 @Injectable()
 export class ListMicroWinsUseCase {
@@ -15,11 +17,13 @@ export class ListMicroWinsUseCase {
 
   /**
    * @param accountId Идентификатор аккаунта (из Guard).
-   * @returns Проекции активных микро-побед.
+   * @param timezone IANA-таймзона аккаунта (из Guard) — для «сегодня».
+   * @returns Проекции активных микро-побед с актуальным `completedToday`.
    */
-  public async execute(accountId: string): Promise<MicroWinView[]> {
+  public async execute(accountId: string, timezone: string): Promise<MicroWinView[]> {
     const items = await this._microWins.list(accountId);
-    // TODO: Claude Code: 2026-06-16: 2.2·4 — completedToday по логам за сегодня (TZ аккаунта).
-    return items.map((item) => toMicroWinView(item, false));
+    const today = todayInTimezone(timezone);
+    const completedToday = await this._microWins.completedIdsOn(accountId, today);
+    return items.map((item) => toMicroWinView(item, completedToday.has(item.id)));
   }
 }

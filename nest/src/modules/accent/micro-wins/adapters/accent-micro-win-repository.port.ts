@@ -83,4 +83,22 @@ export interface AccentMicroWinRepositoryPort {
    * @returns true если удалено, false если нет / не ваша.
    */
   remove(id: string, accountId: string): Promise<boolean>;
+
+  /**
+   * Логирует выполнение микро-победы за день — идемпотентно (ON CONFLICT по
+   * `(micro_win_id, occurred_on)` DO NOTHING = дневной лимит).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param microWinId Идентификатор микро-победы.
+   * @param occurredOn Локальная дата `YYYY-MM-DD`.
+   * @returns true если лог создан впервые, false если уже был сегодня (no-op).
+   */
+  logCompletion(accountId: string, microWinId: string, occurredOn: string): Promise<boolean>;
+
+  /**
+   * Идентификаторы микро-побед, выполненных аккаунтом в указанный день.
+   * @param accountId Идентификатор аккаунта.
+   * @param occurredOn Локальная дата `YYYY-MM-DD`.
+   * @returns Список `microWinId`, по которым есть лог за этот день.
+   */
+  listLoggedOn(accountId: string, occurredOn: string): Promise<string[]>;
 }

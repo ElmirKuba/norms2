@@ -13,9 +13,8 @@
 - **R0 (вычитка) ЗАВЕРШЁН:** README ✅ · domain-model ✅ · gamification ✅ ·
   api-contracts ✅ · ui-ux ✅. Все решения — в журнале; дорожная карта 2.0.0→2.11
   зафиксирована; карта таблиц БД и схемные развилки собраны.
-- **R1 в работе** (см. раздел «R1»): **R1a.1 domain-model ✅, R1a.2 gamification ✅**.
-  **Следующее — `R1a.3 · api-contracts.md`** (routes под терминологию). Дальше
-  R1a.4 ui-ux → R1a.5 README → R1b.1–4 аудит.
+- **R1 в работе**: **R1a.1 ✅ domain-model · R1a.2 ✅ gamification · R1a.3 ✅ api-contracts**.
+  **Следующее — `R1a.4 · ui-ux.md`** (экраны/компоненты). Дальше R1a.5 README → R1b.1–4 аудит.
 - **Затем R2: ADR-0047** — конвенция имён раздела + сводка ключевых решений R0.
 - **Потом — код:** старт подфазы `2.0.0` (каркас).
 - Частичные правки уже применены по ходу (структурные следствия merge/нумерации):
@@ -114,8 +113,9 @@ Quest→`Task`(oneOff). Routes: `/power-ups`→`/micro-wins`, `/bad-guys`→`/ob
 - [x] **R1a.2 · gamification.md** ✅ — `power_up`→`micro_win` (source/событие),
   PowerUp→MicroWin (текст/лимиты), достижение `first_power_up`→`first_micro_win`.
   Правила/формулы не тронуты. grep чист.
-- [ ] **R1a.3 · api-contracts.md** — routes (`/power-ups`→`/micro-wins`,
-  `/bad-guys`→`/obstacles`, `/allies`→`/supporters`) + заголовки §6/§8/§9.
+- [x] **R1a.3 · api-contracts.md** ✅ — routes `/micro-wins`/`/obstacles`/`/supporters`
+  + заголовки §6/§8/§9; `linkedPowerUpId`→`linkedMicroWinId`; dashboard-поля
+  `metricsQuick`→`checkinQuick`, `badGuysActive`→`obstaclesActive`; Quest→one-off. grep чист.
 - [ ] **R1a.4 · ui-ux.md** — routes/экраны/компоненты (экран `bad-guys`→`obstacles`,
   `PowerUpChip`→`MicroWinChip`…) + пометка дашборду (Самокомандование: «Сейчас» в герой → 2.10).
 - [ ] **R1a.5 · README.md** — §3 состав-таблица (имена; убрать `DailyMetric`/Secret/

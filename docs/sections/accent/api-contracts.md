@@ -47,28 +47,28 @@
 - `GET/PATCH /accent/habits/:id` · `POST /accent/habits/:id/deactivate`.
 - `GET /accent/tasks?date=YYYY-MM-DD` → задачи дня (материализованные + разовые).
 - `GET /accent/tasks/overdue` · `GET /accent/tasks/due-today` (для разовых с deadline).
-- `POST /accent/tasks` Body `{ title, occurredOn, kind, targetValue?, category?, deadline?, priority? }` → разовая (Quest).
+- `POST /accent/tasks` Body `{ title, occurredOn, kind, targetValue?, category?, deadline?, priority? }` → разовая (one-off).
 - `POST /accent/tasks/:id/complete` Body `{ doneValue? }` → done/partial (идемпотентно). `partial≥minTarget` держит серию; триггерит `LadderEngine` (`ladder.raised/lowered`).
 - `POST /accent/tasks/:id/uncomplete` → pending + revoke очков.
 - `POST /accent/tasks/:id/postpone` → новый Task на завтра, текущий `skipped/postponed`.
 
-## 6. PowerUps (микро-победы)
-- `GET /accent/power-ups` · `POST /accent/power-ups` Body `{ title, category, durationSeconds, energyCost, effect?, disabledForStates? }`.
-- `PATCH/DELETE /accent/power-ups/:id`.
-- `POST /accent/power-ups/:id/complete` Body `{ occurredOn? }` → 201 (дневной лимит на 1 PowerUp; даёт очки).
+## 6. MicroWins (микро-победы)
+- `GET /accent/micro-wins` · `POST /accent/micro-wins` Body `{ title, category, durationSeconds, energyCost, effect?, disabledForStates? }`.
+- `PATCH/DELETE /accent/micro-wins/:id`.
+- `POST /accent/micro-wins/:id/complete` Body `{ occurredOn? }` → 201 (дневной лимит на 1 MicroWin; даёт очки).
 
 ## 7. AntiHabits
 - `GET /accent/anti-habits` (с вычисл. `currentDays` на фронте) · `POST` Body `{ title, description?, targetDays? }`.
 - `GET/PATCH /accent/anti-habits/:id` · `POST .../relapse` Body `{ triggerTag?, note? }` → сброс таймера, рекорд, история.
 - `GET /accent/anti-habits/:id/relapses?cursor` — история попыток.
 
-## 8. BadGuys + Counterplays
-- `GET/POST /accent/bad-guys` Body `{ name, type?, trigger?, symptoms?, intensity? }`.
-- `PATCH/DELETE /accent/bad-guys/:id`.
-- `POST /accent/bad-guys/:id/counterplays` Body `{ text, linkedPowerUpId? }` · `GET/DELETE`.
+## 8. Obstacles + Counterplays
+- `GET/POST /accent/obstacles` Body `{ name, type?, trigger?, symptoms?, intensity? }`.
+- `PATCH/DELETE /accent/obstacles/:id`.
+- `POST /accent/obstacles/:id/counterplays` Body `{ text, linkedMicroWinId? }` · `GET/DELETE`.
 
-## 9. Allies (MVP — реестр)
-- `GET/POST /accent/allies` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.
+## 9. Supporters (MVP — реестр)
+- `GET/POST /accent/supporters` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.
 - _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — поздняя волна 2.12+._
 
 ## 10. Недельный слой и журналы
@@ -83,7 +83,7 @@
 - `GET /accent/point-events?cursor` — история начислений (для прозрачности).
 
 ## 12. Dashboard (агрегатор)
-- `GET /accent/dashboard?date=YYYY-MM-DD` → всё для главного экрана за 1 запрос: `{ state, recommendations, today:{tasks,percent,streak}, week:{donut,bars,best,worst}, goals:[...], metricsQuick, overdue, badGuysActive }`. Серверная агрегация ([ADR-0019](../../decisions/0019-backend-architecture-conventions.md)).
+- `GET /accent/dashboard?date=YYYY-MM-DD` → всё для главного экрана за 1 запрос: `{ state, recommendations, today:{tasks,percent,streak}, week:{donut,bars,best,worst}, goals:[...], checkinQuick, overdue, obstaclesActive }`. Серверная агрегация ([ADR-0019](../../decisions/0019-backend-architecture-conventions.md)).
 
 ## 13. Ролловер (фон, не эндпоинт)
 `@nestjs/schedule`: материализация Task из активных Habit по RRULE в локальную полночь (по `timezone`, §0). В recovery/паузе — мягкий ролловер (минимальные версии). Sweep устаревших — по образцу фазы 1.

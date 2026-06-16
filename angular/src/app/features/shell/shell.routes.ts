@@ -16,7 +16,7 @@ export const shellRoutes: Routes = [
       { path: 'profile', loadComponent: () => import('../profile/profile.component').then((m) => m.ProfileComponent) },
       { path: 'u/:login', loadComponent: () => import('../profile/user-profile/user-profile.component').then((m) => m.UserProfileComponent) },
       { path: 'invites', loadComponent: () => import('../invites/invites.component').then((m) => m.InvitesComponent) },
-      { path: 'accent', loadComponent: () => import('../accent/accent.component').then((m) => m.AccentComponent) },
+      { path: 'accent', loadChildren: () => import('../accent/accent.routes').then((m) => m.accentRoutes) },
       { path: 'sessions', loadComponent: () => import('../sessions/sessions.component').then((m) => m.SessionsComponent) },
       { path: 'settings', loadComponent: () => import('../settings/settings.component').then((m) => m.SettingsComponent) },
       { path: '**', loadComponent: () => import('../not-found/not-found.component').then((m) => m.NotFoundComponent) },

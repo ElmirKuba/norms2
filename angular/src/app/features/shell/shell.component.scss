@@ -53,12 +53,13 @@
   &.nav--open {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-2);
     position: fixed;
     inset: 0;
     z-index: 60;
-    padding: var(--space-6) var(--space-5);
+    // Сверху — отступ под крестик (а не центр экрана); список растёт вниз.
+    padding: calc(var(--touch-min) + var(--space-4)) var(--space-5) var(--space-6);
     background: color-mix(in srgb, var(--color-surface) 78%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);

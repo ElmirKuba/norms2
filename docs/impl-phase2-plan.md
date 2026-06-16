@@ -13,8 +13,9 @@
 - **R0 (вычитка) ЗАВЕРШЁН:** README ✅ · domain-model ✅ · gamification ✅ ·
   api-contracts ✅ · ui-ux ✅. Все решения — в журнале; дорожная карта 2.0.0→2.11
   зафиксирована; карта таблиц БД и схемные развилки собраны.
-- **R1 в работе**: **R1a.1 ✅ domain-model · R1a.2 ✅ gamification · R1a.3 ✅ api-contracts**.
-  **Следующее — `R1a.4 · ui-ux.md`** (экраны/компоненты). Дальше R1a.5 README → R1b.1–4 аудит.
+- **R1a ЗАВЕРШЁН** (все 5 файлов финализированы: domain-model/gamification/api/ui-ux/README).
+  **Следующее — R1b: сквозной аудит консистентности** (R1b.1 grep-терминология →
+  R1b.2 покрытие → R1b.3 контракты → R1b.4 ссылки/нумерация/метки).
 - **Затем R2: ADR-0047** — конвенция имён раздела + сводка ключевых решений R0.
 - **Потом — код:** старт подфазы `2.0.0` (каркас).
 - Частичные правки уже применены по ходу (структурные следствия merge/нумерации):
@@ -116,10 +117,11 @@ Quest→`Task`(oneOff). Routes: `/power-ups`→`/micro-wins`, `/bad-guys`→`/ob
 - [x] **R1a.3 · api-contracts.md** ✅ — routes `/micro-wins`/`/obstacles`/`/supporters`
   + заголовки §6/§8/§9; `linkedPowerUpId`→`linkedMicroWinId`; dashboard-поля
   `metricsQuick`→`checkinQuick`, `badGuysActive`→`obstaclesActive`; Quest→one-off. grep чист.
-- [ ] **R1a.4 · ui-ux.md** — routes/экраны/компоненты (экран `bad-guys`→`obstacles`,
-  `PowerUpChip`→`MicroWinChip`…) + пометка дашборду (Самокомандование: «Сейчас» в герой → 2.10).
-- [ ] **R1a.5 · README.md** — §3 состав-таблица (имена; убрать `DailyMetric`/Secret/
-  Epic/BadGuy/Ally/PowerUp); сверить §-ссылки. (Принципы/§7 — уже причёсаны.)
+- [x] **R1a.4 · ui-ux.md** ✅ — экраны (`/micro-wins`/`/obstacles`/`/supporters`),
+  компоненты (`PowerUpChip`→`MicroWinChip`, `MetricSlider`→`CheckinSlider`), BadGuy→
+  Obstacle, «волну 2.1»→`2.12+`, тренды из CheckIn + пометка дашборду (самокомандование). grep чист.
+- [x] **R1a.5 · README.md** ✅ — §3 состав-таблица к терминологии (Goal/MicroWin/
+  Obstacle/Supporter/Identity), DailyMetric убрана, подцели в Goal, Ally→Supporter в волнах. grep чист.
 
 ### R1b — аудит консистентности (сквозной, после R1a; коммит на находки)
 - [ ] **R1b.1 · терминология** — `grep` по 5 файлам: ноль старых имён/routes

@@ -14,13 +14,15 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { VersionModule } from './modules/version/version.module';
+import { AccentModule } from './modules/accent/accent.module';
 import { RateLimitGuard } from './shared/guards/rate-limit.guard';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
  * общие сервисы (shared), БД (Drizzle), health и доменные области
- * account/auth/invites/bans/recovery/profile/stats/notifications. Глобальный `RateLimitGuard`
- * (anti-brute-force) действует только на роуты с `@RateLimit`.
+ * account/auth/invites/bans/recovery/profile/stats/notifications + раздел «Акцент»
+ * (фаза 2). Глобальный `RateLimitGuard` (anti-brute-force) действует только на
+ * роуты с `@RateLimit`.
  */
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
     StatsModule,
     NotificationsModule,
     VersionModule,
+    AccentModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],
 })

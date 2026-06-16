@@ -2,7 +2,7 @@ import { timestamp } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
-import type { AccentSettingsFull } from '../../modules/accent/interfaces/accent-settings-full.interface';
+import type { AccentSettingsFull } from '../../modules/accent/settings/interfaces/accent-settings-full.interface';
 
 /**
  * accent_settings — настройки/состояние раздела «Акцент» (1:1 с account; колонки

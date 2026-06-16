@@ -16,9 +16,9 @@
 ---
 
 ## 1. Настройки раздела
-- `GET /accent/settings` → `{ overallStreakThreshold, accentPausedFrom? }` (timezone — в профиле ЛК, не здесь — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)).
-- `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200.
-- `POST /accent/pause` / `POST /accent/resume` — пауза-режим (заморозка серий) → 204.
+- `GET /accent/settings` → `{ accentPausedFrom }` _(реализовано, 2.0.0)_; `overallStreakThreshold` добавится с сериями (2.8). timezone — в профиле ЛК, не здесь ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)).
+- `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200 _(в 2.8, когда появится поле; в 2.0.0 патчить нечего)_.
+- `POST /accent/pause` / `POST /accent/resume` — пауза-режим (заморозка серий) → 204 _(реализовано, 2.0.0)_.
 
 ## 1a. Справочники (сферы, атрибуты)
 - `GET /accent/domains` → `[{ key, title, … }]` — сферы жизни (`DomainKey`, подфаза 2.1; справочник, не enum в БД).

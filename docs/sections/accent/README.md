@@ -2,7 +2,7 @@
 
 > Личная ОС достижений внутри Нормисов: цели, привычки, микро-победы и геймификация, которые ведут человека от «1 отжимания» к устойчивому росту. Для **аутентифицированных** пользователей, на общем ЛК фазы 1.
 >
-> Характер и ключевые решения — [ADR-0027](../../decisions/0027-accent-phase2-core.md), [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md) (timezone+домены), [ADR-0047](../../decisions/0047-accent-naming-convention.md) (имена), [ADR-0048](../../decisions/0048-accent-domain-refinements.md) (доменные уточнения), [ADR-0049](../../decisions/0049-accent-product-principles.md) (принципы). История переваривания источников — `../../archive/phase2-analysis-map.md` (🗄 рабочая карта). Детали — в соседних файлах этой папки. Реализация — `../../impl-phase2-plan.md`.
+> Характер и ключевые решения — [ADR-0027](../../decisions/0027-accent-phase2-core.md), [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md) (timezone+домены), [ADR-0047](../../decisions/0047-accent-naming-convention.md) (имена), [ADR-0048](../../decisions/0048-accent-domain-refinements.md) (доменные уточнения), [ADR-0049](../../decisions/0049-accent-product-principles.md) (принципы), [ADR-0050](../../decisions/0050-accent-module-architecture.md) (архитектура модуля). История переваривания источников — `../../archive/phase2-analysis-map.md` (🗄 рабочая карта). Детали — в соседних файлах этой папки. Реализация — `../../impl-phase2-plan.md`.
 
 ## 1. Что это и для кого
 

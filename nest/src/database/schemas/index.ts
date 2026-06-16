@@ -9,3 +9,5 @@ export * from './session-token-history.schema';
 export * from './notifications.schema';
 export * from './notification-reads.schema';
 export * from './accent-settings.schema';
+export * from './accent-domains.schema';
+export * from './accent-attributes.schema';

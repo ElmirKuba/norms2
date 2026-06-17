@@ -30,13 +30,4 @@ export interface AccentSettingsRepositoryPort {
    * @returns Обновлённая строка настроек.
    */
   updatePausedFrom(accountId: string, value: Date | null): Promise<AccentSettingsFull>;
-
-  /**
-   * Атомарно «занимает» право засеять стартовый набор микро-побед: ставит
-   * `starter_micro_wins_seeded_at = now()` ТОЛЬКО если оно было null (CAS, защита от
-   * гонки/двойного сева). Строка настроек должна уже существовать (вызвать getOrCreate).
-   * @param accountId Идентификатор аккаунта.
-   * @returns true если право получено (сеять должен вызывающий), false если уже засеяно.
-   */
-  claimMicroWinsStarter(accountId: string): Promise<boolean>;
 }

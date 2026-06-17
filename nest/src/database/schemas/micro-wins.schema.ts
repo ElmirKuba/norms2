@@ -29,6 +29,7 @@ export const microWins = defineTableWithSchema<MicroWinFull>()(
     effect: text('effect'),
     disabledForStates: jsonb('disabled_for_states').$type<UserState[]>(),
     isActive: boolean('is_active').notNull().default(true),
+    isStarter: boolean('is_starter').notNull().default(false),
     ...timestamps(),
   },
   (table) => [

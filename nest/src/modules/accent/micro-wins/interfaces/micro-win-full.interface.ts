@@ -58,6 +58,8 @@ export interface MicroWinFull {
   disabledForStates: UserState[] | null;
   /** Активна ли (мягкое отключение из выдачи). */
   isActive: boolean;
+  /** Стартовая (пример из пака) — пока не присвоена; первое «Сделал»/«Изм.» снимает флаг (2.3). */
+  isStarter: boolean;
   /** Когда создано. */
   createdAt: Date;
   /** Когда изменено. */

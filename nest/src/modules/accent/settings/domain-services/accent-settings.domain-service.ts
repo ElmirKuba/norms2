@@ -46,16 +46,4 @@ export class AccentSettingsDomainService {
     await this.getOrCreate(accountId);
     return this._repository.updatePausedFrom(accountId, null);
   }
-
-  /**
-   * Атомарно «занимает» право засеять стартовый набор микро-побед (ленивое создание
-   * строки настроек + CAS по `starter_micro_wins_seeded_at`). Кросс-доменная точка
-   * вниз: зовётся из use-case области micro-wins (ADR-0050).
-   * @param accountId Идентификатор аккаунта.
-   * @returns true если право получено (сеять должен вызывающий), false если уже засеяно.
-   */
-  public async claimMicroWinsStarter(accountId: string): Promise<boolean> {
-    await this.getOrCreate(accountId);
-    return this._repository.claimMicroWinsStarter(accountId);
-  }
 }

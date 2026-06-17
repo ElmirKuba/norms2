@@ -17,7 +17,6 @@ export const accentSettings = defineTableWithSchema<AccentSettingsFull>()(
       .primaryKey()
       .references(() => accounts.id, { onDelete: 'cascade' }),
     pausedFrom: timestamp('paused_from', { withTimezone: true }),
-    starterMicroWinsSeededAt: timestamp('starter_micro_wins_seeded_at', { withTimezone: true }),
     ...timestamps(),
   },
 );

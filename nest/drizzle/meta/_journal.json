@@ -50,6 +50,13 @@
       "when": 1781697552337,
       "tag": "0006_absurd_deathbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781707796515,
+      "tag": "0007_small_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
+import { AccentSettingsModule } from '../settings/accent-settings.module';
 import { ACCENT_MICRO_WIN_REPOSITORY } from './adapters/accent-micro-win-repository.port';
 import { AccentMicroWinRepository } from '../../../database/repositories/accent/accent-micro-win.repository';
 import { AccentMicroWinDomainService } from './domain-services/accent-micro-win.domain-service';
@@ -14,11 +15,12 @@ import { CompleteMicroWinUseCase } from './use-cases/complete-micro-win.use-case
  * Область микро-побед раздела «Акцент» (мультимодуль, ADR-0050): порт
  * `ACCENT_MICRO_WIN_REPOSITORY` → Drizzle-репо, `AccentMicroWinDomainService`
  * (per-account CRUD с инвариантами и владением), контроллер `/accent/micro-wins`
- * под AuthGuard (импорт `AccessControlModule`) + тонкие use-cases. `complete` (лог) —
- * подфаза 2.2·4. Экспортит domain-service для кросс-домена вниз (Recommender 2.7).
+ * под AuthGuard (импорт `AccessControlModule`) + тонкие use-cases. Импортит
+ * `AccentSettingsModule` (кросс-домен вниз: флаг сева стартового набора, 2.2·5).
+ * Экспортит domain-service для кросс-домена вниз (Recommender 2.7).
  */
 @Module({
-  imports: [AccessControlModule],
+  imports: [AccessControlModule, AccentSettingsModule],
   controllers: [MicroWinsController],
   providers: [
     { provide: ACCENT_MICRO_WIN_REPOSITORY, useClass: AccentMicroWinRepository },

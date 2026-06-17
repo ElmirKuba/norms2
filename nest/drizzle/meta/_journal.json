@@ -43,6 +43,13 @@
       "when": 1781629653738,
       "tag": "0005_orange_forge",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781697552337,
+      "tag": "0006_absurd_deathbird",
+      "breakpoints": true
     }
   ]
 }

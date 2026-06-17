@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { accentSettings } from '../../schemas/accent-settings.schema';
@@ -74,5 +74,25 @@ export class AccentSettingsRepository implements AccentSettingsRepositoryPort {
       throw new Error('accent_settings: updatePausedFrom не нашёл строку.');
     }
     return row;
+  }
+
+  /**
+   * Атомарный CAS: проставляет `starter_micro_wins_seeded_at = now()` только если оно
+   * было null. Возврат RETURNING непустой → выиграли гонку (право сеять наше).
+   * @param accountId Идентификатор аккаунта.
+   * @returns true если право получено, false если уже засеяно (или строки нет).
+   */
+  public async claimMicroWinsStarter(accountId: string): Promise<boolean> {
+    const rows = await this._db
+      .update(accentSettings)
+      .set({ starterMicroWinsSeededAt: new Date() })
+      .where(
+        and(
+          eq(accentSettings.accountId, accountId),
+          isNull(accentSettings.starterMicroWinsSeededAt),
+        ),
+      )
+      .returning({ accountId: accentSettings.accountId });
+    return rows.length > 0;
   }
 }

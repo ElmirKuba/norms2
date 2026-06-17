@@ -80,6 +80,33 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
   }
 
   /**
+   * Массовая вставка микро-побед (стартовый набор; id на каждую — `generateId()`).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  public async createMany(items: readonly MicroWinCreateData[]): Promise<number> {
+    if (items.length === 0) {
+      return 0;
+    }
+    const rows = await this._db
+      .insert(microWins)
+      .values(
+        items.map((data) => ({
+          id: generateId(),
+          accountId: data.accountId,
+          title: data.title,
+          category: data.category,
+          durationSeconds: data.durationSeconds,
+          energyCost: data.energyCost,
+          effect: data.effect ?? null,
+          disabledForStates: data.disabledForStates ?? null,
+        })),
+      )
+      .returning({ id: microWins.id });
+    return rows.length;
+  }
+
+  /**
    * Обновляет микро-победу владельца (только переданные поля).
    * @param id Идентификатор микро-победы.
    * @param accountId Идентификатор аккаунта-владельца.

@@ -11,6 +11,7 @@ import {
   MICRO_WIN_CATEGORIES,
   USER_STATES,
 } from '../interfaces/micro-win-full.interface';
+import { STARTER_MICRO_WINS } from '../seed/starter-micro-wins';
 import type {
   MicroWinCategory,
   MicroWinFull,
@@ -170,6 +171,19 @@ export class AccentMicroWinDomainService {
    */
   public async completedIdsOn(accountId: string, occurredOn: string): Promise<Set<string>> {
     return new Set(await this._repository.listLoggedOn(accountId, occurredOn));
+  }
+
+  /**
+   * Создаёт персональный стартовый набор микро-побед аккаунту (массовой вставкой).
+   * Данные — доверенные константы (`STARTER_MICRO_WINS`), валидация не нужна.
+   * Идемпотентность гарантирует вызывающий (CAS-флаг в настройках, 2.2·5).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число созданных микро-побед.
+   */
+  public async createStarterSet(accountId: string): Promise<number> {
+    return this._repository.createMany(
+      STARTER_MICRO_WINS.map((item) => ({ ...item, accountId })),
+    );
   }
 
   /**

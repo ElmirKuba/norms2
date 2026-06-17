@@ -1,0 +1,1 @@
+ALTER TABLE "accent_settings" ADD COLUMN "starter_micro_wins_seeded_at" timestamp with time zone;

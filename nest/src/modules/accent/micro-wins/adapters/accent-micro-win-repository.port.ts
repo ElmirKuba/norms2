@@ -68,6 +68,13 @@ export interface AccentMicroWinRepositoryPort {
   create(data: MicroWinCreateData): Promise<MicroWinFull>;
 
   /**
+   * Массовая вставка микро-побед (стартовый набор; id генерирует репозиторий).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  createMany(items: readonly MicroWinCreateData[]): Promise<number>;
+
+  /**
    * Обновляет микро-победу владельца (частично).
    * @param id Идентификатор микро-победы.
    * @param accountId Идентификатор аккаунта-владельца.

@@ -3,8 +3,8 @@ import { AccentComponent } from './accent.component';
 
 /**
  * Маршруты раздела «Акцент»: `AccentComponent` как layout (вкладки) + дочерние
- * lazy-экраны. default → дашборд. Цели/привычки/микро-победы — сид-заглушки
- * (`AccentPlaceholderComponent`), наполнятся подфазами 2.2–2.11.
+ * lazy-экраны. default → дашборд. Микро-победы — рабочий экран (2.2·6); цели/привычки —
+ * сид-заглушки (`AccentPlaceholderComponent`), наполнятся подфазами 2.3–2.11.
  */
 export const accentRoutes: Routes = [
   {
@@ -32,8 +32,7 @@ export const accentRoutes: Routes = [
       {
         path: 'micro-wins',
         loadComponent: () =>
-          import('./accent-placeholder.component').then((m) => m.AccentPlaceholderComponent),
-        data: { title: 'Микро-победы' },
+          import('./micro-wins/micro-wins.component').then((m) => m.MicroWinsComponent),
       },
     ],
   },

@@ -19,6 +19,7 @@ const MESSAGES: Readonly<Record<string, string>> = {
   BAN_NOT_FOUND: 'Бан не найден.',
   AVATAR_INVALID: 'Неподходящий файл — нужен JPEG, PNG или WEBP в пределах лимита.',
   VALIDATION_ERROR: 'Проверьте правильность заполнения.',
+  MICRO_WIN_NOT_FOUND: 'Микро-победа не найдена.',
 };
 
 /** Безопасно извлекает конверт ошибки бэка. */

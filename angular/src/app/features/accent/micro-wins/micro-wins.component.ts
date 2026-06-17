@@ -42,7 +42,13 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
           <app-button (click)="openCreate()">Добавить</app-button>
         </div>
       </header>
-      <p class="mw__lead">Маленькое действие — уже победа. Сделай хотя бы одно.</p>
+      <aside class="mw__why">
+        <span class="mw__why-icon" aria-hidden="true">🌱</span>
+        <p class="mw__why-text">
+          <strong>Раздел для тяжёлых дней.</strong> Нет сил на большое — сделай одно крошечное.
+          Смысл не в том, чтобы успеть больше, а чтобы не упасть в ноль.
+        </p>
+      </aside>
 
       @if (loading()) {
         <p class="mw__muted">Загрузка…</p>
@@ -114,9 +120,27 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         gap: var(--space-2);
         flex-wrap: wrap;
       }
-      .mw__lead {
+      .mw__why {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        margin: var(--space-3) 0 var(--space-4);
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-surface-2);
+        border-left: 3px solid var(--color-accent);
+        border-radius: var(--radius-md);
+      }
+      .mw__why-icon {
+        font-size: var(--fs-lg);
+        line-height: 1.3;
+      }
+      .mw__why-text {
+        margin: 0;
+        font-size: var(--fs-sm);
         color: var(--color-text-muted);
-        margin: var(--space-2) 0 var(--space-4);
+      }
+      .mw__why-text strong {
+        color: var(--color-text);
       }
       .mw__hint {
         font-size: var(--fs-sm);

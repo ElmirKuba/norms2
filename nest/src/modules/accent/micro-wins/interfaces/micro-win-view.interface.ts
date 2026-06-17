@@ -26,6 +26,8 @@ export interface MicroWinView {
   disabledForStates: UserState[] | null;
   /** Выполнена ли сегодня (дневной лимит/фидбэк). */
   completedToday: boolean;
+  /** Стартовая (пример из пака), ещё не присвоена — для badge «пример» (2.3). */
+  isStarter: boolean;
 }
 
 /**
@@ -44,5 +46,6 @@ export function toMicroWinView(full: MicroWinFull, completedToday: boolean): Mic
     effect: full.effect,
     disabledForStates: full.disabledForStates,
     completedToday,
+    isStarter: full.isStarter,
   };
 }

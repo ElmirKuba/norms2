@@ -9,6 +9,8 @@ import { CreateMicroWinUseCase } from './use-cases/create-micro-win.use-case';
 import { UpdateMicroWinUseCase } from './use-cases/update-micro-win.use-case';
 import { DeleteMicroWinUseCase } from './use-cases/delete-micro-win.use-case';
 import { CompleteMicroWinUseCase } from './use-cases/complete-micro-win.use-case';
+import { SeedStarterPackUseCase } from './use-cases/seed-starter-pack.use-case';
+import { ClearStartersUseCase } from './use-cases/clear-starters.use-case';
 
 /**
  * Область микро-побед раздела «Акцент» (мультимодуль, ADR-0050): порт
@@ -28,6 +30,8 @@ import { CompleteMicroWinUseCase } from './use-cases/complete-micro-win.use-case
     UpdateMicroWinUseCase,
     DeleteMicroWinUseCase,
     CompleteMicroWinUseCase,
+    SeedStarterPackUseCase,
+    ClearStartersUseCase,
   ],
   exports: [AccentMicroWinDomainService],
 })

@@ -12,6 +12,8 @@ import { CreateMicroWinUseCase } from '../use-cases/create-micro-win.use-case';
 import { UpdateMicroWinUseCase } from '../use-cases/update-micro-win.use-case';
 import { DeleteMicroWinUseCase } from '../use-cases/delete-micro-win.use-case';
 import { CompleteMicroWinUseCase } from '../use-cases/complete-micro-win.use-case';
+import { SeedStarterPackUseCase } from '../use-cases/seed-starter-pack.use-case';
+import { ClearStartersUseCase } from '../use-cases/clear-starters.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { MicroWinView } from '../interfaces/micro-win-view.interface';
 
@@ -35,6 +37,8 @@ export class MicroWinsController {
     private readonly _update: UpdateMicroWinUseCase,
     private readonly _delete: DeleteMicroWinUseCase,
     private readonly _complete: CompleteMicroWinUseCase,
+    private readonly _seedStarterPack: SeedStarterPackUseCase,
+    private readonly _clearStarters: ClearStartersUseCase,
   ) {}
 
   /**
@@ -59,6 +63,29 @@ export class MicroWinsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<MicroWinView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Получить стартовый пак (докидывает примеры, своё не трогает). Объявлен ДО `:id`,
+   * иначе `starter-pack` ловится как `:id`. Возвращает свежий список.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список микро-побед после сева.
+   */
+  @Post('micro-wins/starter-pack')
+  public async getStarterPack(@Req() request: AuthenticatedRequest): Promise<MicroWinView[]> {
+    await this._seedStarterPack.execute(request.account.id);
+    return this._list.execute(request.account.id, request.account.timezone);
+  }
+
+  /**
+   * Очистить примеры (удаляет только не присвоенные стартовые). Объявлен ДО `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список микро-побед после очистки.
+   */
+  @Delete('micro-wins/starter-pack')
+  public async clearStarters(@Req() request: AuthenticatedRequest): Promise<MicroWinView[]> {
+    await this._clearStarters.execute(request.account.id);
+    return this._list.execute(request.account.id, request.account.timezone);
   }
 
   /**

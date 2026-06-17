@@ -48,4 +48,14 @@ export class AccentApiService {
   public completeMicroWin(id: string): Observable<MicroWinView> {
     return this._http.post<MicroWinView>(`${API_PREFIX}/accent/micro-wins/${id}/complete`, {});
   }
+
+  /** Получить стартовый пак (докидывает примеры, своё не трогает) → свежий список. */
+  public seedStarterPack(): Observable<MicroWinView[]> {
+    return this._http.post<MicroWinView[]>(`${API_PREFIX}/accent/micro-wins/starter-pack`, {});
+  }
+
+  /** Очистить примеры (удаляет только не присвоенные стартовые) → свежий список. */
+  public clearStarters(): Observable<MicroWinView[]> {
+    return this._http.delete<MicroWinView[]>(`${API_PREFIX}/accent/micro-wins/starter-pack`);
+  }
 }

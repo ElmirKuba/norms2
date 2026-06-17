@@ -42,6 +42,8 @@ export interface MicroWinView {
   disabledForStates: AccentUserState[] | null;
   /** Выполнена ли сегодня (дневной фидбэк). */
   completedToday: boolean;
+  /** Стартовая (пример из пака), ещё не присвоена — для badge «пример» (2.3). */
+  isStarter: boolean;
 }
 
 /** Тело создания/обновления микро-победы (`POST`/`PATCH /accent/micro-wins`). */

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -13,10 +13,11 @@ import { MicroWinFormModalComponent } from './micro-win-form-modal.component';
 import type { MicroWinFormData } from './micro-win-form-modal.component';
 
 /**
- * Экран микро-побед (`/accent/micro-wins`, 2.2·6): список «сделать сейчас» с дневным
- * фидбэком (`completedToday`), отметкой выполнения в один тап, CRUD через модалку.
- * Первый заход на бэке сеет персональный стартовый набор (2.2·5). Тонкий слой над
- * `AccentApiService`; философия раздела — «тренажёр отказа» (ADR-0049): одно действие, без шума.
+ * Экран микро-побед (`/accent/micro-wins`): список «сделать сейчас» с дневным фидбэком
+ * (`completedToday`), complete в один тап, CRUD через модалку. Стартовый пак — по кнопке
+ * (2.3): пусто → CTA «Получить пак»; примеры помечены badge и присваиваются первым
+ * «Сделал»/«Изм.»; контекстная кнопка «Очистить примеры» ↔ «Получить пак». Тонкий слой
+ * над `AccentApiService`; философия — «тренажёр отказа» (ADR-0049): одно действие, без шума.
  */
 @Component({
   selector: 'app-micro-wins',
@@ -26,7 +27,20 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
     <section class="mw">
       <header class="mw__head">
         <h2>Микро-победы</h2>
-        <app-button (click)="openCreate()">Добавить</app-button>
+        <div class="mw__head-actions">
+          @if (items().length > 0) {
+            @if (hasStarters()) {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                Очистить примеры
+              </app-button>
+            } @else {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                Получить стартовый пак
+              </app-button>
+            }
+          }
+          <app-button (click)="openCreate()">Добавить</app-button>
+        </div>
       </header>
       <p class="mw__lead">Маленькое действие — уже победа. Сделай хотя бы одно.</p>
 
@@ -37,16 +51,26 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
       } @else if (items().length === 0) {
         <app-empty-state
           title="Пока нет микро-побед"
-          text="Заведи первое маленькое действие — то, что по силам даже в плохой день."
-        />
+          text="Начни с готового набора маленьких действий — по силам даже в плохой день."
+        >
+          <app-button [loading]="packBusy()" (click)="seedPack()">Получить стартовый пак</app-button>
+        </app-empty-state>
       } @else {
+        @if (hasStarters()) {
+          <p class="mw__hint">«Сделал» или «Изм.» оставит победу себе.</p>
+        }
         <ul class="mw__list">
           @for (mw of items(); track mw.id) {
             <li>
               <app-card>
                 <div class="mw__item">
                   <div class="mw__main">
-                    <strong class="mw__name">{{ mw.title }}</strong>
+                    <span class="mw__title-row">
+                      <strong class="mw__name">{{ mw.title }}</strong>
+                      @if (mw.isStarter) {
+                        <span class="mw__badge">пример</span>
+                      }
+                    </span>
                     <span class="mw__meta">
                       {{ categoryLabel(mw.category) }} · {{ durationLabel(mw.durationSeconds) }} ·
                       энергия {{ mw.energyCost }}/3
@@ -82,10 +106,22 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .mw__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
       }
       .mw__lead {
         color: var(--color-text-muted);
         margin: var(--space-2) 0 var(--space-4);
+      }
+      .mw__hint {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-3);
       }
       .mw__muted {
         color: var(--color-text-muted);
@@ -114,8 +150,22 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         gap: var(--space-1);
         min-width: 0;
       }
+      .mw__title-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
       .mw__name {
         font-size: var(--fs-md);
+      }
+      .mw__badge {
+        font-size: var(--fs-xs);
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent);
+        border-radius: var(--radius-sm);
+        padding: 0 var(--space-1);
+        opacity: 0.85;
       }
       .mw__meta {
         font-size: var(--fs-sm);
@@ -153,6 +203,11 @@ export class MicroWinsComponent {
   protected readonly error = signal<string | null>(null);
   /** Id микро-победы, по которой идёт отметка «сделал» (для спиннера). */
   protected readonly busyId = signal<string | null>(null);
+  /** Идёт получение/очистка стартового пака. */
+  protected readonly packBusy = signal(false);
+
+  /** Есть ли ещё не присвоенные стартовые (для badge-хинта и контекстной кнопки). */
+  protected readonly hasStarters = computed(() => this.items().some((item) => item.isStarter));
 
   public constructor() {
     this._load();
@@ -183,6 +238,30 @@ export class MicroWinsComponent {
     });
   }
 
+  /** Получить стартовый пак (докидывает примеры) — список приходит свежим. */
+  protected seedPack(): void {
+    this.packBusy.set(true);
+    this._api.seedStarterPack().subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => this.packBusy.set(false),
+    });
+  }
+
+  /** Очистить примеры (только не присвоенные стартовые) — список приходит свежим. */
+  protected clearExamples(): void {
+    this.packBusy.set(true);
+    this._api.clearStarters().subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => this.packBusy.set(false),
+    });
+  }
+
   /** Открывает модалку создания. */
   protected openCreate(): void {
     this._openForm({}, (payload) => this._api.createMicroWin(payload));
@@ -193,7 +272,7 @@ export class MicroWinsComponent {
     this._openForm({ microWin: mw }, (payload) => this._api.updateMicroWin(mw.id, payload));
   }
 
-  /** Отмечает выполнение (один тап); патчит карточку в `completedToday`. */
+  /** Отмечает выполнение (один тап); патчит карточку (`completedToday`, adoption `isStarter`). */
   protected complete(mw: MicroWinView): void {
     if (mw.completedToday) {
       return;

@@ -70,6 +70,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
         energyCost: data.energyCost,
         effect: data.effect ?? null,
         disabledForStates: data.disabledForStates ?? null,
+        isStarter: data.isStarter ?? false,
       })
       .returning();
     const row = rows[0];
@@ -100,6 +101,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
           energyCost: data.energyCost,
           effect: data.effect ?? null,
           disabledForStates: data.disabledForStates ?? null,
+          isStarter: data.isStarter ?? false,
         })),
       )
       .returning({ id: microWins.id });
@@ -138,6 +140,19 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
       .where(and(eq(microWins.id, id), eq(microWins.accountId, accountId)))
       .returning({ id: microWins.id });
     return rows.length > 0;
+  }
+
+  /**
+   * Удаляет все стартовые (`is_starter=true`) победы аккаунта; свои не трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async deleteStarters(accountId: string): Promise<number> {
+    const rows = await this._db
+      .delete(microWins)
+      .where(and(eq(microWins.accountId, accountId), eq(microWins.isStarter, true)))
+      .returning({ id: microWins.id });
+    return rows.length;
   }
 
   /**

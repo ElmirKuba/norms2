@@ -23,6 +23,8 @@ export interface MicroWinCreateData {
   effect?: string | null;
   /** В каких состояниях скрывать (опц.). */
   disabledForStates?: UserState[] | null;
+  /** Стартовая (пример из пака) — опц., дефолт false. */
+  isStarter?: boolean;
 }
 
 /**
@@ -38,6 +40,8 @@ export interface MicroWinUpdateData {
   effect?: string | null | undefined;
   disabledForStates?: UserState[] | null | undefined;
   isActive?: boolean | undefined;
+  /** Снятие флага «стартовое» (adoption) — внутреннее, не из API-DTO. */
+  isStarter?: boolean | undefined;
 }
 
 /**
@@ -90,6 +94,14 @@ export interface AccentMicroWinRepositoryPort {
    * @returns true если удалено, false если нет / не ваша.
    */
   remove(id: string, accountId: string): Promise<boolean>;
+
+  /**
+   * Удаляет все ещё не присвоенные стартовые победы аккаунта (`is_starter=true`).
+   * Свои (присвоенные) НЕ трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  deleteStarters(accountId: string): Promise<number>;
 
   /**
    * Логирует выполнение микро-победы за день — идемпотентно (ON CONFLICT по

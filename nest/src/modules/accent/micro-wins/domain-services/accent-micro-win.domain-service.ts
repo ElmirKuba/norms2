@@ -122,6 +122,8 @@ export class AccentMicroWinDomainService {
     if (patch.isActive !== undefined) {
       clean.isActive = patch.isActive;
     }
+    // Adoption (2.3): любое редактирование «присваивает» стартовую победу (снимает флаг).
+    clean.isStarter = false;
     const updated = await this._repository.update(id, accountId, clean);
     if (!updated) {
       throw new MicroWinNotFoundError('Микро-победа не найдена.');
@@ -155,11 +157,15 @@ export class AccentMicroWinDomainService {
     accountId: string,
     occurredOn: string,
   ): Promise<{ microWin: MicroWinFull; newlyCompleted: boolean }> {
-    const microWin = await this.getOwned(id, accountId);
+    let microWin = await this.getOwned(id, accountId);
     const newlyCompleted = await this._repository.logCompletion(accountId, id, occurredOn);
-    // TODO: Claude Code: 2026-06-16: 2.8 (геймификация) — при newlyCompleted эмитить
+    // Adoption (2.3): первое выполнение стартовой победы «присваивает» её (снимает флаг).
+    if (microWin.isStarter) {
+      microWin = (await this._repository.update(id, accountId, { isStarter: false })) ?? microWin;
+    }
+    // TODO: Claude Code: 2026-06-16: 2.9 (геймификация) — при newlyCompleted эмитить
     // доменное событие `micro_win.completed`; листенер начислит очки. Сейчас механизма
-    // событий нет (event-emitter не подключён) → начисление отложено до 2.8.
+    // событий нет (event-emitter не подключён) → начисление отложено до 2.9.
     return { microWin, newlyCompleted };
   }
 
@@ -174,16 +180,30 @@ export class AccentMicroWinDomainService {
   }
 
   /**
-   * Создаёт персональный стартовый набор микро-побед аккаунту (массовой вставкой).
-   * Данные — доверенные константы (`STARTER_MICRO_WINS`), валидация не нужна.
-   * Идемпотентность гарантирует вызывающий (CAS-флаг в настройках, 2.2·5).
+   * Засевает стартовый набор (по кнопке «Получить пак», 2.3): создаёт победы из
+   * `STARTER_MICRO_WINS` с `is_starter=true`. **Только докидывает** (своё не трогает) и
+   * пропускает названия, которые у аккаунта уже есть (без дублей). Данные — доверенные
+   * константы, валидация не нужна.
    * @param accountId Идентификатор аккаунта.
-   * @returns Число созданных микро-побед.
+   * @returns Число созданных стартовых побед (0 если все уже есть).
    */
-  public async createStarterSet(accountId: string): Promise<number> {
-    return this._repository.createMany(
-      STARTER_MICRO_WINS.map((item) => ({ ...item, accountId })),
+  public async seedStarterPack(accountId: string): Promise<number> {
+    const existing = await this._repository.listByAccount(accountId);
+    const existingTitles = new Set(existing.map((win) => win.title));
+    const toSeed = STARTER_MICRO_WINS.filter((item) => !existingTitles.has(item.title)).map(
+      (item) => ({ ...item, accountId, isStarter: true }),
     );
+    return this._repository.createMany(toSeed);
+  }
+
+  /**
+   * Очищает примеры: удаляет ещё не присвоенные стартовые победы аккаунта
+   * (`is_starter=true`). Свои (присвоенные) не трогает.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число удалённых.
+   */
+  public async clearStarters(accountId: string): Promise<number> {
+    return this._repository.deleteStarters(accountId);
   }
 
   /**

@@ -32,4 +32,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.2 — «Акцент»: Микро-победы',
     contentFile: 'notifications/release-2.2.0.md',
   },
+  {
+    key: 'release-2.3.0',
+    title: 'Нормисы 2.3 — Микро-победы: стартовый пак и «для тяжёлых дней»',
+    contentFile: 'notifications/release-2.3.0.md',
+  },
 ];

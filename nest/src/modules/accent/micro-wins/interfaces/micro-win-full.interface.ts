@@ -10,6 +10,11 @@ export const MICRO_WIN_CATEGORIES = [
   'social',
   'sensory',
   'household',
+  'digital',
+  'rest',
+  'spiritual',
+  'nature',
+  'boundaries',
 ] as const;
 
 /** Категория микро-победы (производна от `MICRO_WIN_CATEGORIES`). */

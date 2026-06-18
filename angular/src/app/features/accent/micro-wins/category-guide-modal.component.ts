@@ -31,9 +31,6 @@ import type { MicroWinCategory } from '../accent.types';
   `,
   styles: [
     `
-      .cg {
-        padding: var(--space-5);
-      }
       .cg__title {
         margin: 0 0 var(--space-2);
       }

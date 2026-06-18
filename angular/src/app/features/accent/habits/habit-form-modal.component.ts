@@ -177,9 +177,6 @@ export interface HabitFormData {
   `,
   styles: [
     `
-      .hf {
-        padding: var(--space-5);
-      }
       .hf__head {
         display: flex;
         align-items: baseline;

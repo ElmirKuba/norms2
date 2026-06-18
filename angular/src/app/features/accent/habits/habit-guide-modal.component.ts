@@ -77,9 +77,6 @@ import type { RecurrenceMode } from './recurrence-builder.util';
   `,
   styles: [
     `
-      .hg {
-        padding: var(--space-5);
-      }
       .hg__title {
         margin: 0 0 var(--space-2);
       }

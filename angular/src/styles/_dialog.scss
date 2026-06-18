@@ -15,6 +15,11 @@
   border-radius: var(--radius-lg) !important;
   padding: var(--space-5);
   box-shadow: var(--shadow-1);
+  // Высокая модалка не должна вылезать за вьюпорт — кап по высоте + внутренний
+  // скролл (CDK центрирует, поля сверху/снизу остаются). Свои модалки кладут
+  // контент прямо в surface (без mat-dialog-content), поэтому скролл держим тут.
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .mat-mdc-dialog-title {

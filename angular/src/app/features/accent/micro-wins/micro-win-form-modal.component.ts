@@ -83,9 +83,6 @@ export interface MicroWinFormData {
   `,
   styles: [
     `
-      .mwf {
-        padding: var(--space-5);
-      }
       .mwf__title {
         margin: 0 0 var(--space-4);
       }

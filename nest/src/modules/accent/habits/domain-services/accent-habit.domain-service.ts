@@ -56,6 +56,27 @@ export class AccentHabitDomainService {
   }
 
   /**
+   * Привычка владельца или null (без 404) — для движка лесенки (мягкий путь).
+   * @param id Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Привычка или null.
+   */
+  public async findOwnedOrNull(id: string, accountId: string): Promise<HabitFull | null> {
+    return this._repository.findOwned(id, accountId);
+  }
+
+  /**
+   * Записывает лесенку привычки целиком (включая счётчики) — для `LadderEngine`. В обход
+   * слияния счётчиков из `update` (то — для пользовательских правок целей лесенки).
+   * @param id Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ladder Новая лесенка.
+   */
+  public async setLadder(id: string, accountId: string, ladder: HabitLadder): Promise<void> {
+    await this._repository.update(id, accountId, { ladder });
+  }
+
+  /**
    * Создаёт привычку после валидации.
    * @param data Данные создания (с `accountId`).
    * @returns Созданная привычка.

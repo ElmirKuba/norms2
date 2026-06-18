@@ -6,6 +6,7 @@ import { ACCENT_TASK_REPOSITORY } from './adapters/accent-task-repository.port';
 import { AccentTaskRepository } from '../../../database/repositories/accent/accent-task.repository';
 import { AccentHabitDomainService } from './domain-services/accent-habit.domain-service';
 import { AccentTaskDomainService } from './domain-services/accent-task.domain-service';
+import { AccentLadderEngine } from './domain-services/accent-ladder-engine.domain-service';
 import { HabitsController } from './controllers/habits.controller';
 import { TasksController } from './controllers/tasks.controller';
 import { ListHabitsUseCase } from './use-cases/list-habits.use-case';
@@ -36,6 +37,7 @@ import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
     { provide: ACCENT_TASK_REPOSITORY, useClass: AccentTaskRepository },
     AccentHabitDomainService,
     AccentTaskDomainService,
+    AccentLadderEngine,
     ListHabitsUseCase,
     GetHabitUseCase,
     CreateHabitUseCase,

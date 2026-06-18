@@ -11,6 +11,7 @@ import type {
 } from '../adapters/accent-task-repository.port';
 import type { TaskFull } from '../interfaces/task-full.interface';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
+import { AccentLadderEngine } from './accent-ladder-engine.domain-service';
 
 /**
  * Domain-service задач дня. Ключевая операция — **ленивая материализация**: при чтении дня
@@ -29,6 +30,7 @@ export class AccentTaskDomainService {
   public constructor(
     @Inject(ACCENT_TASK_REPOSITORY) private readonly _repository: AccentTaskRepositoryPort,
     private readonly _habits: AccentHabitDomainService,
+    private readonly _ladder: AccentLadderEngine,
   ) {}
 
   /**
@@ -159,6 +161,8 @@ export class AccentTaskDomainService {
    */
   public async complete(id: string, accountId: string, doneValue?: number): Promise<TaskFull> {
     const task = await this.getOwned(id, accountId);
+    // Лесенка двигается один раз на выполнение: только при переходе из не-выполненного.
+    const wasOpen = task.status === 'pending' || task.status === 'skipped';
     let effectiveDone: number;
     if (task.kind === 'binary') {
       effectiveDone = 1;
@@ -179,6 +183,10 @@ export class AccentTaskDomainService {
     });
     if (!updated) {
       throw new TaskNotFoundError('Задача не найдена.');
+    }
+    // Лесенка (2.4·12): задача привычки → двигаем планку один раз на выполнение (не на повтор).
+    if (task.templateId !== null && wasOpen) {
+      await this._ladder.onComplete(task.templateId, accountId, effectiveDone);
     }
     return updated;
   }

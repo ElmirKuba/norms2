@@ -14,26 +14,25 @@ import type { MicroWinCategory } from '../accent.types';
   imports: [ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="cg">
-      <h2 class="cg__title">Что значат категории</h2>
-      <p class="cg__lead">
-        Лёгкая линза «какого типа действие». Микро-победы — для тяжёлых дней: сделай хоть одно.
-      </p>
-      <ul class="cg__list">
-        @for (c of categories; track c.label) {
-          <li><b>{{ c.label }}</b> — {{ c.description }}</li>
-        }
-      </ul>
-      <div class="cg__actions">
+    <div class="dlg">
+      <div class="dlg__head"><h2>Что значат категории</h2></div>
+      <div class="dlg__body">
+        <p class="cg__lead">
+          Лёгкая линза «какого типа действие». Микро-победы — для тяжёлых дней: сделай хоть одно.
+        </p>
+        <ul class="cg__list">
+          @for (c of categories; track c.label) {
+            <li><b>{{ c.label }}</b> — {{ c.description }}</li>
+          }
+        </ul>
+      </div>
+      <div class="dlg__foot">
         <app-button (click)="close()">Закрыть</app-button>
       </div>
     </div>
   `,
   styles: [
     `
-      .cg__title {
-        margin: 0 0 var(--space-2);
-      }
       .cg__lead {
         margin: 0 0 var(--space-4);
         font-size: var(--fs-sm);
@@ -52,11 +51,6 @@ import type { MicroWinCategory } from '../accent.types';
       .cg__list b {
         color: var(--color-text);
         font-weight: var(--fw-medium);
-      }
-      .cg__actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: var(--space-5);
       }
     `,
   ],

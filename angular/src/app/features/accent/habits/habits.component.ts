@@ -420,7 +420,7 @@ export class HabitsComponent {
   ): void {
     const ref = this._dialog.open<HabitFormModalComponent, HabitFormData, HabitPayload | null>(
       HabitFormModalComponent,
-      { width: MODAL_MEDIUM_WIDTH, data },
+      { width: MODAL_MEDIUM_WIDTH, panelClass: 'modal-flush', data },
     );
     ref.afterClosed().subscribe((payload) => {
       if (payload) {

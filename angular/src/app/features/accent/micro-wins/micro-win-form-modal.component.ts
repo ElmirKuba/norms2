@@ -26,10 +26,13 @@ export interface MicroWinFormData {
   imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mwf">
-      <h2 class="mwf__title">{{ isEdit ? 'Изменить микро-победу' : 'Новая микро-победа' }}</h2>
+    <div class="dlg">
+      <div class="dlg__head">
+        <h2>{{ isEdit ? 'Изменить микро-победу' : 'Новая микро-победа' }}</h2>
+      </div>
 
-      <form class="mwf__form" [formGroup]="form" (ngSubmit)="save()">
+      <form class="dlg__form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="dlg__body mwf__form">
         <app-text-field
           label="Название"
           [control]="titleControl"
@@ -74,7 +77,9 @@ export interface MicroWinFormData {
           placeholder="Что это даёт"
         />
 
-        <div class="mwf__actions">
+        </div>
+
+        <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
           <app-button type="submit" [disabled]="form.invalid">Сохранить</app-button>
         </div>
@@ -83,9 +88,6 @@ export interface MicroWinFormData {
   `,
   styles: [
     `
-      .mwf__title {
-        margin: 0 0 var(--space-4);
-      }
       .mwf__form {
         display: flex;
         flex-direction: column;
@@ -132,12 +134,6 @@ export interface MicroWinFormData {
         font-size: var(--fs-xs);
         color: var(--color-accent);
         text-decoration: underline;
-      }
-      .mwf__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-3);
-        margin-top: var(--space-2);
       }
     `,
   ],
@@ -251,6 +247,9 @@ export class MicroWinFormModalComponent {
 
   /** Открывает гид по категориям поверх формы (вложенный диалог; ввод не теряется). */
   protected openCategoryGuide(): void {
-    this._dialog.open(CategoryGuideModalComponent, { width: MODAL_SMALL_WIDTH });
+    this._dialog.open(CategoryGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+    });
   }
 }

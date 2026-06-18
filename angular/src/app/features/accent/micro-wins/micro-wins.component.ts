@@ -260,7 +260,10 @@ export class MicroWinsComponent {
 
   /** Открывает модалку-гид по категориям. */
   protected openCategoryGuide(): void {
-    this._dialog.open(CategoryGuideModalComponent, { width: MODAL_SMALL_WIDTH });
+    this._dialog.open(CategoryGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+    });
   }
 
   /** Человекочитаемая длительность. */
@@ -359,7 +362,7 @@ export class MicroWinsComponent {
   ): void {
     const ref = this._dialog.open<MicroWinFormModalComponent, MicroWinFormData, MicroWinPayload | null>(
       MicroWinFormModalComponent,
-      { width: MODAL_SMALL_WIDTH, data },
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data },
     );
     ref.afterClosed().subscribe((payload) => {
       if (payload) {

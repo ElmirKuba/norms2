@@ -35,13 +35,14 @@ export interface HabitFormData {
   imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="hf">
-      <div class="hf__head">
-        <h2 class="hf__title">{{ isEdit ? 'Изменить привычку' : 'Новая привычка' }}</h2>
+    <div class="dlg">
+      <div class="dlg__head">
+        <h2>{{ isEdit ? 'Изменить привычку' : 'Новая привычка' }}</h2>
         <button type="button" class="hf__guide" (click)="openGuide()">Как заполнять?</button>
       </div>
 
-      <form class="hf__form" [formGroup]="form" (ngSubmit)="save()">
+      <form class="dlg__form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="dlg__body hf__fields">
         <app-text-field
           label="Название"
           [control]="titleControl"
@@ -167,8 +168,9 @@ export interface HabitFormData {
         @if (formError()) {
           <span class="hf__error">{{ formError() }}</span>
         }
+        </div>
 
-        <div class="hf__actions">
+        <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
           <app-button type="submit">Сохранить</app-button>
         </div>
@@ -177,16 +179,6 @@ export interface HabitFormData {
   `,
   styles: [
     `
-      .hf__head {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: var(--space-3);
-        margin-bottom: var(--space-4);
-      }
-      .hf__title {
-        margin: 0;
-      }
       .hf__guide {
         flex-shrink: 0;
         padding: 0;
@@ -201,7 +193,7 @@ export interface HabitFormData {
         font-size: var(--fs-xs);
         color: var(--color-text-muted);
       }
-      .hf__form {
+      .hf__fields {
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
@@ -283,11 +275,6 @@ export interface HabitFormData {
       .hf__error {
         font-size: var(--fs-sm);
         color: var(--color-danger);
-      }
-      .hf__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-3);
       }
     `,
   ],
@@ -503,6 +490,9 @@ export class HabitFormModalComponent {
 
   /** Открывает гид «как заполнять» поверх формы (вложенный диалог; ввод не теряется). */
   protected openGuide(): void {
-    this._dialog.open(HabitGuideModalComponent, { width: MODAL_SMALL_WIDTH });
+    this._dialog.open(HabitGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+    });
   }
 }

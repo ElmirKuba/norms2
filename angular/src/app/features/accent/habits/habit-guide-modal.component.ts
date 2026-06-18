@@ -19,8 +19,9 @@ import type { RecurrenceMode } from './recurrence-builder.util';
   imports: [ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="hg">
-      <h2 class="hg__title">Как заполнять привычку</h2>
+    <div class="dlg">
+      <div class="dlg__head"><h2>Как заполнять привычку</h2></div>
+      <div class="dlg__body">
       <p class="hg__lead">Коротко по каждому полю. Не уверен — оставляй как есть, потом поправишь.</p>
 
       <section class="hg__sec">
@@ -69,17 +70,15 @@ import type { RecurrenceMode } from './recurrence-builder.util';
           }
         </ul>
       </section>
+      </div>
 
-      <div class="hg__actions">
+      <div class="dlg__foot">
         <app-button (click)="close()">Понятно</app-button>
       </div>
     </div>
   `,
   styles: [
     `
-      .hg__title {
-        margin: 0 0 var(--space-2);
-      }
       .hg__lead {
         margin: 0 0 var(--space-4);
         font-size: var(--fs-sm);
@@ -110,11 +109,6 @@ import type { RecurrenceMode } from './recurrence-builder.util';
       .hg__list b {
         color: var(--color-text);
         font-weight: var(--fw-medium);
-      }
-      .hg__actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: var(--space-2);
       }
     `,
   ],

@@ -95,6 +95,14 @@ export const MICRO_WIN_CATEGORY_DESCRIPTIONS: Readonly<Record<MicroWinCategory, 
   boundaries: 'Сказать «нет» лишнему — сберечь силы и время',
 };
 
+/** Элемент справочника (сфера/атрибут): ключ + название (`GET /accent/domains|attributes`). */
+export interface AccentRefItem {
+  /** Slug-ключ. */
+  key: string;
+  /** Отображаемое название. */
+  title: string;
+}
+
 // ── Привычки + задачи (2.4; зеркало бэка) ──
 
 /** Тип привычки/задачи: бинарная / счётная / по времени. */

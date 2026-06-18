@@ -1,13 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ModalService } from '../../../shared/modals/modal.service';
+import { MODAL_MEDIUM_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
-import type { HabitView } from '../accent.types';
+import type { HabitPayload, HabitView } from '../accent.types';
 import { recurrenceLabel } from './recurrence-label.util';
+import { HabitFormModalComponent } from './habit-form-modal.component';
+import type { HabitFormData } from './habit-form-modal.component';
 
 /**
  * Экран привычек (`/accent/habits`, 2.4) — вкладки **Сегодня** (дневной чеклист, ·17) и
@@ -22,6 +26,7 @@ import { recurrenceLabel } from './recurrence-label.util';
     <section class="hb">
       <header class="hb__head">
         <h2>Привычки</h2>
+        <app-button (click)="openCreate()">Добавить</app-button>
       </header>
 
       <nav class="hb__tabs">
@@ -39,8 +44,10 @@ import { recurrenceLabel } from './recurrence-label.util';
         } @else if (habits().length === 0) {
           <app-empty-state
             title="Пока нет привычек"
-            text="Здесь будут твои повторяющиеся дела с адаптивной планкой. Добавление — на следующем шаге."
-          />
+            text="Заведи повторяющееся дело с адаптивной планкой — она будет расти от минимума к цели."
+          >
+            <app-button (click)="openCreate()">Добавить привычку</app-button>
+          </app-empty-state>
         } @else {
           <ul class="hb__list">
             @for (h of habits(); track h.id) {
@@ -57,6 +64,7 @@ import { recurrenceLabel } from './recurrence-label.util';
                       }
                     </div>
                     <div class="hb__actions">
+                      <app-button variant="ghost" (click)="openEdit(h)">Изм.</app-button>
                       <app-button variant="danger" [loading]="busyId() === h.id" (click)="deactivate(h)">
                         Убрать
                       </app-button>
@@ -74,6 +82,19 @@ import { recurrenceLabel } from './recurrence-label.util';
     `
       .hb {
         padding: var(--space-5);
+      }
+      .hb__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .hb__actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
       }
       .hb__tabs {
         display: flex;
@@ -138,6 +159,7 @@ import { recurrenceLabel } from './recurrence-label.util';
 export class HabitsComponent {
   private readonly _api = inject(AccentApiService);
   private readonly _modal = inject(ModalService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Активная вкладка. */
   protected readonly tab = signal<'today' | 'templates'>('templates');
@@ -182,6 +204,36 @@ export class HabitsComponent {
         this.error.set(errorMessage(err));
         this.loading.set(false);
       },
+    });
+  }
+
+  /** Открывает модалку создания привычки. */
+  protected openCreate(): void {
+    this._openForm({}, (payload) => this._api.createHabit(payload));
+  }
+
+  /** Открывает модалку редактирования привычки. */
+  protected openEdit(habit: HabitView): void {
+    this._openForm({ habit }, (payload) => this._api.updateHabit(habit.id, payload));
+  }
+
+  /**
+   * Открывает форму привычки и применяет результат через переданный API-вызов.
+   * @param data Данные модалки (привычка для редактирования или пусто).
+   * @param submit Функция сохранения по payload.
+   */
+  private _openForm(
+    data: HabitFormData,
+    submit: (payload: HabitPayload) => ReturnType<AccentApiService['createHabit']>,
+  ): void {
+    const ref = this._dialog.open<HabitFormModalComponent, HabitFormData, HabitPayload | null>(
+      HabitFormModalComponent,
+      { width: MODAL_MEDIUM_WIDTH, data },
+    );
+    ref.afterClosed().subscribe((payload) => {
+      if (payload) {
+        submit(payload).subscribe({ next: () => this._load(), error: () => undefined });
+      }
     });
   }
 

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
+  AccentRefItem,
   AccentSettingsView,
   HabitPayload,
   HabitView,
@@ -65,6 +66,18 @@ export class AccentApiService {
   /** Очистить примеры (удаляет только не присвоенные стартовые) → свежий список. */
   public clearStarters(): Observable<MicroWinView[]> {
     return this._http.delete<MicroWinView[]>(`${API_PREFIX}/accent/micro-wins/starter-pack`);
+  }
+
+  // ── Справочники (сферы/атрибуты, read-only) ──
+
+  /** Каталог сфер жизни. */
+  public listDomains(): Observable<AccentRefItem[]> {
+    return this._http.get<AccentRefItem[]>(`${API_PREFIX}/accent/domains`);
+  }
+
+  /** Каталог RPG-атрибутов. */
+  public listAttributes(): Observable<AccentRefItem[]> {
+    return this._http.get<AccentRefItem[]>(`${API_PREFIX}/accent/attributes`);
   }
 
   // ── Привычки (2.4) ──

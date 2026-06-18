@@ -9,6 +9,7 @@ import type {
 } from '../adapters/accent-habit-repository.port';
 import { HABIT_KINDS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
 import type { HabitFull, HabitKind, HabitLadder } from '../interfaces/habit-full.interface';
+import { isValidRecurrence } from '../recurrence.util';
 
 /** Максимальная длина названия привычки. */
 const TITLE_MAX = 120;
@@ -178,12 +179,12 @@ export class AccentHabitDomainService {
   }
 
   /**
-   * Базовая проверка RRULE-строки (непустая + есть `FREQ=`). Полный разбор — 2.4·6 (`rrule`).
+   * Валидация RRULE-строки через `rrule` (парсится + содержит `FREQ`).
    * @param value RRULE-строка.
-   * @throws {ValidationError} Пусто / не похоже на RRULE.
+   * @throws {ValidationError} Невалидное правило.
    */
   private _validateRecurrence(value: string): void {
-    if (value.trim().length === 0 || !value.toUpperCase().includes('FREQ=')) {
+    if (!isValidRecurrence(value)) {
       throw new ValidationError('Расписание (RRULE) некорректно.');
     }
   }

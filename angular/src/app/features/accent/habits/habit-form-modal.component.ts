@@ -4,8 +4,9 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
+import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
-import type { HabitKind, HabitPayload, HabitView, LadderPolicy } from '../accent.types';
+import type { AccentRefItem, HabitKind, HabitPayload, HabitView, LadderPolicy } from '../accent.types';
 import {
   WEEKDAY_CODES,
   WEEKDAY_LABELS,
@@ -120,6 +121,34 @@ export interface HabitFormData {
           </div>
         }
 
+        <label class="hf__field">
+          <span class="hf__label">Сфера (опц.)</span>
+          <select class="hf__input" formControlName="domainKey">
+            <option [ngValue]="null">— не выбрана —</option>
+            @for (d of domains(); track d.key) {
+              <option [ngValue]="d.key">{{ d.title }}</option>
+            }
+          </select>
+        </label>
+
+        @if (attributesCatalog().length > 0) {
+          <div class="hf__field">
+            <span class="hf__label">Прокачивает атрибуты (опц.)</span>
+            <div class="hf__chips">
+              @for (a of attributesCatalog(); track a.key) {
+                <button
+                  type="button"
+                  class="hf__chip"
+                  [class.active]="attrs().has(a.key)"
+                  (click)="toggleAttr(a.key)"
+                >
+                  {{ a.title }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <app-text-field label="Минимум на плохой день (опц.)" [control]="minVersionControl" />
 
         @if (formError()) {
@@ -202,6 +231,24 @@ export interface HabitFormData {
         border-color: var(--color-accent);
         color: var(--color-accent);
       }
+      .hf__chips {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .hf__chip {
+        min-height: var(--touch-min);
+        padding: 0 var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        color: var(--color-text-muted);
+        cursor: pointer;
+      }
+      .hf__chip.active {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
       .hf__error {
         font-size: var(--fs-sm);
         color: var(--color-danger);
@@ -218,6 +265,14 @@ export class HabitFormModalComponent {
   private readonly _ref =
     inject<MatDialogRef<HabitFormModalComponent, HabitPayload | null>>(MatDialogRef);
   private readonly _data = inject<HabitFormData>(MAT_DIALOG_DATA);
+  private readonly _api = inject(AccentApiService);
+
+  /** Каталог сфер (для select). */
+  protected readonly domains = signal<AccentRefItem[]>([]);
+  /** Каталог RPG-атрибутов (для мультиселекта). */
+  protected readonly attributesCatalog = signal<AccentRefItem[]>([]);
+  /** Выбранные ключи атрибутов. */
+  protected readonly attrs = signal<Set<string>>(new Set());
 
   /** Режим редактирования. */
   protected readonly isEdit = this._data.habit !== undefined;
@@ -250,6 +305,7 @@ export class HabitFormModalComponent {
     goalTarget: new FormControl<number | null>(null),
     step: new FormControl(1, { nonNullable: true }),
     policy: new FormControl<LadderPolicy>('manual', { nonNullable: true }),
+    domainKey: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
   });
 
@@ -273,10 +329,16 @@ export class HabitFormModalComponent {
   protected readonly showInterval = computed(() => this._mode() === 'every-n');
 
   public constructor() {
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
+    this._api.listAttributes().subscribe({
+      next: (a) => this.attributesCatalog.set(a),
+      error: () => undefined,
+    });
     const habit = this._data.habit;
     if (habit !== undefined) {
       const rec = parseRecurrence(habit.recurrence);
       this.weekdays.set(new Set(rec.weekdays));
+      this.attrs.set(new Set(habit.attributes));
       this.form.setValue({
         title: habit.title,
         icon: habit.icon ?? '',
@@ -289,6 +351,7 @@ export class HabitFormModalComponent {
         goalTarget: habit.ladder.goalTarget,
         step: habit.ladder.step ?? 1,
         policy: habit.ladder.policy,
+        domainKey: habit.domainKey,
         minVersion: habit.minVersion ?? '',
       });
     }
@@ -323,6 +386,19 @@ export class HabitFormModalComponent {
       return null;
     }
     return c.errors?.['maxlength'] ? 'Название: максимум 120.' : 'Название обязательно.';
+  }
+
+  /** Переключает выбор атрибута. */
+  protected toggleAttr(key: string): void {
+    this.attrs.update((set) => {
+      const next = new Set(set);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
   }
 
   /** Переключает день недели. */
@@ -377,6 +453,8 @@ export class HabitFormModalComponent {
       ladder,
       description: v.description.trim() === '' ? null : v.description.trim(),
       icon: v.icon.trim() === '' ? null : v.icon.trim(),
+      domainKey: v.domainKey,
+      attributes: [...this.attrs()],
       minVersion: v.minVersion.trim() === '' ? null : v.minVersion.trim(),
     };
     this._ref.close(payload);

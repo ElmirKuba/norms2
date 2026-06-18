@@ -58,7 +58,23 @@ import type { HabitFormData } from './habit-form-modal.component';
                       <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
                       <span class="hb__meta">{{ taskMeta(t) }}</span>
                     </div>
-                    <span class="hb__badge" [attr.data-status]="t.status">{{ statusLabel(t) }}</span>
+                    <div class="hb__actions">
+                      <span class="hb__badge" [attr.data-status]="t.status">{{ statusLabel(t) }}</span>
+                      @if (t.status === 'pending' || t.status === 'partial') {
+                        @if (t.kind === 'binary') {
+                          <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t)">Сделал</app-button>
+                        } @else {
+                          <input #val class="hb__numin" type="number" min="0" [value]="t.targetValue ?? 1" />
+                          <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t, val.value)">Отметить</app-button>
+                        }
+                      }
+                      @if (t.status === 'done' || t.status === 'partial') {
+                        <app-button variant="ghost" (click)="uncompleteTask(t)">Отменить</app-button>
+                      }
+                      @if (t.status === 'pending') {
+                        <app-button variant="ghost" (click)="postpone(t)">→ Завтра</app-button>
+                      }
+                    </div>
                   </div>
                 </app-card>
               </li>
@@ -171,6 +187,15 @@ import type { HabitFormData } from './habit-form-modal.component';
         color: var(--color-accent);
         font-weight: 600;
       }
+      .hb__numin {
+        width: 64px;
+        min-height: var(--touch-min);
+        padding: 0 var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        color: var(--color-text);
+      }
       .hb__error {
         color: var(--color-danger);
       }
@@ -231,6 +256,8 @@ export class HabitsComponent {
   protected readonly tasksLoading = signal(false);
   /** Ошибка загрузки задач (или null). */
   protected readonly tasksError = signal<string | null>(null);
+  /** Id задачи в процессе отметки (для спиннера). */
+  protected readonly busyTaskId = signal<string | null>(null);
 
   /** % дня: задачи с прогрессом (done/partial) от всех непропущенных. */
   protected readonly donePercent = computed(() => {
@@ -276,6 +303,54 @@ export class HabitsComponent {
       case 'pending':
         return 'Ожидает';
     }
+  }
+
+  /** Отмечает выполнение задачи (binary — без значения; иначе — введённое). Двигает лесенку на бэке. */
+  protected completeTask(task: TaskView, rawValue?: string): void {
+    const doneValue =
+      task.kind === 'binary' || rawValue === undefined || rawValue.trim() === ''
+        ? undefined
+        : Number(rawValue);
+    if (doneValue !== undefined && (!Number.isFinite(doneValue) || doneValue < 0)) {
+      return;
+    }
+    this.busyTaskId.set(task.id);
+    this._api.completeTask(task.id, doneValue).subscribe({
+      next: (updated) => {
+        this._patchTask(updated);
+        this.busyTaskId.set(null);
+      },
+      error: () => this.busyTaskId.set(null),
+    });
+  }
+
+  /** Снимает отметку выполнения. */
+  protected uncompleteTask(task: TaskView): void {
+    this.busyTaskId.set(task.id);
+    this._api.uncompleteTask(task.id).subscribe({
+      next: (updated) => {
+        this._patchTask(updated);
+        this.busyTaskId.set(null);
+      },
+      error: () => this.busyTaskId.set(null),
+    });
+  }
+
+  /** Переносит задачу на завтра (текущая → перенесена; список дня обновляем). */
+  protected postpone(task: TaskView): void {
+    this.busyTaskId.set(task.id);
+    this._api.postponeTask(task.id).subscribe({
+      next: () => {
+        this.busyTaskId.set(null);
+        this._loadTasks();
+      },
+      error: () => this.busyTaskId.set(null),
+    });
+  }
+
+  /** Заменяет задачу в списке дня обновлённой версией. */
+  private _patchTask(updated: TaskView): void {
+    this.tasks.update((list) => list.map((t) => (t.id === updated.id ? updated : t)));
   }
 
   private _loadTasks(): void {

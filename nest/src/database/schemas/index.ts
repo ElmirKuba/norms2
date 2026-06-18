@@ -13,3 +13,4 @@ export * from './accent-domains.schema';
 export * from './accent-attributes.schema';
 export * from './micro-wins.schema';
 export * from './micro-win-logs.schema';
+export * from './habits.schema';

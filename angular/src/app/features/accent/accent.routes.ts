@@ -25,9 +25,7 @@ export const accentRoutes: Routes = [
       },
       {
         path: 'habits',
-        loadComponent: () =>
-          import('./accent-placeholder.component').then((m) => m.AccentPlaceholderComponent),
-        data: { title: 'Привычки' },
+        loadComponent: () => import('./habits/habits.component').then((m) => m.HabitsComponent),
       },
       {
         path: 'micro-wins',

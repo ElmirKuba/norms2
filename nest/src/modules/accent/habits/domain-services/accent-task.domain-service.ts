@@ -120,6 +120,49 @@ export class AccentTaskDomainService {
   }
 
   /**
+   * Переносит задачу на завтра: создаёт копию на следующий день (как one-off,
+   * `templateId=null` → без конфликта уник `(template_id, occurred_on)`; ссылка
+   * `postponedFromTaskId` хранит происхождение), текущую помечает `skipped/postponed`.
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Новая задача на завтра.
+   * @throws {TaskNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если задача уже пропущена/перенесена.
+   */
+  public async postpone(id: string, accountId: string): Promise<TaskFull> {
+    const task = await this.getOwned(id, accountId);
+    if (task.status === 'skipped') {
+      throw new ValidationError('Задача уже пропущена или перенесена.');
+    }
+    const created = await this._repository.create({
+      accountId,
+      templateId: null,
+      goalId: task.goalId,
+      title: task.title,
+      occurredOn: this._nextDay(task.occurredOn),
+      kind: task.kind,
+      targetValue: task.targetValue,
+      category: task.category,
+      deadline: task.deadline,
+      priority: task.priority,
+      postponedFromTaskId: task.id,
+      status: 'pending',
+    });
+    await this._repository.update(id, accountId, { status: 'skipped', skipReason: 'postponed' });
+    return created;
+  }
+
+  /**
+   * Следующий день для даты `YYYY-MM-DD` (в «пространстве дат», UTC-полночь +1).
+   * @param ymd Дата `YYYY-MM-DD`.
+   * @returns Дата следующего дня `YYYY-MM-DD`.
+   */
+  private _nextDay(ymd: string): string {
+    const day = new Date(`${ymd}T00:00:00.000Z`);
+    return new Date(day.getTime() + 86_400_000).toISOString().slice(0, 10);
+  }
+
+  /**
    * Снимает отметку выполнения (→ pending; doneValue/completedAt/skipReason очищаются).
    * Revoke очков — TODO 2.9.
    * @param id Идентификатор задачи.

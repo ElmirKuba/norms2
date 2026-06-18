@@ -15,6 +15,22 @@ export const WEEKDAY_LABELS: Readonly<Record<string, string>> = {
   SU: 'Вс',
 };
 
+/** RU-подписи режимов расписания (для гида). */
+export const RECURRENCE_MODE_LABELS: Readonly<Record<RecurrenceMode, string>> = {
+  daily: 'Каждый день',
+  weekdays: 'По будням (Пн–Пт)',
+  'custom-week': 'По дням недели',
+  'every-n': 'Каждые N дней',
+};
+
+/** Пояснения «что это» по режимам расписания. */
+export const RECURRENCE_MODE_DESCRIPTIONS: Readonly<Record<RecurrenceMode, string>> = {
+  daily: 'Привычка на каждый день.',
+  weekdays: 'Только по рабочим дням (Пн–Пт), выходные свободны.',
+  'custom-week': 'Сам выбираешь дни недели (напр. пн/ср/пт).',
+  'every-n': 'Через равные промежутки (напр. каждые 2 дня).',
+};
+
 /** Состояние пикера расписания. */
 export interface RecurrenceState {
   /** Режим. */

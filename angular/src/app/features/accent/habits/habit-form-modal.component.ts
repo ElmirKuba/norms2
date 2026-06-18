@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { AccentApiService } from '../services/accent-api.service';
-import { HABIT_KIND_LABELS } from '../accent.types';
+import { HABIT_KIND_DESCRIPTIONS, HABIT_KIND_LABELS } from '../accent.types';
 import type { AccentRefItem, HabitKind, HabitPayload, HabitView, LadderPolicy } from '../accent.types';
 import {
+  RECURRENCE_MODE_DESCRIPTIONS,
   WEEKDAY_CODES,
   WEEKDAY_LABELS,
   buildRecurrence,
   parseRecurrence,
 } from './recurrence-builder.util';
 import type { RecurrenceMode } from './recurrence-builder.util';
+import { HabitGuideModalComponent } from './habit-guide-modal.component';
 
 /** Данные в модалку: если `habit` задан — режим редактирования. */
 export interface HabitFormData {
@@ -33,7 +36,10 @@ export interface HabitFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="hf">
-      <h2 class="hf__title">{{ isEdit ? 'Изменить привычку' : 'Новая привычка' }}</h2>
+      <div class="hf__head">
+        <h2 class="hf__title">{{ isEdit ? 'Изменить привычку' : 'Новая привычка' }}</h2>
+        <button type="button" class="hf__guide" (click)="openGuide()">Как заполнять?</button>
+      </div>
 
       <form class="hf__form" [formGroup]="form" (ngSubmit)="save()">
         <app-text-field
@@ -53,6 +59,7 @@ export interface HabitFormData {
               <option [ngValue]="k.value">{{ k.label }}</option>
             }
           </select>
+          <span class="hf__hint">{{ kindHint() }}</span>
         </label>
 
         <label class="hf__field">
@@ -63,6 +70,7 @@ export interface HabitFormData {
             <option [ngValue]="'custom-week'">По дням недели</option>
             <option [ngValue]="'every-n'">Каждые N дней</option>
           </select>
+          <span class="hf__hint">{{ modeHint() }}</span>
         </label>
 
         @if (showCustomWeek()) {
@@ -89,6 +97,10 @@ export interface HabitFormData {
         @if (isQuantitative()) {
           <div class="hf__ladder">
             <span class="hf__label">Лесенка (план растёт от минимума к цели)</span>
+            <span class="hf__hint">
+              Минимум — что не стыдно даже в худший день. «Адаптивно» = планка сама растёт, когда
+              легко, и отступает, когда тяжело.
+            </span>
             <div class="hf__row">
               <label class="hf__field">
                 <span class="hf__sub">Минимум</span>
@@ -134,6 +146,7 @@ export interface HabitFormData {
         @if (attributesCatalog().length > 0) {
           <div class="hf__field">
             <span class="hf__label">Прокачивает атрибуты (опц.)</span>
+            <span class="hf__hint">Как в RPG: дело качает характеристику. Не уверен — пропусти.</span>
             <div class="hf__chips">
               @for (a of attributesCatalog(); track a.key) {
                 <button
@@ -167,8 +180,29 @@ export interface HabitFormData {
       .hf {
         padding: var(--space-5);
       }
+      .hf__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+      }
       .hf__title {
-        margin: 0 0 var(--space-4);
+        margin: 0;
+      }
+      .hf__guide {
+        flex-shrink: 0;
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: var(--fs-sm);
+        color: var(--color-accent);
+        text-decoration: underline;
+      }
+      .hf__hint {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
       }
       .hf__form {
         display: flex;
@@ -266,6 +300,7 @@ export class HabitFormModalComponent {
     inject<MatDialogRef<HabitFormModalComponent, HabitPayload | null>>(MatDialogRef);
   private readonly _data = inject<HabitFormData>(MAT_DIALOG_DATA);
   private readonly _api = inject(AccentApiService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Каталог сфер (для select). */
   protected readonly domains = signal<AccentRefItem[]>([]);
@@ -327,6 +362,10 @@ export class HabitFormModalComponent {
   protected readonly showCustomWeek = computed(() => this._mode() === 'custom-week');
   /** Показывать ли интервал. */
   protected readonly showInterval = computed(() => this._mode() === 'every-n');
+  /** Подсказка по выбранному типу. */
+  protected readonly kindHint = computed(() => HABIT_KIND_DESCRIPTIONS[this._kind()]);
+  /** Подсказка по выбранному режиму расписания. */
+  protected readonly modeHint = computed(() => RECURRENCE_MODE_DESCRIPTIONS[this._mode()]);
 
   public constructor() {
     this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
@@ -463,5 +502,10 @@ export class HabitFormModalComponent {
   /** Отмена — закрывает без результата. */
   protected cancel(): void {
     this._ref.close(null);
+  }
+
+  /** Открывает гид «как заполнять» поверх формы (вложенный диалог; ввод не теряется). */
+  protected openGuide(): void {
+    this._dialog.open(HabitGuideModalComponent, { width: MODAL_SMALL_WIDTH });
   }
 }

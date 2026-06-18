@@ -8,6 +8,7 @@ import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
+import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import type { MicroWinPayload, MicroWinView } from '../accent.types';
 import { MicroWinFormModalComponent } from './micro-win-form-modal.component';
 import type { MicroWinFormData } from './micro-win-form-modal.component';
@@ -49,6 +50,10 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
           Смысл не в том, чтобы успеть больше, а чтобы не упасть в ноль.
         </p>
       </aside>
+
+      <button type="button" class="mw__cats-link" (click)="openCategoryGuide()">
+        Что значат категории?
+      </button>
 
       @if (loading()) {
         <p class="mw__muted">Загрузка…</p>
@@ -141,6 +146,17 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
       }
       .mw__why-text strong {
         color: var(--color-text);
+      }
+      .mw__cats-link {
+        display: inline-block;
+        margin: 0 0 var(--space-4);
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: var(--fs-sm);
+        color: var(--color-accent);
+        text-decoration: underline;
       }
       .mw__hint {
         font-size: var(--fs-sm);
@@ -240,6 +256,11 @@ export class MicroWinsComponent {
   /** RU-подпись категории. */
   protected categoryLabel(category: MicroWinView['category']): string {
     return MICRO_WIN_CATEGORY_LABELS[category];
+  }
+
+  /** Открывает модалку-гид по категориям. */
+  protected openCategoryGuide(): void {
+    this._dialog.open(CategoryGuideModalComponent, { width: MODAL_SMALL_WIDTH });
   }
 
   /** Человекочитаемая длительность. */

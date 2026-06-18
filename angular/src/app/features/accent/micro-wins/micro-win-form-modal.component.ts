@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
-import { MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { MICRO_WIN_CATEGORY_DESCRIPTIONS, MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
+import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import type { MicroWinCategory, MicroWinPayload, MicroWinView } from '../accent.types';
 
 /** Данные в модалку: если `microWin` задан — режим редактирования (префилл). */
@@ -36,12 +39,16 @@ export interface MicroWinFormData {
         />
 
         <label class="mwf__field">
-          <span class="mwf__label">Категория</span>
+          <span class="mwf__label">
+            Категория
+            <button type="button" class="mwf__help" (click)="openCategoryGuide()">что это?</button>
+          </span>
           <select class="mwf__input" formControlName="category">
             @for (cat of categories; track cat.value) {
               <option [ngValue]="cat.value">{{ cat.label }}</option>
             }
           </select>
+          <span class="mwf__hint">{{ categoryHint() }}</span>
         </label>
 
         <label class="mwf__field">
@@ -115,6 +122,20 @@ export interface MicroWinFormData {
         font-size: var(--fs-xs);
         color: var(--color-danger);
       }
+      .mwf__hint {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .mwf__help {
+        margin-left: var(--space-2);
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: var(--fs-xs);
+        color: var(--color-accent);
+        text-decoration: underline;
+      }
       .mwf__actions {
         display: flex;
         justify-content: flex-end;
@@ -128,6 +149,7 @@ export class MicroWinFormModalComponent {
   private readonly _ref =
     inject<MatDialogRef<MicroWinFormModalComponent, MicroWinPayload | null>>(MatDialogRef);
   private readonly _data = inject<MicroWinFormData>(MAT_DIALOG_DATA);
+  private readonly _dialog = inject(MatDialog);
 
   /** Режим редактирования (иначе создание). */
   protected readonly isEdit = this._data.microWin !== undefined;
@@ -156,6 +178,15 @@ export class MicroWinFormModalComponent {
 
   /** Триггер пере-вычисления ошибок после попытки сохранить. */
   protected readonly submitted = signal(false);
+
+  /** Текущая выбранная категория (реактивно для подсказки). */
+  private readonly _selectedCategory = toSignal(this.form.controls.category.valueChanges, {
+    initialValue: this.form.controls.category.value,
+  });
+  /** Пояснение «что/зачем» по выбранной категории. */
+  protected readonly categoryHint = computed(
+    () => MICRO_WIN_CATEGORY_DESCRIPTIONS[this._selectedCategory()],
+  );
 
   public constructor() {
     const mw = this._data.microWin;
@@ -219,5 +250,10 @@ export class MicroWinFormModalComponent {
   /** Отмена — закрывает без результата. */
   protected cancel(): void {
     this._ref.close(null);
+  }
+
+  /** Открывает гид по категориям поверх формы (вложенный диалог; ввод не теряется). */
+  protected openCategoryGuide(): void {
+    this._dialog.open(CategoryGuideModalComponent, { width: MODAL_SMALL_WIDTH });
   }
 }

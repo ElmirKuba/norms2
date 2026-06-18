@@ -13,7 +13,12 @@ export type MicroWinCategory =
   | 'emotional'
   | 'social'
   | 'sensory'
-  | 'household';
+  | 'household'
+  | 'digital'
+  | 'rest'
+  | 'spiritual'
+  | 'nature'
+  | 'boundaries';
 
 /** Состояние пользователя (значения `disabledForStates`; зеркало бэка). */
 export type AccentUserState =
@@ -62,10 +67,30 @@ export interface MicroWinPayload {
 
 /** RU-подписи категорий микро-побед (для select и карточек). */
 export const MICRO_WIN_CATEGORY_LABELS: Readonly<Record<MicroWinCategory, string>> = {
-  physical: 'Телесное',
-  mental: 'Ум',
-  emotional: 'Эмоции',
-  social: 'Общение',
-  sensory: 'Сенсорика',
-  household: 'Быт',
+  physical: '🫀 Телесное',
+  mental: '🧠 Ум',
+  emotional: '❤️ Эмоции',
+  social: '👋 Общение',
+  sensory: '👁 Сенсорика',
+  household: '🧹 Быт',
+  digital: '📵 Цифровое',
+  rest: '😴 Отдых',
+  spiritual: '🌱 Дух / смысл',
+  nature: '🌿 Природа',
+  boundaries: '🛡 Границы',
+};
+
+/** Короткие пояснения «что/зачем» по категориям (для подсказки в форме и легенды на странице). */
+export const MICRO_WIN_CATEGORY_DESCRIPTIONS: Readonly<Record<MicroWinCategory, string>> = {
+  physical: 'Тело и движение — будит, сбивает оцепенение',
+  mental: 'Голова и фокус — мягко включает мышление',
+  emotional: 'Чувства — возвращает контакт с собой',
+  social: 'Связь с людьми — вытаскивает из изоляции',
+  sensory: 'Органы чувств — возвращает в «здесь и сейчас»',
+  household: 'Среда вокруг — порядок снаружи = внутри',
+  digital: 'Гигиена внимания — против залипания в ленте',
+  rest: 'Отдых — разрешить паузу тоже победа',
+  spiritual: 'Дух и смысл — благодарность, «зачем»',
+  nature: 'Природа — свет, воздух, небо',
+  boundaries: 'Сказать «нет» лишнему — сберечь силы и время',
 };

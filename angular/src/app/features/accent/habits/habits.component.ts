@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -8,7 +8,7 @@ import { MODAL_MEDIUM_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
-import type { HabitPayload, HabitView } from '../accent.types';
+import type { HabitPayload, HabitView, TaskView } from '../accent.types';
 import { recurrenceLabel } from './recurrence-label.util';
 import { HabitFormModalComponent } from './habit-form-modal.component';
 import type { HabitFormData } from './habit-form-modal.component';
@@ -30,12 +30,41 @@ import type { HabitFormData } from './habit-form-modal.component';
       </header>
 
       <nav class="hb__tabs">
-        <button type="button" [class.active]="tab() === 'today'" (click)="tab.set('today')">Сегодня</button>
-        <button type="button" [class.active]="tab() === 'templates'" (click)="tab.set('templates')">Шаблоны</button>
+        <button type="button" [class.active]="tab() === 'today'" (click)="selectTab('today')">Сегодня</button>
+        <button type="button" [class.active]="tab() === 'templates'" (click)="selectTab('templates')">Шаблоны</button>
       </nav>
 
       @if (tab() === 'today') {
-        <p class="hb__muted">Дневной чеклист появится здесь (следующий шаг).</p>
+        @if (tasksLoading()) {
+          <p class="hb__muted">Загрузка…</p>
+        } @else if (tasksError()) {
+          <p class="hb__error">{{ tasksError() }}</p>
+        } @else if (tasks().length === 0) {
+          <app-empty-state
+            title="На сегодня задач нет"
+            text="Заведи привычку во вкладке «Шаблоны» — задачи появятся по её расписанию."
+          />
+        } @else {
+          <div class="hb__progress">
+            <span>Сегодня сделано: <b>{{ donePercent() }}%</b></span>
+            <span class="hb__streak">🔥 серия — скоро</span>
+          </div>
+          <ul class="hb__list">
+            @for (t of tasks(); track t.id) {
+              <li>
+                <app-card>
+                  <div class="hb__item">
+                    <div class="hb__main">
+                      <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
+                      <span class="hb__meta">{{ taskMeta(t) }}</span>
+                    </div>
+                    <span class="hb__badge" [attr.data-status]="t.status">{{ statusLabel(t) }}</span>
+                  </div>
+                </app-card>
+              </li>
+            }
+          </ul>
+        }
       } @else {
         @if (loading()) {
           <p class="hb__muted">Загрузка…</p>
@@ -117,6 +146,31 @@ import type { HabitFormData } from './habit-form-modal.component';
       .hb__muted {
         color: var(--color-text-muted);
       }
+      .hb__progress {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+        color: var(--color-text-muted);
+        flex-wrap: wrap;
+      }
+      .hb__streak {
+        font-size: var(--fs-sm);
+      }
+      .hb__done {
+        text-decoration: line-through;
+        opacity: 0.7;
+      }
+      .hb__badge {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        white-space: nowrap;
+      }
+      .hb__badge[data-status='done'] {
+        color: var(--color-accent);
+        font-weight: 600;
+      }
       .hb__error {
         color: var(--color-danger);
       }
@@ -171,9 +225,72 @@ export class HabitsComponent {
   protected readonly error = signal<string | null>(null);
   /** Id привычки в процессе деактивации. */
   protected readonly busyId = signal<string | null>(null);
+  /** Задачи дня (вкладка «Сегодня»). */
+  protected readonly tasks = signal<TaskView[]>([]);
+  /** Идёт загрузка задач дня. */
+  protected readonly tasksLoading = signal(false);
+  /** Ошибка загрузки задач (или null). */
+  protected readonly tasksError = signal<string | null>(null);
+
+  /** % дня: задачи с прогрессом (done/partial) от всех непропущенных. */
+  protected readonly donePercent = computed(() => {
+    const active = this.tasks().filter((t) => t.status !== 'skipped');
+    if (active.length === 0) {
+      return 0;
+    }
+    const done = active.filter((t) => t.status === 'done' || t.status === 'partial').length;
+    return Math.round((done / active.length) * 100);
+  });
 
   public constructor() {
     this._load();
+  }
+
+  /** Переключает вкладку; при «Сегодня» — (пере)загружает задачи (материализация на бэке). */
+  protected selectTab(tab: 'today' | 'templates'): void {
+    this.tab.set(tab);
+    if (tab === 'today') {
+      this._loadTasks();
+    }
+  }
+
+  /** Метаданные задачи (тип + цель/сделано). */
+  protected taskMeta(task: TaskView): string {
+    const kind = HABIT_KIND_LABELS[task.kind];
+    if (task.targetValue === null) {
+      return kind;
+    }
+    const done = task.doneValue === null ? '' : `${String(task.doneValue)}/`;
+    return `${kind} · ${done}${String(task.targetValue)}`;
+  }
+
+  /** Подпись статуса задачи. */
+  protected statusLabel(task: TaskView): string {
+    switch (task.status) {
+      case 'done':
+        return '✓ Сделано';
+      case 'partial':
+        return `Частично ${String(task.doneValue ?? 0)}`;
+      case 'skipped':
+        return task.skipReason === 'postponed' ? 'Перенесено' : 'Пропущено';
+      case 'pending':
+        return 'Ожидает';
+    }
+  }
+
+  private _loadTasks(): void {
+    this.tasksLoading.set(true);
+    this._api.listTasks().subscribe({
+      next: (items) => {
+        this.tasks.set(items);
+        this.tasksError.set(null);
+        this.tasksLoading.set(false);
+      },
+      error: (err: unknown) => {
+        this.tasksError.set(errorMessage(err));
+        this.tasksLoading.set(false);
+      },
+    });
   }
 
   /** RU-подпись типа привычки. */

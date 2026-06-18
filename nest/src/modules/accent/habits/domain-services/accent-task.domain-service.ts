@@ -3,6 +3,7 @@ import { ValidationError } from '../../../../shared/errors/validation.error';
 import { TaskNotFoundError } from '../../../../shared/errors/task-not-found.error';
 import { localYmd } from '../../../../shared/utility-level/today-in-timezone.util';
 import { isHabitDueOn } from '../recurrence.util';
+import { HABIT_KINDS } from '../interfaces/habit-full.interface';
 import { ACCENT_TASK_REPOSITORY } from '../adapters/accent-task-repository.port';
 import type {
   AccentTaskRepositoryPort,
@@ -64,6 +65,69 @@ export class AccentTaskDomainService {
       });
     }
     return this._repository.createMany(toCreate);
+  }
+
+  /**
+   * Задачи дня: сперва материализует из привычек (идемпотентно), затем возвращает список.
+   * @param accountId Идентификатор аккаунта.
+   * @param date Локальная дата `YYYY-MM-DD`.
+   * @param timezone IANA-таймзона аккаунта.
+   * @returns Задачи дня владельца.
+   */
+  public async listForDay(accountId: string, date: string, timezone: string): Promise<TaskFull[]> {
+    await this.ensureTasksForDay(accountId, date, timezone);
+    return this._repository.listByAccountOn(accountId, date);
+  }
+
+  /**
+   * Создаёт разовую задачу (one-off, `templateId=null`) после валидации.
+   * @param data Данные создания (без templateId).
+   * @returns Созданная задача.
+   * @throws {ValidationError} При нарушении инвариантов.
+   */
+  public async createOneOff(data: TaskCreateData): Promise<TaskFull> {
+    const title = data.title.trim();
+    if (title.length === 0 || title.length > 120) {
+      throw new ValidationError('Название: 1–120 символов.');
+    }
+    if (!HABIT_KINDS.includes(data.kind)) {
+      throw new ValidationError('Недопустимый тип задачи.');
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.occurredOn)) {
+      throw new ValidationError('Дата: формат YYYY-MM-DD.');
+    }
+    if (
+      data.targetValue !== undefined &&
+      data.targetValue !== null &&
+      (!Number.isInteger(data.targetValue) || data.targetValue < 1)
+    ) {
+      throw new ValidationError('Цель: целое ≥ 1.');
+    }
+    return this._repository.create({ ...data, title, templateId: null, status: 'pending' });
+  }
+
+  /**
+   * Просроченные разовые задачи: открытые с дедлайном, чья локальная дата дедлайна < сегодня.
+   * @param accountId Идентификатор аккаунта.
+   * @param today Сегодня `YYYY-MM-DD` (в TZ аккаунта).
+   * @param timezone IANA-таймзона аккаунта.
+   * @returns Просроченные задачи.
+   */
+  public async listOverdue(accountId: string, today: string, timezone: string): Promise<TaskFull[]> {
+    const open = await this._repository.listOpenOneOffWithDeadline(accountId);
+    return open.filter((t) => t.deadline !== null && localYmd(t.deadline, timezone) < today);
+  }
+
+  /**
+   * Разовые задачи с дедлайном на сегодня (по TZ аккаунта).
+   * @param accountId Идентификатор аккаунта.
+   * @param today Сегодня `YYYY-MM-DD`.
+   * @param timezone IANA-таймзона аккаунта.
+   * @returns Задачи с дедлайном сегодня.
+   */
+  public async listDueToday(accountId: string, today: string, timezone: string): Promise<TaskFull[]> {
+    const open = await this._repository.listOpenOneOffWithDeadline(accountId);
+    return open.filter((t) => t.deadline !== null && localYmd(t.deadline, timezone) === today);
   }
 
   /**

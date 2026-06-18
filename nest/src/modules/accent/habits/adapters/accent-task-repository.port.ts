@@ -90,4 +90,12 @@ export interface AccentTaskRepositoryPort {
    * @returns Обновлённая строка или null (нет / не ваша).
    */
   update(id: string, accountId: string, patch: TaskUpdateData): Promise<TaskFull | null>;
+
+  /**
+   * Открытые (`pending`/`partial`) разовые задачи (templateId=null) с дедлайном — для
+   * расчёта overdue/due-today (фильтрация по дате дедлайна — в domain-service по TZ).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Открытые разовые задачи с дедлайном.
+   */
+  listOpenOneOffWithDeadline(accountId: string): Promise<TaskFull[]>;
 }

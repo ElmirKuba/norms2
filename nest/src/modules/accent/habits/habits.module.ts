@@ -7,11 +7,19 @@ import { AccentTaskRepository } from '../../../database/repositories/accent/acce
 import { AccentHabitDomainService } from './domain-services/accent-habit.domain-service';
 import { AccentTaskDomainService } from './domain-services/accent-task.domain-service';
 import { HabitsController } from './controllers/habits.controller';
+import { TasksController } from './controllers/tasks.controller';
 import { ListHabitsUseCase } from './use-cases/list-habits.use-case';
 import { GetHabitUseCase } from './use-cases/get-habit.use-case';
 import { CreateHabitUseCase } from './use-cases/create-habit.use-case';
 import { UpdateHabitUseCase } from './use-cases/update-habit.use-case';
 import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
+import { ListTasksUseCase } from './use-cases/list-tasks.use-case';
+import { ListOverdueTasksUseCase } from './use-cases/list-overdue-tasks.use-case';
+import { ListDueTodayTasksUseCase } from './use-cases/list-due-today-tasks.use-case';
+import { CreateOneOffTaskUseCase } from './use-cases/create-one-off-task.use-case';
+import { CompleteTaskUseCase } from './use-cases/complete-task.use-case';
+import { UncompleteTaskUseCase } from './use-cases/uncomplete-task.use-case';
+import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
 
 /**
  * Область привычек раздела «Акцент» (мультимодуль, ADR-0050; «сердце продукта», 2.4):
@@ -22,7 +30,7 @@ import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
  */
 @Module({
   imports: [AccessControlModule],
-  controllers: [HabitsController],
+  controllers: [HabitsController, TasksController],
   providers: [
     { provide: ACCENT_HABIT_REPOSITORY, useClass: AccentHabitRepository },
     { provide: ACCENT_TASK_REPOSITORY, useClass: AccentTaskRepository },
@@ -33,6 +41,13 @@ import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
     CreateHabitUseCase,
     UpdateHabitUseCase,
     DeactivateHabitUseCase,
+    ListTasksUseCase,
+    ListOverdueTasksUseCase,
+    ListDueTodayTasksUseCase,
+    CreateOneOffTaskUseCase,
+    CompleteTaskUseCase,
+    UncompleteTaskUseCase,
+    PostponeTaskUseCase,
   ],
   exports: [AccentHabitDomainService],
 })

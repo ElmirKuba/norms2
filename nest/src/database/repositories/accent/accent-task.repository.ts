@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { tasks } from '../../schemas/tasks.schema';
@@ -102,6 +102,26 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
       .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
+  }
+
+  /**
+   * Открытые разовые задачи (templateId=null) с дедлайном (для overdue/due-today).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Открытые разовые задачи с дедлайном.
+   */
+  public async listOpenOneOffWithDeadline(accountId: string): Promise<TaskFull[]> {
+    return this._db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.accountId, accountId),
+          isNull(tasks.templateId),
+          isNotNull(tasks.deadline),
+          inArray(tasks.status, ['pending', 'partial']),
+        ),
+      )
+      .orderBy(asc(tasks.deadline));
   }
 
   /**

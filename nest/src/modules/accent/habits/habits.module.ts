@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
 import { ACCENT_HABIT_REPOSITORY } from './adapters/accent-habit-repository.port';
 import { AccentHabitRepository } from '../../../database/repositories/accent/accent-habit.repository';
+import { ACCENT_TASK_REPOSITORY } from './adapters/accent-task-repository.port';
+import { AccentTaskRepository } from '../../../database/repositories/accent/accent-task.repository';
 import { AccentHabitDomainService } from './domain-services/accent-habit.domain-service';
 import { HabitsController } from './controllers/habits.controller';
 import { ListHabitsUseCase } from './use-cases/list-habits.use-case';
@@ -22,6 +24,7 @@ import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
   controllers: [HabitsController],
   providers: [
     { provide: ACCENT_HABIT_REPOSITORY, useClass: AccentHabitRepository },
+    { provide: ACCENT_TASK_REPOSITORY, useClass: AccentTaskRepository },
     AccentHabitDomainService,
     ListHabitsUseCase,
     GetHabitUseCase,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -123,7 +123,7 @@ import type { HabitFormData } from './habit-form-modal.component';
           </app-empty-state>
         } @else {
           @if (hasStarters()) {
-            <p class="hb__hint">«Добавить себе» или «Изм.» оставит привычку себе — и она начнёт давать задачи.</p>
+            <p class="hb__hint">«Добавить себе» или «⋯» → ✏️ Изменить оставит привычку себе — и она начнёт давать задачи.</p>
           }
           <ul class="hb__list">
             @for (h of habits(); track h.id) {
@@ -148,10 +148,32 @@ import type { HabitFormData } from './habit-form-modal.component';
                       @if (h.isStarter) {
                         <app-button [loading]="busyId() === h.id" (click)="adoptHabit(h)">Добавить себе</app-button>
                       }
-                      <app-button variant="ghost" (click)="openEdit(h)">Изм.</app-button>
-                      <app-button variant="danger" [loading]="busyId() === h.id" (click)="deactivate(h)">
-                        Убрать
-                      </app-button>
+                      <div class="hb__menu-wrap">
+                        <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
+                          <button
+                            type="button"
+                            class="hb__menu-btn"
+                            aria-label="Дополнительные опции"
+                            (click)="toggleMenu(h.id, $event)"
+                          >⋯</button>
+                        </span>
+                        @if (openMenuId() === h.id) {
+                          <div class="hb__menu" (click)="$event.stopPropagation()">
+                            <button type="button" class="hb__menu-item" (click)="openEdit(h); closeMenu()">
+                              <span class="hb__menu-ico" aria-hidden="true">✏️</span>
+                              Изменить
+                            </button>
+                            <button
+                              type="button"
+                              class="hb__menu-item hb__menu-item--danger"
+                              (click)="deactivate(h); closeMenu()"
+                            >
+                              <span class="hb__menu-ico" aria-hidden="true">🗑️</span>
+                              Удалить
+                            </button>
+                          </div>
+                        }
+                      </div>
                     </div>
                   </div>
                 </app-card>
@@ -215,6 +237,63 @@ import type { HabitFormData } from './habit-form-modal.component';
         border: 1px solid var(--color-accent);
         border-radius: var(--radius-sm);
         padding: 0 var(--space-2);
+      }
+      .hb__menu-wrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .hb__menu-btn {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: var(--fs-lg);
+        line-height: 1;
+      }
+      .hb__menu-btn:hover {
+        color: var(--color-text);
+        border-color: var(--color-text-muted);
+      }
+      .hb__menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        min-width: 160px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-1);
+        overflow: hidden;
+      }
+      .hb__menu-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-align: left;
+        padding: var(--space-2) var(--space-3);
+        min-height: var(--touch-min);
+        background: none;
+        border: none;
+        color: var(--color-text);
+        cursor: pointer;
+        font-size: var(--fs-sm);
+      }
+      .hb__menu-item:hover {
+        background: var(--color-surface-2);
+      }
+      .hb__menu-item--danger {
+        color: var(--color-danger);
+      }
+      .hb__menu-ico {
+        width: 1.2em;
+        text-align: center;
+        flex-shrink: 0;
       }
       .hb__tabs {
         display: flex;
@@ -356,6 +435,33 @@ export class HabitsComponent {
   protected readonly packBusy = signal(false);
   /** Есть ли непринятые примеры (для хинта и контекстной кнопки). */
   protected readonly hasStarters = computed(() => this.habits().some((h) => h.isStarter));
+  /** Id карточки с открытым меню «⋯» (Изменить/Удалить) или null. */
+  protected readonly openMenuId = signal<string | null>(null);
+
+  /** Переключает меню «⋯» карточки; stopPropagation — чтобы document-клик не закрыл сразу. */
+  protected toggleMenu(id: string, event: Event): void {
+    event.stopPropagation();
+    this.openMenuId.update((cur) => (cur === id ? null : id));
+  }
+
+  /** Закрывает меню «⋯». */
+  protected closeMenu(): void {
+    this.openMenuId.set(null);
+  }
+
+  /** Клик где угодно вне меню — закрыть. */
+  @HostListener('document:click')
+  protected onDocumentClick(): void {
+    if (this.openMenuId() !== null) {
+      this.openMenuId.set(null);
+    }
+  }
+
+  /** Escape — закрыть открытое меню. */
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.openMenuId.set(null);
+  }
   /** Задачи дня (вкладка «Сегодня»). */
   protected readonly tasks = signal<TaskView[]>([]);
   /** Идёт загрузка задач дня. */
@@ -601,13 +707,13 @@ export class HabitsComponent {
     });
   }
 
-  /** Деактивирует привычку после подтверждения (мягко: исчезает из активных). */
+  /** Удаляет привычку после подтверждения (мягко: деактивация — исчезает из активных). */
   protected deactivate(habit: HabitView): void {
     void this._modal
       .confirm({
-        title: 'Убрать привычку?',
+        title: 'Удалить привычку?',
         text: `«${habit.title}» перестанет появляться в задачах дня. История останется.`,
-        confirmText: 'Убрать',
+        confirmText: 'Удалить',
         danger: true,
       })
       .then((ok) => {

@@ -51,6 +51,10 @@ export class AccentTaskDomainService {
     const habits = await this._habits.list(accountId);
     const toCreate: TaskCreateData[] = [];
     for (const habit of habits) {
+      // Примеры (ADR-0051, ветка Б) — инертная витрина: не материализуем до присвоения.
+      if (habit.isStarter) {
+        continue;
+      }
       const dtstart = localYmd(habit.createdAt, timezone);
       if (!isHabitDueOn(habit.recurrence, dtstart, date)) {
         continue;

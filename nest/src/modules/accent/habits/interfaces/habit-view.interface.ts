@@ -38,6 +38,8 @@ export interface HabitView {
   recurrence: string;
   /** Активна ли. */
   isActive: boolean;
+  /** Стартовый пример (бейдж «пример»; не материализует задачи до присвоения). */
+  isStarter: boolean;
   /** Лесенка (цели + политика). */
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */
@@ -62,6 +64,7 @@ export function toHabitView(full: HabitFull): HabitView {
     kind: full.kind,
     recurrence: full.recurrence,
     isActive: full.isActive,
+    isStarter: full.isStarter,
     ladder: {
       minTarget: full.ladder.minTarget,
       currentTarget: full.ladder.currentTarget,

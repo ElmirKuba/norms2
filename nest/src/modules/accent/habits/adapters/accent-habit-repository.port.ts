@@ -33,6 +33,8 @@ export interface HabitCreateData {
   priority?: number;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion?: string | null;
+  /** Стартовый пример (опц., дефолт false) — для сева стартового пака. */
+  isStarter?: boolean;
 }
 
 /** Частичный патч привычки (только переданные поля; поля `| undefined` под zod `.partial()`). */
@@ -49,6 +51,8 @@ export interface HabitUpdateData {
   ladder?: HabitLadder | undefined;
   isActive?: boolean | undefined;
   minVersion?: string | null | undefined;
+  /** Снятие флага «пример» (adoption) — внутреннее, не из API-DTO. */
+  isStarter?: boolean | undefined;
 }
 
 /**
@@ -77,6 +81,20 @@ export interface AccentHabitRepositoryPort {
    * @returns Созданная привычка.
    */
   create(data: HabitCreateData): Promise<HabitFull>;
+
+  /**
+   * Массовая вставка привычек (стартовый набор; id на каждую — `generateId()`).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  createMany(items: readonly HabitCreateData[]): Promise<number>;
+
+  /**
+   * Удаляет все непринятые стартовые (`is_starter=true`) привычки аккаунта; свои не трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  deleteStarters(accountId: string): Promise<number>;
 
   /**
    * Обновляет привычку владельца (частично; deactivate = `{ isActive: false }`).

@@ -71,6 +71,13 @@
       "when": 1781763119710,
       "tag": "0009_true_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781852817738,
+      "tag": "0010_misty_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

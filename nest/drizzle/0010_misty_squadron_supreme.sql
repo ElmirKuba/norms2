@@ -1,0 +1,1 @@
+ALTER TABLE "habits" ADD COLUMN "is_starter" boolean DEFAULT false NOT NULL;

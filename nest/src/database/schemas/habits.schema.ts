@@ -32,6 +32,7 @@ export const habits = defineTableWithSchema<HabitFull>()(
     kind: varchar('kind', { length: 16 }).$type<HabitKind>().notNull(),
     recurrence: text('recurrence').notNull(),
     isActive: boolean('is_active').notNull().default(true),
+    isStarter: boolean('is_starter').notNull().default(false),
     ladder: jsonb('ladder').$type<HabitLadder>().notNull(),
     minVersion: text('min_version'),
     ...timestamps(),

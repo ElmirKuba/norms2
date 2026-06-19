@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createHabitSchema } from '../dtos/create-habit.dto';
@@ -10,6 +10,9 @@ import { GetHabitUseCase } from '../use-cases/get-habit.use-case';
 import { CreateHabitUseCase } from '../use-cases/create-habit.use-case';
 import { UpdateHabitUseCase } from '../use-cases/update-habit.use-case';
 import { DeactivateHabitUseCase } from '../use-cases/deactivate-habit.use-case';
+import { SeedHabitStarterPackUseCase } from '../use-cases/seed-habit-starter-pack.use-case';
+import { ClearHabitStartersUseCase } from '../use-cases/clear-habit-starters.use-case';
+import { AdoptHabitUseCase } from '../use-cases/adopt-habit.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { HabitView } from '../interfaces/habit-view.interface';
 
@@ -34,6 +37,9 @@ export class HabitsController {
     private readonly _create: CreateHabitUseCase,
     private readonly _update: UpdateHabitUseCase,
     private readonly _deactivate: DeactivateHabitUseCase,
+    private readonly _seedStarterPack: SeedHabitStarterPackUseCase,
+    private readonly _clearStarters: ClearHabitStartersUseCase,
+    private readonly _adopt: AdoptHabitUseCase,
   ) {}
 
   /**
@@ -58,6 +64,44 @@ export class HabitsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<HabitView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Получить стартовый пак привычек (докидывает примеры, своё не трогает; ADR-0051).
+   * Объявлен ДО `:id`. Возвращает свежий список.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список привычек после сева.
+   */
+  @Post('habits/starter-pack')
+  public async getStarterPack(@Req() request: AuthenticatedRequest): Promise<HabitView[]> {
+    await this._seedStarterPack.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * Очистить примеры (удаляет только непринятые стартовые). Объявлен ДО `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список привычек после очистки.
+   */
+  @Delete('habits/starter-pack')
+  public async clearStarters(@Req() request: AuthenticatedRequest): Promise<HabitView[]> {
+    await this._clearStarters.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * Присвоить пример себе («Добавить себе»): снимает флаг — привычка начинает
+   * материализовать задачи и двигать лесенку (ADR-0051).
+   * @param id Идентификатор привычки.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция присвоенной привычки.
+   */
+  @Post('habits/:id/adopt')
+  public adopt(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<HabitView> {
+    return this._adopt.execute(id, request.account.id);
   }
 
   /**

@@ -10,6 +10,7 @@ import type {
 import { HABIT_KINDS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
 import type { HabitFull, HabitKind, HabitLadder } from '../interfaces/habit-full.interface';
 import { isValidRecurrence } from '../recurrence.util';
+import { STARTER_HABITS } from '../seed/starter-habits';
 
 /** Максимальная длина названия привычки. */
 const TITLE_MAX = 120;
@@ -141,6 +142,8 @@ export class AccentHabitDomainService {
     if (patch.isActive !== undefined) {
       clean.isActive = patch.isActive;
     }
+    // Adoption (ADR-0051): любое редактирование «присваивает» пример (снимает флаг).
+    clean.isStarter = false;
     if (patch.ladder !== undefined) {
       this._validateLadder(patch.ladder);
       // Сохраняем счётчики прогресса при редактировании целей лесенки.
@@ -152,6 +155,59 @@ export class AccentHabitDomainService {
       };
     }
     const updated = await this._repository.update(id, accountId, clean);
+    if (!updated) {
+      throw new HabitNotFoundError('Привычка не найдена.');
+    }
+    return updated;
+  }
+
+  /**
+   * Засевает стартовый пак привычек (по кнопке «Получить пак», ADR-0051): создаёт привычки
+   * из `STARTER_HABITS` с `is_starter=true`. **Только докидывает** недостающие (дедуп по
+   * названию, своё не трогает). Данные — доверенные константы, доменная валидация не нужна.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число созданных примеров (0 если все уже есть).
+   */
+  public async seedStarterPack(accountId: string): Promise<number> {
+    const existing = await this._repository.listByAccount(accountId);
+    const existingTitles = new Set(existing.map((habit) => habit.title));
+    const toSeed: HabitCreateData[] = STARTER_HABITS.filter(
+      (item) => !existingTitles.has(item.title),
+    ).map((item) => ({
+      accountId,
+      title: item.title,
+      kind: item.kind,
+      recurrence: item.recurrence,
+      ladder: item.ladder,
+      description: item.description,
+      icon: item.icon,
+      attributes: item.attributes,
+      minVersion: item.minVersion,
+      isStarter: true,
+    }));
+    return this._repository.createMany(toSeed);
+  }
+
+  /**
+   * Очищает примеры: удаляет ещё не присвоенные стартовые привычки (`is_starter=true`).
+   * Свои (присвоенные) не трогает.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число удалённых.
+   */
+  public async clearStarters(accountId: string): Promise<number> {
+    return this._repository.deleteStarters(accountId);
+  }
+
+  /**
+   * Присваивает пример («Добавить себе», ADR-0051): снимает `is_starter` → привычка
+   * становится обычной (начинает материализовать задачи и двигать лесенку).
+   * @param id Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая привычка.
+   * @throws {HabitNotFoundError} Если нет / не ваша.
+   */
+  public async adopt(id: string, accountId: string): Promise<HabitFull> {
+    const updated = await this._repository.update(id, accountId, { isStarter: false });
     if (!updated) {
       throw new HabitNotFoundError('Привычка не найдена.');
     }

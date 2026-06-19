@@ -74,6 +74,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
         recurrence: data.recurrence,
         ladder: data.ladder,
         minVersion: data.minVersion ?? null,
+        isStarter: data.isStarter ?? false,
       })
       .returning();
     const row = rows[0];
@@ -81,6 +82,52 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
       throw new Error('habits: create не вернул строку.');
     }
     return row;
+  }
+
+  /**
+   * Массовая вставка привычек (стартовый набор; id на каждую — `generateId()`).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  public async createMany(items: readonly HabitCreateData[]): Promise<number> {
+    if (items.length === 0) {
+      return 0;
+    }
+    const rows = await this._db
+      .insert(habits)
+      .values(
+        items.map((data) => ({
+          id: generateId(),
+          accountId: data.accountId,
+          title: data.title,
+          description: data.description ?? null,
+          icon: data.icon ?? null,
+          domainKey: data.domainKey ?? null,
+          attributes: data.attributes ?? [],
+          goalId: data.goalId ?? null,
+          priority: data.priority ?? 0,
+          kind: data.kind,
+          recurrence: data.recurrence,
+          ladder: data.ladder,
+          minVersion: data.minVersion ?? null,
+          isStarter: data.isStarter ?? false,
+        })),
+      )
+      .returning({ id: habits.id });
+    return rows.length;
+  }
+
+  /**
+   * Удаляет все непринятые стартовые (`is_starter=true`) привычки аккаунта; свои не трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async deleteStarters(accountId: string): Promise<number> {
+    const rows = await this._db
+      .delete(habits)
+      .where(and(eq(habits.accountId, accountId), eq(habits.isStarter, true)))
+      .returning({ id: habits.id });
+    return rows.length;
   }
 
   /**

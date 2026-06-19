@@ -53,7 +53,7 @@
 - `GET /accent/tasks?date=YYYY-MM-DD` → задачи дня (материализованные + разовые).
 - `GET /accent/tasks/overdue` · `GET /accent/tasks/due-today` (для разовых с deadline).
 - `POST /accent/tasks` Body `{ title, occurredOn, kind, targetValue?, category?, deadline?, priority? }` → разовая (one-off).
-- `POST /accent/tasks/:id/complete` Body `{ doneValue? }` → done/partial (идемпотентно). `partial≥minTarget` держит серию; триггерит `LadderEngine` (`ladder.raised/lowered`).
+- `POST /accent/tasks/:id/complete` Body `{ doneValue? }` → **`{ task, ladderEvent }`** (done/partial, идемпотентно). `ladderEvent` = `'raised' | 'lowered' | null` — движение адаптивной планки для фидбэка («планка выросла / сегодня мягче»; null = нет движения / manual / разовая). `partial≥minTarget` держит серию; триггерит `LadderEngine`.
 - `POST /accent/tasks/:id/uncomplete` → pending + revoke очков.
 - `POST /accent/tasks/:id/postpone` → новый Task на завтра, текущий `skipped/postponed`.
 

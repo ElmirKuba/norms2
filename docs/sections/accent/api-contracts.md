@@ -49,7 +49,7 @@
 
 ## 5. Habits (TaskTemplate) + Tasks + лесенка
 - `GET /accent/habits` · `POST /accent/habits` Body `{ title, description?, icon?, domainKey?, attributes?, goalId?, priority?, kind, recurrence, ladder:{minTarget,currentTarget,goalTarget?,step?,policy}, minVersion? }` → 201.
-- `GET/PATCH /accent/habits/:id` · `POST /accent/habits/:id/deactivate`.
+- `GET/PATCH /accent/habits/:id` · `POST /accent/habits/:id/deactivate` (мягко: `isActive=false` → уходит из материализации; **+ удаляет ещё не тронутые `pending`-задачи этой привычки**, `done`/`partial`/`skipped` оставляет ради истории — удаление шаблона намеренное).
 - `POST /accent/habits/starter-pack` → засевает примеры-привычки (`is_starter=true`, дедуп по названию, только докидывает) → свежий список. `DELETE` → удаляет непринятые примеры → свежий список. **Инертная витрина (ADR-0051):** примеры видны в «Шаблонах» с бейджем, но НЕ материализуют задачи / не двигают лесенку до присвоения.
 - `POST /accent/habits/:id/adopt` → «Добавить себе»: снимает `is_starter` (привычка начинает материализовать задачи). Adoption также при `PATCH` (редактирование).
 - `GET /accent/tasks?date=YYYY-MM-DD` → задачи дня (материализованные + разовые).

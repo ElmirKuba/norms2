@@ -108,6 +108,21 @@ export class AccentApiService {
     return this._http.post<HabitView>(`${API_PREFIX}/accent/habits/${id}/deactivate`, {});
   }
 
+  /** Получить стартовый пак привычек (докидывает примеры, своё не трогает) → свежий список. */
+  public seedHabitStarterPack(): Observable<HabitView[]> {
+    return this._http.post<HabitView[]>(`${API_PREFIX}/accent/habits/starter-pack`, {});
+  }
+
+  /** Очистить примеры привычек (удаляет только непринятые стартовые) → свежий список. */
+  public clearHabitStarters(): Observable<HabitView[]> {
+    return this._http.delete<HabitView[]>(`${API_PREFIX}/accent/habits/starter-pack`);
+  }
+
+  /** Присвоить пример себе («Добавить себе»): снимает флаг — привычка начнёт давать задачи. */
+  public adoptHabit(id: string): Observable<HabitView> {
+    return this._http.post<HabitView>(`${API_PREFIX}/accent/habits/${id}/adopt`, {});
+  }
+
   // ── Задачи дня (2.4) ──
 
   /** Задачи дня (по умолчанию — сегодня); материализуются из привычек на бэке. */

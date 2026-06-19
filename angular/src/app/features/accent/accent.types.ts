@@ -173,6 +173,8 @@ export interface HabitView {
   recurrence: string;
   /** Активна ли. */
   isActive: boolean;
+  /** Стартовый пример (бейдж «пример»; не материализует задачи до присвоения). */
+  isStarter: boolean;
   /** Лесенка. */
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */

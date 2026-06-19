@@ -26,7 +26,20 @@ import type { HabitFormData } from './habit-form-modal.component';
     <section class="hb">
       <header class="hb__head">
         <h2>Привычки</h2>
-        <app-button (click)="openCreate()">Добавить</app-button>
+        <div class="hb__head-actions">
+          @if (tab() === 'templates' && habits().length > 0) {
+            @if (hasStarters()) {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                Очистить примеры
+              </app-button>
+            } @else {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                Получить пак
+              </app-button>
+            }
+          }
+          <app-button (click)="openCreate()">Добавить</app-button>
+        </div>
       </header>
 
       <nav class="hb__tabs">
@@ -95,18 +108,27 @@ import type { HabitFormData } from './habit-form-modal.component';
         } @else if (habits().length === 0) {
           <app-empty-state
             title="Пока нет привычек"
-            text="Заведи повторяющееся дело с адаптивной планкой — она будет расти от минимума к цели."
+            text="Начни с готового набора — примеры с мягкой планкой, по силам даже в плохой день. Или заведи свою."
           >
-            <app-button (click)="openCreate()">Добавить привычку</app-button>
+            <app-button [loading]="packBusy()" (click)="seedPack()">Получить стартовый пак</app-button>
+            <app-button variant="ghost" (click)="openCreate()">Создать свою</app-button>
           </app-empty-state>
         } @else {
+          @if (hasStarters()) {
+            <p class="hb__hint">«Добавить себе» или «Изм.» оставит привычку себе — и она начнёт давать задачи.</p>
+          }
           <ul class="hb__list">
             @for (h of habits(); track h.id) {
               <li>
                 <app-card>
                   <div class="hb__item">
                     <div class="hb__main">
-                      <strong class="hb__name">{{ h.icon ? h.icon + ' ' : '' }}{{ h.title }}</strong>
+                      <span class="hb__name-row">
+                        <strong class="hb__name">{{ h.icon ? h.icon + ' ' : '' }}{{ h.title }}</strong>
+                        @if (h.isStarter) {
+                          <span class="hb__example">пример</span>
+                        }
+                      </span>
                       <span class="hb__meta">
                         {{ kindLabel(h.kind) }} · {{ recurrenceText(h.recurrence) }} · {{ ladderText(h) }}
                       </span>
@@ -115,6 +137,9 @@ import type { HabitFormData } from './habit-form-modal.component';
                       }
                     </div>
                     <div class="hb__actions">
+                      @if (h.isStarter) {
+                        <app-button [loading]="busyId() === h.id" (click)="adoptHabit(h)">Добавить себе</app-button>
+                      }
                       <app-button variant="ghost" (click)="openEdit(h)">Изм.</app-button>
                       <app-button variant="danger" [loading]="busyId() === h.id" (click)="deactivate(h)">
                         Убрать
@@ -146,6 +171,30 @@ import type { HabitFormData } from './habit-form-modal.component';
         align-items: center;
         gap: var(--space-2);
         flex-wrap: wrap;
+      }
+      .hb__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .hb__hint {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-3);
+      }
+      .hb__name-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .hb__example {
+        font-size: var(--fs-xs);
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent);
+        border-radius: var(--radius-sm);
+        padding: 0 var(--space-2);
       }
       .hb__tabs {
         display: flex;
@@ -281,8 +330,12 @@ export class HabitsComponent {
   protected readonly loading = signal(true);
   /** Ошибка загрузки (или null). */
   protected readonly error = signal<string | null>(null);
-  /** Id привычки в процессе деактивации. */
+  /** Id привычки в процессе деактивации/присвоения. */
   protected readonly busyId = signal<string | null>(null);
+  /** Идёт получение/очистка стартового пака. */
+  protected readonly packBusy = signal(false);
+  /** Есть ли непринятые примеры (для хинта и контекстной кнопки). */
+  protected readonly hasStarters = computed(() => this.habits().some((h) => h.isStarter));
   /** Задачи дня (вкладка «Сегодня»). */
   protected readonly tasks = signal<TaskView[]>([]);
   /** Идёт загрузка задач дня. */
@@ -459,6 +512,42 @@ export class HabitsComponent {
         this.error.set(errorMessage(err));
         this.loading.set(false);
       },
+    });
+  }
+
+  /** Получить стартовый пак привычек (докидывает примеры) — список приходит свежим. */
+  protected seedPack(): void {
+    this.packBusy.set(true);
+    this._api.seedHabitStarterPack().subscribe({
+      next: (items) => {
+        this.habits.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => this.packBusy.set(false),
+    });
+  }
+
+  /** Очистить примеры (только непринятые стартовые) — список приходит свежим. */
+  protected clearExamples(): void {
+    this.packBusy.set(true);
+    this._api.clearHabitStarters().subscribe({
+      next: (items) => {
+        this.habits.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => this.packBusy.set(false),
+    });
+  }
+
+  /** Присвоить пример себе («Добавить себе»): снимает флаг → начнёт давать задачи. */
+  protected adoptHabit(habit: HabitView): void {
+    this.busyId.set(habit.id);
+    this._api.adoptHabit(habit.id).subscribe({
+      next: (updated) => {
+        this.habits.update((list) => list.map((h) => (h.id === updated.id ? updated : h)));
+        this.busyId.set(null);
+      },
+      error: () => this.busyId.set(null),
     });
   }
 

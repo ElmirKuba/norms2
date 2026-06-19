@@ -277,6 +277,9 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         align-items: center;
         gap: var(--space-2);
         flex-wrap: wrap;
+        // Держим действия у правого края и при переносе — иначе «⋯» уезжает влево
+        // и меню (right:0) раскрывается за край экрана.
+        margin-left: auto;
       }
       .mw__done {
         color: var(--color-accent);

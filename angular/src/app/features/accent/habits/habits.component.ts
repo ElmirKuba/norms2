@@ -201,6 +201,9 @@ import type { HabitFormData } from './habit-form-modal.component';
         align-items: center;
         gap: var(--space-2);
         flex-wrap: wrap;
+        // Держим блок действий у правого края даже при переносе на свою строку —
+        // иначе «⋯» уезжает влево и меню (right:0) раскрывается за край экрана.
+        margin-left: auto;
       }
       .hb__head-actions {
         display: flex;

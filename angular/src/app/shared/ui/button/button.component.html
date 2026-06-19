@@ -5,6 +5,7 @@
   [class.btn-block]="block()"
   [type]="type()"
   [disabled]="disabled() || loading()"
+  [attr.aria-label]="ariaLabel()"
 >
   @if (loading()) {
     <span class="spinner" aria-hidden="true"></span>

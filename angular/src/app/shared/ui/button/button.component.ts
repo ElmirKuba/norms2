@@ -18,4 +18,6 @@ export class ButtonComponent {
   public readonly loading = input(false);
   /** На всю ширину. */
   public readonly block = input(false);
+  /** Доступное имя (для icon-кнопок без видимого текста); null — не задавать. */
+  public readonly ariaLabel = input<string | null>(null);
 }

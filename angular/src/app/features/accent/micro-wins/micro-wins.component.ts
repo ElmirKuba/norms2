@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -94,10 +94,36 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
                     @if (mw.completedToday) {
                       <span class="mw__done">✓ Сегодня</span>
                     } @else {
-                      <app-button [loading]="busyId() === mw.id" (click)="complete(mw)">Сделал</app-button>
+                      <span class="tooltip-host" [attr.data-tooltip]="'Я сегодня это сделал'">
+                        <app-button
+                          ariaLabel="Я сегодня это сделал"
+                          [loading]="busyId() === mw.id"
+                          (click)="complete(mw)"
+                        >✓</app-button>
+                      </span>
                     }
-                    <app-button variant="ghost" (click)="openEdit(mw)">Изм.</app-button>
-                    <app-button variant="danger" (click)="remove(mw)">Удалить</app-button>
+                    <div class="mw__menu-wrap">
+                      <button
+                        type="button"
+                        class="mw__menu-btn"
+                        aria-label="Ещё действия"
+                        (click)="toggleMenu(mw.id, $event)"
+                      >⋯</button>
+                      @if (openMenuId() === mw.id) {
+                        <div class="mw__menu" (click)="$event.stopPropagation()">
+                          <button type="button" class="mw__menu-item" (click)="openEdit(mw); closeMenu()">
+                            Изменить
+                          </button>
+                          <button
+                            type="button"
+                            class="mw__menu-item mw__menu-item--danger"
+                            (click)="remove(mw); closeMenu()"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      }
+                    </div>
                   </div>
                 </div>
               </app-card>
@@ -227,6 +253,55 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         font-weight: 600;
         padding: 0 var(--space-2);
       }
+      .mw__menu-wrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .mw__menu-btn {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: var(--fs-lg);
+        line-height: 1;
+      }
+      .mw__menu-btn:hover {
+        color: var(--color-text);
+        border-color: var(--color-text-muted);
+      }
+      .mw__menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        min-width: 160px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-1);
+        overflow: hidden;
+      }
+      .mw__menu-item {
+        text-align: left;
+        padding: var(--space-2) var(--space-3);
+        min-height: var(--touch-min);
+        background: none;
+        border: none;
+        color: var(--color-text);
+        cursor: pointer;
+        font-size: var(--fs-sm);
+      }
+      .mw__menu-item:hover {
+        background: var(--color-surface-2);
+      }
+      .mw__menu-item--danger {
+        color: var(--color-danger);
+      }
     `,
   ],
 })
@@ -245,6 +320,33 @@ export class MicroWinsComponent {
   protected readonly busyId = signal<string | null>(null);
   /** Идёт получение/очистка стартового пака. */
   protected readonly packBusy = signal(false);
+  /** Id карточки с открытым меню «⋯» (обслуживание: Изменить/Удалить) или null. */
+  protected readonly openMenuId = signal<string | null>(null);
+
+  /** Переключает меню «⋯» карточки; stopPropagation — чтобы document-клик не закрыл сразу. */
+  protected toggleMenu(id: string, event: Event): void {
+    event.stopPropagation();
+    this.openMenuId.update((cur) => (cur === id ? null : id));
+  }
+
+  /** Закрывает меню «⋯». */
+  protected closeMenu(): void {
+    this.openMenuId.set(null);
+  }
+
+  /** Клик где угодно вне меню — закрыть (toggle/меню гасят всплытие). */
+  @HostListener('document:click')
+  protected onDocumentClick(): void {
+    if (this.openMenuId() !== null) {
+      this.openMenuId.set(null);
+    }
+  }
+
+  /** Escape — закрыть открытое меню. */
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.openMenuId.set(null);
+  }
 
   /** Есть ли ещё не присвоенные стартовые (для badge-хинта и контекстной кнопки). */
   protected readonly hasStarters = computed(() => this.items().some((item) => item.isStarter));

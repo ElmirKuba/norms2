@@ -1,28 +1,20 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { HscrollHintDirective } from '../../shared/ui/hscroll-hint.directive';
 
 /**
  * Раздел «Акцент» (фаза 2) — layout с вложенной навигацией (вкладки) + `router-outlet`
  * для под-экранов (дашборд/цели/привычки/микро-победы). Вкладки на узком экране НЕ
- * переносятся, а скроллятся горизонтально (полоса скрыта во всех браузерах). Чтобы это
- * было очевидно (скрытая полоса = неявно), при КАЖДОМ заходе в раздел проигрываем «нудж»
- * — меню само чуть прокручивается вправо и возвращается, показывая, что его можно крутить
- * вбок (только если оно реально не влезает). Одноразовость намеренно НЕ вводим (реш. Elmir
- * 2026-06-19): подсказка ненавязчива и помогает каждый раз.
+ * переносятся, а скроллятся горизонтально (полоса скрыта во всех браузерах). Чтобы скрытый
+ * скролл был очевиден — нудж-подсказка через `appHscrollHint` (директива, переиспользуется).
  */
 @Component({
   selector: 'app-accent',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="accent">
-      <nav #tabs class="accent__tabs">
+      <nav class="accent__tabs" appHscrollHint>
         <a routerLink="dashboard" routerLinkActive="active">Дашборд</a>
         <a routerLink="goals" routerLinkActive="active">Цели</a>
         <a routerLink="habits" routerLinkActive="active">Привычки</a>
@@ -63,23 +55,4 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     `,
   ],
 })
-export class AccentComponent implements AfterViewInit {
-  /** Контейнер вкладок (для подсказки-нуджа горизонтального скролла). */
-  private readonly _tabs = viewChild<ElementRef<HTMLElement>>('tabs');
-
-  /** При каждом заходе — нудж, если меню не влезает по ширине (одноразовость не вводим). */
-  public ngAfterViewInit(): void {
-    const el = this._tabs()?.nativeElement;
-    if (!el) {
-      return;
-    }
-    const overflow = el.scrollWidth - el.clientWidth;
-    if (overflow < 12) {
-      return; // всё влезает (широкий экран) — крутить нечего, подсказка не нужна
-    }
-    const amount = Math.min(80, overflow);
-    // Нудж: чуть вправо (контент уезжает справа-налево, открывая скрытые пункты) → обратно.
-    window.setTimeout(() => el.scrollTo({ left: amount, behavior: 'smooth' }), 450);
-    window.setTimeout(() => el.scrollTo({ left: 0, behavior: 'smooth' }), 1150);
-  }
-}
+export class AccentComponent {}

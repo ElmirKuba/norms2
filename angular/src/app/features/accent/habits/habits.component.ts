@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { MODAL_MEDIUM_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
@@ -20,13 +21,13 @@ import type { HabitFormData } from './habit-form-modal.component';
  */
 @Component({
   selector: 'app-habits',
-  imports: [ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [ButtonComponent, CardComponent, EmptyStateComponent, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="hb">
       <header class="hb__head">
         <h2>Привычки</h2>
-        <div class="hb__head-actions">
+        <div class="hb__head-actions" appHscrollHint>
           @if (tab() === 'templates' && habits().length > 0) {
             @if (hasStarters()) {
               <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
@@ -176,7 +177,19 @@ import type { HabitFormData } from './habit-form-modal.component';
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        min-width: 0;
+        scroll-behavior: smooth;
+        // Полоса скрыта во всех браузерах (крутим пальцем/нуджем — appHscrollHint).
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .hb__head-actions::-webkit-scrollbar {
+        display: none;
+      }
+      .hb__head-actions .btn {
+        flex-shrink: 0;
       }
       .hb__hint {
         font-size: var(--fs-sm);

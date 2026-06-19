@@ -248,6 +248,9 @@ export interface HabitFormData {
         scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        // overflow делает авто-min-height = 0 → в flex-колонке модалки (скролл-контейнер
+        // с ограниченной высотой) прямой ряд схлопывался в 0. Не даём колонке сжать.
+        flex-shrink: 0;
       }
       .hf__weekdays::-webkit-scrollbar,
       .hf__chips::-webkit-scrollbar {

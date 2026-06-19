@@ -40,6 +40,10 @@ import type { HabitFormData } from './habit-form-modal.component';
             }
           }
           <app-button (click)="openCreate()">Добавить</app-button>
+          <!-- TODO: Claude Code: 2026-06-19: ВРЕМЕННО — моки для проверки нудж-скролла, удалить -->
+          @for (n of [1, 2, 3, 4, 5]; track n) {
+            <app-button variant="ghost">Мок {{ n }}</app-button>
+          }
         </div>
       </header>
 

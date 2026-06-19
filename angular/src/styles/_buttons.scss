@@ -8,6 +8,7 @@
   min-height: var(--touch-min);
   padding: 0 var(--space-4);
   border-radius: var(--radius-md);
+  white-space: nowrap;
   background: var(--color-accent);
   color: var(--color-on-accent);
   font-weight: var(--fw-medium);

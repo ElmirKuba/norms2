@@ -7,16 +7,16 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-/** Ключ localStorage: подсказка-нудж горизонтального меню уже показана. */
-const NAV_HINT_KEY = 'accent-nav-hint-seen';
-
 /**
  * Раздел «Акцент» (фаза 2) — layout с вложенной навигацией (вкладки) + `router-outlet`
  * для под-экранов (дашборд/цели/привычки/микро-победы). Вкладки на узком экране НЕ
  * переносятся, а скроллятся горизонтально (полоса скрыта во всех браузерах). Чтобы это
- * было очевидно (скрытая полоса = неявно), при первом заходе в раздел проигрываем
- * одноразовый «нудж» — меню само чуть прокручивается вправо и возвращается, показывая,
- * что его можно крутить вбок (только если оно реально не влезает).
+ * было очевидно (скрытая полоса = неявно), при заходе в раздел проигрываем «нудж» — меню
+ * само чуть прокручивается вправо и возвращается, показывая, что его можно крутить вбок
+ * (только если оно реально не влезает).
+ *
+ * TODO: Claude Code: 2026-06-19: вернуть одноразовость нуджа (persist в localStorage,
+ * ключ 'accent-nav-hint-seen') — временно убрано, чтобы Elmir увидел поведение по Ctrl+R.
  */
 @Component({
   selector: 'app-accent',
@@ -69,38 +69,19 @@ export class AccentComponent implements AfterViewInit {
   /** Контейнер вкладок (для подсказки-нуджа горизонтального скролла). */
   private readonly _tabs = viewChild<ElementRef<HTMLElement>>('tabs');
 
-  /** При первом заходе — одноразовый нудж, если меню не влезает по ширине. */
+  /** При заходе — нудж, если меню не влезает по ширине (пока без одноразовости — см. TODO). */
   public ngAfterViewInit(): void {
     const el = this._tabs()?.nativeElement;
-    if (!el || this._hintSeen()) {
+    if (!el) {
       return;
     }
     const overflow = el.scrollWidth - el.clientWidth;
     if (overflow < 12) {
       return; // всё влезает (широкий экран) — крутить нечего, подсказка не нужна
     }
-    this._markHintSeen();
     const amount = Math.min(80, overflow);
     // Нудж: чуть вправо (контент уезжает справа-налево, открывая скрытые пункты) → обратно.
     window.setTimeout(() => el.scrollTo({ left: amount, behavior: 'smooth' }), 450);
     window.setTimeout(() => el.scrollTo({ left: 0, behavior: 'smooth' }), 1150);
-  }
-
-  /** Показывали ли уже подсказку (persist; null-safe к окружению без localStorage). */
-  private _hintSeen(): boolean {
-    try {
-      return localStorage.getItem(NAV_HINT_KEY) === '1';
-    } catch {
-      return true; // нет доступа к storage — не навязываемся
-    }
-  }
-
-  /** Фиксирует, что подсказка показана (больше не повторяем). */
-  private _markHintSeen(): void {
-    try {
-      localStorage.setItem(NAV_HINT_KEY, '1');
-    } catch {
-      // окружение без localStorage — игнорируем
-    }
   }
 }

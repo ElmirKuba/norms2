@@ -27,7 +27,7 @@ import type { HabitFormData } from './habit-form-modal.component';
     <section class="hb">
       <header class="hb__head">
         <h2>Привычки</h2>
-        <div class="hb__head-actions" appHscrollHint>
+        <div class="hb__head-actions" appHscrollHint [appHscrollHintDelay]="1300">
           @if (tab() === 'templates' && habits().length > 0) {
             @if (hasStarters()) {
               <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">

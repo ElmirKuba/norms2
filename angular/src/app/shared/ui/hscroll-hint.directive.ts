@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, inject } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, input } from '@angular/core';
 
 /**
  * Подсказка-нудж горизонтального скролла. Вешать на горизонтальный scroll-контейнер
@@ -14,6 +14,9 @@ import { AfterViewInit, Directive, ElementRef, inject } from '@angular/core';
 export class HscrollHintDirective implements AfterViewInit {
   private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
   private _nudged = false;
+
+  /** Доп. задержка нуджа (мс) — чтобы развести по времени несколько рядов на экране. */
+  public readonly hintDelay = input(0, { alias: 'appHscrollHintDelay' });
 
   public ngAfterViewInit(): void {
     this._check();
@@ -32,8 +35,10 @@ export class HscrollHintDirective implements AfterViewInit {
     }
     this._nudged = true;
     const amount = Math.min(80, overflow);
-    // Вправо (контент уезжает справа-налево, открывая скрытое) → обратно.
-    window.setTimeout(() => el.scrollTo({ left: amount, behavior: 'smooth' }), 450);
-    window.setTimeout(() => el.scrollTo({ left: 0, behavior: 'smooth' }), 1150);
+    const delay = this.hintDelay();
+    // Вправо (контент уезжает справа-налево, открывая скрытое) → обратно. delay разводит
+    // несколько рядов по времени (напр. меню раздела раньше, кнопки чуть позже).
+    window.setTimeout(() => el.scrollTo({ left: amount, behavior: 'smooth' }), 450 + delay);
+    window.setTimeout(() => el.scrollTo({ left: 0, behavior: 'smooth' }), 1150 + delay);
   }
 }

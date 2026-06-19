@@ -37,4 +37,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.3 — Микро-победы: стартовый пак и «для тяжёлых дней»',
     contentFile: 'notifications/release-2.3.0.md',
   },
+  {
+    key: 'release-2.4.19',
+    title: 'Нормисы 2.4 — «Акцент»: Привычки и адаптивная лесенка',
+    contentFile: 'notifications/release-2.4.19.md',
+  },
 ];

@@ -103,15 +103,18 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
                       </span>
                     }
                     <div class="mw__menu-wrap">
-                      <button
-                        type="button"
-                        class="mw__menu-btn"
-                        aria-label="Ещё действия"
-                        (click)="toggleMenu(mw.id, $event)"
-                      >⋯</button>
+                      <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
+                        <button
+                          type="button"
+                          class="mw__menu-btn"
+                          aria-label="Дополнительные опции"
+                          (click)="toggleMenu(mw.id, $event)"
+                        >⋯</button>
+                      </span>
                       @if (openMenuId() === mw.id) {
                         <div class="mw__menu" (click)="$event.stopPropagation()">
                           <button type="button" class="mw__menu-item" (click)="openEdit(mw); closeMenu()">
+                            <span class="mw__menu-ico" aria-hidden="true">✏️</span>
                             Изменить
                           </button>
                           <button
@@ -119,6 +122,7 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
                             class="mw__menu-item mw__menu-item--danger"
                             (click)="remove(mw); closeMenu()"
                           >
+                            <span class="mw__menu-ico" aria-hidden="true">🗑️</span>
                             Удалить
                           </button>
                         </div>
@@ -287,6 +291,9 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         overflow: hidden;
       }
       .mw__menu-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
         text-align: left;
         padding: var(--space-2) var(--space-3);
         min-height: var(--touch-min);
@@ -301,6 +308,11 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
       }
       .mw__menu-item--danger {
         color: var(--color-danger);
+      }
+      .mw__menu-ico {
+        width: 1.2em;
+        text-align: center;
+        flex-shrink: 0;
       }
     `,
   ],

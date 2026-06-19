@@ -5,6 +5,7 @@
 .tooltip-host {
   position: relative;
   display: inline-flex;
+  flex-shrink: 0;
 }
 
 .tooltip-host[data-tooltip]:hover::after,

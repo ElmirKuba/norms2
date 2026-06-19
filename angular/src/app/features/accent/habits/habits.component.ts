@@ -39,7 +39,9 @@ import type { HabitFormData } from './habit-form-modal.component';
               </app-button>
             }
           }
-          <app-button (click)="openCreate()">Добавить</app-button>
+          <span class="tooltip-host" [attr.data-tooltip]="'Добавить привычку'">
+            <app-button ariaLabel="Добавить привычку" (click)="openCreate()">+</app-button>
+          </span>
         </div>
       </header>
 

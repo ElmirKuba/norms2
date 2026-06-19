@@ -43,7 +43,9 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
               </app-button>
             }
           }
-          <app-button (click)="openCreate()">Добавить</app-button>
+          <span class="tooltip-host" [attr.data-tooltip]="'Добавить микро-победу'">
+            <app-button ariaLabel="Добавить микро-победу" (click)="openCreate()">+</app-button>
+          </span>
         </div>
       </header>
       <aside class="mw__why">

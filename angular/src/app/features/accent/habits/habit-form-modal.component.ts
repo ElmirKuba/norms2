@@ -26,6 +26,19 @@ export interface HabitFormData {
 }
 
 /**
+ * Курируемый набор эмодзи для пикера иконки привычки — вместо свободного ввода
+ * (исключает мусор-строки в карточке). Тело/движение, ум, самочувствие, быт, настроение,
+ * связи, природа, фокус.
+ */
+const ICON_OPTIONS: readonly string[] = [
+  '💪', '🏃', '🧘', '🚶', '🏋️', '🚴', '⚽', '🤸',
+  '💧', '🥗', '🍎', '😴', '🛏️', '🚿', '💊', '🦷',
+  '📖', '📚', '✍️', '🧠', '💡', '🎯', '⏰', '✅',
+  '🌅', '🌙', '🧹', '🌱', '🌿', '☀️',
+  '🎨', '🎵', '🎸', '💻', '💰', '🙏', '❤️', '😊', '🤝', '📵', '🔥',
+];
+
+/**
  * Модалка создания/редактирования привычки (MatDialog, ADR-0026) — ядро (2.4·16a):
  * название/иконка/описание/тип + пикер расписания (RRULE-пресеты) + лесенка
  * (min·current·goal·step·policy; для binary авто 1/1) + minVersion. Сфера/атрибуты — ·16b.
@@ -51,7 +64,26 @@ export interface HabitFormData {
           [required]="true"
           [error]="titleError()"
         />
-        <app-text-field label="Иконка (эмодзи)" [control]="iconControl" placeholder="💪" />
+        <div class="hf__field">
+          <span class="hf__label">Иконка (необязательно)</span>
+          <div class="hf__icons" appHscrollHint>
+            <button
+              type="button"
+              class="hf__icon-opt hf__icon-opt--none"
+              [class.active]="iconValue() === ''"
+              (click)="selectIcon('')"
+              aria-label="Без иконки"
+            >✕</button>
+            @for (e of iconOptions; track e) {
+              <button
+                type="button"
+                class="hf__icon-opt"
+                [class.active]="iconValue() === e"
+                (click)="selectIcon(e)"
+              >{{ e }}</button>
+            }
+          </div>
+        </div>
         <app-text-field label="Описание" [control]="descriptionControl" placeholder="Коротко зачем" />
 
         <label class="hf__field">
@@ -240,7 +272,8 @@ export interface HabitFormData {
       // Чипсы (дни недели / атрибуты) — на узком экране не переносим, а скроллим
       // горизонтально (полоса скрыта; нудж-подсказка — appHscrollHint).
       .hf__weekdays,
-      .hf__chips {
+      .hf__chips,
+      .hf__icons {
         display: flex;
         gap: var(--space-2);
         flex-wrap: nowrap;
@@ -253,8 +286,27 @@ export interface HabitFormData {
         flex-shrink: 0;
       }
       .hf__weekdays::-webkit-scrollbar,
-      .hf__chips::-webkit-scrollbar {
+      .hf__chips::-webkit-scrollbar,
+      .hf__icons::-webkit-scrollbar {
         display: none;
+      }
+      .hf__icon-opt {
+        flex-shrink: 0;
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        cursor: pointer;
+      }
+      .hf__icon-opt.active {
+        border-color: var(--color-accent);
+        background: var(--color-surface);
+      }
+      .hf__icon-opt--none {
+        color: var(--color-text-muted);
       }
       .hf__day {
         flex-shrink: 0;
@@ -349,6 +401,17 @@ export class HabitFormModalComponent {
   private readonly _policy = toSignal(this.form.controls.policy.valueChanges, {
     initialValue: this.form.controls.policy.value,
   });
+  /** Текущее значение иконки (для подсветки выбранной в пикере). */
+  protected readonly iconValue = toSignal(this.form.controls.icon.valueChanges, {
+    initialValue: this.form.controls.icon.value,
+  });
+  /** Курируемый набор эмодзи для пикера иконки. */
+  protected readonly iconOptions = ICON_OPTIONS;
+
+  /** Выбирает иконку (пустая строка — без иконки). */
+  protected selectIcon(emoji: string): void {
+    this.form.controls.icon.setValue(emoji);
+  }
 
   /** Показывать ли поля лесенки (не binary). */
   protected readonly isQuantitative = computed(() => this._kind() !== 'binary');
@@ -395,10 +458,6 @@ export class HabitFormModalComponent {
   /** Контрол названия. */
   protected get titleControl(): FormControl<string> {
     return this.form.controls.title;
-  }
-  /** Контрол иконки. */
-  protected get iconControl(): FormControl<string> {
-    return this.form.controls.icon;
   }
   /** Контрол описания. */
   protected get descriptionControl(): FormControl<string> {

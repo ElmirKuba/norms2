@@ -32,10 +32,12 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
           @if (items().length > 0) {
             @if (hasStarters()) {
               <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                <span aria-hidden="true">🧹</span>
                 Очистить примеры
               </app-button>
             } @else {
               <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                <span aria-hidden="true">🎁</span>
                 Получить стартовый пак
               </app-button>
             }
@@ -52,7 +54,8 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
       </aside>
 
       <button type="button" class="mw__cats-link" (click)="openCategoryGuide()">
-        Что значат категории?
+        <span aria-hidden="true">💡</span>
+        <span class="mw__cats-text">Что значат категории?</span>
       </button>
 
       @if (loading()) {
@@ -64,11 +67,14 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
           title="Пока нет микро-побед"
           text="Начни с готового набора маленьких действий — по силам даже в плохой день."
         >
-          <app-button [loading]="packBusy()" (click)="seedPack()">Получить стартовый пак</app-button>
+          <app-button [loading]="packBusy()" (click)="seedPack()">
+            <span aria-hidden="true">🎁</span>
+            Получить стартовый пак
+          </app-button>
         </app-empty-state>
       } @else {
         @if (hasStarters()) {
-          <p class="mw__hint">«Сделал» или «Изм.» оставит победу себе.</p>
+          <p class="mw__hint">Нажми ✓ или «⋯» → ✏️ Изменить — и пример станет твоим.</p>
         }
         <ul class="mw__list">
           @for (mw of items(); track mw.id) {
@@ -178,7 +184,9 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         color: var(--color-text);
       }
       .mw__cats-link {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
         margin: 0 0 var(--space-4);
         padding: 0;
         background: none;
@@ -186,6 +194,9 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         cursor: pointer;
         font-size: var(--fs-sm);
         color: var(--color-accent);
+        text-decoration: none;
+      }
+      .mw__cats-text {
         text-decoration: underline;
       }
       .mw__hint {

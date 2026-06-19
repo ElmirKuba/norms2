@@ -5,6 +5,7 @@ import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
   AccentRefItem,
   AccentSettingsView,
+  CompleteTaskResult,
   HabitPayload,
   HabitView,
   MicroWinPayload,
@@ -130,10 +131,13 @@ export class AccentApiService {
     return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks`, payload);
   }
 
-  /** Отметить выполнение (binary — без `doneValue`; quantitative/timed — со значением). */
-  public completeTask(id: string, doneValue?: number): Observable<TaskView> {
+  /**
+   * Отметить выполнение (binary — без `doneValue`; quantitative/timed — со значением).
+   * Возвращает задачу + событие лесенки (`ladderEvent`) для фидбэка адаптивности.
+   */
+  public completeTask(id: string, doneValue?: number): Observable<CompleteTaskResult> {
     const body = doneValue === undefined ? {} : { doneValue };
-    return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks/${id}/complete`, body);
+    return this._http.post<CompleteTaskResult>(`${API_PREFIX}/accent/tasks/${id}/complete`, body);
   }
 
   /** Снять отметку выполнения. */

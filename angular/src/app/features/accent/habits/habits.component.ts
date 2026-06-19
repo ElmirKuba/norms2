@@ -8,7 +8,7 @@ import { MODAL_MEDIUM_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
-import type { HabitPayload, HabitView, TaskView } from '../accent.types';
+import type { HabitPayload, HabitView, LadderEventView, TaskView } from '../accent.types';
 import { recurrenceLabel } from './recurrence-label.util';
 import { HabitFormModalComponent } from './habit-form-modal.component';
 import type { HabitFormData } from './habit-form-modal.component';
@@ -35,6 +35,12 @@ import type { HabitFormData } from './habit-form-modal.component';
       </nav>
 
       @if (tab() === 'today') {
+        @if (ladderFlash(); as flash) {
+          <div class="hb__flash" [attr.data-event]="flash.event" role="status">
+            <span>{{ flash.text }}</span>
+            <button type="button" class="hb__flash-x" (click)="dismissFlash()" aria-label="Закрыть">×</button>
+          </div>
+        }
         @if (tasksLoading()) {
           <p class="hb__muted">Загрузка…</p>
         } @else if (tasksError()) {
@@ -162,6 +168,33 @@ import type { HabitFormData } from './habit-form-modal.component';
       .hb__muted {
         color: var(--color-text-muted);
       }
+      .hb__flash {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        color: var(--color-text);
+        font-size: var(--fs-sm);
+      }
+      .hb__flash[data-event='raised'] {
+        border-color: var(--color-accent);
+      }
+      .hb__flash-x {
+        flex-shrink: 0;
+        width: var(--touch-min);
+        min-height: var(--touch-min);
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+      }
       .hb__progress {
         display: flex;
         align-items: center;
@@ -258,6 +291,10 @@ export class HabitsComponent {
   protected readonly tasksError = signal<string | null>(null);
   /** Id задачи в процессе отметки (для спиннера). */
   protected readonly busyTaskId = signal<string | null>(null);
+  /** Фидбэк движения лесенки (баннер «планка выросла / мягче») или null. */
+  protected readonly ladderFlash = signal<{ event: 'raised' | 'lowered'; text: string } | null>(null);
+  /** Таймер авто-скрытия баннера. */
+  private _flashTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** % дня: задачи с прогрессом (done/partial) от всех непропущенных. */
   protected readonly donePercent = computed(() => {
@@ -316,12 +353,38 @@ export class HabitsComponent {
     }
     this.busyTaskId.set(task.id);
     this._api.completeTask(task.id, doneValue).subscribe({
-      next: (updated) => {
-        this._patchTask(updated);
+      next: (result) => {
+        this._patchTask(result.task);
+        this._flashLadder(result.ladderEvent);
         this.busyTaskId.set(null);
       },
       error: () => this.busyTaskId.set(null),
     });
+  }
+
+  /** Показывает баннер-фидбэк движения лесенки (авто-скрытие ~7с). null — ничего. */
+  private _flashLadder(event: LadderEventView): void {
+    if (event === null) {
+      return;
+    }
+    const text =
+      event === 'raised'
+        ? '🎉 Планка выросла — стало чуть сложнее. Ты справляешься!'
+        : '🌙 Сегодня планка мягче — это нормально, серия цела.';
+    this.ladderFlash.set({ event, text });
+    if (this._flashTimer !== null) {
+      clearTimeout(this._flashTimer);
+    }
+    this._flashTimer = setTimeout(() => this.ladderFlash.set(null), 7000);
+  }
+
+  /** Закрывает баннер-фидбэк вручную. */
+  protected dismissFlash(): void {
+    if (this._flashTimer !== null) {
+      clearTimeout(this._flashTimer);
+      this._flashTimer = null;
+    }
+    this.ladderFlash.set(null);
   }
 
   /** Снимает отметку выполнения. */

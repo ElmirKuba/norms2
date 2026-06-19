@@ -249,6 +249,17 @@ export interface TaskView {
   completedAt: string | null;
 }
 
+/** Событие лесенки после выполнения adaptive-привычки: подъём/откат планки или null. */
+export type LadderEventView = 'raised' | 'lowered' | null;
+
+/** Результат выполнения задачи (`POST /accent/tasks/:id/complete`): задача + событие лесенки. */
+export interface CompleteTaskResult {
+  /** Обновлённая задача. */
+  task: TaskView;
+  /** Движение планки (для фидбэка «планка выросла / мягче») или null. */
+  ladderEvent: LadderEventView;
+}
+
 /** Тело создания разовой задачи (`POST /accent/tasks`). */
 export interface OneOffTaskPayload {
   /** Название. */

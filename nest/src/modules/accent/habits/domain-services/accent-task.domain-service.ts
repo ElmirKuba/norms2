@@ -114,6 +114,17 @@ export class AccentTaskDomainService {
   }
 
   /**
+   * Удаляет ещё не тронутые (`pending`) задачи привычки — при её деактивации (намеренное
+   * удаление шаблона убирает и незакрытые дела). `done`/`partial`/`skipped` оставляет (история).
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async removePendingForTemplate(templateId: string, accountId: string): Promise<number> {
+    return this._repository.deletePendingByTemplate(templateId, accountId);
+  }
+
+  /**
    * Просроченные разовые задачи: открытые с дедлайном, чья локальная дата дедлайна < сегодня.
    * @param accountId Идентификатор аккаунта.
    * @param today Сегодня `YYYY-MM-DD` (в TZ аккаунта).

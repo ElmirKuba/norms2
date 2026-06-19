@@ -125,6 +125,27 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   }
 
   /**
+   * Удаляет ещё не тронутые (`pending`) задачи привычки-шаблона (при деактивации);
+   * `done`/`partial`/`skipped` оставляет (история вовлечённости).
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async deletePendingByTemplate(templateId: string, accountId: string): Promise<number> {
+    const rows = await this._db
+      .delete(tasks)
+      .where(
+        and(
+          eq(tasks.accountId, accountId),
+          eq(tasks.templateId, templateId),
+          eq(tasks.status, 'pending'),
+        ),
+      )
+      .returning({ id: tasks.id });
+    return rows.length;
+  }
+
+  /**
    * Готовит строку для вставки (id + дефолты).
    * @param data Данные создания.
    * @returns Объект значений вставки.

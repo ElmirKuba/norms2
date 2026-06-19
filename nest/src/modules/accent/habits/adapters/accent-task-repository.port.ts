@@ -98,4 +98,13 @@ export interface AccentTaskRepositoryPort {
    * @returns Открытые разовые задачи с дедлайном.
    */
   listOpenOneOffWithDeadline(accountId: string): Promise<TaskFull[]>;
+
+  /**
+   * Удаляет ещё не тронутые (`pending`) задачи привычки-шаблона (при деактивации).
+   * Выполненные/частичные/пропущенные (`done`/`partial`/`skipped`) НЕ трогает — история.
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  deletePendingByTemplate(templateId: string, accountId: string): Promise<number>;
 }

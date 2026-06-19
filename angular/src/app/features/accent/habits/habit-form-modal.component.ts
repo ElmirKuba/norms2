@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
+import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_DESCRIPTIONS, HABIT_KIND_LABELS } from '../accent.types';
@@ -32,7 +33,7 @@ export interface HabitFormData {
  */
 @Component({
   selector: 'app-habit-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
@@ -75,7 +76,7 @@ export interface HabitFormData {
         </label>
 
         @if (showCustomWeek()) {
-          <div class="hf__weekdays">
+          <div class="hf__weekdays" appHscrollHint>
             @for (d of weekdayCodes; track d) {
               <button
                 type="button"
@@ -148,7 +149,7 @@ export interface HabitFormData {
           <div class="hf__field">
             <span class="hf__label">Прокачивает атрибуты (опц.)</span>
             <span class="hf__hint">Как в RPG: дело качает характеристику. Не уверен — пропусти.</span>
-            <div class="hf__chips">
+            <div class="hf__chips" appHscrollHint>
               @for (a of attributesCatalog(); track a.key) {
                 <button
                   type="button"
@@ -236,12 +237,24 @@ export interface HabitFormData {
         background: var(--color-surface-2);
         border-radius: var(--radius-md);
       }
-      .hf__weekdays {
+      // Чипсы (дни недели / атрибуты) — на узком экране не переносим, а скроллим
+      // горизонтально (полоса скрыта; нудж-подсказка — appHscrollHint).
+      .hf__weekdays,
+      .hf__chips {
         display: flex;
         gap: var(--space-2);
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .hf__weekdays::-webkit-scrollbar,
+      .hf__chips::-webkit-scrollbar {
+        display: none;
       }
       .hf__day {
+        flex-shrink: 0;
         min-width: 40px;
         min-height: var(--touch-min);
         border: 1px solid var(--color-border);
@@ -254,12 +267,8 @@ export interface HabitFormData {
         border-color: var(--color-accent);
         color: var(--color-accent);
       }
-      .hf__chips {
-        display: flex;
-        gap: var(--space-2);
-        flex-wrap: wrap;
-      }
       .hf__chip {
+        flex-shrink: 0;
         min-height: var(--touch-min);
         padding: 0 var(--space-3);
         border: 1px solid var(--color-border);

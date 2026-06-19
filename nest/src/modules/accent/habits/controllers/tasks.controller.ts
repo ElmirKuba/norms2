@@ -13,7 +13,7 @@ import { CompleteTaskUseCase } from '../use-cases/complete-task.use-case';
 import { UncompleteTaskUseCase } from '../use-cases/uncomplete-task.use-case';
 import { PostponeTaskUseCase } from '../use-cases/postpone-task.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
-import type { TaskView } from '../interfaces/task-view.interface';
+import type { CompleteTaskResult, TaskView } from '../interfaces/task-view.interface';
 
 /**
  * Контроллер задач дня (`/api/v1/accent/tasks`) — под Guard (members-only, per-account).
@@ -95,14 +95,14 @@ export class TasksController {
    * @param id Идентификатор задачи.
    * @param body Тело (опц. `doneValue`).
    * @param request Запрос (аккаунт из Guard).
-   * @returns Проекция обновлённой задачи.
+   * @returns Обновлённая задача + событие лесенки (raised/lowered/null).
    */
   @Post('tasks/:id/complete')
   public complete(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(completeTaskSchema)) body: CompleteTaskDto,
     @Req() request: AuthenticatedRequest,
-  ): Promise<TaskView> {
+  ): Promise<CompleteTaskResult> {
     return this._complete.execute(id, request.account.id, body.doneValue);
   }
 

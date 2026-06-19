@@ -33,6 +33,20 @@ export interface TaskView {
   completedAt: string | null;
 }
 
+/** Событие лесенки после выполнения adaptive-привычки: подъём/откат планки или null. */
+export type LadderEventView = 'raised' | 'lowered' | null;
+
+/**
+ * Результат выполнения задачи (`POST /accent/tasks/:id/complete`): обновлённая задача
+ * + что случилось с планкой адаптивной привычки (для фидбэка «планка выросла / мягче»).
+ */
+export interface CompleteTaskResult {
+  /** Обновлённая задача. */
+  task: TaskView;
+  /** Событие лесенки (raised/lowered) или null (нет движения / manual / разовая). */
+  ladderEvent: LadderEventView;
+}
+
 /**
  * Проецирует доменную задачу в наружную view (моменты → ISO).
  * @param full Доменная сущность.

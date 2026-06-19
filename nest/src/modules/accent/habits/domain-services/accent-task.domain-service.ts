@@ -12,6 +12,7 @@ import type {
 import type { TaskFull } from '../interfaces/task-full.interface';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
 import { AccentLadderEngine } from './accent-ladder-engine.domain-service';
+import type { LadderEvent } from './accent-ladder-engine.domain-service';
 
 /**
  * Domain-service задач дня. Ключевая операция — **ленивая материализация**: при чтении дня
@@ -155,11 +156,15 @@ export class AccentTaskDomainService {
    * @param id Идентификатор задачи.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param doneValue Сколько сделано (для quantitative/timed; опц.).
-   * @returns Обновлённая задача.
+   * @returns Обновлённая задача + событие лесенки (для фидбэка «планка выросла / мягче»).
    * @throws {TaskNotFoundError} Если нет / не ваша.
    * @throws {ValidationError} Если `doneValue` некорректен.
    */
-  public async complete(id: string, accountId: string, doneValue?: number): Promise<TaskFull> {
+  public async complete(
+    id: string,
+    accountId: string,
+    doneValue?: number,
+  ): Promise<{ task: TaskFull; ladderEvent: LadderEvent }> {
     const task = await this.getOwned(id, accountId);
     // Лесенка двигается один раз на выполнение: только при переходе из не-выполненного.
     const wasOpen = task.status === 'pending' || task.status === 'skipped';
@@ -185,10 +190,12 @@ export class AccentTaskDomainService {
       throw new TaskNotFoundError('Задача не найдена.');
     }
     // Лесенка (2.4·12): задача привычки → двигаем планку один раз на выполнение (не на повтор).
+    // Событие (raised/lowered) пробрасываем наружу для фидбэка (2.4·19).
+    let ladderEvent: LadderEvent = null;
     if (task.templateId !== null && wasOpen) {
-      await this._ladder.onComplete(task.templateId, accountId, effectiveDone);
+      ladderEvent = await this._ladder.onComplete(task.templateId, accountId, effectiveDone);
     }
-    return updated;
+    return { task: updated, ladderEvent };
   }
 
   /**

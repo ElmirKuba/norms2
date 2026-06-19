@@ -31,10 +31,12 @@ import type { HabitFormData } from './habit-form-modal.component';
           @if (tab() === 'templates' && habits().length > 0) {
             @if (hasStarters()) {
               <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                <span aria-hidden="true">🧹</span>
                 Очистить примеры
               </app-button>
             } @else {
               <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                <span aria-hidden="true">🎁</span>
                 Получить пак
               </app-button>
             }
@@ -113,7 +115,10 @@ import type { HabitFormData } from './habit-form-modal.component';
             title="Пока нет привычек"
             text="Начни с готового набора — примеры с мягкой планкой, по силам даже в плохой день. Или заведи свою."
           >
-            <app-button [loading]="packBusy()" (click)="seedPack()">Получить стартовый пак</app-button>
+            <app-button [loading]="packBusy()" (click)="seedPack()">
+              <span aria-hidden="true">🎁</span>
+              Получить стартовый пак
+            </app-button>
             <app-button variant="ghost" (click)="openCreate()">Создать свою</app-button>
           </app-empty-state>
         } @else {

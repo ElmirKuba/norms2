@@ -62,7 +62,7 @@ FREE_REGISTRATION=false       # прод — invite-only (ADR-0022)
 DOMAIN=xn--h1ahceki4e.xn--p1ai  # punycode!
 ACME_EMAIL=<реальная почта для LE>
 DB_PASSWORD=<сильный>         # БД наружу не публикуется, но пароль всё равно сильный
-JWT_ACCESS_SECRET / JWT_REFRESH_SECRET=<сильные, разные>
+JWT_ACCESS_SECRET=<≥32 символов из CSPRNG: openssl rand -base64 36>   # refresh — opaque-токен (не JWT), отдельный секрет не нужен
 ```
 - **Версия продукта** — в файле `VERSION` в корне репо (не в `.env`); бэк читает его и отдаёт в `GET /version`. Бамп версии = правка `VERSION` + коммит (ADR-0044).
 - `GIT_COMMIT` в `.env` **не задавать** — он инжектится в образ как build-arg (Makefile: `git rev-parse --short HEAD`); пустой `.env`-вариант перебил бы его.

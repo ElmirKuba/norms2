@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { goals } from '../../schemas/goals.schema';
@@ -219,6 +219,28 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           eq(goals.status, 'archived'),
+        ),
+      )
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Авто-завершение (ADR-0052): `status='completed'`, `completed_at=now` только при
+   * `completed_at IS NULL` (идемпотентно, без version).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / уже завершена).
+   */
+  public async markCompleted(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ status: 'completed', completedAt: new Date() })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          isNull(goals.completedAt),
         ),
       )
       .returning();

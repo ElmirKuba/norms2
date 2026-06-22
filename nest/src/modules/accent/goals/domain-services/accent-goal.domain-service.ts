@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import { GoalNotFoundError } from '../../../../shared/errors/goal-not-found.error';
 import { GoalMaxDepthReachedError } from '../../../../shared/errors/goal-max-depth-reached.error';
+import { GoalPausedError } from '../../../../shared/errors/goal-paused.error';
+import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
 import type { Env } from '../../../../system/config/env.schema';
 import { ACCENT_GOAL_REPOSITORY } from '../adapters/accent-goal-repository.port';
 import type {
@@ -11,8 +13,13 @@ import type {
   GoalListFilters,
   GoalUpdateData,
 } from '../adapters/accent-goal-repository.port';
+import { ACCENT_GOAL_ENTRY_REPOSITORY } from '../adapters/accent-goal-entry-repository.port';
+import type { AccentGoalEntryRepositoryPort } from '../adapters/accent-goal-entry-repository.port';
 import { GOAL_DIRECTIONS } from '../interfaces/goal-full.interface';
 import type { GoalDirection, GoalFull } from '../interfaces/goal-full.interface';
+import type { GoalEntryFull } from '../interfaces/goal-entry-full.interface';
+import { computeGoalProgress, isGoalReached } from '../goal-progress.util';
+import type { GoalProgress } from '../goal-progress.util';
 
 /** Максимальная длина названия цели. */
 const TITLE_MAX = 160;
@@ -35,6 +42,8 @@ export class AccentGoalDomainService {
    */
   public constructor(
     @Inject(ACCENT_GOAL_REPOSITORY) private readonly _repository: AccentGoalRepositoryPort,
+    @Inject(ACCENT_GOAL_ENTRY_REPOSITORY)
+    private readonly _entryRepository: AccentGoalEntryRepositoryPort,
     private readonly _config: ConfigService<Env, true>,
   ) {}
 
@@ -176,6 +185,106 @@ export class AccentGoalDomainService {
   public async restore(id: string, accountId: string): Promise<GoalFull> {
     const updated = await this._repository.restore(id, accountId);
     return updated ?? this._failTransition(id, accountId, 'восстановить можно только архивированную цель');
+  }
+
+  /**
+   * Добавляет запись прогресса к цели (append-only) и при достижении target — авто-завершает
+   * (атомарно, идемпотентно; ADR-0052). На паузе → `GOAL_PAUSED` 409; в архиве → `VALIDATION_ERROR`.
+   * @param goalId Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param data Значение/дата/заметка (дата по умолчанию — сегодня в TZ).
+   * @param timezone TZ пользователя (для даты по умолчанию).
+   * @returns Созданная запись + актуальная цель (возможно завершённая).
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {GoalPausedError} Если цель на паузе.
+   * @throws {ValidationError} Архив / некорректное значение.
+   */
+  public async addEntry(
+    goalId: string,
+    accountId: string,
+    data: { value: number; occurredOn?: string | null; note?: string | null },
+    timezone: string,
+  ): Promise<{ entry: GoalEntryFull; goal: GoalFull }> {
+    const goal = await this.getOwned(goalId, accountId);
+    if (goal.status === 'paused') {
+      throw new GoalPausedError('Цель на паузе — записи не принимаются.');
+    }
+    if (goal.status === 'archived') {
+      throw new ValidationError('Цель в архиве — записи не принимаются.');
+    }
+    if (!Number.isFinite(data.value)) {
+      throw new ValidationError('Значение записи должно быть числом.');
+    }
+    if (goal.direction === 'accumulate' && data.value === 0) {
+      throw new ValidationError('Для накопительной цели значение записи не может быть 0.');
+    }
+    const occurredOn = data.occurredOn ?? todayInTimezone(timezone);
+    const entry = await this._entryRepository.add({
+      goalId,
+      value: data.value,
+      occurredOn,
+      note: data.note ?? null,
+    });
+    // Пересчёт текущего значения и идемпотентное авто-завершение.
+    let resulting = goal;
+    if (goal.status === 'active') {
+      const { current, base } = await this._currentAndBase(goal);
+      if (isGoalReached(goal, current, base)) {
+        const completed = await this._repository.markCompleted(goalId, accountId);
+        if (completed) {
+          resulting = completed;
+        }
+      }
+    }
+    return { entry, goal: resulting };
+  }
+
+  /**
+   * История записей цели (новые сверху, курсор по `id`). Проверяет владение.
+   * @param goalId Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param cursor Курсор (id последней полученной) или undefined.
+   * @param limit Размер страницы.
+   * @returns Страница записей.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   */
+  public async listEntries(
+    goalId: string,
+    accountId: string,
+    cursor: string | undefined,
+    limit: number,
+  ): Promise<GoalEntryFull[]> {
+    await this.getOwned(goalId, accountId);
+    return this._entryRepository.listByGoal(goalId, { cursor, limit });
+  }
+
+  /**
+   * Считает вычисляемый прогресс цели (currentValue/%/forecast/…, ADR-0052) из её записей.
+   * @param goal Цель.
+   * @param timezone TZ пользователя (для «сегодня» в daysLeft).
+   * @returns Вычисляемый прогресс.
+   */
+  public async describe(goal: GoalFull, timezone: string): Promise<GoalProgress> {
+    const { current, base } = await this._currentAndBase(goal);
+    return computeGoalProgress(goal, current, base, todayInTimezone(timezone), new Date());
+  }
+
+  /**
+   * Текущее значение и база цели из записей (ADR-0052). accumulate: current=Σ, base=0;
+   * reach/reduce: base=startValue ?? первый замер, current=последний замер ?? base.
+   * @param goal Цель.
+   * @returns `{ current, base }` (любое поле может быть null, если посчитать нельзя).
+   */
+  private async _currentAndBase(
+    goal: GoalFull,
+  ): Promise<{ current: number | null; base: number | null }> {
+    if (goal.direction === 'accumulate') {
+      return { current: await this._entryRepository.sumValue(goal.id), base: 0 };
+    }
+    const base =
+      goal.startValue ?? (await this._entryRepository.earliestValue(goal.id));
+    const latest = await this._entryRepository.latestValue(goal.id);
+    return { current: latest ?? base, base };
   }
 
   /**

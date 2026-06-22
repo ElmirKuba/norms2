@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { AccentGoalDomainService } from '../domain-services/accent-goal.domain-service';
-import { toGoalView } from '../interfaces/goal-view.interface';
-import type { GoalView } from '../interfaces/goal-view.interface';
+import { toGoalProgressView } from '../interfaces/goal-progress-view.interface';
+import type { GoalProgressView } from '../interfaces/goal-progress-view.interface';
 
-/** Use-case одной цели (`GET /accent/goals/:id`). Тонкий: domain → проекция. */
+/**
+ * Use-case одной цели (`GET /accent/goals/:id`). Тонкий: domain → проекция с **вычисляемым
+ * прогрессом** (ADR-0052).
+ */
 @Injectable()
 export class GetGoalUseCase {
   /**
@@ -14,10 +17,11 @@ export class GetGoalUseCase {
   /**
    * @param id Идентификатор цели.
    * @param accountId Идентификатор аккаунта (из Guard).
-   * @returns Проекция цели.
+   * @param timezone TZ пользователя (для forecast/daysLeft).
+   * @returns Проекция цели с прогрессом.
    */
-  public async execute(id: string, accountId: string): Promise<GoalView> {
+  public async execute(id: string, accountId: string, timezone: string): Promise<GoalProgressView> {
     const found = await this._goals.getOwned(id, accountId);
-    return toGoalView(found);
+    return toGoalProgressView(found, await this._goals.describe(found, timezone));
   }
 }

@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AccentGoalDomainService } from '../domain-services/accent-goal.domain-service';
-import { toGoalView } from '../interfaces/goal-view.interface';
-import type { GoalView } from '../interfaces/goal-view.interface';
+import { toGoalProgressView } from '../interfaces/goal-progress-view.interface';
+import type { GoalProgressView } from '../interfaces/goal-progress-view.interface';
 import type { GoalListFilters } from '../adapters/accent-goal-repository.port';
 
-/** Use-case списка целей (`GET /accent/goals?status&domain`). Тонкий: domain → проекции. */
+/**
+ * Use-case списка целей (`GET /accent/goals?status&domain`). Тонкий: domain → проекции
+ * с **вычисляемым прогрессом** (ADR-0052; `describe` на каждую цель).
+ */
 @Injectable()
 export class ListGoalsUseCase {
   /**
@@ -14,11 +17,20 @@ export class ListGoalsUseCase {
 
   /**
    * @param accountId Идентификатор аккаунта (из Guard).
+   * @param timezone TZ пользователя (для forecast/daysLeft).
    * @param filters Фильтр (статус/сфера).
-   * @returns Проекции целей.
+   * @returns Проекции целей с прогрессом.
    */
-  public async execute(accountId: string, filters?: GoalListFilters): Promise<GoalView[]> {
+  public async execute(
+    accountId: string,
+    timezone: string,
+    filters?: GoalListFilters,
+  ): Promise<GoalProgressView[]> {
     const items = await this._goals.list(accountId, filters);
-    return items.map((item) => toGoalView(item));
+    return Promise.all(
+      items.map(async (item) =>
+        toGoalProgressView(item, await this._goals.describe(item, timezone)),
+      ),
+    );
   }
 }

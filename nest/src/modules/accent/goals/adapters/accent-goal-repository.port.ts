@@ -136,4 +136,13 @@ export interface AccentGoalRepositoryPort {
    * @returns Обновлённая строка или null (нет / не ваша / не в `archived`).
    */
   restore(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Авто-завершение (ADR-0052): атомарно `status='completed'`, `completed_at=now` **только
+   * если `completed_at IS NULL`** (идемпотентно — фиксируется один раз; гонок нет, без version).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / уже завершена).
+   */
+  markCompleted(id: string, accountId: string): Promise<GoalFull | null>;
 }

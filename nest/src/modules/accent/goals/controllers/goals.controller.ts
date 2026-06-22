@@ -5,6 +5,8 @@ import { createGoalSchema } from '../dtos/create-goal.dto';
 import type { CreateGoalDto } from '../dtos/create-goal.dto';
 import { updateGoalSchema } from '../dtos/update-goal.dto';
 import type { UpdateGoalDto } from '../dtos/update-goal.dto';
+import { addGoalEntrySchema } from '../dtos/add-goal-entry.dto';
+import type { AddGoalEntryDto } from '../dtos/add-goal-entry.dto';
 import { GOAL_STATUSES } from '../interfaces/goal-full.interface';
 import type { GoalStatus } from '../interfaces/goal-full.interface';
 import type { GoalListFilters } from '../adapters/accent-goal-repository.port';
@@ -16,8 +18,13 @@ import { ArchiveGoalUseCase } from '../use-cases/archive-goal.use-case';
 import { RestoreGoalUseCase } from '../use-cases/restore-goal.use-case';
 import { PauseGoalUseCase } from '../use-cases/pause-goal.use-case';
 import { ResumeGoalUseCase } from '../use-cases/resume-goal.use-case';
+import { AddGoalEntryUseCase } from '../use-cases/add-goal-entry.use-case';
+import type { AddGoalEntryResult } from '../use-cases/add-goal-entry.use-case';
+import { ListGoalEntriesUseCase } from '../use-cases/list-goal-entries.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { GoalView } from '../interfaces/goal-view.interface';
+import type { GoalProgressView } from '../interfaces/goal-progress-view.interface';
+import type { GoalEntryView } from '../interfaces/goal-entry-view.interface';
 
 /**
  * Контроллер целей (`/api/v1/accent/goals`) — под Guard (members-only, per-account).
@@ -46,6 +53,8 @@ export class GoalsController {
     private readonly _restore: RestoreGoalUseCase,
     private readonly _pause: PauseGoalUseCase,
     private readonly _resume: ResumeGoalUseCase,
+    private readonly _addEntry: AddGoalEntryUseCase,
+    private readonly _listEntries: ListGoalEntriesUseCase,
   ) {}
 
   /**
@@ -60,7 +69,7 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
     @Query('status') status?: string,
     @Query('domain') domain?: string,
-  ): Promise<GoalView[]> {
+  ): Promise<GoalProgressView[]> {
     const filters: GoalListFilters = {};
     if (status !== undefined && (GOAL_STATUSES as readonly string[]).includes(status)) {
       filters.status = status as GoalStatus;
@@ -68,7 +77,7 @@ export class GoalsController {
     if (domain !== undefined && domain !== '') {
       filters.domainKey = domain;
     }
-    return this._list.execute(request.account.id, filters);
+    return this._list.execute(request.account.id, request.account.timezone, filters);
   }
 
   /**
@@ -95,8 +104,48 @@ export class GoalsController {
   public get(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
-  ): Promise<GoalView> {
-    return this._get.execute(id, request.account.id);
+  ): Promise<GoalProgressView> {
+    return this._get.execute(id, request.account.id, request.account.timezone);
+  }
+
+  /**
+   * Добавляет запись прогресса к цели (триггерит пересчёт + возможное авто-завершение).
+   * @param id Идентификатор цели.
+   * @param body Тело (значение/дата/заметка).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Созданная запись + цель с прогрессом (201).
+   */
+  @Post('goals/:id/entries')
+  public addEntry(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(addGoalEntrySchema)) body: AddGoalEntryDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<AddGoalEntryResult> {
+    return this._addEntry.execute(id, request.account.id, body, request.account.timezone);
+  }
+
+  /**
+   * История записей прогресса цели (новые сверху, курсор по `id`).
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @param cursor Курсор (id последней полученной) или undefined.
+   * @param limit Размер страницы (опц.).
+   * @returns Страница записей.
+   */
+  @Get('goals/:id/entries')
+  public listEntries(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ): Promise<GoalEntryView[]> {
+    const parsedLimit = limit !== undefined ? Number(limit) : undefined;
+    return this._listEntries.execute(
+      id,
+      request.account.id,
+      cursor,
+      Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+    );
   }
 
   /**

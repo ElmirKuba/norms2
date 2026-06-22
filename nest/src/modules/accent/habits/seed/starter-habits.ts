@@ -30,7 +30,7 @@ export interface StarterHabit {
  * Сознательно **anti-burnout**: низкий `minTarget` (1), адаптивная лесенка от смешного
  * минимума к цели, у каждой — worded `minVersion` (что делать в худший день). Учат
  * хорошим дефолтам на примере (философия раздела: расти без надрыва, не обнуляться).
- * Курировано **15** — широкий охват сфер (движение / ум / дух / здоровье / связь / деньги /
+ * Курировано **18** — широкий охват сфер (движение / ум / язык / дух / здоровье / питание / связь / деньги /
  * **отказ — цифровая тишина и утро без телефона** как ядро «тренажёра отказа», ADR-0049), но не свалка: каждая
  * привычка — осмысленный дефолт, а не «добей до числа». По аналогии с расширением
  * стартового пака микро-побед (2.4). Это **примеры**, человек берёт нужное, остальное чистит.
@@ -175,5 +175,35 @@ export const STARTER_HABITS: readonly StarterHabit[] = [
     ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
     attributes: ['discipline', 'intellect'],
     minVersion: 'Одна строка: на что ушли деньги.',
+  },
+  {
+    title: 'Овощ или фрукт',
+    icon: '🥗',
+    description: 'Что-то живое в тарелке каждый день.',
+    kind: 'quantitative',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: 3, step: 1, policy: 'adaptive', easyStreak: 0, missStreak: 0 },
+    attributes: ['health'],
+    minVersion: 'Один укус зелёного.',
+  },
+  {
+    title: 'Новые слова / язык',
+    icon: '🗣',
+    description: 'По чуть-чуть — и через год говоришь.',
+    kind: 'quantitative',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 5, goalTarget: 20, step: 1, policy: 'adaptive', easyStreak: 0, missStreak: 0 },
+    attributes: ['intellect', 'discipline'],
+    minVersion: 'Одно новое слово или карточка.',
+  },
+  {
+    title: 'День без сладкого',
+    icon: '🚫',
+    description: 'Отказ от лишнего — та же тренируемая мышца.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['discipline', 'health'],
+    minVersion: 'Отказаться от сладкого хотя бы один раз за день.',
   },
 ];

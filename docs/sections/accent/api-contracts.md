@@ -39,8 +39,8 @@
 - `GET /accent/recommendations` → `{ actions: [...] }` — 1–3 микро-действия по состоянию (`Recommender`).
 
 ## 4. Goals + Entries + Milestones
-- `GET /accent/goals?status&domain` → массив (с вычисляемыми `currentValue/percentage/daysLeft/pace/forecast`).
-- `POST /accent/goals` Body `{ title, whyItMatters?, domainKey?, attributes?, parentGoalId?, unit, targetValue, deadline?, fallbackVersion? }` → 201. `parentGoalId` → подцель (глубина ≤ `ACCENT_GOAL_MAX_DEPTH`, иначе `GOAL_MAX_DEPTH_REACHED` 422).
+- `GET /accent/goals?status&domain` → массив (с вычисляемыми `currentValue/percentage/daysLeft/pace/forecast/projectedCompletionDate`; [ADR-0052](../../decisions/0052-accent-goal-direction-and-computed-progress.md)).
+- `POST /accent/goals` Body `{ title, whyItMatters?, domainKey?, attributes?, parentGoalId?, direction, unit, targetValue, startValue?, deadline?, fallbackVersion? }` → 201. `direction` ∈ `accumulate|reach|reduce` (ADR-0052); `startValue` — базовый замер для reach/reduce (иммутабелен; null → база из первой записи). `parentGoalId` → подцель (глубина ≤ `ACCENT_GOAL_MAX_DEPTH`, иначе `GOAL_MAX_DEPTH_REACHED` 422). Валидация: accumulate `targetValue>0`; reach/reduce `targetValue≠startValue` (иначе `VALIDATION_ERROR`).
 - `GET /accent/goals/:id` · `PATCH /accent/goals/:id` · `POST /accent/goals/:id/archive` · `/restore`.
 - `POST /accent/goals/:id/pause` · `/resume` (пауза не принимает entries).
 - `POST /accent/goals/:id/entries` Body `{ value, occurredOn?, note? }` → 201. Ошибка `GOAL_PAUSED` (409). Триггерит прогресс + возможный `goal.completed`/`milestone.reached`.

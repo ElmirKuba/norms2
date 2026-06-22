@@ -101,6 +101,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0049](./0049-accent-product-principles.md) | «Акцент»: принципы Внешняя память (GTD/Second Brain) + Самокомандование (commitment device/SDT) | accepted | [accent] [phase2] [product] |
 | [0050](./0050-accent-module-architecture.md) | «Акцент»: мультимодуль (область = модуль, как ф.1) + тонкий зонтик `AccentModule` + правило слоёв (контроллер→use-case всегда; кросс-домен/кросс-фаза вниз через domain-service; свой порт/ds по необходимости) | accepted | [accent] [phase2] [backend] [architecture] |
 | [0051](./0051-starter-habits-inert-showcase.md) | «Акцент»: стартовый пак привычек — инертная витрина (примеры не материализуют задачи/не двигают лесенку до явного «Добавить себе» или «Изм.»); зеркало механизма 2.3 (`is_starter`+seed+endpoints); обратимо к «живым» примерам | accepted | [accent] [phase2] [product] |
+| [0052](./0052-accent-goal-direction-and-computed-progress.md) | «Акцент» Цели (2.5): `direction` ∈ accumulate/reach/reduce (+`start_value`); все агрегаты (currentValue/%/pace/forecast/rollup) **вычисляются на чтение** из `goal_entries`/детей → без хранимого счётчика/`version`; forecast в едином пространстве доли `f`; rollup = среднее % детей; тон forecast проективный, не обвиняющий | accepted | [accent] [phase2] [product] [backend] |
 
 ### Ожидают решения
 

@@ -39,6 +39,10 @@ export const envSchema = z.object({
   CONTENT_DIR: z.string().min(1).default('content'),
   OPTIMISTIC_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(3),
 
+  // Макс. глубина дерева целей «Акцента» (ADR-0052; дефолт 2 = 1 уровень подцелей).
+  // Превышение → GOAL_MAX_DEPTH_REACHED (422). Менять → рестарт, без правок кода.
+  ACCENT_GOAL_MAX_DEPTH: z.coerce.number().int().positive().default(2),
+
   // git-SHA билда (деплой); версия продукта — в файле VERSION (ADR-0044, пересмотр).
   GIT_COMMIT: z.string().default(''),
 });

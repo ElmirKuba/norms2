@@ -1,0 +1,78 @@
+import type { GoalEntryFull } from '../interfaces/goal-entry-full.interface';
+
+/** DI-токен порта репозитория записей прогресса целей (биндится в goals.module). */
+export const ACCENT_GOAL_ENTRY_REPOSITORY = Symbol('ACCENT_GOAL_ENTRY_REPOSITORY');
+
+/** Данные создания записи прогресса (id/таймстамп проставляет репозиторий). */
+export interface GoalEntryCreateData {
+  /** Родительская цель — FK на `goals.id`. */
+  goalId: string;
+  /** Значение (инкремент для accumulate / замер для reach/reduce). */
+  value: number;
+  /** Дата записи YYYY-MM-DD. */
+  occurredOn: string;
+  /** Заметка (опц.). */
+  note?: string | null;
+}
+
+/** Опции курсорной выборки истории (по убыванию `id` = новые сверху). */
+export interface GoalEntryListOptions {
+  /** Курсор — `id` последней полученной записи (вернёт строго старше неё). */
+  cursor?: string | undefined;
+  /** Размер страницы. */
+  limit: number;
+}
+
+/**
+ * Порт репозитория записей прогресса целей (append-only), БЕЗ ORM. Владение проверяется
+ * выше (по родительской цели), поэтому методы принимают `goalId` уже проверенной цели.
+ * Агрегаты (`sumValue`/`latestValue`/`earliestValue`) — для **вычисляемого `currentValue`**
+ * (ADR-0052): accumulate → Σ; reach/reduce → последний замер (база — первый, если
+ * `startValue` не задан). Реализация — `database/repositories/accent` (Drizzle).
+ */
+export interface AccentGoalEntryRepositoryPort {
+  /**
+   * Добавляет запись прогресса (append-only INSERT; id генерирует репозиторий).
+   * @param data Данные создания.
+   * @returns Созданная запись.
+   */
+  add(data: GoalEntryCreateData): Promise<GoalEntryFull>;
+
+  /**
+   * История записей цели (новые сверху), курсорная пагинация по `id`.
+   * @param goalId Идентификатор цели.
+   * @param options Курсор + размер страницы.
+   * @returns Страница записей.
+   */
+  listByGoal(goalId: string, options: GoalEntryListOptions): Promise<GoalEntryFull[]>;
+
+  /**
+   * Σ значений всех записей цели (для `currentValue` накопительной цели).
+   * @param goalId Идентификатор цели.
+   * @returns Сумма (0, если записей нет).
+   */
+  sumValue(goalId: string): Promise<number>;
+
+  /**
+   * Значение последнего замера (по `occurred_on`, затем `created_at`) — для `currentValue`
+   * целей reach/reduce.
+   * @param goalId Идентификатор цели.
+   * @returns Значение или null (записей нет).
+   */
+  latestValue(goalId: string): Promise<number | null>;
+
+  /**
+   * Значение первого замера (по `occurred_on`, затем `created_at`) — база reach/reduce,
+   * если `startValue` не задан (ADR-0052).
+   * @param goalId Идентификатор цели.
+   * @returns Значение или null (записей нет).
+   */
+  earliestValue(goalId: string): Promise<number | null>;
+
+  /**
+   * Число записей цели (есть ли вообще прогресс).
+   * @param goalId Идентификатор цели.
+   * @returns Количество записей.
+   */
+  count(goalId: string): Promise<number>;
+}

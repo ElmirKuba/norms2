@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
 import { ACCENT_GOAL_REPOSITORY } from './adapters/accent-goal-repository.port';
 import { AccentGoalRepository } from '../../../database/repositories/accent/accent-goal.repository';
+import { ACCENT_GOAL_ENTRY_REPOSITORY } from './adapters/accent-goal-entry-repository.port';
+import { AccentGoalEntryRepository } from '../../../database/repositories/accent/accent-goal-entry.repository';
 import { AccentGoalDomainService } from './domain-services/accent-goal.domain-service';
 import { GoalsController } from './controllers/goals.controller';
 import { ListGoalsUseCase } from './use-cases/list-goals.use-case';
@@ -26,6 +28,7 @@ import { ResumeGoalUseCase } from './use-cases/resume-goal.use-case';
   controllers: [GoalsController],
   providers: [
     { provide: ACCENT_GOAL_REPOSITORY, useClass: AccentGoalRepository },
+    { provide: ACCENT_GOAL_ENTRY_REPOSITORY, useClass: AccentGoalEntryRepository },
     AccentGoalDomainService,
     ListGoalsUseCase,
     GetGoalUseCase,

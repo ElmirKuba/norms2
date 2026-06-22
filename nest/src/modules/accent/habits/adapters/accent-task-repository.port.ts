@@ -1,5 +1,6 @@
 import type { HabitKind } from '../interfaces/habit-full.interface';
 import type { TaskFull, TaskSkipReason, TaskStatus } from '../interfaces/task-full.interface';
+import type { Transaction } from '../../../../shared/transactions/transaction.interface';
 
 /** DI-токен порта репозитория задач дня (биндится в habits.module). */
 export const ACCENT_TASK_REPOSITORY = Symbol('ACCENT_TASK_REPOSITORY');
@@ -70,9 +71,10 @@ export interface AccentTaskRepositoryPort {
   /**
    * Создаёт задачу (id генерирует репозиторий).
    * @param data Данные создания.
+   * @param tx Опц. транзакция.
    * @returns Созданная задача.
    */
-  create(data: TaskCreateData): Promise<TaskFull>;
+  create(data: TaskCreateData, tx?: Transaction): Promise<TaskFull>;
 
   /**
    * Массовая вставка задач (материализация дня). ON CONFLICT по
@@ -87,9 +89,26 @@ export interface AccentTaskRepositoryPort {
    * @param id Идентификатор задачи.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param patch Поля для обновления.
+   * @param tx Опц. транзакция.
    * @returns Обновлённая строка или null (нет / не ваша).
    */
-  update(id: string, accountId: string, patch: TaskUpdateData): Promise<TaskFull | null>;
+  update(
+    id: string,
+    accountId: string,
+    patch: TaskUpdateData,
+    tx?: Transaction,
+  ): Promise<TaskFull | null>;
+
+  /**
+   * Условный переход «открытой» задачи (`pending`/`skipped`) — атомарно. Применяет patch
+   * только если задача открыта; возвращает строку, если переход произошёл (идемпотентное
+   * движение лесенки: ровно один из параллельных complete получит строку).
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param patch Поля для обновления.
+   * @returns Обновлённая строка или null (уже не открыта / нет / не ваша).
+   */
+  updateIfOpen(id: string, accountId: string, patch: TaskUpdateData): Promise<TaskFull | null>;
 
   /**
    * Открытые (`pending`/`partial`) разовые задачи (templateId=null) с дедлайном — для

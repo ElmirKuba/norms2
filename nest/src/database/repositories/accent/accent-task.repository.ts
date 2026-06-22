@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
-import type { DrizzleDatabase } from '../../client/database.constants';
+import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { tasks } from '../../schemas/tasks.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type {
@@ -10,6 +10,7 @@ import type {
   TaskUpdateData,
 } from '../../../modules/accent/habits/adapters/accent-task-repository.port';
 import type { TaskFull } from '../../../modules/accent/habits/interfaces/task-full.interface';
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
  * Drizzle-реализация порта задач дня (единственное место с ORM). Строка `tasks`
@@ -58,8 +59,8 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @returns Созданная задача.
    * @throws {Error} Если insert не вернул строку.
    */
-  public async create(data: TaskCreateData): Promise<TaskFull> {
-    const rows = await this._db.insert(tasks).values(this._toRow(data)).returning();
+  public async create(data: TaskCreateData, tx?: Transaction): Promise<TaskFull> {
+    const rows = await this._exec(tx).insert(tasks).values(this._toRow(data)).returning();
     const row = rows[0];
     if (!row) {
       throw new Error('tasks: create не вернул строку.');
@@ -95,11 +96,40 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
     id: string,
     accountId: string,
     patch: TaskUpdateData,
+    tx?: Transaction,
+  ): Promise<TaskFull | null> {
+    const rows = await this._exec(tx)
+      .update(tasks)
+      .set(patch)
+      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Условный переход «открытой» задачи (`pending`/`skipped`) — атомарно. Применяет patch
+   * ТОЛЬКО если задача сейчас открыта; возвращает строку, если переход произошёл (для
+   * идемпотентного движения лесенки: ровно один из параллельных complete получит строку).
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param patch Поля для обновления.
+   * @returns Обновлённая строка или null (уже не открыта / нет / не ваша).
+   */
+  public async updateIfOpen(
+    id: string,
+    accountId: string,
+    patch: TaskUpdateData,
   ): Promise<TaskFull | null> {
     const rows = await this._db
       .update(tasks)
       .set(patch)
-      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
+      .where(
+        and(
+          eq(tasks.id, id),
+          eq(tasks.accountId, accountId),
+          inArray(tasks.status, ['pending', 'skipped']),
+        ),
+      )
       .returning();
     return rows[0] ?? null;
   }
@@ -143,6 +173,16 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
       )
       .returning({ id: tasks.id });
     return rows.length;
+  }
+
+  /**
+   * Исполнитель: транзакция (если передана) или базовый клиент. Опаковый `tx` приводится
+   * к `DrizzleExecutor` тут — наружу ORM не утекает.
+   * @param tx Опц. транзакция.
+   * @returns DrizzleExecutor.
+   */
+  private _exec(tx?: Transaction): DrizzleExecutor {
+    return tx === undefined ? this._db : (tx as unknown as DrizzleExecutor);
   }
 
   /**

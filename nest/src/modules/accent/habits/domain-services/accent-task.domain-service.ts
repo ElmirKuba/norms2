@@ -10,6 +10,8 @@ import type {
   TaskCreateData,
 } from '../adapters/accent-task-repository.port';
 import type { TaskFull } from '../interfaces/task-full.interface';
+import { TRANSACTION_RUNNER } from '../../../../shared/transactions/transaction-runner.port';
+import type { TransactionRunnerPort } from '../../../../shared/transactions/transaction-runner.port';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
 import { AccentLadderEngine } from './accent-ladder-engine.domain-service';
 import type { LadderEvent } from './accent-ladder-engine.domain-service';
@@ -30,6 +32,7 @@ export class AccentTaskDomainService {
    */
   public constructor(
     @Inject(ACCENT_TASK_REPOSITORY) private readonly _repository: AccentTaskRepositoryPort,
+    @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
     private readonly _habits: AccentHabitDomainService,
     private readonly _ladder: AccentLadderEngine,
   ) {}
@@ -181,8 +184,6 @@ export class AccentTaskDomainService {
     doneValue?: number,
   ): Promise<{ task: TaskFull; ladderEvent: LadderEvent }> {
     const task = await this.getOwned(id, accountId);
-    // Лесенка двигается один раз на выполнение: только при переходе из не-выполненного.
-    const wasOpen = task.status === 'pending' || task.status === 'skipped';
     let effectiveDone: number;
     if (task.kind === 'binary') {
       effectiveDone = 1;
@@ -195,22 +196,29 @@ export class AccentTaskDomainService {
       effectiveDone = doneValue;
     }
     const target = task.targetValue ?? effectiveDone;
-    const updated = await this._repository.update(id, accountId, {
-      status: effectiveDone >= target ? 'done' : 'partial',
+    const patch = {
+      status: (effectiveDone >= target ? 'done' : 'partial') as TaskFull['status'],
       doneValue: effectiveDone,
       completedAt: new Date(),
       skipReason: null,
-    });
+    };
+    // Идемпотентность лесенки (ADR-0035): двигаем планку только если ИМЕННО этот вызов
+    // перевёл задачу из открытой (pending/skipped) — атомарным условным UPDATE. Параллельный
+    // или повторный complete строку не получит → лесенка не двинется дважды.
+    const templateId = task.templateId;
+    if (templateId !== null) {
+      const transitioned = await this._repository.updateIfOpen(id, accountId, patch);
+      if (transitioned) {
+        const ladderEvent = await this._ladder.onComplete(templateId, accountId, effectiveDone);
+        return { task: transitioned, ladderEvent };
+      }
+    }
+    // Разовая задача, либо повторный complete (уже не открыта) — обновляем значение без лесенки.
+    const updated = await this._repository.update(id, accountId, patch);
     if (!updated) {
       throw new TaskNotFoundError('Задача не найдена.');
     }
-    // Лесенка (2.4·12): задача привычки → двигаем планку один раз на выполнение (не на повтор).
-    // Событие (raised/lowered) пробрасываем наружу для фидбэка (2.4·19).
-    let ladderEvent: LadderEvent = null;
-    if (task.templateId !== null && wasOpen) {
-      ladderEvent = await this._ladder.onComplete(task.templateId, accountId, effectiveDone);
-    }
-    return { task: updated, ladderEvent };
+    return { task: updated, ladderEvent: null };
   }
 
   /**
@@ -228,22 +236,34 @@ export class AccentTaskDomainService {
     if (task.status === 'skipped') {
       throw new ValidationError('Задача уже пропущена или перенесена.');
     }
-    const created = await this._repository.create({
-      accountId,
-      templateId: null,
-      goalId: task.goalId,
-      title: task.title,
-      occurredOn: this._nextDay(task.occurredOn),
-      kind: task.kind,
-      targetValue: task.targetValue,
-      category: task.category,
-      deadline: task.deadline,
-      priority: task.priority,
-      postponedFromTaskId: task.id,
-      status: 'pending',
+    // Атомарно: создать завтрашнюю копию + закрыть исходную (иначе при сбое/повторе —
+    // дубль завтрашней задачи или незакрытая исходная).
+    return this._transactionRunner.run(async (tx) => {
+      const created = await this._repository.create(
+        {
+          accountId,
+          templateId: null,
+          goalId: task.goalId,
+          title: task.title,
+          occurredOn: this._nextDay(task.occurredOn),
+          kind: task.kind,
+          targetValue: task.targetValue,
+          category: task.category,
+          deadline: task.deadline,
+          priority: task.priority,
+          postponedFromTaskId: task.id,
+          status: 'pending',
+        },
+        tx,
+      );
+      await this._repository.update(
+        id,
+        accountId,
+        { status: 'skipped', skipReason: 'postponed' },
+        tx,
+      );
+      return created;
     });
-    await this._repository.update(id, accountId, { status: 'skipped', skipReason: 'postponed' });
-    return created;
   }
 
   /**

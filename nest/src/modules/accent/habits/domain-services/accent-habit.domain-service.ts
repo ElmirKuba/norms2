@@ -67,14 +67,22 @@ export class AccentHabitDomainService {
   }
 
   /**
-   * Записывает лесенку привычки целиком (включая счётчики) — для `LadderEngine`. В обход
-   * слияния счётчиков из `update` (то — для пользовательских правок целей лесенки).
+   * CAS-запись лесенки целиком (вкл. счётчики) — для `LadderEngine` (ADR-0035). Пишет только
+   * при совпадении `version` (иначе движок перечитает и повторит). В обход слияния счётчиков
+   * из `update` (то — для пользовательских правок целей лесенки).
    * @param id Идентификатор привычки.
    * @param accountId Идентификатор аккаунта-владельца.
+   * @param expectedVersion Ожидаемая версия (из прочитанной привычки).
    * @param ladder Новая лесенка.
+   * @returns true если записано, false при конфликте версий.
    */
-  public async setLadder(id: string, accountId: string, ladder: HabitLadder): Promise<void> {
-    await this._repository.update(id, accountId, { ladder });
+  public async setLadderCas(
+    id: string,
+    accountId: string,
+    expectedVersion: number,
+    ladder: HabitLadder,
+  ): Promise<boolean> {
+    return this._repository.setLadderCas(id, accountId, expectedVersion, ladder);
   }
 
   /**

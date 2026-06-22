@@ -73,6 +73,8 @@ export interface HabitFull {
   ladder: HabitLadder;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion: string | null;
+  /** Версия строки для оптимистичного лока (ADR-0035; движок лесенки пишет через CAS). */
+  version: number;
   /** Когда создано. */
   createdAt: Date;
   /** Когда изменено. */

@@ -104,4 +104,20 @@ export interface AccentHabitRepositoryPort {
    * @returns Обновлённая строка или null (нет / не ваша).
    */
   update(id: string, accountId: string, patch: HabitUpdateData): Promise<HabitFull | null>;
+
+  /**
+   * CAS-запись лесенки (ADR-0035): пишет `ladder` и `version+1` только если текущая
+   * `version` совпала с `expectedVersion`. Для движка лесенки (без потери обновлений).
+   * @param id Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param expectedVersion Ожидаемая версия.
+   * @param ladder Новая лесенка.
+   * @returns true если записано, false при конфликте версий (нужен retry).
+   */
+  setLadderCas(
+    id: string,
+    accountId: string,
+    expectedVersion: number,
+    ladder: HabitLadder,
+  ): Promise<boolean>;
 }

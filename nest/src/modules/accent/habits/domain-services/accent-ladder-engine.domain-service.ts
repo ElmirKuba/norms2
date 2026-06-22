@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
 import type { HabitLadder } from '../interfaces/habit-full.interface';
+import type { Env } from '../../../../system/config/env.schema';
 
 /** Порог «лёгких» выполнений подряд для подъёма планки (gamification §7, дефолт 3). */
 const EASE_THRESHOLD = 3;
@@ -20,8 +22,12 @@ export type LadderEvent = 'raised' | 'lowered' | null;
 export class AccentLadderEngine {
   /**
    * @param _habits Domain-service привычек (читает/пишет лесенку).
+   * @param _configService Конфиг (число retry для CAS).
    */
-  public constructor(private readonly _habits: AccentHabitDomainService) {}
+  public constructor(
+    private readonly _habits: AccentHabitDomainService,
+    private readonly _configService: ConfigService<Env, true>,
+  ) {}
 
   /**
    * Подстраивает лесенку привычки после выполнения её задачи за день.
@@ -35,14 +41,23 @@ export class AccentLadderEngine {
     accountId: string,
     performed: number,
   ): Promise<LadderEvent> {
-    const habit = await this._habits.findOwnedOrNull(habitId, accountId);
-    if (!habit || habit.ladder.policy !== 'adaptive') {
-      return null;
+    // CAS+retry (ADR-0035): читаем привычку (с version), считаем новую лесенку, пишем только
+    // если version не изменилась; при конфликте (параллельная правка/complete) — перечитываем.
+    const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const habit = await this._habits.findOwnedOrNull(habitId, accountId);
+      if (!habit || habit.ladder.policy !== 'adaptive') {
+        return null;
+      }
+      const { ladder, event } = this._apply(habit.ladder, performed);
+      const written = await this._habits.setLadderCas(habitId, accountId, habit.version, ladder);
+      if (written) {
+        // TODO: Claude Code: 2026-06-18: 2.9 — при event эмитить ladder.raised/lowered (очки/тосты).
+        return event;
+      }
     }
-    const { ladder, event } = this._apply(habit.ladder, performed);
-    await this._habits.setLadder(habitId, accountId, ladder);
-    // TODO: Claude Code: 2026-06-18: 2.9 — при event эмитить ladder.raised/lowered (очки/тосты).
-    return event;
+    // Не разрешилось за N попыток — лучше не двигать планку, чем затереть чужой апдейт.
+    return null;
   }
 
   /**

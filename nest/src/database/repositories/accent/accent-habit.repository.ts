@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { habits } from '../../schemas/habits.schema';
@@ -9,7 +9,10 @@ import type {
   HabitCreateData,
   HabitUpdateData,
 } from '../../../modules/accent/habits/adapters/accent-habit-repository.port';
-import type { HabitFull } from '../../../modules/accent/habits/interfaces/habit-full.interface';
+import type {
+  HabitFull,
+  HabitLadder,
+} from '../../../modules/accent/habits/interfaces/habit-full.interface';
 
 /**
  * Drizzle-реализация порта привычек (единственное место с ORM). Строка `habits`
@@ -144,9 +147,38 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
   ): Promise<HabitFull | null> {
     const rows = await this._db
       .update(habits)
-      .set(patch)
+      // Любой update bump'ает version → CAS движка лесенки замечает конкурентную правку.
+      .set({ ...patch, version: sql`${habits.version} + 1` })
       .where(and(eq(habits.id, id), eq(habits.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
+  }
+
+  /**
+   * CAS-запись лесенки (ADR-0035): `ladder` + `version+1` только при совпадении version.
+   * @param id Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param expectedVersion Ожидаемая версия.
+   * @param ladder Новая лесенка.
+   * @returns true если записано, false при конфликте версий.
+   */
+  public async setLadderCas(
+    id: string,
+    accountId: string,
+    expectedVersion: number,
+    ladder: HabitLadder,
+  ): Promise<boolean> {
+    const rows = await this._db
+      .update(habits)
+      .set({ ladder, version: sql`${habits.version} + 1` })
+      .where(
+        and(
+          eq(habits.id, id),
+          eq(habits.accountId, accountId),
+          eq(habits.version, expectedVersion),
+        ),
+      )
+      .returning({ id: habits.id });
+    return rows.length > 0;
   }
 }

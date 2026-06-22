@@ -1,0 +1,1 @@
+ALTER TABLE "habits" ADD COLUMN "version" integer DEFAULT 0 NOT NULL;

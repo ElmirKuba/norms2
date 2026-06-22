@@ -1,0 +1,1 @@
+ALTER TABLE "goals" DROP CONSTRAINT "goals_target_value_nonzero";

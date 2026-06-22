@@ -1,5 +1,4 @@
 import {
-  check,
   date,
   doublePrecision,
   jsonb,
@@ -8,7 +7,6 @@ import {
   varchar,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
@@ -26,8 +24,9 @@ import type {
  * reduce). `targetValue`/`startValue` — `doublePrecision` (JS number, дробные замеры).
  * `parent_goal_id` — self-FK (подцель; глубину сторожит домен из `ACCENT_GOAL_MAX_DEPTH`).
  * `attributes` — jsonb string[] (ключи RPG-атрибутов); `pause_history` — jsonb периодов
- * пауз для `activeDays`. CHECK `target_value <> 0` — защита-в-глубину (полные инварианты
- * рода — в домене 2.5·4). `domain_key` — мягкий ключ сферы (без FK).
+ * пауз для `activeDays`. Инварианты значения (accumulate `target>0`; reach/reduce
+ * `target≠start`) — в домене 2.5·4; **без DB-CHECK** `target<>0` — он рубил легитимные
+ * reduce-цели с `target=0` («бросить курить = 0»). `domain_key` — мягкий ключ сферы (без FK).
  */
 export const goals = defineTableWithSchema<GoalFull>()(
   'goals',
@@ -63,5 +62,4 @@ export const goals = defineTableWithSchema<GoalFull>()(
       .default([]),
     ...timestamps(),
   },
-  (table) => [check('goals_target_value_nonzero', sql`${table.targetValue} <> 0`)],
 );

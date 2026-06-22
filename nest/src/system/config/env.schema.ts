@@ -23,10 +23,11 @@ export const envSchema = z.object({
   FRONTEND_PORT: z.coerce.number().int().positive().default(4200),
 
   // CORS-origin фронта (dev). Пусто → CORS выключен (прод same-origin за Traefik).
-  CORS_ORIGIN: z.string().default(''),
+  // `*` запрещён: с credentials:true и небезопасно, и браузер всё равно отвергнет.
+  CORS_ORIGIN: z.string().default('').refine((v) => v !== '*', 'CORS_ORIGIN не может быть "*".'),
 
-  JWT_ACCESS_SECRET: z.string().min(1),
-  JWT_REFRESH_SECRET: z.string().min(1),
+  // Секрет подписи access-JWT — ≥32 символов (из CSPRNG), иначе подделка токенов.
+  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET: минимум 32 символа.'),
   ACCESS_TTL: z.string().min(1).default('15m'),
   REFRESH_TTL: z.string().min(1).default('30d'),
   COOKIE_SECURE: booleanFromEnv.default(false),

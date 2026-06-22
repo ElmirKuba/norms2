@@ -39,6 +39,16 @@ async function bootstrap(): Promise<void> {
   // Парсинг cookie (refresh-токен в httpOnly-cookie).
   app.use(cookieParser());
 
+  // Базовые security-заголовки (без зависимостей). nosniff критичен для /content/*
+  // (пользовательские загрузки — не давать браузеру угадывать MIME → защита от XSS
+  // через загруженный файл); API не должен встраиваться во фрейм; не утекать referrer.
+  app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    next();
+  });
+
   // CORS — config-driven (ADR-0020/D1): включаем ТОЛЬКО если задан CORS_ORIGIN
   // (dev: фронт на другом порту). В проде same-origin (Traefik path-based) →
   // CORS_ORIGIN пуст → CORS выключен, лишних заголовков нет.

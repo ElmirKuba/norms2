@@ -116,16 +116,20 @@ export class SecretQaDomainService {
       return false;
     }
     const hashById = new Map(rows.map((row) => [row.id, row.answerHash]));
+    // Проверяем ВСЕ ответы без раннего выхода — иначе по времени видно, сколько верных
+    // до первой ошибки (слабый тайминг-оракул). Накапливаем результат, отдаём в конце.
+    let ok = true;
     for (const attempt of attempts) {
       const hash = hashById.get(attempt.questionId);
       if (hash === undefined) {
-        return false;
+        ok = false;
+        continue;
       }
       const matched = await this._hashService.verify(hash, attempt.answer.value);
       if (!matched) {
-        return false;
+        ok = false;
       }
     }
-    return true;
+    return ok;
   }
 }

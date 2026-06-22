@@ -85,6 +85,13 @@
       "when": 1782122397823,
       "tag": "0011_premium_gravity",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1782149240327,
+      "tag": "0012_illegal_blur",
+      "breakpoints": true
     }
   ]
 }

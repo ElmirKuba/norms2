@@ -15,3 +15,4 @@ export * from './micro-wins.schema';
 export * from './micro-win-logs.schema';
 export * from './habits.schema';
 export * from './tasks.schema';
+export * from './goals.schema';

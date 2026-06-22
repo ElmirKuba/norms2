@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { goals } from '../../schemas/goals.schema';
@@ -131,6 +131,96 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .update(goals)
       .set(patch)
       .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Пауза (атомарно, только из `active`): `status='paused'`, `paused_at=now`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `active`).
+   */
+  public async pause(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ status: 'paused', pausedAt: new Date() })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          eq(goals.status, 'active'),
+        ),
+      )
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Снятие паузы (атомарно, только из `paused`): `status='active'`, дописывает закрытый
+   * период `{pausedAt: paused_at, resumedAt: now}` в `pause_history` (jsonb-конкатенация
+   * на стороне БД → без read-modify-write), `paused_at=null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `paused`).
+   */
+  public async resume(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({
+        status: 'active',
+        pausedAt: null,
+        pauseHistory: sql`${goals.pauseHistory} || jsonb_build_array(jsonb_build_object('pausedAt', ${goals.pausedAt}, 'resumedAt', now()))`,
+      })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          eq(goals.status, 'paused'),
+        ),
+      )
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Архивация (атомарно, из `active|paused|completed`): `status='archived'`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / уже `archived`).
+   */
+  public async archive(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ status: 'archived' })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          inArray(goals.status, ['active', 'paused', 'completed']),
+        ),
+      )
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Восстановление из архива (атомарно, только из `archived`): `status='active'`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `archived`).
+   */
+  public async restore(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ status: 'active' })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          eq(goals.status, 'archived'),
+        ),
+      )
       .returning();
     return rows[0] ?? null;
   }

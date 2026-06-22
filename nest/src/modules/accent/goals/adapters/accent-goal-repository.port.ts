@@ -101,4 +101,39 @@ export interface AccentGoalRepositoryPort {
    * @returns Обновлённая строка или null (нет / не ваша).
    */
   update(id: string, accountId: string, patch: GoalUpdateData): Promise<GoalFull | null>;
+
+  /**
+   * Ставит цель на паузу (атомарно, только из `active`): `status='paused'`, `paused_at=now`.
+   * Открытая пауза = ненулевой `paused_at`; история пауз не трогается (закрытые периоды
+   * дописывает `resume`).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `active`).
+   */
+  pause(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Снимает паузу (атомарно, только из `paused`): `status='active'`, дописывает закрытый
+   * период `{pausedAt: текущий paused_at, resumedAt: now}` в `pause_history`, `paused_at=null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `paused`).
+   */
+  resume(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Архивирует цель (атомарно, из `active|paused|completed`): `status='archived'`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / уже `archived`).
+   */
+  archive(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Восстанавливает из архива (атомарно, только из `archived`): `status='active'`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `archived`).
+   */
+  restore(id: string, accountId: string): Promise<GoalFull | null>;
 }

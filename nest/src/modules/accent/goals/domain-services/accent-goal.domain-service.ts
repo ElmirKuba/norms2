@@ -127,6 +127,77 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Ставит цель на паузу (из `active`). На паузе цель не принимает записи прогресса.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Цель на паузе.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если цель не в статусе `active`.
+   */
+  public async pause(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.pause(id, accountId);
+    return updated ?? this._failTransition(id, accountId, 'на паузу можно поставить только активную цель');
+  }
+
+  /**
+   * Снимает паузу (из `paused`) — закрытый период паузы уходит в историю (для `activeDays`).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Активная цель.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если цель не в статусе `paused`.
+   */
+  public async resume(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.resume(id, accountId);
+    return updated ?? this._failTransition(id, accountId, 'снять с паузы можно только приостановленную цель');
+  }
+
+  /**
+   * Архивирует цель (из `active|paused|completed`) — уходит из дашборда, не удаляется.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Архивированная цель.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если цель уже архивирована.
+   */
+  public async archive(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.archive(id, accountId);
+    return updated ?? this._failTransition(id, accountId, 'цель уже архивирована');
+  }
+
+  /**
+   * Восстанавливает из архива (из `archived`) в `active`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Активная цель.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если цель не в архиве.
+   */
+  public async restore(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.restore(id, accountId);
+    return updated ?? this._failTransition(id, accountId, 'восстановить можно только архивированную цель');
+  }
+
+  /**
+   * Разбирает причину неуспеха атомарного перехода: нет строки → 404; есть, но статус не
+   * тот → `VALIDATION_ERROR` с понятным сообщением. Никогда не возвращает (всегда бросает).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param reason Человекочитаемая причина (для `VALIDATION_ERROR`).
+   * @returns Никогда (для удобства вызова `?? this._failTransition(...)`).
+   * @throws {GoalNotFoundError} Если цели нет / не ваша.
+   * @throws {ValidationError} Если цель есть, но в неподходящем статусе.
+   */
+  private async _failTransition(
+    id: string,
+    accountId: string,
+    reason: string,
+  ): Promise<never> {
+    await this.getOwned(id, accountId); // бросит 404, если нет/не ваша
+    throw new ValidationError(`Недопустимый переход: ${reason}.`);
+  }
+
+  /**
    * Нормализует и валидирует название.
    * @param raw Сырое название.
    * @returns Подрезанное название.

@@ -30,8 +30,8 @@ export interface StarterHabit {
  * Сознательно **anti-burnout**: низкий `minTarget` (1), адаптивная лесенка от смешного
  * минимума к цели, у каждой — worded `minVersion` (что делать в худший день). Учат
  * хорошим дефолтам на примере (философия раздела: расти без надрыва, не обнуляться).
- * Курировано **12** — широкий охват сфер (движение / ум / дух / здоровье / связь /
- * **отказ — цифровая тишина** как ядро «тренажёра отказа», ADR-0049), но не свалка: каждая
+ * Курировано **15** — широкий охват сфер (движение / ум / дух / здоровье / связь / деньги /
+ * **отказ — цифровая тишина и утро без телефона** как ядро «тренажёра отказа», ADR-0049), но не свалка: каждая
  * привычка — осмысленный дефолт, а не «добей до числа». По аналогии с расширением
  * стартового пака микро-побед (2.4). Это **примеры**, человек берёт нужное, остальное чистит.
  */
@@ -145,5 +145,35 @@ export const STARTER_HABITS: readonly StarterHabit[] = [
     ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
     attributes: ['social'],
     minVersion: 'Короткое сообщение одному близкому.',
+  },
+  {
+    title: 'Утро без телефона',
+    icon: '🌅',
+    description: 'Не отдавать первые минуты дня ленте — день начинается с тебя.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['discipline', 'spirit'],
+    minVersion: 'Не хватать телефон 10 минут после пробуждения.',
+  },
+  {
+    title: 'Маленькое добро',
+    icon: '🙋',
+    description: 'Одно доброе действие в день — мышца, которую стоит качать.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['social', 'spirit'],
+    minVersion: 'Сказать кому-то спасибо от души.',
+  },
+  {
+    title: 'Записать траты',
+    icon: '🧾',
+    description: 'Видеть, куда уходят деньги — первый шаг к контролю над ними.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['discipline', 'intellect'],
+    minVersion: 'Одна строка: на что ушли деньги.',
   },
 ];

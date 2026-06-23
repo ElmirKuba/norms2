@@ -18,6 +18,8 @@ import type {
 export interface GoalFormData {
   /** Редактируемая цель (или undefined — создание). */
   goal?: GoalView;
+  /** Предзаданный родитель (создать подцелью этой цели) — скрывает выбор родителя. */
+  presetParentId?: string;
 }
 
 /** Результат: payload создания (новая цель) или обновления (edit) — по полю `mode`. */
@@ -109,7 +111,7 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
         </div>
       }
 
-      @if (!isEdit && parents().length > 0) {
+      @if (showParentSelect() && parents().length > 0) {
         <label class="gf__field">
           <span class="gf__label">Родительская цель (опц. — сделать подцелью)</span>
           <select class="gf__input" formControlName="parentGoalId">
@@ -261,6 +263,10 @@ export class GoalFormModalComponent {
   /** Показывать ли поле «старт» (reach/reduce). */
   protected readonly showStart = computed(() => this.form.controls.direction.value !== 'accumulate');
 
+  /** Показывать ли выбор родителя (не edit и не предзадан). */
+  protected readonly showParentSelect = (): boolean =>
+    !this.isEdit && this._data.presetParentId === undefined;
+
   public constructor() {
     const goal = this._data.goal;
     if (goal) {
@@ -278,11 +284,14 @@ export class GoalFormModalComponent {
       this.form.controls.direction.disable();
       this.form.controls.startValue.disable();
     }
+    if (this._data.presetParentId !== undefined) {
+      this.form.controls.parentGoalId.setValue(this._data.presetParentId);
+    }
     this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     this._api
       .listAttributes()
       .subscribe({ next: (a) => this.attributesCatalog.set(a), error: () => undefined });
-    if (!this.isEdit) {
+    if (this.showParentSelect()) {
       this._api.listGoals('active').subscribe({
         next: (g) => this.parents.set(g),
         error: () => undefined,

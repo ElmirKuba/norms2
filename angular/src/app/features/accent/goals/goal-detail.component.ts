@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -36,7 +36,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goal-detail',
-  imports: [ReactiveFormsModule, ButtonComponent, CardComponent],
+  imports: [RouterLink, ReactiveFormsModule, ButtonComponent, CardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="gd">
@@ -79,6 +79,27 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
             </div>
           </div>
         </app-card>
+
+        @if (g.parentGoalId === null) {
+          <div class="gd__subgoals">
+            <div class="gd__subgoals-head">
+              <h3 class="gd__sub">Подцели</h3>
+              <app-button variant="ghost" (click)="addSubgoal()">+ Подцель</app-button>
+            </div>
+            @if (children().length > 0) {
+              <ul class="gd__children">
+                @for (c of children(); track c.id) {
+                  <li class="gd__child">
+                    <a class="gd__child-link" [routerLink]="['../', c.id]">{{ c.title }}</a>
+                    <span class="gd__child-pct">{{ c.percentage === null ? '—' : c.percentage + '%' }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="gd__muted">Пока нет подцелей. Большую цель можно разбить на шаги.</p>
+            }
+          </div>
+        }
 
         @if (!g.rollup && g.status === 'active') {
           <app-card>
@@ -313,6 +334,37 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .gd__input--thr {
         max-width: 140px;
       }
+      .gd__subgoals-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+      .gd__children {
+        list-style: none;
+        margin: var(--space-2) 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+      .gd__child {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+      .gd__child-link {
+        color: var(--color-accent);
+        text-decoration: none;
+      }
+      .gd__child-link:hover {
+        text-decoration: underline;
+      }
+      .gd__child-pct {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+      }
       .gd__history {
         list-style: none;
         margin: 0;
@@ -374,6 +426,8 @@ export class GoalDetailComponent {
   protected readonly moreBusy = signal(false);
   /** Поле значения записи. */
   protected readonly valueControl = new FormControl<number | null>(null);
+  /** Прямые подцели. */
+  protected readonly children = signal<GoalProgressView[]>([]);
   /** Вехи цели. */
   protected readonly milestones = signal<MilestoneView[]>([]);
   /** Поле названия новой вехи. */
@@ -513,6 +567,22 @@ export class GoalDetailComponent {
     });
   }
 
+  /** Открывает форму создания подцели (родитель предзадан). */
+  protected addSubgoal(): void {
+    const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
+      GoalFormModalComponent,
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { presetParentId: this._id } },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result && result.mode === 'create') {
+        this._api.createGoal(result.payload).subscribe({
+          next: () => this._load(),
+          error: () => undefined,
+        });
+      }
+    });
+  }
+
   /** Добавляет веху. */
   protected addMilestone(): void {
     const title = this.msTitle.value.trim();
@@ -558,6 +628,7 @@ export class GoalDetailComponent {
         this.loading.set(false);
         this._loadEntries();
         this._loadMilestones();
+        this._loadChildren();
       },
       error: (err: unknown) => {
         this.error.set(errorMessage(err));
@@ -579,6 +650,14 @@ export class GoalDetailComponent {
   private _loadMilestones(): void {
     this._api.listMilestones(this._id).subscribe({
       next: (items) => this.milestones.set(items),
+      error: () => undefined,
+    });
+  }
+
+  /** Грузит прямые подцели (фильтр всех целей по `parentGoalId`). */
+  private _loadChildren(): void {
+    this._api.listGoals().subscribe({
+      next: (all) => this.children.set(all.filter((goal) => goal.parentGoalId === this._id)),
       error: () => undefined,
     });
   }

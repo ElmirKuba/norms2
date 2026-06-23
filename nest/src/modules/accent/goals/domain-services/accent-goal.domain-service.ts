@@ -21,7 +21,12 @@ import { GOAL_DIRECTIONS } from '../interfaces/goal-full.interface';
 import type { GoalDirection, GoalFull } from '../interfaces/goal-full.interface';
 import type { GoalEntryFull } from '../interfaces/goal-entry-full.interface';
 import type { MilestoneFull } from '../interfaces/milestone-full.interface';
-import { computeGoalProgress, isGoalReached, isMilestoneReached } from '../goal-progress.util';
+import {
+  computeGoalProgress,
+  computeRollupProgress,
+  isGoalReached,
+  isMilestoneReached,
+} from '../goal-progress.util';
 import type { GoalProgress } from '../goal-progress.util';
 
 /** Веха с вычисленной достигнутостью (для проекции наружу). */
@@ -278,8 +283,23 @@ export class AccentGoalDomainService {
    * @returns Вычисляемый прогресс.
    */
   public async describe(goal: GoalFull, timezone: string): Promise<GoalProgress> {
+    const todayYmd = todayInTimezone(timezone);
+    const now = new Date();
+    // Rollup (ADR-0052): есть активные подцели → прогресс = среднее % детей (рекурсивно,
+    // глубина ограничена ACCENT_GOAL_MAX_DEPTH → без бесконечной рекурсии). Иначе — лист.
+    const children = (await this._repository.listChildren(goal.id, goal.accountId)).filter(
+      (child) => child.status !== 'archived',
+    );
+    if (children.length > 0) {
+      const childProgresses = await Promise.all(
+        children.map((child) => this.describe(child, timezone)),
+      );
+      const percentages = childProgresses.map((progress) => progress.percentage ?? 0);
+      const completed = children.filter((child) => child.status === 'completed').length;
+      return computeRollupProgress(goal, percentages, completed, todayYmd, now);
+    }
     const { current, base } = await this._currentAndBase(goal);
-    return computeGoalProgress(goal, current, base, todayInTimezone(timezone), new Date());
+    return computeGoalProgress(goal, current, base, todayYmd, now);
   }
 
   /**

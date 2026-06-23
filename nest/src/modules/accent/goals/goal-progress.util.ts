@@ -14,6 +14,12 @@ export interface GoalProgress {
   forecast: 'ahead' | 'on_track' | 'behind' | null;
   /** «При текущем темпе — к этой дате» (YYYY-MM-DD) или null. */
   projectedCompletionDate: string | null;
+  /** Прогресс посчитан из подцелей (rollup, ADR-0052), а не из своих записей. */
+  rollup: boolean;
+  /** Число прямых (не архивных) подцелей; 0 для листа. */
+  subgoalsTotal: number;
+  /** Сколько подцелей завершено (`status='completed'`). */
+  subgoalsCompleted: number;
 }
 
 const DAY_MS = 86_400_000;
@@ -143,14 +149,64 @@ export function computeGoalProgress(
   now: Date,
 ): GoalProgress {
   const f = progressFraction(goal, currentValue, base);
-  const percentage = f === null ? null : Math.round(f * 100);
+  const fb = forecastBlock(goal, f, todayYmd, now);
+  return {
+    currentValue,
+    percentage: f === null ? null : Math.round(f * 100),
+    daysLeft: fb.daysLeft,
+    pace: currentValue === null ? null : currentValue / activeDaysOf(goal, now),
+    forecast: fb.forecast,
+    projectedCompletionDate: fb.projectedCompletionDate,
+    rollup: false,
+    subgoalsTotal: 0,
+    subgoalsCompleted: 0,
+  };
+}
 
-  const daysLeft =
-    goal.deadline === null
-      ? null
-      : Math.round((ymdToUtcMs(goal.deadline) - ymdToUtcMs(todayYmd)) / DAY_MS);
+/**
+ * Прогресс цели-родителя из подцелей (rollup, ADR-0052): `percentage` = **среднее %
+ * прямых детей** (равный вес); `currentValue`/`pace` = null (единицы детей разнородны);
+ * forecast считается из доли `f = avg%/100` и дедлайна родителя.
+ * @param goal Родительская цель.
+ * @param childPercentages Проценты прямых (не архивных) подцелей (null трактуем как 0).
+ * @param completedCount Сколько подцелей завершено.
+ * @param todayYmd Сегодня в TZ пользователя.
+ * @param now Текущий момент.
+ * @returns Вычисляемый прогресс родителя.
+ */
+export function computeRollupProgress(
+  goal: GoalFull,
+  childPercentages: readonly number[],
+  completedCount: number,
+  todayYmd: string,
+  now: Date,
+): GoalProgress {
+  const avg =
+    childPercentages.length === 0
+      ? 0
+      : childPercentages.reduce((sum, p) => sum + p, 0) / childPercentages.length;
+  const f = avg / 100;
+  const fb = forecastBlock(goal, f, todayYmd, now);
+  return {
+    currentValue: null,
+    percentage: Math.round(avg),
+    daysLeft: fb.daysLeft,
+    pace: null,
+    forecast: fb.forecast,
+    projectedCompletionDate: fb.projectedCompletionDate,
+    rollup: true,
+    subgoalsTotal: childPercentages.length,
+    subgoalsCompleted: completedCount,
+  };
+}
 
-  // activeDays = прожитые дни минус паузы (≥1).
+/**
+ * `activeDays` цели — прожитые дни минус паузы (из `pauseHistory` + текущая открытая), ≥1.
+ * @param goal Цель.
+ * @param now Текущий момент.
+ * @returns Активные дни (дробные допустимы).
+ */
+function activeDaysOf(goal: GoalFull, now: Date): number {
   const elapsedMs = Math.max(0, now.getTime() - goal.createdAt.getTime());
   let pausedMs = 0;
   for (const period of goal.pauseHistory) {
@@ -163,17 +219,35 @@ export function computeGoalProgress(
   if (goal.pausedAt !== null) {
     pausedMs += Math.max(0, now.getTime() - goal.pausedAt.getTime());
   }
-  const activeDays = Math.max(1, (elapsedMs - pausedMs) / DAY_MS);
-  const pace = currentValue === null ? null : currentValue / activeDays;
+  return Math.max(1, (elapsedMs - pausedMs) / DAY_MS);
+}
 
+/**
+ * Общий блок прогноза (daysLeft + forecast + projectedDate) в пространстве доли `f`.
+ * Используется и листом (f из своих записей), и rollup (f из среднего % детей).
+ * @param goal Цель (deadline/createdAt/паузы).
+ * @param f Доля прогресса [0,1] или null.
+ * @param todayYmd Сегодня в TZ.
+ * @param now Текущий момент.
+ * @returns daysLeft + forecast + projectedCompletionDate.
+ */
+function forecastBlock(
+  goal: GoalFull,
+  f: number | null,
+  todayYmd: string,
+  now: Date,
+): Pick<GoalProgress, 'daysLeft' | 'forecast' | 'projectedCompletionDate'> {
+  const daysLeft =
+    goal.deadline === null
+      ? null
+      : Math.round((ymdToUtcMs(goal.deadline) - ymdToUtcMs(todayYmd)) / DAY_MS);
   let forecast: GoalProgress['forecast'] = null;
   let projectedCompletionDate: string | null = null;
   if (f !== null && f < 1) {
-    const observedRate = f / activeDays;
+    const observedRate = f / activeDaysOf(goal, now);
     if (observedRate > 0) {
-      const daysToFinish = (1 - f) / observedRate;
       projectedCompletionDate = utcMsToYmd(
-        ymdToUtcMs(todayYmd) + Math.ceil(daysToFinish) * DAY_MS,
+        ymdToUtcMs(todayYmd) + Math.ceil((1 - f) / observedRate) * DAY_MS,
       );
     }
     if (daysLeft !== null) {
@@ -191,6 +265,5 @@ export function computeGoalProgress(
       }
     }
   }
-
-  return { currentValue, percentage, daysLeft, pace, forecast, projectedCompletionDate };
+  return { daysLeft, forecast, projectedCompletionDate };
 }

@@ -115,6 +115,12 @@ export class AccentGoalDomainService {
     this._assertValues(data.direction, data.targetValue, data.startValue ?? null);
     if (data.parentGoalId != null) {
       await this._assertParentDepthOk(data.parentGoalId, data.accountId);
+      // P3#7: нельзя сделать подцелью цель, у которой уже есть свои записи (rollup затрёт показ).
+      if ((await this._entryRepository.count(data.parentGoalId)) > 0) {
+        throw new ValidationError(
+          'У этой цели уже есть свои записи прогресса — она не может стать родителем (rollup не смешивается со своими записями).',
+        );
+      }
     }
     return this._repository.create({ ...data, title, unit });
   }
@@ -241,6 +247,11 @@ export class AccentGoalDomainService {
     if (goal.direction === 'accumulate' && data.value === 0) {
       throw new ValidationError('Для накопительной цели значение записи не может быть 0.');
     }
+    // P3#7: rollup и свои записи не смешиваются — у цели с подцелями прогресс идёт из них.
+    const childCount = (await this._repository.listChildren(goalId, accountId)).length;
+    if (childCount > 0) {
+      throw new ValidationError('У цели есть подцели — записывай прогресс в них, не в родителя.');
+    }
     const occurredOn = data.occurredOn ?? todayInTimezone(timezone);
     const entry = await this._entryRepository.add({
       goalId,
@@ -287,6 +298,10 @@ export class AccentGoalDomainService {
     }
     const goal = await this._repository.findOwned(goalId, accountId);
     if (!goal || goal.status !== 'active' || goal.direction !== 'accumulate') {
+      return;
+    }
+    // Rollup-родитель (есть подцели) прогресс не принимает — скип (P3#7), не ломая задачу.
+    if ((await this._repository.listChildren(goalId, accountId)).length > 0) {
       return;
     }
     await this.addEntry(

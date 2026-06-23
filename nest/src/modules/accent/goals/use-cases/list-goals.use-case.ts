@@ -26,11 +26,8 @@ export class ListGoalsUseCase {
     timezone: string,
     filters?: GoalListFilters,
   ): Promise<GoalProgressView[]> {
-    const items = await this._goals.list(accountId, filters);
-    return Promise.all(
-      items.map(async (item) =>
-        toGoalProgressView(item, await this._goals.describe(item, timezone)),
-      ),
-    );
+    // Батч (P2#3): прогресс всех целей считается без N+1 (агрегаты + дерево одним проходом).
+    const items = await this._goals.listWithProgress(accountId, timezone, filters);
+    return items.map((item) => toGoalProgressView(item.goal, item.progress));
   }
 }

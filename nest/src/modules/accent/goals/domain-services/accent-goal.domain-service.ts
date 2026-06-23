@@ -37,6 +37,22 @@ export interface MilestoneWithReached {
   reached: boolean;
 }
 
+/** Предсчитанный контекст для батч-расчёта прогресса списка целей (P2#3, без N+1). */
+interface ProgressContext {
+  /** `goalId → Σ значений` (accumulate). */
+  sums: Map<string, number>;
+  /** `goalId → последний замер` (reach/reduce). */
+  latest: Map<string, number>;
+  /** `goalId → первый замер` (база reach/reduce). */
+  earliest: Map<string, number>;
+  /** `parentGoalId → активные подцели` (дерево для rollup). */
+  childrenByParent: Map<string, GoalFull[]>;
+  /** Сегодня в TZ пользователя (YYYY-MM-DD). */
+  todayYmd: string;
+  /** Текущий момент (для activeDays). */
+  now: Date;
+}
+
 /** Максимальная длина названия цели. */
 const TITLE_MAX = 160;
 /** Максимальная длина единицы измерения. */
@@ -351,6 +367,77 @@ export class AccentGoalDomainService {
   ): Promise<GoalEntryFull[]> {
     await this.getOwned(goalId, accountId);
     return this._entryRepository.listByGoal(goalId, { cursor, limit });
+  }
+
+  /**
+   * **Список целей с прогрессом БЕЗ N+1 (2.5·23 P2#3):** агрегаты (Σ/последний/первый замер) и
+   * дерево считаются батчем (по 1 запросу на аккаунт), прогресс — в памяти. 5 запросов вместо
+   * O(N). Используется списком целей; детальный `describe` (одна цель) остаётся как есть.
+   * @param accountId Идентификатор аккаунта.
+   * @param timezone TZ пользователя.
+   * @param filters Фильтр (статус/сфера).
+   * @returns Цели (по фильтру) + вычисленный прогресс.
+   */
+  public async listWithProgress(
+    accountId: string,
+    timezone: string,
+    filters?: GoalListFilters,
+  ): Promise<Array<{ goal: GoalFull; progress: GoalProgress }>> {
+    const filtered = await this._repository.listByAccount(accountId, filters);
+    if (filtered.length === 0) {
+      return [];
+    }
+    const [all, sums, latest, earliest] = await Promise.all([
+      this._repository.listByAccount(accountId),
+      this._entryRepository.sumValuesByAccount(accountId),
+      this._entryRepository.latestValuesByAccount(accountId),
+      this._entryRepository.earliestValuesByAccount(accountId),
+    ]);
+    const childrenByParent = new Map<string, GoalFull[]>();
+    for (const goal of all) {
+      if (goal.parentGoalId !== null && goal.status !== 'archived') {
+        const list = childrenByParent.get(goal.parentGoalId) ?? [];
+        list.push(goal);
+        childrenByParent.set(goal.parentGoalId, list);
+      }
+    }
+    const ctx: ProgressContext = {
+      sums,
+      latest,
+      earliest,
+      childrenByParent,
+      todayYmd: todayInTimezone(timezone),
+      now: new Date(),
+    };
+    return filtered.map((goal) => ({ goal, progress: this._progressFromContext(goal, ctx) }));
+  }
+
+  /**
+   * Чистый расчёт прогресса цели из предсчитанного контекста (без запросов; рекурсия по дереву
+   * ограничена глубиной). Зеркалит `describe`/`_currentAndBase`, но из карт.
+   * @param goal Цель.
+   * @param ctx Контекст (карты агрегатов + дерево + дата).
+   * @returns Вычисленный прогресс.
+   */
+  private _progressFromContext(goal: GoalFull, ctx: ProgressContext): GoalProgress {
+    const children = ctx.childrenByParent.get(goal.id) ?? [];
+    if (children.length > 0) {
+      const percentages = children.map(
+        (child) => this._progressFromContext(child, ctx).percentage ?? 0,
+      );
+      const completed = children.filter((child) => child.status === 'completed').length;
+      return computeRollupProgress(goal, percentages, completed, ctx.todayYmd, ctx.now);
+    }
+    let current: number | null;
+    let base: number | null;
+    if (goal.direction === 'accumulate') {
+      current = ctx.sums.get(goal.id) ?? 0;
+      base = 0;
+    } else {
+      base = goal.startValue ?? ctx.earliest.get(goal.id) ?? null;
+      current = ctx.latest.get(goal.id) ?? base;
+    }
+    return computeGoalProgress(goal, current, base, ctx.todayYmd, ctx.now);
   }
 
   /**

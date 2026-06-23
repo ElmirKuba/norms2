@@ -36,6 +36,7 @@ import { ListGoalEntriesUseCase } from '../use-cases/list-goal-entries.use-case'
 import { AddMilestoneUseCase } from '../use-cases/add-milestone.use-case';
 import { ListMilestonesUseCase } from '../use-cases/list-milestones.use-case';
 import { RemoveMilestoneUseCase } from '../use-cases/remove-milestone.use-case';
+import { ListChildGoalsUseCase } from '../use-cases/list-child-goals.use-case';
 import { addMilestoneSchema } from '../dtos/add-milestone.dto';
 import type { AddMilestoneDto } from '../dtos/add-milestone.dto';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
@@ -76,6 +77,7 @@ export class GoalsController {
     private readonly _addMilestone: AddMilestoneUseCase,
     private readonly _listMilestones: ListMilestonesUseCase,
     private readonly _removeMilestone: RemoveMilestoneUseCase,
+    private readonly _listChildren: ListChildGoalsUseCase,
   ) {}
 
   /**
@@ -127,6 +129,20 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalProgressView> {
     return this._get.execute(id, request.account.id, request.account.timezone);
+  }
+
+  /**
+   * Прямые подцели цели (с вычисляемым прогрессом).
+   * @param id Идентификатор родительской цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекции подцелей.
+   */
+  @Get('goals/:id/children')
+  public children(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalProgressView[]> {
+    return this._listChildren.execute(id, request.account.id, request.account.timezone);
   }
 
   /**

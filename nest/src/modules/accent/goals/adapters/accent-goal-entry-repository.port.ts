@@ -86,4 +86,26 @@ export interface AccentGoalEntryRepositoryPort {
    * @returns Число удалённых записей.
    */
   deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number>;
+
+  /**
+   * **Батч (2.5·23 P2#3):** Σ значений по всем целям аккаунта одним запросом — для списка
+   * целей без N+1. Цели без записей в карте отсутствуют (трактуй как 0).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → сумма`.
+   */
+  sumValuesByAccount(accountId: string): Promise<Map<string, number>>;
+
+  /**
+   * **Батч:** последний замер по каждой цели аккаунта (reach/reduce) одним запросом.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → последнее значение`.
+   */
+  latestValuesByAccount(accountId: string): Promise<Map<string, number>>;
+
+  /**
+   * **Батч:** первый замер по каждой цели аккаунта (база reach/reduce) одним запросом.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → первое значение`.
+   */
+  earliestValuesByAccount(accountId: string): Promise<Map<string, number>>;
 }

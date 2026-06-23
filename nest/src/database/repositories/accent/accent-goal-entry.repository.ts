@@ -3,6 +3,7 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { goalEntries } from '../../schemas/goal-entries.schema';
+import { goals } from '../../schemas/goals.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type {
   AccentGoalEntryRepositoryPort,
@@ -143,5 +144,59 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       )
       .returning({ id: goalEntries.id });
     return rows.length;
+  }
+
+  /**
+   * Σ значений по всем целям аккаунта (батч, один запрос join+group by).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → сумма`.
+   */
+  public async sumValuesByAccount(accountId: string): Promise<Map<string, number>> {
+    const rows = await this._db
+      .select({
+        goalId: goalEntries.goalId,
+        total: sql<number>`sum(${goalEntries.value})::double precision`,
+      })
+      .from(goalEntries)
+      .innerJoin(goals, eq(goals.id, goalEntries.goalId))
+      .where(eq(goals.accountId, accountId))
+      .groupBy(goalEntries.goalId);
+    return new Map(rows.map((r) => [r.goalId, Number(r.total)]));
+  }
+
+  /**
+   * Последний замер по каждой цели аккаунта (occurred_on desc, created_at desc) — батч.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → последнее значение`.
+   */
+  public async latestValuesByAccount(accountId: string): Promise<Map<string, number>> {
+    const rows = await this._db
+      .selectDistinctOn([goalEntries.goalId], {
+        goalId: goalEntries.goalId,
+        value: goalEntries.value,
+      })
+      .from(goalEntries)
+      .innerJoin(goals, eq(goals.id, goalEntries.goalId))
+      .where(eq(goals.accountId, accountId))
+      .orderBy(goalEntries.goalId, desc(goalEntries.occurredOn), desc(goalEntries.createdAt));
+    return new Map(rows.map((r) => [r.goalId, r.value]));
+  }
+
+  /**
+   * Первый замер по каждой цели аккаунта (occurred_on asc, created_at asc) — батч.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Карта `goalId → первое значение`.
+   */
+  public async earliestValuesByAccount(accountId: string): Promise<Map<string, number>> {
+    const rows = await this._db
+      .selectDistinctOn([goalEntries.goalId], {
+        goalId: goalEntries.goalId,
+        value: goalEntries.value,
+      })
+      .from(goalEntries)
+      .innerJoin(goals, eq(goals.id, goalEntries.goalId))
+      .where(eq(goals.accountId, accountId))
+      .orderBy(goalEntries.goalId, asc(goalEntries.occurredOn), asc(goalEntries.createdAt));
+    return new Map(rows.map((r) => [r.goalId, r.value]));
   }
 }

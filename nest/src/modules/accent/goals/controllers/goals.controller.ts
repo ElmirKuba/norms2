@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createGoalSchema } from '../dtos/create-goal.dto';
@@ -21,10 +33,16 @@ import { ResumeGoalUseCase } from '../use-cases/resume-goal.use-case';
 import { AddGoalEntryUseCase } from '../use-cases/add-goal-entry.use-case';
 import type { AddGoalEntryResult } from '../use-cases/add-goal-entry.use-case';
 import { ListGoalEntriesUseCase } from '../use-cases/list-goal-entries.use-case';
+import { AddMilestoneUseCase } from '../use-cases/add-milestone.use-case';
+import { ListMilestonesUseCase } from '../use-cases/list-milestones.use-case';
+import { RemoveMilestoneUseCase } from '../use-cases/remove-milestone.use-case';
+import { addMilestoneSchema } from '../dtos/add-milestone.dto';
+import type { AddMilestoneDto } from '../dtos/add-milestone.dto';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { GoalView } from '../interfaces/goal-view.interface';
 import type { GoalProgressView } from '../interfaces/goal-progress-view.interface';
 import type { GoalEntryView } from '../interfaces/goal-entry-view.interface';
+import type { MilestoneView } from '../interfaces/milestone-view.interface';
 
 /**
  * Контроллер целей (`/api/v1/accent/goals`) — под Guard (members-only, per-account).
@@ -55,6 +73,9 @@ export class GoalsController {
     private readonly _resume: ResumeGoalUseCase,
     private readonly _addEntry: AddGoalEntryUseCase,
     private readonly _listEntries: ListGoalEntriesUseCase,
+    private readonly _addMilestone: AddMilestoneUseCase,
+    private readonly _listMilestones: ListMilestonesUseCase,
+    private readonly _removeMilestone: RemoveMilestoneUseCase,
   ) {}
 
   /**
@@ -218,5 +239,51 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalView> {
     return this._resume.execute(id, request.account.id);
+  }
+
+  /**
+   * Добавляет веху к цели.
+   * @param id Идентификатор цели.
+   * @param body Название + порог.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция созданной вехи (201).
+   */
+  @Post('goals/:id/milestones')
+  public addMilestone(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(addMilestoneSchema)) body: AddMilestoneDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MilestoneView> {
+    return this._addMilestone.execute(id, request.account.id, body);
+  }
+
+  /**
+   * Вехи цели (по возрастанию порога, с вычисленным `reached`).
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекции вех.
+   */
+  @Get('goals/:id/milestones')
+  public listMilestones(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MilestoneView[]> {
+    return this._listMilestones.execute(id, request.account.id);
+  }
+
+  /**
+   * Удаляет веху (только не достигнутую).
+   * @param id Идентификатор цели.
+   * @param mid Идентификатор вехи.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Delete('goals/:id/milestones/:mid')
+  @HttpCode(204)
+  public removeMilestone(
+    @Param('id') id: string,
+    @Param('mid') mid: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    return this._removeMilestone.execute(id, mid, request.account.id);
   }
 }

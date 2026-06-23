@@ -100,6 +100,31 @@ export function isGoalReached(
 }
 
 /**
+ * Достигнута ли веха (direction-aware, ADR-0052). Веха пройдена, когда текущее значение
+ * дошло до её порога **в нужную сторону**: accumulate/reach (рост) — `current ≥ threshold`;
+ * reduce (снижение, `target<base`) — `current ≤ threshold`.
+ * @param goal Цель (род + цель/база определяют направление).
+ * @param thresholdValue Порог вехи.
+ * @param currentValue Текущее значение или null.
+ * @param base База (для reach/reduce) или null.
+ * @returns true, если веха достигнута.
+ */
+export function isMilestoneReached(
+  goal: Pick<GoalFull, 'direction' | 'targetValue'>,
+  thresholdValue: number,
+  currentValue: number | null,
+  base: number | null,
+): boolean {
+  if (currentValue === null) {
+    return false;
+  }
+  // Направление: reduce при target<base → идём вниз; иначе вверх (accumulate base=0).
+  const goingDown =
+    goal.direction === 'reduce' && base !== null && goal.targetValue < base;
+  return goingDown ? currentValue <= thresholdValue : currentValue >= thresholdValue;
+}
+
+/**
  * Считает весь вычисляемый прогресс цели (ADR-0052). forecast — в пространстве доли `f`
  * (observedRate=f/activeDays vs requiredRate=(1−f)/daysLeft), едино для всех direction.
  * `activeDays` = прожитые дни минус паузы (из `pauseHistory` + текущая открытая).

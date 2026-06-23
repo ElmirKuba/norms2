@@ -15,11 +15,22 @@ import type {
 } from '../adapters/accent-goal-repository.port';
 import { ACCENT_GOAL_ENTRY_REPOSITORY } from '../adapters/accent-goal-entry-repository.port';
 import type { AccentGoalEntryRepositoryPort } from '../adapters/accent-goal-entry-repository.port';
+import { ACCENT_MILESTONE_REPOSITORY } from '../adapters/accent-milestone-repository.port';
+import type { AccentMilestoneRepositoryPort } from '../adapters/accent-milestone-repository.port';
 import { GOAL_DIRECTIONS } from '../interfaces/goal-full.interface';
 import type { GoalDirection, GoalFull } from '../interfaces/goal-full.interface';
 import type { GoalEntryFull } from '../interfaces/goal-entry-full.interface';
-import { computeGoalProgress, isGoalReached } from '../goal-progress.util';
+import type { MilestoneFull } from '../interfaces/milestone-full.interface';
+import { computeGoalProgress, isGoalReached, isMilestoneReached } from '../goal-progress.util';
 import type { GoalProgress } from '../goal-progress.util';
+
+/** Веха с вычисленной достигнутостью (для проекции наружу). */
+export interface MilestoneWithReached {
+  /** Веха. */
+  milestone: MilestoneFull;
+  /** Достигнута ли (вычислено из текущего прогресса цели). */
+  reached: boolean;
+}
 
 /** Максимальная длина названия цели. */
 const TITLE_MAX = 160;
@@ -44,6 +55,8 @@ export class AccentGoalDomainService {
     @Inject(ACCENT_GOAL_REPOSITORY) private readonly _repository: AccentGoalRepositoryPort,
     @Inject(ACCENT_GOAL_ENTRY_REPOSITORY)
     private readonly _entryRepository: AccentGoalEntryRepositoryPort,
+    @Inject(ACCENT_MILESTONE_REPOSITORY)
+    private readonly _milestoneRepository: AccentMilestoneRepositoryPort,
     private readonly _config: ConfigService<Env, true>,
   ) {}
 
@@ -267,6 +280,87 @@ export class AccentGoalDomainService {
   public async describe(goal: GoalFull, timezone: string): Promise<GoalProgress> {
     const { current, base } = await this._currentAndBase(goal);
     return computeGoalProgress(goal, current, base, todayInTimezone(timezone), new Date());
+  }
+
+  /**
+   * Добавляет веху к цели. Валидирует: название непусто; `thresholdValue` конечно; для
+   * `accumulate` — `0 < threshold ≤ targetValue` (для reach/reduce порог — уровень замера,
+   * без жёсткой границы).
+   * @param goalId Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param data Название + порог.
+   * @returns Созданная веха.
+   * @throws {GoalNotFoundError} Если цели нет / не ваша.
+   * @throws {ValidationError} При нарушении инвариантов.
+   */
+  public async addMilestone(
+    goalId: string,
+    accountId: string,
+    data: { title: string; thresholdValue: number },
+  ): Promise<MilestoneFull> {
+    const goal = await this.getOwned(goalId, accountId);
+    const title = data.title.trim();
+    if (title.length === 0) {
+      throw new ValidationError('Название вехи не может быть пустым.');
+    }
+    if (title.length > TITLE_MAX) {
+      throw new ValidationError(`Название вехи длиннее ${TITLE_MAX} символов.`);
+    }
+    if (!Number.isFinite(data.thresholdValue)) {
+      throw new ValidationError('Порог вехи должен быть числом.');
+    }
+    if (goal.direction === 'accumulate') {
+      if (data.thresholdValue <= 0 || data.thresholdValue > goal.targetValue) {
+        throw new ValidationError('Порог вехи должен быть в диапазоне (0, цель].');
+      }
+    }
+    return this._milestoneRepository.add({ goalId, title, thresholdValue: data.thresholdValue });
+  }
+
+  /**
+   * Вехи цели с вычисленной достигнутостью (по текущему прогрессу). Проверяет владение.
+   * @param goalId Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Вехи + флаг `reached` на каждой.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   */
+  public async listMilestones(
+    goalId: string,
+    accountId: string,
+  ): Promise<MilestoneWithReached[]> {
+    const goal = await this.getOwned(goalId, accountId);
+    const { current, base } = await this._currentAndBase(goal);
+    const items = await this._milestoneRepository.listByGoal(goalId);
+    return items.map((milestone) => ({
+      milestone,
+      reached: isMilestoneReached(goal, milestone.thresholdValue, current, base),
+    }));
+  }
+
+  /**
+   * Удаляет веху цели — **только не достигнутую** (domain-model §4). Достигнутую веху не
+   * трогаем (она факт истории/награды).
+   * @param goalId Идентификатор цели.
+   * @param milestoneId Идентификатор вехи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @throws {GoalNotFoundError} Если цели/вехи нет / не ваша.
+   * @throws {ValidationError} Если веха уже достигнута.
+   */
+  public async removeMilestone(
+    goalId: string,
+    milestoneId: string,
+    accountId: string,
+  ): Promise<void> {
+    const goal = await this.getOwned(goalId, accountId);
+    const milestone = await this._milestoneRepository.findInGoal(milestoneId, goalId);
+    if (!milestone) {
+      throw new GoalNotFoundError('Веха не найдена.');
+    }
+    const { current, base } = await this._currentAndBase(goal);
+    if (isMilestoneReached(goal, milestone.thresholdValue, current, base)) {
+      throw new ValidationError('Достигнутую веху удалить нельзя.');
+    }
+    await this._milestoneRepository.remove(milestoneId, goalId);
   }
 
   /**

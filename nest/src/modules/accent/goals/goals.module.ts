@@ -18,6 +18,9 @@ import { PauseGoalUseCase } from './use-cases/pause-goal.use-case';
 import { ResumeGoalUseCase } from './use-cases/resume-goal.use-case';
 import { AddGoalEntryUseCase } from './use-cases/add-goal-entry.use-case';
 import { ListGoalEntriesUseCase } from './use-cases/list-goal-entries.use-case';
+import { AddMilestoneUseCase } from './use-cases/add-milestone.use-case';
+import { ListMilestonesUseCase } from './use-cases/list-milestones.use-case';
+import { RemoveMilestoneUseCase } from './use-cases/remove-milestone.use-case';
 
 /**
  * Область целей раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.5). Порт
@@ -45,6 +48,9 @@ import { ListGoalEntriesUseCase } from './use-cases/list-goal-entries.use-case';
     ResumeGoalUseCase,
     AddGoalEntryUseCase,
     ListGoalEntriesUseCase,
+    AddMilestoneUseCase,
+    ListMilestonesUseCase,
+    RemoveMilestoneUseCase,
   ],
   exports: [AccentGoalDomainService],
 })

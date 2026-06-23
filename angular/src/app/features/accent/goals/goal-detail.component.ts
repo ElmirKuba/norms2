@@ -817,10 +817,10 @@ export class GoalDetailComponent {
     });
   }
 
-  /** Грузит прямые подцели (фильтр всех целей по `parentGoalId`). */
+  /** Грузит прямые подцели (эндпоинт `/children`, P3#5). */
   private _loadChildren(): void {
-    this._api.listGoals().subscribe({
-      next: (all) => this.children.set(all.filter((goal) => goal.parentGoalId === this._id)),
+    this._api.listChildGoals(this._id).subscribe({
+      next: (items) => this.children.set(items),
       error: () => undefined,
     });
   }

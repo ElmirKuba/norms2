@@ -197,6 +197,11 @@ export class AccentApiService {
     return this._http.get<GoalProgressView>(`${API_PREFIX}/accent/goals/${id}`);
   }
 
+  /** Прямые подцели цели (с прогрессом). */
+  public listChildGoals(id: string): Observable<GoalProgressView[]> {
+    return this._http.get<GoalProgressView[]>(`${API_PREFIX}/accent/goals/${id}/children`);
+  }
+
   /** Создать цель. */
   public createGoal(payload: GoalPayload): Observable<GoalView> {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals`, payload);

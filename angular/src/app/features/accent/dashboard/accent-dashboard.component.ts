@@ -137,17 +137,24 @@ export class AccentDashboardComponent {
     this._load();
   }
 
+  /**
+   *
+   */
   private _load(): void {
     this._api.getSettings().subscribe({
-      next: (settings) => this.pausedFrom.set(settings.accentPausedFrom),
+      next: (settings) => { this.pausedFrom.set(settings.accentPausedFrom); },
       error: () => undefined,
     });
     this._api.listGoals('active').subscribe({
-      next: (goals) => this.activeGoals.set(goals.slice(0, 5)),
+      // Примеры (is_starter) не считаются «в работе» — только присвоенные цели.
+      next: (goals) => { this.activeGoals.set(goals.filter((g) => !g.isStarter).slice(0, 5)); },
       error: () => undefined,
     });
   }
 
+  /**
+   *
+   */
   protected pause(): void {
     this.busy.set(true);
     this._api.pause().subscribe({
@@ -155,10 +162,13 @@ export class AccentDashboardComponent {
         this.busy.set(false);
         this._load();
       },
-      error: () => this.busy.set(false),
+      error: () => { this.busy.set(false); },
     });
   }
 
+  /**
+   *
+   */
   protected resume(): void {
     this.busy.set(true);
     this._api.resume().subscribe({
@@ -166,7 +176,7 @@ export class AccentDashboardComponent {
         this.busy.set(false);
         this._load();
       },
-      error: () => this.busy.set(false),
+      error: () => { this.busy.set(false); },
     });
   }
 }

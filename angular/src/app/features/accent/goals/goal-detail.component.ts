@@ -155,7 +155,16 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </div>
         }
 
-        @if (!g.rollup && g.status === 'active') {
+        @if (g.isStarter) {
+          <app-card>
+            <div class="gd__adopt">
+              <p class="gd__muted">Это пример. Добавь себе — и начни записывать прогресс (числа потом поправишь).</p>
+              <app-button [loading]="adoptBusy()" (click)="adopt(g)">
+                <span aria-hidden="true">➕</span> Добавить себе
+              </app-button>
+            </div>
+          </app-card>
+        } @else if (!g.rollup && g.status === 'active') {
           <app-card>
             <form class="gd__record" (ngSubmit)="record(g)">
               <label class="gd__rec-label">{{ recordLabel(g) }}</label>
@@ -406,6 +415,12 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         flex-direction: column;
         gap: var(--space-2);
       }
+      .gd__adopt {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        align-items: flex-start;
+      }
       .gd__rec-label {
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
@@ -610,6 +625,8 @@ export class GoalDetailComponent {
   protected readonly moreBusy = signal(false);
   /** Открыто ли меню «⋯» действий с целью. */
   protected readonly menuOpen = signal(false);
+  /** Идёт присвоение примера. */
+  protected readonly adoptBusy = signal(false);
   /** Поле значения записи. */
   protected readonly valueControl = new FormControl<number | null>(null);
   /** Id редактируемой записи истории (или null). */
@@ -714,9 +731,12 @@ export class GoalDetailComponent {
     this._lifecycle(this._api.restoreGoal(this._id));
   }
 
+  /**
+   *
+   */
   private _lifecycle(request: ReturnType<AccentApiService['pauseGoal']>): void {
     this.menuOpen.set(false);
-    request.subscribe({ next: () => this._load(), error: () => undefined });
+    request.subscribe({ next: () => { this._load(); }, error: () => undefined });
   }
 
   /** RU-подпись рода. */
@@ -827,9 +847,9 @@ export class GoalDetailComponent {
       { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { goal } },
     );
     ref.afterClosed().subscribe((result) => {
-      if (result && result.mode === 'update') {
+      if (result?.mode === 'update') {
         this._api.updateGoal(this._id, result.payload).subscribe({
-          next: () => this._load(),
+          next: () => { this._load(); },
           error: () => undefined,
         });
       }
@@ -849,7 +869,19 @@ export class GoalDetailComponent {
         this.hasMore.set(page.length === ENTRIES_PAGE);
         this.moreBusy.set(false);
       },
-      error: () => this.moreBusy.set(false),
+      error: () => { this.moreBusy.set(false); },
+    });
+  }
+
+  /** Присваивает пример себе («Добавить себе») → перезагрузка. */
+  protected adopt(goal: GoalProgressView): void {
+    this.adoptBusy.set(true);
+    this._api.adoptGoal(goal.id).subscribe({
+      next: () => {
+        this.adoptBusy.set(false);
+        this._reloadGoal();
+      },
+      error: () => { this.adoptBusy.set(false); },
     });
   }
 
@@ -860,9 +892,9 @@ export class GoalDetailComponent {
       { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { presetParentId: this._id } },
     );
     ref.afterClosed().subscribe((result) => {
-      if (result && result.mode === 'create') {
+      if (result?.mode === 'create') {
         this._api.createGoal(result.payload).subscribe({
-          next: () => this._load(),
+          next: () => { this._load(); },
           error: () => undefined,
         });
       }
@@ -900,11 +932,14 @@ export class GoalDetailComponent {
   /** Удаляет (не достигнутую) веху. */
   protected removeMilestone(milestone: MilestoneView): void {
     this._api.removeMilestone(this._id, milestone.id).subscribe({
-      next: () => this._loadMilestones(),
+      next: () => { this._loadMilestones(); },
       error: () => undefined,
     });
   }
 
+  /**
+   *
+   */
   private _load(): void {
     this.loading.set(true);
     this._api.getGoal(this._id).subscribe({
@@ -923,6 +958,9 @@ export class GoalDetailComponent {
     });
   }
 
+  /**
+   *
+   */
   private _loadEntries(): void {
     this._api.listGoalEntries(this._id, undefined, ENTRIES_PAGE).subscribe({
       next: (page) => {
@@ -933,9 +971,12 @@ export class GoalDetailComponent {
     });
   }
 
+  /**
+   *
+   */
   private _loadMilestones(): void {
     this._api.listMilestones(this._id).subscribe({
-      next: (items) => this.milestones.set(items),
+      next: (items) => { this.milestones.set(items); },
       error: () => undefined,
     });
   }
@@ -993,7 +1034,7 @@ export class GoalDetailComponent {
   /** Перечитывает цель (для свежего currentValue/% после правки/удаления записи). */
   private _reloadGoal(): void {
     this._api.getGoal(this._id).subscribe({
-      next: (goal) => this.goal.set(goal),
+      next: (goal) => { this.goal.set(goal); },
       error: () => undefined,
     });
   }
@@ -1001,7 +1042,7 @@ export class GoalDetailComponent {
   /** Грузит прямые подцели (эндпоинт `/children`, P3#5). */
   private _loadChildren(): void {
     this._api.listChildGoals(this._id).subscribe({
-      next: (items) => this.children.set(items),
+      next: (items) => { this.children.set(items); },
       error: () => undefined,
     });
   }

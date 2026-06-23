@@ -202,6 +202,21 @@ export class AccentApiService {
     return this._http.get<GoalProgressView[]>(`${API_PREFIX}/accent/goals/${id}/children`);
   }
 
+  /** Получить стартовый пак целей (докидывает примеры) → свежий список. */
+  public seedGoalStarterPack(): Observable<GoalProgressView[]> {
+    return this._http.post<GoalProgressView[]>(`${API_PREFIX}/accent/goals/starter-pack`, {});
+  }
+
+  /** Очистить примеры целей (непринятые) → свежий список. */
+  public clearGoalStarters(): Observable<GoalProgressView[]> {
+    return this._http.delete<GoalProgressView[]>(`${API_PREFIX}/accent/goals/starter-pack`);
+  }
+
+  /** Присвоить пример себе («Добавить себе»). */
+  public adoptGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/adopt`, {});
+  }
+
   /** Создать цель. */
   public createGoal(payload: GoalPayload): Observable<GoalView> {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals`, payload);

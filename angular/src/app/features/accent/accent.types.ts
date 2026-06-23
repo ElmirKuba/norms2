@@ -335,6 +335,8 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
+  isStarter: boolean;
   /** Начало текущей паузы (ISO) или null. */
   pausedAt: string | null;
 }

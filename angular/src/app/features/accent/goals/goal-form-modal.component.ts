@@ -287,13 +287,13 @@ export class GoalFormModalComponent {
     if (this._data.presetParentId !== undefined) {
       this.form.controls.parentGoalId.setValue(this._data.presetParentId);
     }
-    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
+    this._api.listDomains().subscribe({ next: (d) => { this.domains.set(d); }, error: () => undefined });
     this._api
       .listAttributes()
-      .subscribe({ next: (a) => this.attributesCatalog.set(a), error: () => undefined });
+      .subscribe({ next: (a) => { this.attributesCatalog.set(a); }, error: () => undefined });
     if (this.showParentSelect()) {
       this._api.listGoals('active').subscribe({
-        next: (g) => this.parents.set(g),
+        next: (g) => { this.parents.set(g); },
         error: () => undefined,
       });
     }

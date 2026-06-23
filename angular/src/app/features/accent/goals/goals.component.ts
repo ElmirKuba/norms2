@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -17,7 +17,7 @@ import type { GoalFormData, GoalFormResult } from './goal-form-modal.component';
 type StatusFilter = 'all' | GoalStatus;
 
 /** Подписи фильтра статусов. */
-const STATUS_FILTERS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
+const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
   { value: 'active', label: 'Активные' },
   { value: 'completed', label: 'Достигнутые' },
   { value: 'paused', label: 'На паузе' },
@@ -47,9 +47,22 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
     <section class="goals">
       <header class="goals__head">
         <h2>Цели</h2>
-        <span class="tooltip-host" [attr.data-tooltip]="'Создать цель'">
-          <app-button ariaLabel="Создать цель" (click)="openCreate()">+</app-button>
-        </span>
+        <div class="goals__head-actions" appHscrollHint [appHscrollHintDelay]="1300">
+          @if (items().length > 0) {
+            @if (hasStarters()) {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                <span aria-hidden="true">🧹</span> Очистить примеры
+              </app-button>
+            } @else {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                <span aria-hidden="true">🎁</span> Получить пак
+              </app-button>
+            }
+          }
+          <span class="tooltip-host" [attr.data-tooltip]="'Создать цель'">
+            <app-button ariaLabel="Создать цель" (click)="openCreate()">+</app-button>
+          </span>
+        </div>
       </header>
 
       <div class="goals__filters" role="tablist" aria-label="Фильтр по статусу"
@@ -86,14 +99,21 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       } @else if (items().length === 0) {
         <app-empty-state
           title="Целей пока нет"
-          text="Цель — это куда ты идёшь: что накопить, какого уровня достичь или что снизить. Маленькие шаги складываются в большое."
+          text="Цель — это куда ты идёшь: что накопить, какого уровня достичь или что снизить. Можно начать с готовых примеров или создать свою."
         >
-          <app-button (click)="openCreate()">
+          <app-button [loading]="packBusy()" (click)="seedPack()">
+            <span aria-hidden="true">🎁</span>
+            Получить примеры целей
+          </app-button>
+          <app-button variant="ghost" (click)="openCreate()">
             <span aria-hidden="true">🎯</span>
-            Создать цель
+            Создать свою
           </app-button>
         </app-empty-state>
       } @else {
+        @if (hasStarters()) {
+          <p class="goals__hint">Примеры помечены бейджем. «Добавить себе» или «Изм.» — и пример станет твоей целью.</p>
+        }
         <ul class="goals__list">
           @for (g of items(); track g.id) {
             <li>
@@ -101,6 +121,9 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                 <div class="goals__item">
                   <div class="goals__top">
                     <span class="goals__badge">{{ directionLabel(g) }}</span>
+                    @if (g.isStarter) {
+                      <span class="goals__badge goals__badge--example">пример</span>
+                    }
                     @if (g.status !== 'active') {
                       <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span>
                     }
@@ -149,6 +172,31 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .goals__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        min-width: 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .goals__head-actions::-webkit-scrollbar {
+        display: none;
+      }
+      .goals__head-actions .btn {
+        flex-shrink: 0;
+      }
+      .goals__hint {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-3);
+      }
+      .goals__badge--example {
+        color: var(--color-warning, #b8860b);
+        border-color: var(--color-warning, #b8860b);
       }
       .goals__filters {
         display: flex;
@@ -331,9 +379,13 @@ export class GoalsComponent {
   protected readonly domains = signal<AccentRefItem[]>([]);
   /** Текущий фильтр по сфере ('' = все). */
   protected readonly domainFilter = signal('');
+  /** Идёт получение/очистка стартового пака. */
+  protected readonly packBusy = signal(false);
+  /** Есть ли ещё не присвоенные примеры (для бейджа-хинта и контекстной кнопки). */
+  protected readonly hasStarters = computed(() => this.items().some((item) => item.isStarter));
 
   public constructor() {
-    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
+    this._api.listDomains().subscribe({ next: (d) => { this.domains.set(d); }, error: () => undefined });
     this._load();
   }
 
@@ -407,6 +459,30 @@ export class GoalsComponent {
     this._openForm({});
   }
 
+  /** Получить стартовый пак целей (докидывает примеры) — список приходит свежим. */
+  protected seedPack(): void {
+    this.packBusy.set(true);
+    this._api.seedGoalStarterPack().subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => { this.packBusy.set(false); },
+    });
+  }
+
+  /** Очистить примеры (только непринятые) — список приходит свежим. */
+  protected clearExamples(): void {
+    this.packBusy.set(true);
+    this._api.clearGoalStarters().subscribe({
+      next: (items) => {
+        this.items.set(items);
+        this.packBusy.set(false);
+      },
+      error: () => { this.packBusy.set(false); },
+    });
+  }
+
   /** Открывает форму редактирования цели. */
   protected openEdit(goal: GoalProgressView): void {
     this._openForm({ goal });
@@ -426,15 +502,21 @@ export class GoalsComponent {
         result.mode === 'create'
           ? this._api.createGoal(result.payload)
           : this._api.updateGoal(data.goal!.id, result.payload);
-      request.subscribe({ next: () => this._load(), error: () => undefined });
+      request.subscribe({ next: () => { this._load(); }, error: () => undefined });
     });
   }
 
+  /**
+   *
+   */
   private _fmt(ymd: string): string {
     const date = new Date(`${ymd}T00:00:00`);
     return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(date);
   }
 
+  /**
+   *
+   */
   private _load(): void {
     this.loading.set(true);
     const status = this.statusFilter();

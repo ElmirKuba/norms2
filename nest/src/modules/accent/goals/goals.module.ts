@@ -4,6 +4,8 @@ import { ACCENT_GOAL_REPOSITORY } from './adapters/accent-goal-repository.port';
 import { AccentGoalRepository } from '../../../database/repositories/accent/accent-goal.repository';
 import { ACCENT_GOAL_ENTRY_REPOSITORY } from './adapters/accent-goal-entry-repository.port';
 import { AccentGoalEntryRepository } from '../../../database/repositories/accent/accent-goal-entry.repository';
+import { ACCENT_MILESTONE_REPOSITORY } from './adapters/accent-milestone-repository.port';
+import { AccentMilestoneRepository } from '../../../database/repositories/accent/accent-milestone.repository';
 import { AccentGoalDomainService } from './domain-services/accent-goal.domain-service';
 import { GoalsController } from './controllers/goals.controller';
 import { ListGoalsUseCase } from './use-cases/list-goals.use-case';
@@ -31,6 +33,7 @@ import { ListGoalEntriesUseCase } from './use-cases/list-goal-entries.use-case';
   providers: [
     { provide: ACCENT_GOAL_REPOSITORY, useClass: AccentGoalRepository },
     { provide: ACCENT_GOAL_ENTRY_REPOSITORY, useClass: AccentGoalEntryRepository },
+    { provide: ACCENT_MILESTONE_REPOSITORY, useClass: AccentMilestoneRepository },
     AccentGoalDomainService,
     ListGoalsUseCase,
     GetGoalUseCase,

@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -166,10 +166,10 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </app-card>
         } @else if (!g.rollup && g.status === 'active') {
           <app-card>
-            <form class="gd__record" (ngSubmit)="record(g)">
+            <form class="gd__record" [formGroup]="recordForm" (ngSubmit)="record(g)">
               <label class="gd__rec-label">{{ recordLabel(g) }}</label>
               <div class="gd__rec-row">
-                <input class="gd__input" type="number" step="any" [formControl]="valueControl"
+                <input class="gd__input" type="number" step="any" formControlName="value"
                   [placeholder]="g.unit" />
                 <app-button type="submit" [loading]="busy()">Записать</app-button>
               </div>
@@ -199,10 +199,10 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </ul>
         }
         @if (g.status === 'active') {
-          <form class="gd__ms-form" (ngSubmit)="addMilestone()">
-            <input class="gd__input" type="text" maxlength="160" [formControl]="msTitle"
+          <form class="gd__ms-form" [formGroup]="msForm" (ngSubmit)="addMilestone()">
+            <input class="gd__input" type="text" maxlength="160" formControlName="title"
               placeholder="Название вехи" />
-            <input class="gd__input gd__input--thr" type="number" step="any" [formControl]="msThreshold"
+            <input class="gd__input gd__input--thr" type="number" step="any" formControlName="thresholdValue"
               [placeholder]="'порог (' + g.unit + ')'" />
             <app-button type="submit" variant="ghost" [loading]="msBusy()">Добавить веху</app-button>
           </form>
@@ -627,8 +627,10 @@ export class GoalDetailComponent {
   protected readonly menuOpen = signal(false);
   /** Идёт присвоение примера. */
   protected readonly adoptBusy = signal(false);
-  /** Поле значения записи. */
-  protected readonly valueControl = new FormControl<number | null>(null);
+  /** Форма записи прогресса (FormGroup нужен, чтобы `(ngSubmit)` реально эмитился — ADR-триаж 2.5·23 #1). */
+  protected readonly recordForm = new FormGroup({
+    value: new FormControl<number | null>(null),
+  });
   /** Id редактируемой записи истории (или null). */
   protected readonly editingId = signal<string | null>(null);
   /** Поле правки значения записи. */
@@ -637,10 +639,11 @@ export class GoalDetailComponent {
   protected readonly children = signal<GoalProgressView[]>([]);
   /** Вехи цели. */
   protected readonly milestones = signal<MilestoneView[]>([]);
-  /** Поле названия новой вехи. */
-  protected readonly msTitle = new FormControl('', { nonNullable: true });
-  /** Поле порога новой вехи. */
-  protected readonly msThreshold = new FormControl<number | null>(null);
+  /** Форма новой вехи (FormGroup — чтобы `(ngSubmit)` эмитился, см. триаж 2.5·23 #1). */
+  protected readonly msForm = new FormGroup({
+    title: new FormControl('', { nonNullable: true }),
+    thresholdValue: new FormControl<number | null>(null),
+  });
   /** Идёт добавление вехи. */
   protected readonly msBusy = signal(false);
   /** Ошибка вехи. */
@@ -815,7 +818,7 @@ export class GoalDetailComponent {
 
   /** Записывает прогресс (accumulate — инкремент; reach/reduce — замер). */
   protected record(goal: GoalProgressView): void {
-    const value = this.valueControl.value;
+    const value = this.recordForm.controls.value.value;
     this.recordError.set(null);
     if (value === null || !Number.isFinite(value)) {
       this.recordError.set('Введи число.');
@@ -830,7 +833,7 @@ export class GoalDetailComponent {
       next: (result) => {
         this.goal.set(result.goal);
         this.entries.update((list) => [result.entry, ...list]);
-        this.valueControl.reset();
+        this.recordForm.reset();
         this.busy.set(false);
       },
       error: (err: unknown) => {
@@ -903,8 +906,8 @@ export class GoalDetailComponent {
 
   /** Добавляет веху. */
   protected addMilestone(): void {
-    const title = this.msTitle.value.trim();
-    const threshold = this.msThreshold.value;
+    const title = this.msForm.controls.title.value.trim();
+    const threshold = this.msForm.controls.thresholdValue.value;
     this.msError.set(null);
     if (title === '') {
       this.msError.set('Название вехи обязательно.');
@@ -917,8 +920,7 @@ export class GoalDetailComponent {
     this.msBusy.set(true);
     this._api.addMilestone(this._id, { title, thresholdValue: threshold }).subscribe({
       next: () => {
-        this.msTitle.reset();
-        this.msThreshold.reset();
+        this.msForm.reset();
         this.msBusy.set(false);
         this._loadMilestones();
       },

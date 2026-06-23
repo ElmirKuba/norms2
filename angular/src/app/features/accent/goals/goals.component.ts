@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_LABELS } from '../accent.types';
 import type { GoalForecast, GoalProgressView, GoalStatus } from '../accent.types';
+import { GoalFormModalComponent } from './goal-form-modal.component';
+import type { GoalFormData, GoalFormResult } from './goal-form-modal.component';
 
 /** Вариант фильтра по статусу (включая «все»). */
 type StatusFilter = 'all' | GoalStatus;
@@ -262,6 +266,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
 })
 export class GoalsComponent {
   private readonly _api = inject(AccentApiService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Цели текущего фильтра. */
   protected readonly items = signal<GoalProgressView[]>([]);
@@ -338,9 +343,32 @@ export class GoalsComponent {
     return `Осталось ${String(goal.daysLeft)} дн. · до ${this._fmt(goal.deadline)}`;
   }
 
-  /** Открывает форму создания цели. */
+  /** Открывает форму создания цели; на сохранении создаёт и перезагружает. */
   protected openCreate(): void {
-    // TODO: Claude Code: 2026-06-23: подключить модалку создания/редактирования цели — 2.5·16.
+    this._openForm({});
+  }
+
+  /** Открывает форму редактирования цели. */
+  protected openEdit(goal: GoalProgressView): void {
+    this._openForm({ goal });
+  }
+
+  /** Открывает модалку формы и применяет результат (create/update) → reload. */
+  private _openForm(data: GoalFormData): void {
+    const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
+      GoalFormModalComponent,
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+      const request =
+        result.mode === 'create'
+          ? this._api.createGoal(result.payload)
+          : this._api.updateGoal(data.goal!.id, result.payload);
+      request.subscribe({ next: () => this._load(), error: () => undefined });
+    });
   }
 
   private _fmt(ymd: string): string {

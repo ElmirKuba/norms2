@@ -258,6 +258,34 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * **Кросс-домен ВНИЗ (ADR-0050, 2.5·13):** прогресс цели от выполненной привычки. Зовётся
+   * из use-case привычек на переходе complete. **Best-effort, молчаливый:** пропускает без
+   * ошибки, если цели нет/не ваша, цель не `active`, или `direction ≠ accumulate` (инкремент
+   * привычки осмыслен только для накопительной цели; reach/reduce — это замеры, их юзер
+   * ставит сам). Так выполнение задачи не падает из-за состояния цели. Идемпотентность — на
+   * вызывающем (один раз на переход). Авто-завершение цели — внутри `addEntry`.
+   * @param goalId Идентификатор цели (из задачи).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param value Вклад (doneValue задачи; для binary = 1).
+   * @param timezone TZ пользователя (дата записи).
+   */
+  public async addProgressFromHabit(
+    goalId: string,
+    accountId: string,
+    value: number,
+    timezone: string,
+  ): Promise<void> {
+    if (!Number.isFinite(value) || value === 0) {
+      return;
+    }
+    const goal = await this._repository.findOwned(goalId, accountId);
+    if (!goal || goal.status !== 'active' || goal.direction !== 'accumulate') {
+      return;
+    }
+    await this.addEntry(goalId, accountId, { value, note: 'Прогресс из привычки' }, timezone);
+  }
+
+  /**
    * История записей цели (новые сверху, курсор по `id`). Проверяет владение.
    * @param goalId Идентификатор цели.
    * @param accountId Идентификатор аккаунта-владельца.

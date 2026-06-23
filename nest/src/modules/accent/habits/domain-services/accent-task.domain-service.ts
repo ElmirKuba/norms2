@@ -182,7 +182,7 @@ export class AccentTaskDomainService {
     id: string,
     accountId: string,
     doneValue?: number,
-  ): Promise<{ task: TaskFull; ladderEvent: LadderEvent }> {
+  ): Promise<{ task: TaskFull; ladderEvent: LadderEvent; transitioned: boolean }> {
     const task = await this.getOwned(id, accountId);
     let effectiveDone: number;
     if (task.kind === 'binary') {
@@ -207,18 +207,21 @@ export class AccentTaskDomainService {
     // или повторный complete строку не получит → лесенка не двинется дважды.
     const templateId = task.templateId;
     if (templateId !== null) {
-      const transitioned = await this._repository.updateIfOpen(id, accountId, patch);
-      if (transitioned) {
+      const transitionedRow = await this._repository.updateIfOpen(id, accountId, patch);
+      if (transitionedRow) {
         const ladderEvent = await this._ladder.onComplete(templateId, accountId, effectiveDone);
-        return { task: transitioned, ladderEvent };
+        return { task: transitionedRow, ladderEvent, transitioned: true };
       }
     }
     // Разовая задача, либо повторный complete (уже не открыта) — обновляем значение без лесенки.
+    // `transitioned` для разовой = была ли задача открыта до вызова (для кросс-домена 2.5·13,
+    // один раз на переход); для повтора привычки-задачи — false (строку выше не получили).
+    const wasOpen = task.status === 'pending' || task.status === 'skipped';
     const updated = await this._repository.update(id, accountId, patch);
     if (!updated) {
       throw new TaskNotFoundError('Задача не найдена.');
     }
-    return { task: updated, ladderEvent: null };
+    return { task: updated, ladderEvent: null, transitioned: templateId === null && wasOpen };
   }
 
   /**

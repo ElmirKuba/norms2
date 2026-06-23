@@ -103,7 +103,12 @@ export class TasksController {
     @Body(new ZodValidationPipe(completeTaskSchema)) body: CompleteTaskDto,
     @Req() request: AuthenticatedRequest,
   ): Promise<CompleteTaskResult> {
-    return this._complete.execute(id, request.account.id, body.doneValue);
+    return this._complete.execute(
+      id,
+      request.account.id,
+      request.account.timezone,
+      body.doneValue,
+    );
   }
 
   /**

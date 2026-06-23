@@ -136,6 +136,40 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
    * @param sourceTaskId Идентификатор задачи-источника.
    * @returns Число удалённых записей.
    */
+  /**
+   * Удаляет запись по id в пределах цели (ручная коррекция, патч 8).
+   * @param id Идентификатор записи.
+   * @param goalId Идентификатор цели.
+   * @returns true, если удалено.
+   */
+  public async removeById(id: string, goalId: string): Promise<boolean> {
+    const rows = await this._db
+      .delete(goalEntries)
+      .where(and(eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)))
+      .returning({ id: goalEntries.id });
+    return rows.length > 0;
+  }
+
+  /**
+   * Правит запись по id в пределах цели (только переданные поля; патч 8).
+   * @param id Идентификатор записи.
+   * @param goalId Идентификатор цели.
+   * @param patch Поля (value/occurredOn/note).
+   * @returns Обновлённая запись или null.
+   */
+  public async updateById(
+    id: string,
+    goalId: string,
+    patch: { value?: number; occurredOn?: string; note?: string | null },
+  ): Promise<GoalEntryFull | null> {
+    const rows = await this._db
+      .update(goalEntries)
+      .set(patch)
+      .where(and(eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)))
+      .returning();
+    return rows[0] ?? null;
+  }
+
   public async deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number> {
     const rows = await this._db
       .delete(goalEntries)

@@ -120,6 +120,13 @@
       "when": 1782214500149,
       "tag": "0016_kind_penance",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1782226966203,
+      "tag": "0017_gorgeous_human_torch",
+      "breakpoints": true
     }
   ]
 }

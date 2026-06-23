@@ -27,6 +27,7 @@ import {
   isGoalReached,
   isMilestoneReached,
 } from '../goal-progress.util';
+import { STARTER_GOALS } from '../seed/starter-goals';
 import type { GoalProgress } from '../goal-progress.util';
 
 /** Веха с вычисленной достигнутостью (для проекции наружу). */
@@ -168,7 +169,62 @@ export class AccentGoalDomainService {
     if (patch.targetValue !== undefined) {
       this._assertValues(current.direction, patch.targetValue, current.startValue);
     }
+    // Adoption (ADR-0051): правка примера присваивает его (снимает is_starter).
+    if (current.isStarter) {
+      next.isStarter = false;
+    }
     const updated = await this._repository.update(id, accountId, next);
+    if (!updated) {
+      throw new GoalNotFoundError('Цель не найдена.');
+    }
+    return updated;
+  }
+
+  /**
+   * Засевает стартовый пак целей (по кнопке «Получить пак», ADR-0051): создаёт цели из
+   * `STARTER_GOALS` с `is_starter=true`. Только докидывает недостающие (дедуп по названию).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число созданных примеров.
+   */
+  public async seedStarterPack(accountId: string): Promise<number> {
+    const existing = await this._repository.listByAccount(accountId);
+    const titles = new Set(existing.map((goal) => goal.title));
+    const toSeed: GoalCreateData[] = STARTER_GOALS.filter(
+      (item) => !titles.has(item.title),
+    ).map((item) => ({
+      accountId,
+      title: item.title,
+      direction: item.direction,
+      unit: item.unit,
+      targetValue: item.targetValue,
+      startValue: item.startValue,
+      whyItMatters: item.whyItMatters,
+      attributes: item.attributes,
+      fallbackVersion: item.fallbackVersion,
+      isStarter: true,
+    }));
+    return this._repository.createMany(toSeed);
+  }
+
+  /**
+   * Очищает примеры: удаляет непринятые стартовые цели (`is_starter=true`). Свои не трогает.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число удалённых.
+   */
+  public async clearStarters(accountId: string): Promise<number> {
+    return this._repository.deleteStarters(accountId);
+  }
+
+  /**
+   * Присваивает пример («Добавить себе», ADR-0051): снимает `is_starter` → цель становится
+   * обычной (считается «в работе», принимает записи).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая цель.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   */
+  public async adopt(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.update(id, accountId, { isStarter: false });
     if (!updated) {
       throw new GoalNotFoundError('Цель не найдена.');
     }
@@ -256,6 +312,10 @@ export class AccentGoalDomainService {
     }
     if (goal.status === 'archived') {
       throw new ValidationError('Цель в архиве — записи не принимаются.');
+    }
+    // Инертная витрина (ADR-0051): пример не принимает прогресс до присвоения.
+    if (goal.isStarter) {
+      throw new ValidationError('Это пример — сначала «Добавить себе».');
     }
     if (!Number.isFinite(data.value)) {
       throw new ValidationError('Значение записи должно быть числом.');

@@ -37,6 +37,9 @@ import { AddMilestoneUseCase } from '../use-cases/add-milestone.use-case';
 import { ListMilestonesUseCase } from '../use-cases/list-milestones.use-case';
 import { RemoveMilestoneUseCase } from '../use-cases/remove-milestone.use-case';
 import { ListChildGoalsUseCase } from '../use-cases/list-child-goals.use-case';
+import { SeedGoalStarterPackUseCase } from '../use-cases/seed-goal-starter-pack.use-case';
+import { ClearGoalStartersUseCase } from '../use-cases/clear-goal-starters.use-case';
+import { AdoptGoalUseCase } from '../use-cases/adopt-goal.use-case';
 import { RemoveGoalEntryUseCase } from '../use-cases/remove-goal-entry.use-case';
 import { UpdateGoalEntryUseCase } from '../use-cases/update-goal-entry.use-case';
 import { updateGoalEntrySchema } from '../dtos/update-goal-entry.dto';
@@ -84,6 +87,9 @@ export class GoalsController {
     private readonly _listChildren: ListChildGoalsUseCase,
     private readonly _removeEntry: RemoveGoalEntryUseCase,
     private readonly _updateEntry: UpdateGoalEntryUseCase,
+    private readonly _seedPack: SeedGoalStarterPackUseCase,
+    private readonly _clearStarters: ClearGoalStartersUseCase,
+    private readonly _adopt: AdoptGoalUseCase,
   ) {}
 
   /**
@@ -121,6 +127,47 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Получить стартовый пак целей (докидывает примеры, ADR-0051). Объявлен ДО `:id`.
+   * Возвращает свежий список активных целей (вкл. примеры).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список целей после сева.
+   */
+  @Post('goals/starter-pack')
+  public async getStarterPack(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalProgressView[]> {
+    await this._seedPack.execute(request.account.id);
+    return this._list.execute(request.account.id, request.account.timezone, { status: 'active' });
+  }
+
+  /**
+   * Очистить примеры (удаляет только непринятые стартовые). Объявлен ДО `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список целей после очистки.
+   */
+  @Delete('goals/starter-pack')
+  public async clearStarters(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalProgressView[]> {
+    await this._clearStarters.execute(request.account.id);
+    return this._list.execute(request.account.id, request.account.timezone, { status: 'active' });
+  }
+
+  /**
+   * Присвоить пример себе («Добавить себе», ADR-0051): снимает флаг — цель становится в работе.
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция присвоенной цели.
+   */
+  @Post('goals/:id/adopt')
+  public adopt(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalView> {
+    return this._adopt.execute(id, request.account.id);
   }
 
   /**

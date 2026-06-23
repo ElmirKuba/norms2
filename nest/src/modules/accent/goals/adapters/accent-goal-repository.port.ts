@@ -41,6 +41,8 @@ export interface GoalCreateData {
   deadline?: string | null;
   /** Текст «версия на плохой день» (опц.). */
   fallbackVersion?: string | null;
+  /** Стартовый пример (опц., дефолт false) — для сева пака. */
+  isStarter?: boolean;
 }
 
 /** Частичный патч цели (только переданные поля; `| undefined` под zod `.partial()`). */
@@ -53,6 +55,8 @@ export interface GoalUpdateData {
   targetValue?: number | undefined;
   deadline?: string | null | undefined;
   fallbackVersion?: string | null | undefined;
+  /** Снятие флага «пример» (adoption) — внутреннее, не из API-DTO. */
+  isStarter?: boolean | undefined;
 }
 
 /**
@@ -92,6 +96,20 @@ export interface AccentGoalRepositoryPort {
    * @returns Созданная цель.
    */
   create(data: GoalCreateData): Promise<GoalFull>;
+
+  /**
+   * Массовая вставка целей (стартовый пак; id на каждую — `generateId()`).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  createMany(items: readonly GoalCreateData[]): Promise<number>;
+
+  /**
+   * Удаляет все непринятые стартовые (`is_starter=true`) цели аккаунта; присвоенные не трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  deleteStarters(accountId: string): Promise<number>;
 
   /**
    * Обновляет цель владельца (частично; last-write-wins, без version).

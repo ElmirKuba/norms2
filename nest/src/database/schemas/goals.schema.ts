@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   doublePrecision,
   jsonb,
@@ -55,6 +56,7 @@ export const goals = defineTableWithSchema<GoalFull>()(
       .default('active'),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     fallbackVersion: text('fallback_version'),
+    isStarter: boolean('is_starter').notNull().default(false),
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseHistory: jsonb('pause_history')
       .$type<GoalPausePeriod[]>()

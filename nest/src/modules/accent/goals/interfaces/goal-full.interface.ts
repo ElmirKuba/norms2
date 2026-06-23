@@ -73,6 +73,10 @@ export interface GoalFull {
   completedAt: Date | null;
   /** Текст «версия цели на плохой день» (anti-burnout, опц.). */
   fallbackVersion: string | null;
+  /** Стартовый пример (`is_starter`, ADR-0051): виден в списке с бейджем «пример», но НЕ
+   * считается «в работе» (исключён из дашборда) и не принимает записи до присвоения
+   * («Добавить себе» / «Изм.»). Инертная витрина. */
+  isStarter: boolean;
   /** Начало текущей паузы (ISO) или null. */
   pausedAt: Date | null;
   /** История пауз (для `activeDays` в forecast). */

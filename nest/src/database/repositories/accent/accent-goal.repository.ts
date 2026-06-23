@@ -106,6 +106,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
         startValue: data.startValue ?? null,
         deadline: data.deadline ?? null,
         fallbackVersion: data.fallbackVersion ?? null,
+        isStarter: data.isStarter ?? false,
       })
       .returning();
     const row = rows[0];
@@ -113,6 +114,52 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       throw new Error('goals: create не вернул строку.');
     }
     return row;
+  }
+
+  /**
+   * Массовая вставка целей (стартовый пак; id на каждую — `generateId()`).
+   * @param items Данные создания.
+   * @returns Число вставленных строк.
+   */
+  public async createMany(items: readonly GoalCreateData[]): Promise<number> {
+    if (items.length === 0) {
+      return 0;
+    }
+    const rows = await this._db
+      .insert(goals)
+      .values(
+        items.map((data) => ({
+          id: generateId(),
+          accountId: data.accountId,
+          parentGoalId: data.parentGoalId ?? null,
+          title: data.title,
+          whyItMatters: data.whyItMatters ?? null,
+          domainKey: data.domainKey ?? null,
+          attributes: data.attributes ?? [],
+          direction: data.direction,
+          unit: data.unit,
+          targetValue: data.targetValue,
+          startValue: data.startValue ?? null,
+          deadline: data.deadline ?? null,
+          fallbackVersion: data.fallbackVersion ?? null,
+          isStarter: data.isStarter ?? false,
+        })),
+      )
+      .returning({ id: goals.id });
+    return rows.length;
+  }
+
+  /**
+   * Удаляет непринятые стартовые (`is_starter=true`) цели аккаунта; присвоенные не трогает.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async deleteStarters(accountId: string): Promise<number> {
+    const rows = await this._db
+      .delete(goals)
+      .where(and(eq(goals.accountId, accountId), eq(goals.isStarter, true)))
+      .returning({ id: goals.id });
+    return rows.length;
   }
 
   /**

@@ -97,9 +97,21 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
               @if (deadlineLabel(g); as dl) {
                 <span class="gd__muted">{{ dl }}</span>
               }
+              @if (showDeadlineHint(g)) {
+                <span class="gd__muted">Поставь срок, чтобы видеть прогноз к дате.</span>
+              }
             </div>
           </div>
         </app-card>
+
+        @if (g.fallbackVersion) {
+          <aside class="gd__fallback">
+            <span class="gd__fallback-icon" aria-hidden="true">🌱</span>
+            <span class="gd__fallback-text">
+              <strong>На плохой день:</strong> {{ g.fallbackVersion }}
+            </span>
+          </aside>
+        }
 
         @if (g.parentGoalId === null) {
           <div class="gd__subgoals">
@@ -289,6 +301,26 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+      }
+      .gd__fallback {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-surface-2);
+        border-left: 3px solid var(--color-accent);
+        border-radius: var(--radius-md);
+      }
+      .gd__fallback-icon {
+        font-size: var(--fs-lg);
+        line-height: 1.3;
+      }
+      .gd__fallback-text {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .gd__fallback-text strong {
+        color: var(--color-text);
       }
       .gd__pct {
         font-size: var(--fs-xl, 2rem);
@@ -585,14 +617,31 @@ export class GoalDetailComponent {
     return forecast === null ? '' : FORECAST_LABELS[forecast];
   }
 
-  /** Строка «сколько/из чего». */
+  /** Строка «сколько/из чего» — для reduce/reach подчёркивает пройденный путь от старта. */
   protected amountLabel(goal: GoalProgressView): string {
     if (goal.rollup) {
       return `${String(goal.subgoalsCompleted)} из ${String(goal.subgoalsTotal)} подцелей выполнено`;
     }
     const current = goal.currentValue === null ? '—' : String(goal.currentValue);
-    const sep = goal.direction === 'accumulate' ? 'из' : '→';
-    return `${current} ${sep} ${String(goal.targetValue)} ${goal.unit}`;
+    if (goal.direction === 'accumulate') {
+      return `${current} из ${String(goal.targetValue)} ${goal.unit}`;
+    }
+    // reach/reduce: показываем путь старт → сейчас → цель (виден прогресс, а не «сколько осталось»).
+    if (goal.startValue !== null) {
+      return `старт ${String(goal.startValue)} · сейчас ${current} · цель ${String(goal.targetValue)} ${goal.unit}`;
+    }
+    return `сейчас ${current} · цель ${String(goal.targetValue)} ${goal.unit}`;
+  }
+
+  /** Показать ли подсказку «поставь срок» (бессрочная цель в работе, без forecast). */
+  protected showDeadlineHint(goal: GoalProgressView): boolean {
+    return (
+      goal.deadline === null &&
+      !goal.rollup &&
+      goal.status === 'active' &&
+      goal.percentage !== null &&
+      goal.percentage < 100
+    );
   }
 
   /** Подпись поля записи по роду. */

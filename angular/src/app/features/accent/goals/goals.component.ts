@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -39,7 +40,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goals',
-  imports: [ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="goals">
@@ -93,7 +94,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                     }
                   </div>
 
-                  <strong class="goals__name">{{ g.title }}</strong>
+                  <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
                   @if (g.whyItMatters) {
                     <span class="goals__why">{{ g.whyItMatters }}</span>
                   }
@@ -209,6 +210,13 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       }
       .goals__name {
         font-size: var(--fs-md);
+        font-weight: 600;
+        color: var(--color-text);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .goals__name:hover {
+        text-decoration: underline;
       }
       .goals__why {
         font-size: var(--fs-sm);

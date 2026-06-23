@@ -22,6 +22,11 @@ export const accentRoutes: Routes = [
         loadComponent: () => import('./goals/goals.component').then((m) => m.GoalsComponent),
       },
       {
+        path: 'goals/:id',
+        loadComponent: () =>
+          import('./goals/goal-detail.component').then((m) => m.GoalDetailComponent),
+      },
+      {
         path: 'habits',
         loadComponent: () => import('./habits/habits.component').then((m) => m.HabitsComponent),
       },

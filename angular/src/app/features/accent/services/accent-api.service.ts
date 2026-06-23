@@ -240,6 +240,23 @@ export class AccentApiService {
     );
   }
 
+  /** Удалить запись прогресса (ручная коррекция, патч 8). */
+  public removeGoalEntry(goalId: string, entryId: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/accent/goals/${goalId}/entries/${entryId}`);
+  }
+
+  /** Правка записи прогресса (патч 8). */
+  public updateGoalEntry(
+    goalId: string,
+    entryId: string,
+    payload: { value?: number; occurredOn?: string; note?: string | null },
+  ): Observable<GoalEntryView> {
+    return this._http.patch<GoalEntryView>(
+      `${API_PREFIX}/accent/goals/${goalId}/entries/${entryId}`,
+      payload,
+    );
+  }
+
   /** История записей прогресса (курсор по `id`, новые сверху). */
   public listGoalEntries(
     id: string,

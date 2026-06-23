@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
+import { ModalService } from '../../../shared/modals/modal.service';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
@@ -104,6 +112,19 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </div>
         </app-card>
 
+        @if (chart(); as c) {
+          <app-card>
+            <div class="gd__chart-wrap">
+              <span class="gd__chart-label">Динамика</span>
+              <svg class="gd__chart" [attr.viewBox]="'0 0 ' + c.w + ' ' + c.h"
+                preserveAspectRatio="none" role="img" aria-label="График прогресса">
+                <polyline [attr.points]="c.points" fill="none" stroke="var(--color-accent)"
+                  stroke-width="2" vector-effect="non-scaling-stroke" />
+              </svg>
+            </div>
+          </app-card>
+        }
+
         @if (g.fallbackVersion) {
           <aside class="gd__fallback">
             <span class="gd__fallback-icon" aria-hidden="true">🌱</span>
@@ -188,10 +209,24 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           <ul class="gd__history">
             @for (e of entries(); track e.id) {
               <li class="gd__entry">
-                <span class="gd__entry-val">{{ e.value > 0 ? '+' : '' }}{{ e.value }} {{ g.unit }}</span>
-                <span class="gd__entry-date">{{ fmt(e.occurredOn) }}</span>
-                @if (e.note) {
-                  <span class="gd__entry-note">{{ e.note }}</span>
+                @if (editingId() === e.id) {
+                  <input class="gd__entry-edit" type="number" step="any" [formControl]="editControl" />
+                  <button type="button" class="gd__entry-btn" aria-label="Сохранить"
+                    (click)="saveEntry(e)">✓</button>
+                  <button type="button" class="gd__entry-btn" aria-label="Отмена"
+                    (click)="cancelEdit()">↩</button>
+                } @else {
+                  <span class="gd__entry-val">{{ e.value > 0 ? '+' : '' }}{{ e.value }} {{ g.unit }}</span>
+                  <span class="gd__entry-date">{{ fmt(e.occurredOn) }}</span>
+                  @if (e.note) {
+                    <span class="gd__entry-note">{{ e.note }}</span>
+                  }
+                  <span class="gd__entry-actions">
+                    <button type="button" class="gd__entry-btn" aria-label="Изменить запись"
+                      (click)="startEdit(e)">✎</button>
+                    <button type="button" class="gd__entry-btn gd__entry-btn--danger"
+                      aria-label="Удалить запись" (click)="removeEntry(e)">✕</button>
+                  </span>
                 }
               </li>
             }
@@ -477,13 +512,57 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         flex-direction: column;
         gap: var(--space-2);
       }
+      .gd__chart-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .gd__chart-label {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .gd__chart {
+        width: 100%;
+        height: 60px;
+        display: block;
+      }
       .gd__entry {
         display: flex;
         gap: var(--space-3);
-        align-items: baseline;
+        align-items: center;
         flex-wrap: wrap;
         padding: var(--space-2) 0;
         border-bottom: 1px solid var(--color-border);
+      }
+      .gd__entry-actions {
+        margin-left: auto;
+        display: inline-flex;
+        gap: var(--space-1);
+      }
+      .gd__entry-btn {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: var(--fs-md);
+        padding: 0 var(--space-1);
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+      }
+      .gd__entry-btn:hover {
+        color: var(--color-text);
+      }
+      .gd__entry-btn--danger:hover {
+        color: var(--color-danger);
+      }
+      .gd__entry-edit {
+        width: 120px;
+        padding: var(--space-1) var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
       }
       .gd__entry-val {
         font-weight: 600;
@@ -511,6 +590,7 @@ export class GoalDetailComponent {
   private readonly _router = inject(Router);
   private readonly _api = inject(AccentApiService);
   private readonly _dialog = inject(MatDialog);
+  private readonly _modal = inject(ModalService);
 
   /** Цель с прогрессом или null. */
   protected readonly goal = signal<GoalProgressView | null>(null);
@@ -532,6 +612,10 @@ export class GoalDetailComponent {
   protected readonly menuOpen = signal(false);
   /** Поле значения записи. */
   protected readonly valueControl = new FormControl<number | null>(null);
+  /** Id редактируемой записи истории (или null). */
+  protected readonly editingId = signal<string | null>(null);
+  /** Поле правки значения записи. */
+  protected readonly editControl = new FormControl<number | null>(null);
   /** Прямые подцели. */
   protected readonly children = signal<GoalProgressView[]>([]);
   /** Вехи цели. */
@@ -546,6 +630,45 @@ export class GoalDetailComponent {
   protected readonly msError = signal<string | null>(null);
 
   private readonly _id = this._route.snapshot.paramMap.get('id') ?? '';
+
+  /**
+   * SVG-спарклайн динамики из загруженных записей: для accumulate — нарастающая сумма, для
+   * reach/reduce — сами замеры. null, если точек < 2 или цель rollup.
+   */
+  protected readonly chart = computed<{ points: string; w: number; h: number } | null>(() => {
+    const goal = this.goal();
+    if (goal === null || goal.rollup) {
+      return null;
+    }
+    const sorted = [...this.entries()].sort((a, b) =>
+      a.occurredOn === b.occurredOn ? a.id.localeCompare(b.id) : a.occurredOn.localeCompare(b.occurredOn),
+    );
+    if (sorted.length < 2) {
+      return null;
+    }
+    let series: number[];
+    if (goal.direction === 'accumulate') {
+      let acc = 0;
+      series = sorted.map((e) => (acc += e.value));
+    } else {
+      series = sorted.map((e) => e.value);
+    }
+    const W = 300;
+    const H = 60;
+    const pad = 4;
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    const span = max - min || 1;
+    const n = series.length;
+    const points = series
+      .map((v, i) => {
+        const x = pad + (i / (n - 1)) * (W - 2 * pad);
+        const y = H - pad - ((v - min) / span) * (H - 2 * pad);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+    return { points, w: W, h: H };
+  });
 
   public constructor() {
     this._load();
@@ -813,6 +936,64 @@ export class GoalDetailComponent {
   private _loadMilestones(): void {
     this._api.listMilestones(this._id).subscribe({
       next: (items) => this.milestones.set(items),
+      error: () => undefined,
+    });
+  }
+
+  /** Начинает правку записи (инлайн). */
+  protected startEdit(entry: GoalEntryView): void {
+    this.editingId.set(entry.id);
+    this.editControl.setValue(entry.value);
+  }
+
+  /** Отменяет правку. */
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+  }
+
+  /** Сохраняет правку значения записи → пересчёт цели. */
+  protected saveEntry(entry: GoalEntryView): void {
+    const value = this.editControl.value;
+    if (value === null || !Number.isFinite(value)) {
+      return;
+    }
+    this._api.updateGoalEntry(this._id, entry.id, { value }).subscribe({
+      next: (updated) => {
+        this.entries.update((list) => list.map((e) => (e.id === updated.id ? updated : e)));
+        this.editingId.set(null);
+        this._reloadGoal();
+      },
+      error: () => undefined,
+    });
+  }
+
+  /** Удаляет запись (с подтверждением) → пересчёт цели. */
+  protected removeEntry(entry: GoalEntryView): void {
+    void this._modal
+      .confirm({
+        title: 'Удалить запись?',
+        text: `Запись «${entry.value > 0 ? '+' : ''}${String(entry.value)}» будет удалена, прогресс цели пересчитается.`,
+        confirmText: 'Удалить',
+        danger: true,
+      })
+      .then((ok) => {
+        if (!ok) {
+          return;
+        }
+        this._api.removeGoalEntry(this._id, entry.id).subscribe({
+          next: () => {
+            this.entries.update((list) => list.filter((e) => e.id !== entry.id));
+            this._reloadGoal();
+          },
+          error: () => undefined,
+        });
+      });
+  }
+
+  /** Перечитывает цель (для свежего currentValue/% после правки/удаления записи). */
+  private _reloadGoal(): void {
+    this._api.getGoal(this._id).subscribe({
+      next: (goal) => this.goal.set(goal),
       error: () => undefined,
     });
   }

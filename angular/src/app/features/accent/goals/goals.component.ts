@@ -4,11 +4,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_LABELS } from '../accent.types';
-import type { GoalForecast, GoalProgressView, GoalStatus } from '../accent.types';
+import type { AccentRefItem, GoalForecast, GoalProgressView, GoalStatus } from '../accent.types';
 import { GoalFormModalComponent } from './goal-form-modal.component';
 import type { GoalFormData, GoalFormResult } from './goal-form-modal.component';
 
@@ -40,7 +41,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goals',
-  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="goals">
@@ -51,7 +52,8 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         </span>
       </header>
 
-      <div class="goals__filters" role="tablist" aria-label="Фильтр по статусу">
+      <div class="goals__filters" role="tablist" aria-label="Фильтр по статусу"
+        appHscrollHint [appHscrollHintDelay]="1300">
         @for (f of statusFilters; track f.value) {
           <button
             type="button"
@@ -63,6 +65,19 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           >{{ f.label }}</button>
         }
       </div>
+
+      @if (domains().length > 0) {
+        <label class="goals__domain-filter">
+          <span class="goals__domain-label">Сфера:</span>
+          <select class="goals__domain-select" [value]="domainFilter()"
+            (change)="setDomain($any($event.target).value)">
+            <option value="">Все сферы</option>
+            @for (d of domains(); track d.key) {
+              <option [value]="d.key">{{ d.title }}</option>
+            }
+          </select>
+        </label>
+      }
 
       @if (loading()) {
         <p class="goals__muted">Загрузка…</p>
@@ -138,10 +153,17 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .goals__filters {
         display: flex;
         gap: var(--space-2);
-        flex-wrap: wrap;
-        margin: var(--space-3) 0 var(--space-4);
+        margin: var(--space-3) 0 var(--space-3);
+        // На узких экранах чипы не переносим, а крутим горизонтально (+нудж appHscrollHint).
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .goals__filters::-webkit-scrollbar {
+        display: none;
       }
       .goals__chip {
+        flex-shrink: 0;
         padding: var(--space-1) var(--space-3);
         min-height: var(--touch-min);
         border: 1px solid var(--color-border);
@@ -155,6 +177,24 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         background: var(--color-accent);
         border-color: var(--color-accent);
         color: var(--color-on-accent, #fff);
+      }
+      .goals__domain-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0 0 var(--space-4);
+        font-size: var(--fs-sm);
+      }
+      .goals__domain-label {
+        color: var(--color-text-muted);
+      }
+      .goals__domain-select {
+        padding: var(--space-1) var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
       }
       .goals__muted {
         color: var(--color-text-muted);
@@ -287,8 +327,19 @@ export class GoalsComponent {
 
   /** Опции фильтра статуса (для шаблона). */
   protected readonly statusFilters = STATUS_FILTERS;
+  /** Каталог сфер (для фильтра). */
+  protected readonly domains = signal<AccentRefItem[]>([]);
+  /** Текущий фильтр по сфере ('' = все). */
+  protected readonly domainFilter = signal('');
 
   public constructor() {
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
+    this._load();
+  }
+
+  /** Меняет фильтр по сфере и перезагружает. */
+  protected setDomain(value: string): void {
+    this.domainFilter.set(value);
     this._load();
   }
 
@@ -387,7 +438,10 @@ export class GoalsComponent {
   private _load(): void {
     this.loading.set(true);
     const status = this.statusFilter();
-    this._api.listGoals(status === 'all' ? undefined : status).subscribe({
+    const domain = this.domainFilter();
+    this._api
+      .listGoals(status === 'all' ? undefined : status, domain === '' ? undefined : domain)
+      .subscribe({
       next: (items) => {
         this.items.set(items);
         this.error.set(null);

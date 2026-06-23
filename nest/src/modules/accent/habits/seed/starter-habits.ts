@@ -30,8 +30,9 @@ export interface StarterHabit {
  * Сознательно **anti-burnout**: низкий `minTarget` (1), адаптивная лесенка от смешного
  * минимума к цели, у каждой — worded `minVersion` (что делать в худший день). Учат
  * хорошим дефолтам на примере (философия раздела: расти без надрыва, не обнуляться).
- * Курировано **18** — широкий охват сфер (движение / ум / язык / дух / здоровье / питание / связь / деньги /
- * **отказ — цифровая тишина и утро без телефона** как ядро «тренажёра отказа», ADR-0049), но не свалка: каждая
+ * Курировано **23** — широкий охват сфер (движение / разминка / ум / язык / дух / молитва / здоровье /
+ * витамины / питание / связь / деньги / **отказ — цифровая тишина, утро без телефона, алкоголь,
+ * сигареты, сладкое** как ядро «тренажёра отказа», ADR-0049), но не свалка: каждая
  * привычка — осмысленный дефолт, а не «добей до числа». По аналогии с расширением
  * стартового пака микро-побед (2.4). Это **примеры**, человек берёт нужное, остальное чистит.
  */
@@ -205,5 +206,57 @@ export const STARTER_HABITS: readonly StarterHabit[] = [
     ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
     attributes: ['discipline', 'health'],
     minVersion: 'Отказаться от сладкого хотя бы один раз за день.',
+  },
+  {
+    title: 'Витамины',
+    icon: '💊',
+    description: 'То, что назначено/по плану — стабильно, без пропусков.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['health'],
+    minVersion: 'Принять хотя бы основное по плану.',
+  },
+  {
+    title: 'Без алкоголя',
+    icon: '🍷',
+    description: 'День трезвости — тренировка отказа и подарок завтрашнему себе.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['discipline', 'health'],
+    minVersion: 'Сегодня — ни глотка.',
+  },
+  {
+    title: 'Без сигарет',
+    icon: '🚭',
+    description: 'Отказ — главная мышца. Сорвался — отметь честно, не обнуляйся.',
+    kind: 'binary',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual', easyStreak: 0, missStreak: 0 },
+    attributes: ['discipline', 'health'],
+    // NB: бросание курения точнее ляжет в AntiHabit «держусь» (2.6, серия «не курю N дней»);
+    // здесь — дневная форма «день без сигарет». При желании смигрировать на 2.6.
+    minVersion: 'Продержаться этот день.',
+  },
+  {
+    title: 'Зарядка / разминка',
+    icon: '🤸',
+    description: 'Размять тело — отдельно от силы и прогулки: суставы, шея, спина.',
+    kind: 'timed',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 5, goalTarget: 15, step: 1, policy: 'adaptive', easyStreak: 0, missStreak: 0 },
+    attributes: ['health', 'strength'],
+    minVersion: 'Размяться одну минуту — шея и плечи.',
+  },
+  {
+    title: 'Молитва / медитация',
+    icon: '🙏',
+    description: 'Осознанная духовная практика — глубже, чем быстрый сброс тревоги дыханием.',
+    kind: 'timed',
+    recurrence: 'FREQ=DAILY',
+    ladder: { minTarget: 1, currentTarget: 5, goalTarget: 20, step: 1, policy: 'adaptive', easyStreak: 0, missStreak: 0 },
+    attributes: ['spirit'],
+    minVersion: 'Минута тишины с собой или короткая молитва.',
   },
 ];

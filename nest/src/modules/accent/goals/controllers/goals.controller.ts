@@ -37,6 +37,10 @@ import { AddMilestoneUseCase } from '../use-cases/add-milestone.use-case';
 import { ListMilestonesUseCase } from '../use-cases/list-milestones.use-case';
 import { RemoveMilestoneUseCase } from '../use-cases/remove-milestone.use-case';
 import { ListChildGoalsUseCase } from '../use-cases/list-child-goals.use-case';
+import { RemoveGoalEntryUseCase } from '../use-cases/remove-goal-entry.use-case';
+import { UpdateGoalEntryUseCase } from '../use-cases/update-goal-entry.use-case';
+import { updateGoalEntrySchema } from '../dtos/update-goal-entry.dto';
+import type { UpdateGoalEntryDto } from '../dtos/update-goal-entry.dto';
 import { addMilestoneSchema } from '../dtos/add-milestone.dto';
 import type { AddMilestoneDto } from '../dtos/add-milestone.dto';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
@@ -78,6 +82,8 @@ export class GoalsController {
     private readonly _listMilestones: ListMilestonesUseCase,
     private readonly _removeMilestone: RemoveMilestoneUseCase,
     private readonly _listChildren: ListChildGoalsUseCase,
+    private readonly _removeEntry: RemoveGoalEntryUseCase,
+    private readonly _updateEntry: UpdateGoalEntryUseCase,
   ) {}
 
   /**
@@ -183,6 +189,40 @@ export class GoalsController {
       cursor,
       Number.isFinite(parsedLimit) ? parsedLimit : undefined,
     );
+  }
+
+  /**
+   * Правит запись прогресса (ручная коррекция, патч 8).
+   * @param id Идентификатор цели.
+   * @param entryId Идентификатор записи.
+   * @param body Поля для правки.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Обновлённая запись.
+   */
+  @Patch('goals/:id/entries/:entryId')
+  public updateEntry(
+    @Param('id') id: string,
+    @Param('entryId') entryId: string,
+    @Body(new ZodValidationPipe(updateGoalEntrySchema)) body: UpdateGoalEntryDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalEntryView> {
+    return this._updateEntry.execute(id, entryId, request.account.id, body);
+  }
+
+  /**
+   * Удаляет запись прогресса (ручная коррекция, патч 8).
+   * @param id Идентификатор цели.
+   * @param entryId Идентификатор записи.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Delete('goals/:id/entries/:entryId')
+  @HttpCode(204)
+  public removeEntry(
+    @Param('id') id: string,
+    @Param('entryId') entryId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    return this._removeEntry.execute(id, entryId, request.account.id);
   }
 
   /**

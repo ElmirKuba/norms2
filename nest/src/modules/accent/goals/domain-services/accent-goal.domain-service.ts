@@ -291,6 +291,57 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Удаляет запись прогресса (ручная коррекция, патч 8). currentValue пересчитается на чтение.
+   * @param goalId Идентификатор цели.
+   * @param entryId Идентификатор записи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @throws {GoalNotFoundError} Если цели/записи нет / не ваша.
+   */
+  public async removeEntry(
+    goalId: string,
+    entryId: string,
+    accountId: string,
+  ): Promise<void> {
+    await this.getOwned(goalId, accountId);
+    const removed = await this._entryRepository.removeById(entryId, goalId);
+    if (!removed) {
+      throw new GoalNotFoundError('Запись не найдена.');
+    }
+  }
+
+  /**
+   * Правит запись прогресса (ручная коррекция, патч 8). Валидирует значение по роду цели.
+   * @param goalId Идентификатор цели.
+   * @param entryId Идентификатор записи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param patch Поля (value/occurredOn/note).
+   * @returns Обновлённая запись.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} При некорректном значении.
+   */
+  public async updateEntry(
+    goalId: string,
+    entryId: string,
+    accountId: string,
+    patch: { value?: number; occurredOn?: string; note?: string | null },
+  ): Promise<GoalEntryFull> {
+    const goal = await this.getOwned(goalId, accountId);
+    if (patch.value !== undefined) {
+      if (!Number.isFinite(patch.value)) {
+        throw new ValidationError('Значение записи должно быть числом.');
+      }
+      if (goal.direction === 'accumulate' && patch.value === 0) {
+        throw new ValidationError('Для накопительной цели значение записи не может быть 0.');
+      }
+    }
+    const updated = await this._entryRepository.updateById(entryId, goalId, patch);
+    if (!updated) {
+      throw new GoalNotFoundError('Запись не найдена.');
+    }
+    return updated;
+  }
+
+  /**
    * **Кросс-домен ВНИЗ (ADR-0050, 2.5·13):** прогресс цели от выполненной привычки. Зовётся
    * из use-case привычек на переходе complete. **Best-effort, молчаливый:** пропускает без
    * ошибки, если цели нет/не ваша, цель не `active`, или `direction ≠ accumulate` (инкремент

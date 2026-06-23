@@ -88,6 +88,27 @@ export interface AccentGoalEntryRepositoryPort {
   deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number>;
 
   /**
+   * Удаляет одну запись цели по id (ручная коррекция, патч 8).
+   * @param id Идентификатор записи.
+   * @param goalId Идентификатор цели (скоуп).
+   * @returns true, если удалено.
+   */
+  removeById(id: string, goalId: string): Promise<boolean>;
+
+  /**
+   * Правит запись цели (только переданные поля; патч 8).
+   * @param id Идентификатор записи.
+   * @param goalId Идентификатор цели (скоуп).
+   * @param patch Поля (value/occurredOn/note).
+   * @returns Обновлённая запись или null (нет / не та цель).
+   */
+  updateById(
+    id: string,
+    goalId: string,
+    patch: { value?: number; occurredOn?: string; note?: string | null },
+  ): Promise<GoalEntryFull | null>;
+
+  /**
    * **Батч (2.5·23 P2#3):** Σ значений по всем целям аккаунта одним запросом — для списка
    * целей без N+1. Цели без записей в карте отсутствуют (трактуй как 0).
    * @param accountId Идентификатор аккаунта.

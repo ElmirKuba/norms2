@@ -1,0 +1,1 @@
+ALTER TABLE "goal_entries" ADD COLUMN "source_task_id" varchar(52);

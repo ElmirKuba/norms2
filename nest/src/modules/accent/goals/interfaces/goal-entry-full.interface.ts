@@ -16,6 +16,9 @@ export interface GoalEntryFull {
   occurredOn: string;
   /** Заметка (опц.). */
   note: string | null;
+  /** Источник-задача (кросс-домен привычка→цель, 2.5·13) — для отката при uncomplete (2.5·23 P2).
+   * null — ручная запись пользователя. Мягкая ссылка (без FK: задача может быть удалена). */
+  sourceTaskId: string | null;
   /** Когда создано. */
   createdAt: Date;
 }

@@ -39,6 +39,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
         value: data.value,
         occurredOn: data.occurredOn,
         note: data.note ?? null,
+        sourceTaskId: data.sourceTaskId ?? null,
       })
       .returning();
     const row = rows[0];
@@ -126,5 +127,21 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       .from(goalEntries)
       .where(eq(goalEntries.goalId, goalId));
     return Number(rows[0]?.n ?? 0);
+  }
+
+  /**
+   * Удаляет записи цели, порождённые задачей-источником (откат при uncomplete).
+   * @param goalId Идентификатор цели.
+   * @param sourceTaskId Идентификатор задачи-источника.
+   * @returns Число удалённых записей.
+   */
+  public async deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number> {
+    const rows = await this._db
+      .delete(goalEntries)
+      .where(
+        and(eq(goalEntries.goalId, goalId), eq(goalEntries.sourceTaskId, sourceTaskId)),
+      )
+      .returning({ id: goalEntries.id });
+    return rows.length;
   }
 }

@@ -13,6 +13,8 @@ export interface GoalEntryCreateData {
   occurredOn: string;
   /** Заметка (опц.). */
   note?: string | null;
+  /** Источник-задача (привычка→цель) — для отката при uncomplete (опц.). */
+  sourceTaskId?: string | null;
 }
 
 /** Опции курсорной выборки истории (по убыванию `id` = новые сверху). */
@@ -75,4 +77,13 @@ export interface AccentGoalEntryRepositoryPort {
    * @returns Количество записей.
    */
   count(goalId: string): Promise<number>;
+
+  /**
+   * Удаляет записи цели, порождённые задачей-источником (откат прогресса при uncomplete,
+   * 2.5·23 P2). Идемпотентно: нет таких записей → 0.
+   * @param goalId Идентификатор цели.
+   * @param sourceTaskId Идентификатор задачи-источника.
+   * @returns Число удалённых записей.
+   */
+  deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number>;
 }

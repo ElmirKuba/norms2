@@ -220,7 +220,12 @@ export class AccentGoalDomainService {
   public async addEntry(
     goalId: string,
     accountId: string,
-    data: { value: number; occurredOn?: string | null; note?: string | null },
+    data: {
+      value: number;
+      occurredOn?: string | null;
+      note?: string | null;
+      sourceTaskId?: string | null;
+    },
     timezone: string,
   ): Promise<{ entry: GoalEntryFull; goal: GoalFull }> {
     const goal = await this.getOwned(goalId, accountId);
@@ -242,6 +247,7 @@ export class AccentGoalDomainService {
       value: data.value,
       occurredOn,
       note: data.note ?? null,
+      sourceTaskId: data.sourceTaskId ?? null,
     });
     // Пересчёт текущего значения и идемпотентное авто-завершение.
     let resulting = goal;
@@ -273,6 +279,7 @@ export class AccentGoalDomainService {
     goalId: string,
     accountId: string,
     value: number,
+    sourceTaskId: string,
     timezone: string,
   ): Promise<void> {
     if (!Number.isFinite(value) || value === 0) {
@@ -282,7 +289,34 @@ export class AccentGoalDomainService {
     if (!goal || goal.status !== 'active' || goal.direction !== 'accumulate') {
       return;
     }
-    await this.addEntry(goalId, accountId, { value, note: 'Прогресс из привычки' }, timezone);
+    await this.addEntry(
+      goalId,
+      accountId,
+      { value, note: 'Прогресс из привычки', sourceTaskId },
+      timezone,
+    );
+  }
+
+  /**
+   * **Откат прогресса от привычки (2.5·23 P2):** при снятии отметки задачи удаляет записи
+   * цели, порождённые этой задачей (по `sourceTaskId`) → currentValue пересчитается ниже,
+   * двойного счёта при «отметил→снял→отметил» нет. Best-effort/молчаливый (не ломает
+   * uncomplete). Авто-`completed` НЕ откатываем (цель была достигнута — это факт; un-complete
+   * цели — отдельное решение пользователя).
+   * @param goalId Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param sourceTaskId Идентификатор задачи-источника.
+   */
+  public async revokeProgressFromHabit(
+    goalId: string,
+    accountId: string,
+    sourceTaskId: string,
+  ): Promise<void> {
+    const goal = await this._repository.findOwned(goalId, accountId);
+    if (!goal) {
+      return;
+    }
+    await this._entryRepository.deleteBySourceTask(goalId, sourceTaskId);
   }
 
   /**

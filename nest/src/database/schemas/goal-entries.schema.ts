@@ -22,6 +22,8 @@ export const goalEntries = defineTableWithSchema<GoalEntryFull>()(
     value: doublePrecision('value').notNull(),
     occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
     note: text('note'),
+    // Источник-задача (привычка→цель, 2.5·13) для отката при uncomplete; мягкая ссылка без FK.
+    sourceTaskId: fkColumn('source_task_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('goal_entries_goal_occurred_idx').on(table.goalId, table.occurredOn)],

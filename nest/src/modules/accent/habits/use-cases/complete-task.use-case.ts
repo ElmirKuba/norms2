@@ -41,7 +41,13 @@ export class CompleteTaskUseCase {
     );
     // Кросс-домен вниз: прогресс цели только на реальном переходе и при привязке к цели.
     if (transitioned && task.goalId !== null && task.doneValue !== null) {
-      await this._goals.addProgressFromHabit(task.goalId, accountId, task.doneValue, timezone);
+      await this._goals.addProgressFromHabit(
+        task.goalId,
+        accountId,
+        task.doneValue,
+        task.id,
+        timezone,
+      );
     }
     return { task: toTaskView(task), ladderEvent };
   }

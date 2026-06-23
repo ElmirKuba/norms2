@@ -177,6 +177,19 @@ const ICON_OPTIONS: readonly string[] = [
           </select>
         </label>
 
+        @if (goalsForLink().length > 0) {
+          <label class="hf__field">
+            <span class="hf__label">Вклад в цель (опц.)</span>
+            <select class="hf__input" formControlName="goalId">
+              <option [ngValue]="null">— не привязана —</option>
+              @for (g of goalsForLink(); track g.id) {
+                <option [ngValue]="g.id">{{ g.title }}</option>
+              }
+            </select>
+            <span class="hf__hint">Выполнение привычки будет добавлять прогресс в эту накопительную цель.</span>
+          </label>
+        }
+
         @if (attributesCatalog().length > 0) {
           <div class="hf__field">
             <span class="hf__label">Прокачивает атрибуты (опц.)</span>
@@ -356,6 +369,8 @@ export class HabitFormModalComponent {
   protected readonly attributesCatalog = signal<AccentRefItem[]>([]);
   /** Выбранные ключи атрибутов. */
   protected readonly attrs = signal<Set<string>>(new Set());
+  /** Активные накопительные цели — для привязки (прогресс цели от выполнения, 2.5·13). */
+  protected readonly goalsForLink = signal<Array<{ id: string; title: string }>>([]);
 
   /** Режим редактирования. */
   protected readonly isEdit = this._data.habit !== undefined;
@@ -389,6 +404,7 @@ export class HabitFormModalComponent {
     step: new FormControl(1, { nonNullable: true }),
     policy: new FormControl<LadderPolicy>('manual', { nonNullable: true }),
     domainKey: new FormControl<string | null>(null),
+    goalId: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
   });
 
@@ -432,6 +448,14 @@ export class HabitFormModalComponent {
       next: (a) => this.attributesCatalog.set(a),
       error: () => undefined,
     });
+    // Только накопительные цели — прогресс от привычки осмыслен лишь для accumulate (2.5·13).
+    this._api.listGoals('active').subscribe({
+      next: (goals) =>
+        this.goalsForLink.set(
+          goals.filter((g) => g.direction === 'accumulate').map((g) => ({ id: g.id, title: g.title })),
+        ),
+      error: () => undefined,
+    });
     const habit = this._data.habit;
     if (habit !== undefined) {
       const rec = parseRecurrence(habit.recurrence);
@@ -450,6 +474,7 @@ export class HabitFormModalComponent {
         step: habit.ladder.step ?? 1,
         policy: habit.ladder.policy,
         domainKey: habit.domainKey,
+        goalId: habit.goalId,
         minVersion: habit.minVersion ?? '',
       });
     }
@@ -548,6 +573,7 @@ export class HabitFormModalComponent {
       description: v.description.trim() === '' ? null : v.description.trim(),
       icon: v.icon.trim() === '' ? null : v.icon.trim(),
       domainKey: v.domainKey,
+      goalId: v.goalId,
       attributes: [...this.attrs()],
       minVersion: v.minVersion.trim() === '' ? null : v.minVersion.trim(),
     };

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -58,7 +58,28 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
               <p class="gd__why">{{ g.whyItMatters }}</p>
             }
           </div>
-          <app-button variant="ghost" (click)="openEdit(g)">Изменить</app-button>
+          <div class="gd__head-actions">
+            <app-button variant="ghost" (click)="openEdit(g)">Изменить</app-button>
+            <div class="gd__menu-wrap">
+              <button type="button" class="gd__menu-btn" aria-label="Действия с целью"
+                (click)="toggleMenu($event)">⋯</button>
+              @if (menuOpen()) {
+                <div class="gd__menu" (click)="$event.stopPropagation()">
+                  @if (g.status === 'active') {
+                    <button type="button" class="gd__menu-item" (click)="pause()">⏸ На паузу</button>
+                    <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
+                  } @else if (g.status === 'paused') {
+                    <button type="button" class="gd__menu-item" (click)="resume()">▶ Снять с паузы</button>
+                    <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
+                  } @else if (g.status === 'completed') {
+                    <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
+                  } @else {
+                    <button type="button" class="gd__menu-item" (click)="restore()">↩ Восстановить</button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
         </header>
 
         <app-card>
@@ -207,6 +228,57 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       }
       .gd__title {
         margin: var(--space-1) 0 0;
+      }
+      .gd__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .gd__menu-wrap {
+        position: relative;
+        display: inline-flex;
+      }
+      .gd__menu-btn {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        font-size: var(--fs-lg);
+        line-height: 1;
+      }
+      .gd__menu-btn:hover {
+        color: var(--color-text);
+        border-color: var(--color-text-muted);
+      }
+      .gd__menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        min-width: 180px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-1);
+        overflow: hidden;
+      }
+      .gd__menu-item {
+        text-align: left;
+        padding: var(--space-2) var(--space-3);
+        min-height: var(--touch-min);
+        background: none;
+        border: none;
+        color: var(--color-text);
+        cursor: pointer;
+        font-size: var(--fs-sm);
+      }
+      .gd__menu-item:hover {
+        background: var(--color-surface-2);
       }
       .gd__why {
         margin: var(--space-1) 0 0;
@@ -424,6 +496,8 @@ export class GoalDetailComponent {
   protected readonly hasMore = signal(false);
   /** Идёт догрузка истории. */
   protected readonly moreBusy = signal(false);
+  /** Открыто ли меню «⋯» действий с целью. */
+  protected readonly menuOpen = signal(false);
   /** Поле значения записи. */
   protected readonly valueControl = new FormControl<number | null>(null);
   /** Прямые подцели. */
@@ -448,6 +522,46 @@ export class GoalDetailComponent {
   /** Назад к списку целей. */
   protected back(): void {
     void this._router.navigate(['../'], { relativeTo: this._route });
+  }
+
+  /** Переключает меню «⋯». */
+  protected toggleMenu(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.update((open) => !open);
+  }
+
+  /** Клик вне меню / Escape — закрыть. */
+  @HostListener('document:click')
+  @HostListener('document:keydown.escape')
+  protected closeMenu(): void {
+    if (this.menuOpen()) {
+      this.menuOpen.set(false);
+    }
+  }
+
+  /** Ставит цель на паузу. */
+  protected pause(): void {
+    this._lifecycle(this._api.pauseGoal(this._id));
+  }
+
+  /** Снимает цель с паузы. */
+  protected resume(): void {
+    this._lifecycle(this._api.resumeGoal(this._id));
+  }
+
+  /** Архивирует цель. */
+  protected archive(): void {
+    this._lifecycle(this._api.archiveGoal(this._id));
+  }
+
+  /** Восстанавливает цель из архива. */
+  protected restore(): void {
+    this._lifecycle(this._api.restoreGoal(this._id));
+  }
+
+  private _lifecycle(request: ReturnType<AccentApiService['pauseGoal']>): void {
+    this.menuOpen.set(false);
+    request.subscribe({ next: () => this._load(), error: () => undefined });
   }
 
   /** RU-подпись рода. */

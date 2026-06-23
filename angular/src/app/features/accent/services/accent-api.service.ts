@@ -5,11 +5,21 @@ import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
   AccentRefItem,
   AccentSettingsView,
+  AddGoalEntryResult,
   CompleteTaskResult,
+  GoalEntryPayload,
+  GoalEntryView,
+  GoalPayload,
+  GoalProgressView,
+  GoalStatus,
+  GoalUpdatePayload,
+  GoalView,
   HabitPayload,
   HabitView,
   MicroWinPayload,
   MicroWinView,
+  MilestonePayload,
+  MilestoneView,
   OneOffTaskPayload,
   TaskView,
 } from '../accent.types';
@@ -163,5 +173,104 @@ export class AccentApiService {
   /** Перенести задачу на завтра. */
   public postponeTask(id: string): Observable<TaskView> {
     return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks/${id}/postpone`, {});
+  }
+
+  // ─────────────────────────── Цели (2.5) ───────────────────────────
+
+  /** Список целей (с вычисляемым прогрессом), опц. фильтр по статусу/сфере. */
+  public listGoals(status?: GoalStatus, domain?: string): Observable<GoalProgressView[]> {
+    const params = new URLSearchParams();
+    if (status !== undefined) {
+      params.set('status', status);
+    }
+    if (domain !== undefined && domain !== '') {
+      params.set('domain', domain);
+    }
+    const query = params.toString();
+    return this._http.get<GoalProgressView[]>(
+      `${API_PREFIX}/accent/goals${query ? `?${query}` : ''}`,
+    );
+  }
+
+  /** Одна цель с прогрессом. */
+  public getGoal(id: string): Observable<GoalProgressView> {
+    return this._http.get<GoalProgressView>(`${API_PREFIX}/accent/goals/${id}`);
+  }
+
+  /** Создать цель. */
+  public createGoal(payload: GoalPayload): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals`, payload);
+  }
+
+  /** Обновить цель (частично; род/база/родитель иммутабельны). */
+  public updateGoal(id: string, payload: GoalUpdatePayload): Observable<GoalView> {
+    return this._http.patch<GoalView>(`${API_PREFIX}/accent/goals/${id}`, payload);
+  }
+
+  /** Архивировать цель. */
+  public archiveGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/archive`, {});
+  }
+
+  /** Восстановить цель из архива. */
+  public restoreGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/restore`, {});
+  }
+
+  /** Поставить цель на паузу. */
+  public pauseGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/pause`, {});
+  }
+
+  /** Снять цель с паузы. */
+  public resumeGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/resume`, {});
+  }
+
+  /** Добавить запись прогресса (возвращает запись + цель с пересчётом). */
+  public addGoalEntry(id: string, payload: GoalEntryPayload): Observable<AddGoalEntryResult> {
+    return this._http.post<AddGoalEntryResult>(
+      `${API_PREFIX}/accent/goals/${id}/entries`,
+      payload,
+    );
+  }
+
+  /** История записей прогресса (курсор по `id`, новые сверху). */
+  public listGoalEntries(
+    id: string,
+    cursor?: string,
+    limit?: number,
+  ): Observable<GoalEntryView[]> {
+    const params = new URLSearchParams();
+    if (cursor !== undefined) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    return this._http.get<GoalEntryView[]>(
+      `${API_PREFIX}/accent/goals/${id}/entries${query ? `?${query}` : ''}`,
+    );
+  }
+
+  /** Вехи цели (с вычисленным `reached`). */
+  public listMilestones(id: string): Observable<MilestoneView[]> {
+    return this._http.get<MilestoneView[]>(`${API_PREFIX}/accent/goals/${id}/milestones`);
+  }
+
+  /** Добавить веху. */
+  public addMilestone(id: string, payload: MilestonePayload): Observable<MilestoneView> {
+    return this._http.post<MilestoneView>(
+      `${API_PREFIX}/accent/goals/${id}/milestones`,
+      payload,
+    );
+  }
+
+  /** Удалить веху (только не достигнутую). */
+  public removeMilestone(goalId: string, milestoneId: string): Observable<void> {
+    return this._http.delete<void>(
+      `${API_PREFIX}/accent/goals/${goalId}/milestones/${milestoneId}`,
+    );
   }
 }

@@ -279,3 +279,174 @@ export interface OneOffTaskPayload {
   /** Приоритет (опц.). */
   priority?: number;
 }
+
+// ─────────────────────────── Цели (2.5) ───────────────────────────
+
+/** Род цели — как трактуется значение/прогресс (ADR-0052). */
+export type GoalDirection = 'accumulate' | 'reach' | 'reduce';
+
+/** Статус цели. */
+export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
+
+/** Прогноз к сроку (цвет UI). */
+export type GoalForecast = 'ahead' | 'on_track' | 'behind' | null;
+
+/** Человекочитаемые подписи рода цели. */
+export const GOAL_DIRECTION_LABELS: Readonly<Record<GoalDirection, string>> = {
+  accumulate: 'Накопить',
+  reach: 'Достичь уровня',
+  reduce: 'Снизить',
+};
+
+/** Подсказки рода цели (для формы). */
+export const GOAL_DIRECTION_DESCRIPTIONS: Readonly<Record<GoalDirection, string>> = {
+  accumulate: 'Копить количество: каждая запись — вклад «+N» (напр. «50 книг»).',
+  reach: 'Выйти на уровень: запись — текущий замер (напр. «15 подтягиваний»).',
+  reduce: 'Снизить до цели: запись — текущий замер, цель ниже старта (напр. «курить 0»).',
+};
+
+/** Базовая проекция цели (мутации `POST`/`PATCH`/lifecycle возвращают её). */
+export interface GoalView {
+  /** Идентификатор. */
+  id: string;
+  /** Родительская цель или null (подцель). */
+  parentGoalId: string | null;
+  /** Название. */
+  title: string;
+  /** Зачем это важно или null. */
+  whyItMatters: string | null;
+  /** Ключ сферы или null. */
+  domainKey: string | null;
+  /** Ключи RPG-атрибутов. */
+  attributes: string[];
+  /** Род цели. */
+  direction: GoalDirection;
+  /** Единица измерения. */
+  unit: string;
+  /** Целевое значение. */
+  targetValue: number;
+  /** Базовый замер (reach/reduce) или null. */
+  startValue: number | null;
+  /** Дедлайн `YYYY-MM-DD` или null. */
+  deadline: string | null;
+  /** Статус. */
+  status: GoalStatus;
+  /** Когда достигнута (ISO) или null. */
+  completedAt: string | null;
+  /** Текст «версия на плохой день» или null. */
+  fallbackVersion: string | null;
+  /** Начало текущей паузы (ISO) или null. */
+  pausedAt: string | null;
+}
+
+/** Цель с вычисляемым прогрессом (`GET /accent/goals`, `GET /:id`; ADR-0052). */
+export interface GoalProgressView extends GoalView {
+  /** Текущее значение (или null — rollup/нет данных). */
+  currentValue: number | null;
+  /** Процент 0..100 или null. */
+  percentage: number | null;
+  /** Дней до дедлайна (может быть отрицательным) или null. */
+  daysLeft: number | null;
+  /** Темп — единиц в активный день или null. */
+  pace: number | null;
+  /** Прогноз к сроку. */
+  forecast: GoalForecast;
+  /** «При текущем темпе — к этой дате» (`YYYY-MM-DD`) или null. */
+  projectedCompletionDate: string | null;
+  /** Прогресс посчитан из подцелей (rollup). */
+  rollup: boolean;
+  /** Число прямых (не архивных) подцелей. */
+  subgoalsTotal: number;
+  /** Сколько подцелей завершено. */
+  subgoalsCompleted: number;
+}
+
+/** Тело создания цели (`POST /accent/goals`). */
+export interface GoalPayload {
+  /** Название. */
+  title: string;
+  /** Род цели. */
+  direction: GoalDirection;
+  /** Единица измерения. */
+  unit: string;
+  /** Целевое значение. */
+  targetValue: number;
+  /** Родительская цель (опц.) — подцель. */
+  parentGoalId?: string | null;
+  /** Зачем это важно (опц.). */
+  whyItMatters?: string | null;
+  /** Ключ сферы (опц.). */
+  domainKey?: string | null;
+  /** Ключи RPG-атрибутов (опц.). */
+  attributes?: string[];
+  /** Базовый замер для reach/reduce (опц.). */
+  startValue?: number | null;
+  /** Дедлайн `YYYY-MM-DD` (опц.). */
+  deadline?: string | null;
+  /** Текст «версия на плохой день» (опц.). */
+  fallbackVersion?: string | null;
+}
+
+/** Тело обновления цели (`PATCH`): `direction`/`startValue`/`parentGoalId` иммутабельны — их нет. */
+export interface GoalUpdatePayload {
+  title?: string;
+  whyItMatters?: string | null;
+  domainKey?: string | null;
+  attributes?: string[];
+  unit?: string;
+  targetValue?: number;
+  deadline?: string | null;
+  fallbackVersion?: string | null;
+}
+
+/** Запись прогресса цели наружу. */
+export interface GoalEntryView {
+  /** Идентификатор (он же курсор). */
+  id: string;
+  /** Значение (инкремент/замер). */
+  value: number;
+  /** Дата `YYYY-MM-DD`. */
+  occurredOn: string;
+  /** Заметка или null. */
+  note: string | null;
+  /** Когда создано (ISO). */
+  createdAt: string;
+}
+
+/** Тело добавления записи прогресса (`POST /accent/goals/:id/entries`). */
+export interface GoalEntryPayload {
+  /** Значение (инкремент для accumulate / замер для reach/reduce). */
+  value: number;
+  /** Дата `YYYY-MM-DD` (опц., дефолт — сегодня). */
+  occurredOn?: string | null;
+  /** Заметка (опц.). */
+  note?: string | null;
+}
+
+/** Результат добавления записи: запись + цель с пересчитанным прогрессом. */
+export interface AddGoalEntryResult {
+  /** Созданная запись. */
+  entry: GoalEntryView;
+  /** Цель с прогрессом (возможно завершённая). */
+  goal: GoalProgressView;
+}
+
+/** Веха цели наружу (с вычисленным `reached`). */
+export interface MilestoneView {
+  /** Идентификатор. */
+  id: string;
+  /** Название. */
+  title: string;
+  /** Порог достижения. */
+  thresholdValue: number;
+  /** Достигнута ли (вычислено). */
+  reached: boolean;
+}
+
+/** Тело добавления вехи (`POST /accent/goals/:id/milestones`). */
+export interface MilestonePayload {
+  /** Название. */
+  title: string;
+  /** Порог достижения. */
+  thresholdValue: number;
+}

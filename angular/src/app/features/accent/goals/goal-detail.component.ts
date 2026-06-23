@@ -13,6 +13,7 @@ import type {
   GoalForecast,
   GoalProgressView,
   GoalStatus,
+  MilestoneView,
 } from '../accent.types';
 import { GoalFormModalComponent } from './goal-form-modal.component';
 import type { GoalFormData, GoalFormResult } from './goal-form-modal.component';
@@ -95,6 +96,35 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </app-card>
         } @else if (g.rollup) {
           <p class="gd__muted">Прогресс этой цели складывается из подцелей — записывай его в них.</p>
+        }
+
+        <h3 class="gd__sub">Вехи</h3>
+        @if (milestones().length > 0) {
+          <ul class="gd__milestones">
+            @for (m of milestones(); track m.id) {
+              <li class="gd__ms" [class.gd__ms--done]="m.reached">
+                <span class="gd__ms-check">{{ m.reached ? '✓' : '○' }}</span>
+                <span class="gd__ms-title">{{ m.title }}</span>
+                <span class="gd__ms-thr">{{ m.thresholdValue }} {{ g.unit }}</span>
+                @if (!m.reached) {
+                  <button type="button" class="gd__ms-del" aria-label="Удалить веху"
+                    (click)="removeMilestone(m)">✕</button>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (g.status === 'active') {
+          <form class="gd__ms-form" (ngSubmit)="addMilestone()">
+            <input class="gd__input" type="text" maxlength="160" [formControl]="msTitle"
+              placeholder="Название вехи" />
+            <input class="gd__input gd__input--thr" type="number" step="any" [formControl]="msThreshold"
+              [placeholder]="'порог (' + g.unit + ')'" />
+            <app-button type="submit" variant="ghost" [loading]="msBusy()">Добавить веху</app-button>
+          </form>
+          @if (msError()) {
+            <span class="gd__error">{{ msError() }}</span>
+          }
         }
 
         <h3 class="gd__sub">История</h3>
@@ -237,6 +267,52 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .gd__sub {
         margin: 0;
       }
+      .gd__milestones {
+        list-style: none;
+        margin: 0 0 var(--space-2);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+      .gd__ms {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .gd__ms-check {
+        color: var(--color-text-muted);
+      }
+      .gd__ms--done .gd__ms-check {
+        color: var(--color-accent);
+      }
+      .gd__ms--done .gd__ms-title {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+      }
+      .gd__ms-thr {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+      }
+      .gd__ms-del {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+      }
+      .gd__ms-del:hover {
+        color: var(--color-danger);
+      }
+      .gd__ms-form {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .gd__input--thr {
+        max-width: 140px;
+      }
       .gd__history {
         list-style: none;
         margin: 0;
@@ -298,6 +374,16 @@ export class GoalDetailComponent {
   protected readonly moreBusy = signal(false);
   /** Поле значения записи. */
   protected readonly valueControl = new FormControl<number | null>(null);
+  /** Вехи цели. */
+  protected readonly milestones = signal<MilestoneView[]>([]);
+  /** Поле названия новой вехи. */
+  protected readonly msTitle = new FormControl('', { nonNullable: true });
+  /** Поле порога новой вехи. */
+  protected readonly msThreshold = new FormControl<number | null>(null);
+  /** Идёт добавление вехи. */
+  protected readonly msBusy = signal(false);
+  /** Ошибка вехи. */
+  protected readonly msError = signal<string | null>(null);
 
   private readonly _id = this._route.snapshot.paramMap.get('id') ?? '';
 
@@ -427,6 +513,42 @@ export class GoalDetailComponent {
     });
   }
 
+  /** Добавляет веху. */
+  protected addMilestone(): void {
+    const title = this.msTitle.value.trim();
+    const threshold = this.msThreshold.value;
+    this.msError.set(null);
+    if (title === '') {
+      this.msError.set('Название вехи обязательно.');
+      return;
+    }
+    if (threshold === null || !Number.isFinite(threshold)) {
+      this.msError.set('Укажи порог числом.');
+      return;
+    }
+    this.msBusy.set(true);
+    this._api.addMilestone(this._id, { title, thresholdValue: threshold }).subscribe({
+      next: () => {
+        this.msTitle.reset();
+        this.msThreshold.reset();
+        this.msBusy.set(false);
+        this._loadMilestones();
+      },
+      error: (err: unknown) => {
+        this.msError.set(errorMessage(err));
+        this.msBusy.set(false);
+      },
+    });
+  }
+
+  /** Удаляет (не достигнутую) веху. */
+  protected removeMilestone(milestone: MilestoneView): void {
+    this._api.removeMilestone(this._id, milestone.id).subscribe({
+      next: () => this._loadMilestones(),
+      error: () => undefined,
+    });
+  }
+
   private _load(): void {
     this.loading.set(true);
     this._api.getGoal(this._id).subscribe({
@@ -435,6 +557,7 @@ export class GoalDetailComponent {
         this.error.set(null);
         this.loading.set(false);
         this._loadEntries();
+        this._loadMilestones();
       },
       error: (err: unknown) => {
         this.error.set(errorMessage(err));
@@ -449,6 +572,13 @@ export class GoalDetailComponent {
         this.entries.set(page);
         this.hasMore.set(page.length === ENTRIES_PAGE);
       },
+      error: () => undefined,
+    });
+  }
+
+  private _loadMilestones(): void {
+    this._api.listMilestones(this._id).subscribe({
+      next: (items) => this.milestones.set(items),
       error: () => undefined,
     });
   }

@@ -19,9 +19,7 @@ export const accentRoutes: Routes = [
       },
       {
         path: 'goals',
-        loadComponent: () =>
-          import('./accent-placeholder.component').then((m) => m.AccentPlaceholderComponent),
-        data: { title: 'Цели' },
+        loadComponent: () => import('./goals/goals.component').then((m) => m.GoalsComponent),
       },
       {
         path: 'habits',

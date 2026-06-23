@@ -833,6 +833,7 @@ export class GoalDetailComponent {
       next: (result) => {
         this.goal.set(result.goal);
         this.entries.update((list) => [result.entry, ...list]);
+        this._loadMilestones();
         this.recordForm.reset();
         this.busy.set(false);
       },
@@ -1033,12 +1034,17 @@ export class GoalDetailComponent {
       });
   }
 
-  /** Перечитывает цель (для свежего currentValue/% после правки/удаления записи). */
+  /**
+   * Перечитывает цель (свежий currentValue/%) И вехи — `reached` зависит от текущего значения,
+   * поэтому после любой мутации прогресса обновляем их реактивно, без перезагрузки страницы
+   * (триаж 2.5·23 F#2). Покрывает правку/удаление записи.
+   */
   private _reloadGoal(): void {
     this._api.getGoal(this._id).subscribe({
       next: (goal) => { this.goal.set(goal); },
       error: () => undefined,
     });
+    this._loadMilestones();
   }
 
   /** Грузит прямые подцели (эндпоинт `/children`, P3#5). */

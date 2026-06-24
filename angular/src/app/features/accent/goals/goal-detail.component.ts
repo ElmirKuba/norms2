@@ -56,6 +56,11 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       } @else if (error()) {
         <p class="gd__error">{{ error() }}</p>
       } @else if (goal(); as g) {
+        @if (g.parentGoalId) {
+          <button type="button" class="gd__back gd__back--parent" (click)="backToParent(g)">
+            ↑ К родительской цели
+          </button>
+        }
         <header class="gd__head">
           <div class="gd__head-main">
             <span class="gd__badge">{{ directionLabel(g) }}</span>
@@ -724,6 +729,14 @@ export class GoalDetailComponent {
     this.msError.set(null);
     this.recordForm.reset();
     this.msForm.reset();
+  }
+
+  /** К родительской цели (для подцели) — F#9: с подцели нельзя было уйти к родителю, только в список. */
+  protected backToParent(goal: GoalProgressView): void {
+    if (goal.parentGoalId === null) {
+      return;
+    }
+    void this._router.navigate(['../', goal.parentGoalId], { relativeTo: this._route });
   }
 
   /** Назад к списку целей. */

@@ -243,7 +243,8 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
   public async archive(id: string, accountId: string): Promise<GoalFull | null> {
     const rows = await this._db
       .update(goals)
-      .set({ status: 'archived' })
+      // Архив снимает фокус (ADR-0053): архивная цель не «в фокусе» и не учитывается в пороге.
+      .set({ status: 'archived', focusOrder: null })
       .where(
         and(
           eq(goals.id, id),
@@ -338,7 +339,14 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .select({ n: sql<number>`count(*)::int` })
       .from(goals)
-      .where(and(eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
+      // Только активные фокусные считаются в пороге (ADR-0053): архив/завершённые — не «в работе».
+      .where(
+        and(
+          eq(goals.accountId, accountId),
+          isNotNull(goals.focusOrder),
+          eq(goals.status, 'active'),
+        ),
+      );
     return Number(rows[0]?.n ?? 0);
   }
 

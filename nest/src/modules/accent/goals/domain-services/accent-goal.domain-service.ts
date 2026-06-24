@@ -108,6 +108,43 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Переключает «фокус» цели (ADR-0053, мягкий anti-sprawl). `focused=true` → ранг
+   * `maxFocusOrder+1` (идемпотентно: если уже в фокусе — ранг не меняем); `false` → убирает.
+   * Возвращает мету для мягкого предупреждения (`overLimit`) — **НЕ блокирует** (combo A).
+   * Пример (`is_starter`) фокусировать нельзя — сначала «Добавить себе».
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param focused true — в фокус; false — из фокуса.
+   * @returns Цель + мета фокуса (focusedCount/softLimit/overLimit).
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если пытаются фокусировать пример.
+   */
+  public async toggleFocus(
+    id: string,
+    accountId: string,
+    focused: boolean,
+  ): Promise<{ goal: GoalFull; focusedCount: number; softLimit: number; overLimit: boolean }> {
+    const goal = await this.getOwned(id, accountId);
+    const softLimit = this._config.get('ACCENT_GOAL_FOCUS_SOFT_LIMIT', { infer: true });
+    let updated: GoalFull;
+    if (focused) {
+      if (goal.isStarter) {
+        throw new ValidationError('Это пример — сначала «Добавить себе».');
+      }
+      if (goal.focusOrder !== null) {
+        updated = goal; // уже в фокусе — идемпотентно, ранг не трогаем
+      } else {
+        const max = await this._repository.maxFocusOrder(accountId);
+        updated = (await this._repository.setFocus(id, accountId, (max ?? 0) + 1)) ?? goal;
+      }
+    } else {
+      updated = (await this._repository.clearFocus(id, accountId)) ?? goal;
+    }
+    const focusedCount = await this._repository.countFocused(accountId);
+    return { goal: updated, focusedCount, softLimit, overLimit: focused && focusedCount > softLimit };
+  }
+
+  /**
    * Прямые подцели цели (для rollup/иерархии).
    * @param parentGoalId Идентификатор родительской цели.
    * @param accountId Идентификатор аккаунта-владельца.

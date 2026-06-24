@@ -27,6 +27,7 @@ import { UpdateGoalEntryUseCase } from './use-cases/update-goal-entry.use-case';
 import { SeedGoalStarterPackUseCase } from './use-cases/seed-goal-starter-pack.use-case';
 import { ClearGoalStartersUseCase } from './use-cases/clear-goal-starters.use-case';
 import { AdoptGoalUseCase } from './use-cases/adopt-goal.use-case';
+import { ToggleGoalFocusUseCase } from './use-cases/toggle-goal-focus.use-case';
 
 /**
  * Область целей раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.5). Порт
@@ -63,6 +64,7 @@ import { AdoptGoalUseCase } from './use-cases/adopt-goal.use-case';
     SeedGoalStarterPackUseCase,
     ClearGoalStartersUseCase,
     AdoptGoalUseCase,
+    ToggleGoalFocusUseCase,
   ],
   exports: [AccentGoalDomainService],
 })

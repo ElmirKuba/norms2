@@ -40,6 +40,7 @@ import { ListChildGoalsUseCase } from '../use-cases/list-child-goals.use-case';
 import { SeedGoalStarterPackUseCase } from '../use-cases/seed-goal-starter-pack.use-case';
 import { ClearGoalStartersUseCase } from '../use-cases/clear-goal-starters.use-case';
 import { AdoptGoalUseCase } from '../use-cases/adopt-goal.use-case';
+import { ToggleGoalFocusUseCase } from '../use-cases/toggle-goal-focus.use-case';
 import { RemoveGoalEntryUseCase } from '../use-cases/remove-goal-entry.use-case';
 import { UpdateGoalEntryUseCase } from '../use-cases/update-goal-entry.use-case';
 import { updateGoalEntrySchema } from '../dtos/update-goal-entry.dto';
@@ -51,6 +52,7 @@ import type { GoalView } from '../interfaces/goal-view.interface';
 import type { GoalProgressView } from '../interfaces/goal-progress-view.interface';
 import type { GoalEntryView } from '../interfaces/goal-entry-view.interface';
 import type { MilestoneView } from '../interfaces/milestone-view.interface';
+import type { GoalFocusResult } from '../interfaces/goal-focus-result.interface';
 
 /**
  * Контроллер целей (`/api/v1/accent/goals`) — под Guard (members-only, per-account).
@@ -90,6 +92,7 @@ export class GoalsController {
     private readonly _seedPack: SeedGoalStarterPackUseCase,
     private readonly _clearStarters: ClearGoalStartersUseCase,
     private readonly _adopt: AdoptGoalUseCase,
+    private readonly _toggleFocus: ToggleGoalFocusUseCase,
   ) {}
 
   /**
@@ -168,6 +171,34 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalView> {
     return this._adopt.execute(id, request.account.id);
+  }
+
+  /**
+   * Поставить цель «в фокус» (ADR-0053). Мягкий порог — в ответе `overLimit` (не блок).
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Цель + мета фокуса.
+   */
+  @Post('goals/:id/focus')
+  public focus(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalFocusResult> {
+    return this._toggleFocus.execute(id, request.account.id, true);
+  }
+
+  /**
+   * Убрать цель «из фокуса» (ADR-0053).
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Цель + мета фокуса.
+   */
+  @Delete('goals/:id/focus')
+  public unfocus(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalFocusResult> {
+    return this._toggleFocus.execute(id, request.account.id, false);
   }
 
   /**

@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -649,7 +650,12 @@ export class GoalDetailComponent {
   /** Ошибка вехи. */
   protected readonly msError = signal<string | null>(null);
 
-  private readonly _id = this._route.snapshot.paramMap.get('id') ?? '';
+  /**
+   * Id текущей цели. Мутабельное поле (не `snapshot`-разовое): Angular переиспользует компонент при
+   * навигации `goals/:id → goals/:otherId`, поэтому `_id` обновляется из подписки на `paramMap`
+   * (триаж 2.5·23 F#3) — переход в подцель/соседнюю цель перезагружает экран без F5.
+   */
+  private _id = '';
 
   /**
    * SVG-спарклайн динамики из загруженных записей: для accumulate — нарастающая сумма, для
@@ -691,7 +697,33 @@ export class GoalDetailComponent {
   });
 
   public constructor() {
-    this._load();
+    // Реагируем на смену :id (Angular переиспользует инстанс компонента) — без этого переход в
+    // подцель/соседнюю цель показал бы данные прошлой цели (триаж 2.5·23 F#3).
+    this._route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const id = params.get('id') ?? '';
+      if (id === this._id) {
+        return;
+      }
+      this._id = id;
+      this._resetForNewGoal();
+      this._load();
+    });
+  }
+
+  /** Сбрасывает транзиентное состояние экрана при переходе на другую цель (чтобы не утекало). */
+  private _resetForNewGoal(): void {
+    this.goal.set(null);
+    this.entries.set([]);
+    this.milestones.set([]);
+    this.children.set([]);
+    this.hasMore.set(false);
+    this.error.set(null);
+    this.menuOpen.set(false);
+    this.editingId.set(null);
+    this.recordError.set(null);
+    this.msError.set(null);
+    this.recordForm.reset();
+    this.msForm.reset();
   }
 
   /** Назад к списку целей. */

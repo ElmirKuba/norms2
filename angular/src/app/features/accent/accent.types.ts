@@ -337,8 +337,22 @@ export interface GoalView {
   fallbackVersion: string | null;
   /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
   isStarter: boolean;
+  /** Фокус (ADR-0053): null = не в фокусе; не-null = в фокусе + ранг (порядок). */
+  focusOrder: number | null;
   /** Начало текущей паузы (ISO) или null. */
   pausedAt: string | null;
+}
+
+/** Результат переключения фокуса цели (`POST/DELETE /accent/goals/:id/focus`, ADR-0053). */
+export interface GoalFocusResult {
+  /** Обновлённая цель. */
+  goal: GoalView;
+  /** Сколько целей сейчас в фокусе. */
+  focusedCount: number;
+  /** Мягкий порог (env). */
+  softLimit: number;
+  /** Превышен ли порог (для мягкого вопроса; не блок). */
+  overLimit: boolean;
 }
 
 /** Цель с вычисляемым прогрессом (`GET /accent/goals`, `GET /:id`; ADR-0052). */

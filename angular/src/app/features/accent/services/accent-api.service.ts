@@ -9,6 +9,7 @@ import type {
   CompleteTaskResult,
   GoalEntryPayload,
   GoalEntryView,
+  GoalFocusResult,
   GoalPayload,
   GoalProgressView,
   GoalStatus,
@@ -215,6 +216,16 @@ export class AccentApiService {
   /** Присвоить пример себе («Добавить себе»). */
   public adoptGoal(id: string): Observable<GoalView> {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/adopt`, {});
+  }
+
+  /** Поставить цель в фокус (ADR-0053) — возвращает мету для мягкого предупреждения. */
+  public focusGoal(id: string): Observable<GoalFocusResult> {
+    return this._http.post<GoalFocusResult>(`${API_PREFIX}/accent/goals/${id}/focus`, {});
+  }
+
+  /** Убрать цель из фокуса (ADR-0053). */
+  public unfocusGoal(id: string): Observable<GoalFocusResult> {
+    return this._http.delete<GoalFocusResult>(`${API_PREFIX}/accent/goals/${id}/focus`);
   }
 
   /** Создать цель. */

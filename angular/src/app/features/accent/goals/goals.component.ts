@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -8,6 +9,7 @@ import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive'
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { ModalService } from '../../../shared/modals/modal.service';
+import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_LABELS } from '../accent.types';
 import type { AccentRefItem, GoalForecast, GoalProgressView, GoalStatus } from '../accent.types';
@@ -42,7 +44,14 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goals',
-  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent, HscrollHintDirective],
+  imports: [
+    NgTemplateOutlet,
+    RouterLink,
+    ButtonComponent,
+    CardComponent,
+    EmptyStateComponent,
+    HscrollHintDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="goals">
@@ -115,53 +124,75 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         @if (hasStarters()) {
           <p class="goals__hint">Примеры помечены бейджем. «Добавить себе» или «Изм.» — и пример станет твоей целью.</p>
         }
-        <ul class="goals__list">
-          @for (g of items(); track g.id) {
-            <li>
-              <app-card>
-                <div class="goals__item">
-                  <div class="goals__top">
-                    <span class="goals__badge">{{ directionLabel(g) }}</span>
-                    @if (g.isStarter) {
-                      <span class="goals__badge goals__badge--example">пример</span>
-                    }
-                    @if (g.status !== 'active') {
-                      <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span>
-                    }
-                    @if (g.domainKey) {
-                      <span class="goals__domain">{{ g.domainKey }}</span>
-                    }
-                  </div>
-
-                  <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
-                  @if (g.whyItMatters) {
-                    <span class="goals__why">{{ g.whyItMatters }}</span>
-                  }
-
-                  <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
-                    <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
-                  </div>
-
-                  <div class="goals__metrics">
-                    <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
-                    <span class="goals__amount">{{ amountLabel(g) }}</span>
-                    @if (g.forecast) {
-                      <span class="goals__forecast goals__forecast--{{ g.forecast }}">
-                        {{ forecastLabel(g.forecast) }}
-                      </span>
-                    }
-                  </div>
-
-                  @if (deadlineLabel(g); as dl) {
-                    <span class="goals__deadline">{{ dl }}</span>
-                  }
-                </div>
-              </app-card>
-            </li>
+        @if (focusedItems().length > 0) {
+          <h3 class="goals__section">⭐ В фокусе</h3>
+          <ul class="goals__list">
+            @for (g of focusedItems(); track g.id) {
+              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g }" />
+            }
+          </ul>
+        }
+        @if (unfocusedItems().length > 0) {
+          @if (focusedItems().length > 0) {
+            <h3 class="goals__section goals__section--muted">Остальные</h3>
           }
-        </ul>
+          <ul class="goals__list">
+            @for (g of unfocusedItems(); track g.id) {
+              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g }" />
+            }
+          </ul>
+        }
       }
     </section>
+
+    <ng-template #goalCard let-g>
+      <li>
+        <app-card>
+          <div class="goals__item">
+            <div class="goals__top">
+              <span class="goals__badge">{{ directionLabel(g) }}</span>
+              @if (g.isStarter) {
+                <span class="goals__badge goals__badge--example">пример</span>
+              }
+              @if (g.status !== 'active') {
+                <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span>
+              }
+              @if (g.domainKey) {
+                <span class="goals__domain">{{ g.domainKey }}</span>
+              }
+              @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
+                <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
+                  [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
+                  [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
+              }
+            </div>
+
+            <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
+            @if (g.whyItMatters) {
+              <span class="goals__why">{{ g.whyItMatters }}</span>
+            }
+
+            <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
+              <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
+            </div>
+
+            <div class="goals__metrics">
+              <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
+              <span class="goals__amount">{{ amountLabel(g) }}</span>
+              @if (g.forecast) {
+                <span class="goals__forecast goals__forecast--{{ g.forecast }}">
+                  {{ forecastLabel(g.forecast) }}
+                </span>
+              }
+            </div>
+
+            @if (deadlineLabel(g); as dl) {
+              <span class="goals__deadline">{{ dl }}</span>
+            }
+          </div>
+        </app-card>
+      </li>
+    </ng-template>
   `,
   styles: [
     `
@@ -258,6 +289,34 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
+      }
+      .goals__section {
+        margin: var(--space-4) 0 var(--space-2);
+        font-size: var(--fs-sm);
+        font-weight: 600;
+        color: var(--color-text);
+      }
+      .goals__section--muted {
+        color: var(--color-text-muted);
+        font-weight: 500;
+      }
+      .goals__star {
+        margin-left: auto;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: var(--fs-md);
+        line-height: 1;
+        color: var(--color-text-muted);
+        padding: 2px 4px;
+        border-radius: var(--radius-sm);
+      }
+      .goals__star--on {
+        color: var(--color-accent);
+      }
+      .goals__star:disabled {
+        opacity: 0.5;
+        cursor: default;
       }
       .goals__item {
         display: flex;
@@ -385,6 +444,18 @@ export class GoalsComponent {
   protected readonly packBusy = signal(false);
   /** Есть ли ещё не присвоенные примеры (для бейджа-хинта и контекстной кнопки). */
   protected readonly hasStarters = computed(() => this.items().some((item) => item.isStarter));
+  /** Идёт переключение фокуса. */
+  protected readonly focusBusy = signal(false);
+  /** Цели «в фокусе» (focus_order != null), по возрастанию ранга (ADR-0053). */
+  protected readonly focusedItems = computed(() =>
+    this.items()
+      .filter((g) => g.focusOrder !== null)
+      .sort((a, b) => (a.focusOrder ?? 0) - (b.focusOrder ?? 0)),
+  );
+  /** Остальные цели (не в фокусе) — в исходном порядке. */
+  protected readonly unfocusedItems = computed(() =>
+    this.items().filter((g) => g.focusOrder === null),
+  );
 
   public constructor() {
     this._api.listDomains().subscribe({ next: (d) => { this.domains.set(d); }, error: () => undefined });
@@ -487,6 +558,33 @@ export class GoalsComponent {
       error: (err: unknown) => {
         this.packBusy.set(false);
         this._modal.error('Не удалось очистить примеры', errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Переключает «фокус» цели (ADR-0053): реактивно обновляет список (без F5); при превышении
+   * мягкого порога — ненавязчивая подсказка (не блок).
+   */
+  protected toggleFocus(goal: GoalProgressView): void {
+    this.focusBusy.set(true);
+    const req =
+      goal.focusOrder === null ? this._api.focusGoal(goal.id) : this._api.unfocusGoal(goal.id);
+    req.subscribe({
+      next: (res) => {
+        this.focusBusy.set(false);
+        this._load();
+        if (res.overLimit) {
+          this._modal.message(
+            'Многовато в фокусе',
+            ModalHeaderClassIcon.Info,
+            `Уже ${String(res.focusedCount)} целей в фокусе. Фокус — про единицы: что-то можно отпустить.`,
+          );
+        }
+      },
+      error: (err: unknown) => {
+        this.focusBusy.set(false);
+        this._modal.error('Не удалось изменить фокус', errorMessage(err));
       },
     });
   }

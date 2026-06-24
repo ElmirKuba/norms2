@@ -756,7 +756,10 @@ export class HabitsComponent {
     );
     ref.afterClosed().subscribe((payload) => {
       if (payload) {
-        submit(payload).subscribe({ next: () => this._load(), error: () => undefined });
+        submit(payload).subscribe({
+          next: () => this._load(),
+          error: (err: unknown) => this._modal.error('Не удалось сохранить привычку', errorMessage(err)),
+        });
       }
     });
   }
@@ -780,7 +783,10 @@ export class HabitsComponent {
             this.habits.update((list) => list.filter((h) => h.id !== habit.id));
             this.busyId.set(null);
           },
-          error: () => this.busyId.set(null),
+          error: (err: unknown) => {
+            this.busyId.set(null);
+            this._modal.error('Не удалось удалить', errorMessage(err));
+          },
         });
       });
   }

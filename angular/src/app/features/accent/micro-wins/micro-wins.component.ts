@@ -540,7 +540,10 @@ export class MicroWinsComponent {
       })
       .then((ok) => {
         if (ok) {
-          this._api.deleteMicroWin(mw.id).subscribe({ next: () => this._load(), error: () => undefined });
+          this._api.deleteMicroWin(mw.id).subscribe({
+            next: () => this._load(),
+            error: (err: unknown) => this._modal.error('Не удалось удалить', errorMessage(err)),
+          });
         }
       });
   }
@@ -560,7 +563,10 @@ export class MicroWinsComponent {
     );
     ref.afterClosed().subscribe((payload) => {
       if (payload) {
-        submit(payload).subscribe({ next: () => this._load(), error: () => undefined });
+        submit(payload).subscribe({
+          next: () => this._load(),
+          error: (err: unknown) => this._modal.error('Не удалось сохранить', errorMessage(err)),
+        });
       }
     });
   }

@@ -752,7 +752,10 @@ export class GoalsComponent {
         result.mode === 'create'
           ? this._api.createGoal(result.payload)
           : this._api.updateGoal(data.goal!.id, result.payload);
-      request.subscribe({ next: () => { this._load(); }, error: () => undefined });
+      request.subscribe({
+        next: () => { this._load(); },
+        error: (err: unknown) => this._modal.error('Не удалось сохранить цель', errorMessage(err)),
+      });
     });
   }
 

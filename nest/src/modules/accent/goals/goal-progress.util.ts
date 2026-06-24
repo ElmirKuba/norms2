@@ -154,7 +154,7 @@ export function computeGoalProgress(
     currentValue,
     percentage: f === null ? null : Math.round(f * 100),
     daysLeft: fb.daysLeft,
-    pace: currentValue === null ? null : currentValue / activeDaysOf(goal, now),
+    pace: paceOf(goal, currentValue, base, now),
     forecast: fb.forecast,
     projectedCompletionDate: fb.projectedCompletionDate,
     rollup: false,
@@ -220,6 +220,35 @@ function activeDaysOf(goal: GoalFull, now: Date): number {
     pausedMs += Math.max(0, now.getTime() - goal.pausedAt.getTime());
   }
   return Math.max(1, (elapsedMs - pausedMs) / DAY_MS);
+}
+
+/**
+ * Темп — единиц в активный день, **direction-aware** (триаж 2.5·23 F#5). accumulate: накоплено/день
+ * (`current/activeDays`). reach/reduce: скорость движения замера от базы — `(current−base)/activeDays`
+ * (для reduce выходит отрицательным — замер снижается); null без базы. Раньше для reach/reduce считалось
+ * `current/activeDays` (бессмысленно: «вес ÷ дни»). Поле пока не выводится в UI, но считается корректно.
+ * @param goal Цель.
+ * @param currentValue Текущее значение или null.
+ * @param base База (startValue ?? первый замер) или null.
+ * @param now Текущий момент.
+ * @returns Темп (единиц/день) или null.
+ */
+function paceOf(
+  goal: GoalFull,
+  currentValue: number | null,
+  base: number | null,
+  now: Date,
+): number | null {
+  if (currentValue === null) {
+    return null;
+  }
+  if (goal.direction === 'accumulate') {
+    return currentValue / activeDaysOf(goal, now);
+  }
+  if (base === null) {
+    return null;
+  }
+  return (currentValue - base) / activeDaysOf(goal, now);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { goals } from '../../schemas/goals.schema';
@@ -292,5 +292,63 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       )
       .returning();
     return rows[0] ?? null;
+  }
+
+  /**
+   * Помечает цель «в фокусе» рангом `order` (ADR-0053): `focus_order = order`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param order Ранг внутри фокуса.
+   * @returns Обновлённая строка или null.
+   */
+  public async setFocus(id: string, accountId: string, order: number): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ focusOrder: order })
+      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Убирает цель из фокуса (ADR-0053): `focus_order = null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null.
+   */
+  public async clearFocus(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ focusOrder: null })
+      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Число фокусных целей аккаунта (`focus_order IS NOT NULL`) — для мягкого порога.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Количество.
+   */
+  public async countFocused(accountId: string): Promise<number> {
+    const rows = await this._db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(goals)
+      .where(and(eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
+    return Number(rows[0]?.n ?? 0);
+  }
+
+  /**
+   * Макс. `focus_order` среди фокусных целей аккаунта (для следующего ранга) или null.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Макс. ранг или null.
+   */
+  public async maxFocusOrder(accountId: string): Promise<number | null> {
+    const rows = await this._db
+      .select({ m: sql<number | null>`max(${goals.focusOrder})` })
+      .from(goals)
+      .where(and(eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
+    const m = rows[0]?.m;
+    return m === null || m === undefined ? null : Number(m);
   }
 }

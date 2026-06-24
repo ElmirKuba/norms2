@@ -163,4 +163,35 @@ export interface AccentGoalRepositoryPort {
    * @returns Обновлённая строка или null (нет / не ваша / уже завершена).
    */
   markCompleted(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Помечает цель «в фокусе» с заданным рангом (ADR-0053): `focus_order = order`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param order Ранг внутри фокуса (обычно `maxFocusOrder+1`).
+   * @returns Обновлённая строка или null (нет / не ваша).
+   */
+  setFocus(id: string, accountId: string, order: number): Promise<GoalFull | null>;
+
+  /**
+   * Убирает цель из фокуса (ADR-0053): `focus_order = null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша).
+   */
+  clearFocus(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
+   * Число целей аккаунта «в фокусе» (`focus_order IS NOT NULL`) — для мягкого порога.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Количество фокусных целей.
+   */
+  countFocused(accountId: string): Promise<number>;
+
+  /**
+   * Максимальный `focus_order` среди фокусных целей аккаунта (для следующего ранга) или null.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Макс. ранг или null (нет фокусных).
+   */
+  maxFocusOrder(accountId: string): Promise<number | null>;
 }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -52,6 +53,16 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
         <textarea class="gf__input" rows="2" maxlength="2000" formControlName="whyItMatters"
           placeholder="Якорь смысла — к чему ведёт эта цель"></textarea>
       </label>
+
+      @if (isAccumulate()) {
+        <p class="gf__mission-hint">Это про важное — или просто «делать больше»?</p>
+        <label class="gf__field">
+          <span class="gf__label">Ради чего откажусь (опц.)</span>
+          <input class="gf__input" type="text" maxlength="280" formControlName="tradeoff"
+            placeholder="Что отложу ради этой цели" />
+          <span class="gf__hint">Нужно, чтобы взять цель в фокус.</span>
+        </label>
+      }
 
       @if (!isEdit) {
         <label class="gf__field">
@@ -183,6 +194,11 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
         font-size: var(--fs-xs);
         color: var(--color-text-muted);
       }
+      .gf__mission-hint {
+        margin: calc(-1 * var(--space-1)) 0 0;
+        font-size: var(--fs-xs);
+        color: var(--color-accent);
+      }
       .gf__chips {
         display: flex;
         flex-wrap: wrap;
@@ -258,10 +274,15 @@ export class GoalFormModalComponent {
     domainKey: new FormControl<string | null>(null),
     parentGoalId: new FormControl<string | null>(null),
     fallbackVersion: new FormControl('', { nonNullable: true }),
+    tradeoff: new FormControl('', { nonNullable: true }),
   });
 
+  /** Текущий род (сигнал — обновляется из valueChanges, чтобы showStart/isAccumulate были реактивны). */
+  private readonly _direction = signal<GoalDirection>('accumulate');
   /** Показывать ли поле «старт» (reach/reduce). */
-  protected readonly showStart = computed(() => this.form.controls.direction.value !== 'accumulate');
+  protected readonly showStart = computed(() => this._direction() !== 'accumulate');
+  /** Накопительная цель? — для mission-подсказки и поля «ради чего откажусь» (ADR-0053). */
+  protected readonly isAccumulate = computed(() => this._direction() === 'accumulate');
 
   /** Показывать ли выбор родителя (не edit и не предзадан). */
   protected readonly showParentSelect = (): boolean =>
@@ -280,6 +301,7 @@ export class GoalFormModalComponent {
         deadline: goal.deadline,
         domainKey: goal.domainKey,
         fallbackVersion: goal.fallbackVersion ?? '',
+        tradeoff: goal.tradeoff ?? '',
       });
       this.form.controls.direction.disable();
       this.form.controls.startValue.disable();
@@ -287,6 +309,11 @@ export class GoalFormModalComponent {
     if (this._data.presetParentId !== undefined) {
       this.form.controls.parentGoalId.setValue(this._data.presetParentId);
     }
+    // Реактивно отслеживаем род (для showStart/isAccumulate).
+    this._direction.set(this.form.controls.direction.value);
+    this.form.controls.direction.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((d) => { this._direction.set(d); });
     this._api.listDomains().subscribe({ next: (d) => { this.domains.set(d); }, error: () => undefined });
     this._api
       .listAttributes()
@@ -374,6 +401,7 @@ export class GoalFormModalComponent {
     }
     const trimmedWhy = v.whyItMatters.trim();
     const trimmedFallback = v.fallbackVersion.trim();
+    const trimmedTradeoff = v.tradeoff.trim();
     const attributes = [...this.attrs()];
 
     if (this.isEdit) {
@@ -386,6 +414,7 @@ export class GoalFormModalComponent {
         targetValue: target,
         deadline: v.deadline === '' ? null : v.deadline,
         fallbackVersion: trimmedFallback === '' ? null : trimmedFallback,
+        tradeoff: trimmedTradeoff === '' ? null : trimmedTradeoff,
       };
       this._ref.close({ mode: 'update', payload });
       return;
@@ -402,6 +431,7 @@ export class GoalFormModalComponent {
       startValue: v.startValue,
       deadline: v.deadline === '' ? null : v.deadline,
       fallbackVersion: trimmedFallback === '' ? null : trimmedFallback,
+      tradeoff: trimmedTradeoff === '' ? null : trimmedTradeoff,
     };
     this._ref.close({ mode: 'create', payload });
   }

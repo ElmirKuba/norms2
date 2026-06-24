@@ -335,6 +335,8 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /** «Ради чего откажусь» (mission-filter, ADR-0053) или null. */
+  tradeoff: string | null;
   /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
   isStarter: boolean;
   /** Фокус (ADR-0053): null = не в фокусе; не-null = в фокусе + ранг (порядок). */
@@ -401,6 +403,8 @@ export interface GoalPayload {
   deadline?: string | null;
   /** Текст «версия на плохой день» (опц.). */
   fallbackVersion?: string | null;
+  /** «Ради чего откажусь» (mission-filter, для accumulate; опц.). */
+  tradeoff?: string | null;
 }
 
 /** Тело обновления цели (`PATCH`): `direction`/`startValue`/`parentGoalId` иммутабельны — их нет. */
@@ -413,6 +417,7 @@ export interface GoalUpdatePayload {
   targetValue?: number;
   deadline?: string | null;
   fallbackVersion?: string | null;
+  tradeoff?: string | null;
 }
 
 /** Запись прогресса цели наружу. */

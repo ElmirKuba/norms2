@@ -233,6 +233,11 @@ export class AccentApiService {
     return this._http.put<void>(`${API_PREFIX}/accent/goals/reorder`, { ids });
   }
 
+  /** Переставить ранг фокусных целей (drag внутри «В фокусе», ADR-0053/0054). */
+  public reorderGoalFocus(ids: readonly string[]): Observable<void> {
+    return this._http.put<void>(`${API_PREFIX}/accent/goals/focus-reorder`, { ids });
+  }
+
   /** Переставить микро-победы (drag-reorder, ADR-0054). */
   public reorderMicroWins(ids: readonly string[]): Observable<void> {
     return this._http.put<void>(`${API_PREFIX}/accent/micro-wins/reorder`, { ids });

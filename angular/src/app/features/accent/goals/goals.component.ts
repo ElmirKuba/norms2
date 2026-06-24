@@ -132,79 +132,77 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         @if (hasStarters()) {
           <p class="goals__hint">Примеры помечены бейджем. «Добавить себе» или «Изм.» — и пример станет твоей целью.</p>
         }
-        @if (focusedItems().length > 0) {
-          <h3 class="goals__section">⭐ В фокусе</h3>
-          <ul class="goals__list">
-            @for (g of focusedItems(); track g.id) {
-              <li>
-                <app-card>
-                  <div class="goals__item">
-                    <div class="goals__top">
-                      <span class="goals__badge">{{ directionLabel(g) }}</span>
-                      @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
-                      @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
-                      @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
-                      @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
-                        <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
-                          [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
-                          [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
-                      }
-                    </div>
-                    <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
-                    @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
-                    <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
-                      <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
-                    </div>
-                    <div class="goals__metrics">
-                      <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
-                      <span class="goals__amount">{{ amountLabel(g) }}</span>
-                      @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
-                    </div>
-                    @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+        <h3 class="goals__section">⭐ В фокусе</h3>
+        <ul class="goals__list goals__focus-zone" cdkDropList #focusList="cdkDropList"
+          [cdkDropListConnectedTo]="[othersList]" (cdkDropListDropped)="dropOnFocus($event)">
+          @for (g of focusedItems(); track g.id) {
+            <li cdkDrag [cdkDragData]="g">
+              <app-card>
+                <div class="goals__item">
+                  <div class="goals__top">
+                    <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
+                    <span class="goals__badge">{{ directionLabel(g) }}</span>
+                    @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
+                    @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
+                    @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
+                    <button type="button" class="goals__star goals__star--on" aria-label="Убрать из фокуса"
+                      [disabled]="focusBusy()" (click)="toggleFocus(g)">★</button>
                   </div>
-                </app-card>
-              </li>
-            }
-          </ul>
-        }
-        @if (unfocusedItems().length > 0) {
-          @if (focusedItems().length > 0) {
-            <h3 class="goals__section goals__section--muted">Остальные</h3>
+                  <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
+                  @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                  <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
+                    <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
+                  </div>
+                  <div class="goals__metrics">
+                    <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
+                    <span class="goals__amount">{{ amountLabel(g) }}</span>
+                    @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
+                  </div>
+                  @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+                </div>
+              </app-card>
+            </li>
+          } @empty {
+            <li class="goals__focus-empty">Перетащи цель сюда — возьмёшь в фокус ⭐</li>
           }
-          <ul class="goals__list" cdkDropList (cdkDropListDropped)="dropGoal($event)">
-            @for (g of unfocusedItems(); track g.id) {
-              <li cdkDrag>
-                <app-card>
-                  <div class="goals__item">
-                    <div class="goals__top">
-                      <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
-                      <span class="goals__badge">{{ directionLabel(g) }}</span>
-                      @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
-                      @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
-                      @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
-                      @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
-                        <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
-                          [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
-                          [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
-                      }
-                    </div>
-                    <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
-                    @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
-                    <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
-                      <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
-                    </div>
-                    <div class="goals__metrics">
-                      <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
-                      <span class="goals__amount">{{ amountLabel(g) }}</span>
-                      @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
-                    </div>
-                    @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+        </ul>
+
+        <h3 class="goals__section goals__section--muted">Остальные</h3>
+        <ul class="goals__list" cdkDropList #othersList="cdkDropList"
+          [cdkDropListConnectedTo]="[focusList]" (cdkDropListDropped)="dropOnOthers($event)">
+          @for (g of unfocusedItems(); track g.id) {
+            <li cdkDrag [cdkDragData]="g">
+              <app-card>
+                <div class="goals__item">
+                  <div class="goals__top">
+                    <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
+                    <span class="goals__badge">{{ directionLabel(g) }}</span>
+                    @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
+                    @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
+                    @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
+                    @if (!g.isStarter && g.status === 'active') {
+                      <button type="button" class="goals__star" aria-label="Добавить в фокус"
+                        [disabled]="focusBusy()" (click)="toggleFocus(g)">☆</button>
+                    }
                   </div>
-                </app-card>
-              </li>
-            }
-          </ul>
-        }
+                  <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
+                  @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                  <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
+                    <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
+                  </div>
+                  <div class="goals__metrics">
+                    <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
+                    <span class="goals__amount">{{ amountLabel(g) }}</span>
+                    @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
+                  </div>
+                  @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+                </div>
+              </app-card>
+            </li>
+          } @empty {
+            <li class="goals__focus-empty goals__focus-empty--muted">Все активные цели в фокусе</li>
+          }
+        </ul>
       }
     </section>
   `,
@@ -313,6 +311,27 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .goals__section--muted {
         color: var(--color-text-muted);
         font-weight: 500;
+      }
+      .goals__focus-zone {
+        border: 1.5px dashed var(--color-accent);
+        border-radius: var(--radius-md);
+        padding: var(--space-2);
+        min-height: 52px;
+      }
+      .goals__focus-zone.cdk-drop-list-receiving,
+      .goals__focus-zone.cdk-drop-list-dragging {
+        border-style: solid;
+        background: var(--color-surface-2);
+      }
+      .goals__focus-empty {
+        list-style: none;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+        padding: var(--space-3);
+      }
+      .goals__focus-empty--muted {
+        opacity: 0.7;
       }
       .goals__star {
         margin-left: auto;
@@ -627,21 +646,89 @@ export class GoalsComponent {
   }
 
   /**
-   * Drag-reorder в секции «Остальные» (ADR-0054): оптимистично переставляем локально + шлём
-   * новый порядок (focused + reordered unfocused); при ошибке — откат к серверному порядку.
+   * Drop в зону «⭐ В фокусе» (ADR-0053/0054). Внутри фокуса — перестановка ранга (optimistic +
+   * reorderFocus). Из «Остальных» — взять в фокус (через focusGoal: mission-filter/лимит; при отказе
+   * откат + ошибка), затем выставить порядок фокуса.
    */
-  protected dropGoal(event: CdkDragDrop<unknown>): void {
-    if (event.previousIndex === event.currentIndex) {
+  protected dropOnFocus(event: CdkDragDrop<unknown>): void {
+    const goal = event.item.data as GoalProgressView;
+    if (event.previousContainer === event.container) {
+      if (event.previousIndex === event.currentIndex) {
+        return;
+      }
+      const focused = [...this.focusedItems()];
+      moveItemInArray(focused, event.previousIndex, event.currentIndex);
+      const reordered = focused.map((g, i) => ({ ...g, focusOrder: i }));
+      this.items.set([...reordered, ...this.unfocusedItems()]);
+      this._api.reorderGoalFocus(reordered.map((g) => g.id)).subscribe({
+        error: (err: unknown) => {
+          this._load();
+          this._modal.error('Не удалось сохранить порядок', errorMessage(err));
+        },
+      });
       return;
     }
-    const unfocused = [...this.unfocusedItems()];
-    moveItemInArray(unfocused, event.previousIndex, event.currentIndex);
-    const next = [...this.focusedItems(), ...unfocused];
-    this.items.set(next);
-    this._api.reorderGoals(next.map((g) => g.id)).subscribe({
+    const focusedIds = this.focusedItems().map((g) => g.id);
+    focusedIds.splice(event.currentIndex, 0, goal.id);
+    this._api.focusGoal(goal.id).subscribe({
+      next: (res) => {
+        this._api.reorderGoalFocus(focusedIds).subscribe({
+          next: () => this._load(),
+          error: () => this._load(),
+        });
+        if (res.overLimit) {
+          this._modal.message(
+            'Многовато в фокусе',
+            ModalHeaderClassIcon.Info,
+            `Уже ${String(res.focusedCount)} целей в фокусе. Фокус — про единицы: что-то можно отпустить.`,
+          );
+        }
+      },
       error: (err: unknown) => {
         this._load();
-        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
+        this._modal.error('Не удалось взять в фокус', errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Drop в зону «Остальные» (ADR-0054). Внутри — перестановка `position`. Из «В фокусе» — убрать из
+   * фокуса (unfocusGoal), затем выставить позицию.
+   */
+  protected dropOnOthers(event: CdkDragDrop<unknown>): void {
+    const goal = event.item.data as GoalProgressView;
+    if (event.previousContainer === event.container) {
+      if (event.previousIndex === event.currentIndex) {
+        return;
+      }
+      const others = [...this.unfocusedItems()];
+      moveItemInArray(others, event.previousIndex, event.currentIndex);
+      this.items.set([...this.focusedItems(), ...others]);
+      this._api
+        .reorderGoals([...this.focusedItems().map((g) => g.id), ...others.map((g) => g.id)])
+        .subscribe({
+          error: (err: unknown) => {
+            this._load();
+            this._modal.error('Не удалось сохранить порядок', errorMessage(err));
+          },
+        });
+      return;
+    }
+    const othersIds = this.unfocusedItems().map((g) => g.id);
+    othersIds.splice(event.currentIndex, 0, goal.id);
+    this._api.unfocusGoal(goal.id).subscribe({
+      next: () => {
+        const focusedIds = this.focusedItems()
+          .filter((g) => g.id !== goal.id)
+          .map((g) => g.id);
+        this._api.reorderGoals([...focusedIds, ...othersIds]).subscribe({
+          next: () => this._load(),
+          error: () => this._load(),
+        });
+      },
+      error: (err: unknown) => {
+        this._load();
+        this._modal.error('Не удалось убрать из фокуса', errorMessage(err));
       },
     });
   }

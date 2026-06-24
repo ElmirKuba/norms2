@@ -245,22 +245,24 @@ function forecastBlock(
   let projectedCompletionDate: string | null = null;
   if (f !== null && f < 1) {
     const observedRate = f / activeDaysOf(goal, now);
+    // observedRate=0 (нулевой прогресс, f=0) → forecast=null: не прогнозируем и НЕ стыдим только что
+    // начатую цель (ADR-0052: «null если ... observedRate=0»; шляпа 3 — тон без вины). Триаж 2.5·23 F#4.
     if (observedRate > 0) {
       projectedCompletionDate = utcMsToYmd(
         ymdToUtcMs(todayYmd) + Math.ceil((1 - f) / observedRate) * DAY_MS,
       );
-    }
-    if (daysLeft !== null) {
-      if (daysLeft <= 0) {
-        forecast = 'behind';
-      } else {
-        const requiredRate = (1 - f) / daysLeft;
-        if (observedRate > requiredRate * (1 + RATE_EPS)) {
-          forecast = 'ahead';
-        } else if (observedRate < requiredRate * (1 - RATE_EPS)) {
+      if (daysLeft !== null) {
+        if (daysLeft <= 0) {
           forecast = 'behind';
         } else {
-          forecast = 'on_track';
+          const requiredRate = (1 - f) / daysLeft;
+          if (observedRate > requiredRate * (1 + RATE_EPS)) {
+            forecast = 'ahead';
+          } else if (observedRate < requiredRate * (1 - RATE_EPS)) {
+            forecast = 'behind';
+          } else {
+            forecast = 'on_track';
+          }
         }
       }
     }

@@ -771,7 +771,10 @@ export class GoalDetailComponent {
    */
   private _lifecycle(request: ReturnType<AccentApiService['pauseGoal']>): void {
     this.menuOpen.set(false);
-    request.subscribe({ next: () => { this._load(); }, error: () => undefined });
+    request.subscribe({
+      next: () => { this._load(); },
+      error: (err: unknown) => { this._modal.error('Не удалось изменить статус цели', errorMessage(err)); },
+    });
   }
 
   /** RU-подпись рода. */
@@ -886,7 +889,7 @@ export class GoalDetailComponent {
       if (result?.mode === 'update') {
         this._api.updateGoal(this._id, result.payload).subscribe({
           next: () => { this._load(); },
-          error: () => undefined,
+          error: (err: unknown) => { this._modal.error('Не удалось сохранить цель', errorMessage(err)); },
         });
       }
     });
@@ -917,7 +920,10 @@ export class GoalDetailComponent {
         this.adoptBusy.set(false);
         this._reloadGoal();
       },
-      error: () => { this.adoptBusy.set(false); },
+      error: (err: unknown) => {
+        this.adoptBusy.set(false);
+        this._modal.error('Не удалось добавить себе', errorMessage(err));
+      },
     });
   }
 
@@ -931,7 +937,7 @@ export class GoalDetailComponent {
       if (result?.mode === 'create') {
         this._api.createGoal(result.payload).subscribe({
           next: () => { this._load(); },
-          error: () => undefined,
+          error: (err: unknown) => { this._modal.error('Не удалось создать подцель', errorMessage(err)); },
         });
       }
     });
@@ -968,7 +974,7 @@ export class GoalDetailComponent {
   protected removeMilestone(milestone: MilestoneView): void {
     this._api.removeMilestone(this._id, milestone.id).subscribe({
       next: () => { this._loadMilestones(); },
-      error: () => undefined,
+      error: (err: unknown) => { this._modal.error('Не удалось удалить веху', errorMessage(err)); },
     });
   }
 
@@ -1039,7 +1045,7 @@ export class GoalDetailComponent {
         this.editingId.set(null);
         this._reloadGoal();
       },
-      error: () => undefined,
+      error: (err: unknown) => { this._modal.error('Не удалось сохранить запись', errorMessage(err)); },
     });
   }
 
@@ -1061,7 +1067,7 @@ export class GoalDetailComponent {
             this.entries.update((list) => list.filter((e) => e.id !== entry.id));
             this._reloadGoal();
           },
-          error: () => undefined,
+          error: (err: unknown) => { this._modal.error('Не удалось удалить запись', errorMessage(err)); },
         });
       });
   }

@@ -30,6 +30,8 @@ export const microWins = defineTableWithSchema<MicroWinFull>()(
     disabledForStates: jsonb('disabled_for_states').$type<UserState[]>(),
     isActive: boolean('is_active').notNull().default(true),
     isStarter: boolean('is_starter').notNull().default(false),
+    // Ручной порядок (ADR-0054, 2.5·27): drag-to-reorder, per-account; бэкфилл по created_at.
+    position: integer('position').notNull().default(0),
     ...timestamps(),
   },
   (table) => [

@@ -181,4 +181,24 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
       .returning({ id: habits.id });
     return rows.length > 0;
   }
+
+  /**
+   * Ручная сортировка перетаскиванием (ADR-0054): пишем в существующий `priority` (список уже
+   * сортируется `desc(priority)`), без отдельной колонки. Верхний элемент → наибольший priority.
+   * Атомарным UPDATE FROM (VALUES …); чужие id игнорируются (скоуп по account_id).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (сверху вниз).
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const n = ids.length;
+    const tuples = ids.map((id, i) => sql`(${id}, ${n - i})`);
+    await this._db.execute(sql`
+      UPDATE ${habits} AS h SET priority = v.pri::int
+      FROM (VALUES ${sql.join(tuples, sql`, `)}) AS v(id, pri)
+      WHERE h.id = v.id AND h.account_id = ${accountId}
+    `);
+  }
 }

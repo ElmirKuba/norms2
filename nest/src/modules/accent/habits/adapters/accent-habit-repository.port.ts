@@ -120,4 +120,11 @@ export interface AccentHabitRepositoryPort {
     expectedVersion: number,
     ladder: HabitLadder,
   ): Promise<boolean>;
+
+  /**
+   * Ручная сортировка привычек (ADR-0054): пишет `priority` для своих id (верхний → больший priority).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (сверху вниз).
+   */
+  reorder(accountId: string, ids: readonly string[]): Promise<void>;
 }

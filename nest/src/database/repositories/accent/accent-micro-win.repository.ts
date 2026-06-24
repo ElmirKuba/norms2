@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { microWins } from '../../schemas/micro-wins.schema';
@@ -34,7 +34,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
       .select()
       .from(microWins)
       .where(and(eq(microWins.accountId, accountId), eq(microWins.isActive, true)))
-      .orderBy(asc(microWins.createdAt));
+      .orderBy(asc(microWins.position), asc(microWins.createdAt));
   }
 
   /**
@@ -71,6 +71,8 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
         effect: data.effect ?? null,
         disabledForStates: data.disabledForStates ?? null,
         isStarter: data.isStarter ?? false,
+        // Новая микро-победа — в конец списка (ADR-0054): position = max+1 для аккаунта.
+        position: sql<number>`(select coalesce(max(${microWins.position}), -1) + 1 from ${microWins} where ${microWins.accountId} = ${data.accountId})`,
       })
       .returning();
     const row = rows[0];
@@ -187,5 +189,23 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
       .from(microWinLogs)
       .where(and(eq(microWinLogs.accountId, accountId), eq(microWinLogs.occurredOn, occurredOn)));
     return rows.map((row) => row.microWinId);
+  }
+
+  /**
+   * Переставляет микро-победы аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих id,
+   * атомарным UPDATE FROM (VALUES …). Чужие id игнорируются (скоуп по account_id).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок.
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const tuples = ids.map((id, i) => sql`(${id}, ${i})`);
+    await this._db.execute(sql`
+      UPDATE ${microWins} AS m SET position = v.pos::int
+      FROM (VALUES ${sql.join(tuples, sql`, `)}) AS v(id, pos)
+      WHERE m.id = v.id AND m.account_id = ${accountId}
+    `);
   }
 }

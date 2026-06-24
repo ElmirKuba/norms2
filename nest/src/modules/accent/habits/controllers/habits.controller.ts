@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createHabitSchema } from '../dtos/create-habit.dto';
 import type { CreateHabitDto } from '../dtos/create-habit.dto';
+import { reorderHabitsSchema } from '../dtos/reorder-habits.dto';
+import type { ReorderHabitsDto } from '../dtos/reorder-habits.dto';
+import { ReorderHabitsUseCase } from '../use-cases/reorder-habits.use-case';
 import { updateHabitSchema } from '../dtos/update-habit.dto';
 import type { UpdateHabitDto } from '../dtos/update-habit.dto';
 import { ListHabitsUseCase } from '../use-cases/list-habits.use-case';
@@ -40,6 +43,7 @@ export class HabitsController {
     private readonly _seedStarterPack: SeedHabitStarterPackUseCase,
     private readonly _clearStarters: ClearHabitStartersUseCase,
     private readonly _adopt: AdoptHabitUseCase,
+    private readonly _reorder: ReorderHabitsUseCase,
   ) {}
 
   /**
@@ -64,6 +68,20 @@ export class HabitsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<HabitView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Ручная сортировка перетаскиванием (ADR-0054, → priority): тело `{ ids }`. Объявлен ДО `:id`. 204.
+   * @param body Желаемый порядок id.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Put('habits/reorder')
+  @HttpCode(204)
+  public async reorder(
+    @Body(new ZodValidationPipe(reorderHabitsSchema)) body: ReorderHabitsDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._reorder.execute(request.account.id, body.ids);
   }
 
   /**

@@ -18,6 +18,7 @@ import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
 import { SeedHabitStarterPackUseCase } from './use-cases/seed-habit-starter-pack.use-case';
 import { ClearHabitStartersUseCase } from './use-cases/clear-habit-starters.use-case';
 import { AdoptHabitUseCase } from './use-cases/adopt-habit.use-case';
+import { ReorderHabitsUseCase } from './use-cases/reorder-habits.use-case';
 import { ListTasksUseCase } from './use-cases/list-tasks.use-case';
 import { ListOverdueTasksUseCase } from './use-cases/list-overdue-tasks.use-case';
 import { ListDueTodayTasksUseCase } from './use-cases/list-due-today-tasks.use-case';
@@ -50,6 +51,7 @@ import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
     SeedHabitStarterPackUseCase,
     ClearHabitStartersUseCase,
     AdoptHabitUseCase,
+    ReorderHabitsUseCase,
     ListTasksUseCase,
     ListOverdueTasksUseCase,
     ListDueTodayTasksUseCase,

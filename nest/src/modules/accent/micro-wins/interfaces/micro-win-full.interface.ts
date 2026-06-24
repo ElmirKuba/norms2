@@ -65,6 +65,8 @@ export interface MicroWinFull {
   isActive: boolean;
   /** Стартовая (пример из пака) — пока не присвоена; первое «Сделал»/«Изм.» снимает флаг (2.3). */
   isStarter: boolean;
+  /** Ручной порядок в списке (ADR-0054, 2.5·27): drag-to-reorder, per-account. */
+  position: number;
   /** Когда создано. */
   createdAt: Date;
   /** Когда изменено. */

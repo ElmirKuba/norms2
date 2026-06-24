@@ -42,6 +42,15 @@ export class AccentHabitDomainService {
   }
 
   /**
+   * Ручная сортировка привычек (ADR-0054, drag-reorder → priority). Скоуп по аккаунту в репозитории.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок.
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    await this._repository.reorder(accountId, ids);
+  }
+
+  /**
    * Привычка владельца или 404.
    * @param id Идентификатор привычки.
    * @param accountId Идентификатор аккаунта-владельца.

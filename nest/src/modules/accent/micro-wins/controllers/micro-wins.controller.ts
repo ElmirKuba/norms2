@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createMicroWinSchema } from '../dtos/create-micro-win.dto';
 import type { CreateMicroWinDto } from '../dtos/create-micro-win.dto';
+import { reorderMicroWinsSchema } from '../dtos/reorder-micro-wins.dto';
+import type { ReorderMicroWinsDto } from '../dtos/reorder-micro-wins.dto';
+import { ReorderMicroWinsUseCase } from '../use-cases/reorder-micro-wins.use-case';
 import { updateMicroWinSchema } from '../dtos/update-micro-win.dto';
 import type { UpdateMicroWinDto } from '../dtos/update-micro-win.dto';
 import { completeMicroWinSchema } from '../dtos/complete-micro-win.dto';
@@ -39,6 +42,7 @@ export class MicroWinsController {
     private readonly _complete: CompleteMicroWinUseCase,
     private readonly _seedStarterPack: SeedStarterPackUseCase,
     private readonly _clearStarters: ClearStartersUseCase,
+    private readonly _reorder: ReorderMicroWinsUseCase,
   ) {}
 
   /**
@@ -63,6 +67,20 @@ export class MicroWinsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<MicroWinView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Ручная сортировка перетаскиванием (ADR-0054): тело `{ ids }`. Объявлен ДО `:id`. 204.
+   * @param body Желаемый порядок id.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Put('micro-wins/reorder')
+  @HttpCode(204)
+  public async reorder(
+    @Body(new ZodValidationPipe(reorderMicroWinsSchema)) body: ReorderMicroWinsDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._reorder.execute(request.account.id, body.ids);
   }
 
   /**

@@ -52,6 +52,15 @@ export class AccentMicroWinDomainService {
   }
 
   /**
+   * Ручная сортировка микро-побед (ADR-0054, drag-reorder). Репозиторий скоупит по аккаунту.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок.
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    await this._repository.reorder(accountId, ids);
+  }
+
+  /**
    * Микро-победа владельца или ошибка 404.
    * @param id Идентификатор микро-победы.
    * @param accountId Идентификатор аккаунта-владельца.

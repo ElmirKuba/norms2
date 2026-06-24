@@ -148,6 +148,13 @@
       "when": 1782299074568,
       "tag": "0020_rich_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782300335108,
+      "tag": "0021_rainy_saracen",
+      "breakpoints": true
     }
   ]
 }

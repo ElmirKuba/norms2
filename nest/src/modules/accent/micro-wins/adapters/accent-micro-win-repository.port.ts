@@ -120,4 +120,11 @@ export interface AccentMicroWinRepositoryPort {
    * @returns Список `microWinId`, по которым есть лог за этот день.
    */
   listLoggedOn(accountId: string, occurredOn: string): Promise<string[]>;
+
+  /**
+   * Переставляет микро-победы аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих id.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок.
+   */
+  reorder(accountId: string, ids: readonly string[]): Promise<void>;
 }

@@ -20,6 +20,7 @@ export const updateGoalSchema = z
     targetValue: z.number().finite('Целевое значение — число.').optional(),
     deadline: ymd.nullish(),
     fallbackVersion: z.string().max(280).nullish(),
+    tradeoff: z.string().max(280).nullish(),
   })
   .strict();
 

@@ -73,6 +73,8 @@ export interface GoalFull {
   completedAt: Date | null;
   /** Текст «версия цели на плохой день» (anti-burnout, опц.). */
   fallbackVersion: string | null;
+  /** «Ради чего откажусь» (mission-filter, ADR-0053): условно-обязателен при заводе accumulate в фокус. */
+  tradeoff: string | null;
   /** Стартовый пример (`is_starter`, ADR-0051): виден в списке с бейджем «пример», но НЕ
    * считается «в работе» (исключён из дашборда) и не принимает записи до присвоения
    * («Добавить себе» / «Изм.»). Инертная витрина. */

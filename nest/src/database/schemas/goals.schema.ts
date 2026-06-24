@@ -57,6 +57,9 @@ export const goals = defineTableWithSchema<GoalFull>()(
       .default('active'),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     fallbackVersion: text('fallback_version'),
+    // Mission-filter (ADR-0053): «ради чего откажусь» — условно-обязательно при заводе
+    // накопительной (accumulate) цели в фокус (цена слота фокуса).
+    tradeoff: text('tradeoff'),
     isStarter: boolean('is_starter').notNull().default(false),
     // Фокус (ADR-0053, 2.5·24): null = не в фокусе; не-null = в фокусе + ранг (порядок).
     focusOrder: integer('focus_order'),

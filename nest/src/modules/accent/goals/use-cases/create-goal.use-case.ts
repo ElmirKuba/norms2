@@ -34,6 +34,7 @@ export class CreateGoalUseCase {
       startValue: dto.startValue ?? null,
       deadline: dto.deadline ?? null,
       fallbackVersion: dto.fallbackVersion ?? null,
+      tradeoff: dto.tradeoff ?? null,
     });
     return toGoalView(created);
   }

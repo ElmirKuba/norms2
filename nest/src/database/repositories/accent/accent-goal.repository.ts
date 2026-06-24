@@ -106,6 +106,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
         startValue: data.startValue ?? null,
         deadline: data.deadline ?? null,
         fallbackVersion: data.fallbackVersion ?? null,
+        tradeoff: data.tradeoff ?? null,
         isStarter: data.isStarter ?? false,
       })
       .returning();
@@ -142,6 +143,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
           startValue: data.startValue ?? null,
           deadline: data.deadline ?? null,
           fallbackVersion: data.fallbackVersion ?? null,
+          tradeoff: data.tradeoff ?? null,
           isStarter: data.isStarter ?? false,
         })),
       )

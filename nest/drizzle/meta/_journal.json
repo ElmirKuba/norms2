@@ -134,6 +134,13 @@
       "when": 1782291978286,
       "tag": "0018_naive_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782296721515,
+      "tag": "0019_plain_patch",
+      "breakpoints": true
     }
   ]
 }

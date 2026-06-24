@@ -35,6 +35,8 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /** «Ради чего откажусь» (mission-filter, ADR-0053) или null. */
+  tradeoff: string | null;
   /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
   isStarter: boolean;
   /** Фокус (ADR-0053): null = не в фокусе; не-null = в фокусе + ранг (порядок). */
@@ -65,6 +67,7 @@ export function toGoalView(full: GoalFull): GoalView {
     status: full.status,
     completedAt: full.completedAt ? full.completedAt.toISOString() : null,
     fallbackVersion: full.fallbackVersion,
+    tradeoff: full.tradeoff,
     isStarter: full.isStarter,
     focusOrder: full.focusOrder,
     pausedAt: full.pausedAt ? full.pausedAt.toISOString() : null,

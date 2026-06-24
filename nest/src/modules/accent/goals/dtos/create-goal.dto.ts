@@ -23,6 +23,7 @@ export const goalBodyShape = {
   startValue: z.number().finite('Базовый замер — число.').nullish(),
   deadline: ymd.nullish(),
   fallbackVersion: z.string().max(280).nullish(),
+  tradeoff: z.string().max(280).nullish(),
 };
 
 /** Схема тела POST /accent/goals (closed-shape). */

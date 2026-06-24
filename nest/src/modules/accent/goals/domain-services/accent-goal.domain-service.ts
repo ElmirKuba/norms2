@@ -134,6 +134,16 @@ export class AccentGoalDomainService {
       if (goal.focusOrder !== null) {
         updated = goal; // уже в фокусе — идемпотентно, ранг не трогаем
       } else {
+        // Mission-filter (ADR-0053): накопительную цель в фокус — только назвав цену
+        // («ради чего откажусь»). reduce/reach — уже «вычитание»/замер, не требуют.
+        if (
+          goal.direction === 'accumulate' &&
+          (goal.tradeoff === null || goal.tradeoff.trim() === '')
+        ) {
+          throw new ValidationError(
+            'Чтобы взять цель в фокус, сначала впиши в ней «ради чего готов отказаться» (кнопка «Изменить»).',
+          );
+        }
         const max = await this._repository.maxFocusOrder(accountId);
         updated = (await this._repository.setFocus(id, accountId, (max ?? 0) + 1)) ?? goal;
       }

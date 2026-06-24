@@ -228,6 +228,11 @@ export class AccentApiService {
     return this._http.delete<GoalFocusResult>(`${API_PREFIX}/accent/goals/${id}/focus`);
   }
 
+  /** Переставить цели в заданный порядок (drag-reorder, ADR-0054). */
+  public reorderGoals(ids: readonly string[]): Observable<void> {
+    return this._http.put<void>(`${API_PREFIX}/accent/goals/reorder`, { ids });
+  }
+
   /** Создать цель. */
   public createGoal(payload: GoalPayload): Observable<GoalView> {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals`, payload);

@@ -1,5 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -46,6 +53,9 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
   selector: 'app-goals',
   imports: [
     NgTemplateOutlet,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
     RouterLink,
     ButtonComponent,
     CardComponent,
@@ -126,9 +136,9 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         }
         @if (focusedItems().length > 0) {
           <h3 class="goals__section">⭐ В фокусе</h3>
-          <ul class="goals__list">
+          <ul class="goals__list" cdkDropList [cdkDropListSortingDisabled]="true">
             @for (g of focusedItems(); track g.id) {
-              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g }" />
+              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g, drag: false }" />
             }
           </ul>
         }
@@ -136,20 +146,23 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           @if (focusedItems().length > 0) {
             <h3 class="goals__section goals__section--muted">Остальные</h3>
           }
-          <ul class="goals__list">
+          <ul class="goals__list" cdkDropList (cdkDropListDropped)="dropGoal($event)">
             @for (g of unfocusedItems(); track g.id) {
-              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g }" />
+              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g, drag: true }" />
             }
           </ul>
         }
       }
     </section>
 
-    <ng-template #goalCard let-g>
-      <li>
+    <ng-template #goalCard let-g let-drag="drag">
+      <li cdkDrag [cdkDragDisabled]="!drag">
         <app-card>
           <div class="goals__item">
             <div class="goals__top">
+              @if (drag) {
+                <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
+              }
               <span class="goals__badge">{{ directionLabel(g) }}</span>
               @if (g.isStarter) {
                 <span class="goals__badge goals__badge--example">пример</span>
@@ -317,6 +330,25 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .goals__star:disabled {
         opacity: 0.5;
         cursor: default;
+      }
+      .goals__grip {
+        border: none;
+        background: transparent;
+        cursor: grab;
+        color: var(--color-text-muted);
+        font-size: var(--fs-md);
+        line-height: 1;
+        padding: 0 var(--space-1);
+        touch-action: none;
+      }
+      .goals__grip:active {
+        cursor: grabbing;
+      }
+      .cdk-drag-preview {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      }
+      .cdk-drag-placeholder {
+        opacity: 0.4;
       }
       .goals__item {
         display: flex;
@@ -589,6 +621,26 @@ export class GoalsComponent {
       error: (err: unknown) => {
         this.focusBusy.set(false);
         this._modal.error('Не удалось изменить фокус', errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Drag-reorder в секции «Остальные» (ADR-0054): оптимистично переставляем локально + шлём
+   * новый порядок (focused + reordered unfocused); при ошибке — откат к серверному порядку.
+   */
+  protected dropGoal(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const unfocused = [...this.unfocusedItems()];
+    moveItemInArray(unfocused, event.previousIndex, event.currentIndex);
+    const next = [...this.focusedItems(), ...unfocused];
+    this.items.set(next);
+    this._api.reorderGoals(next.map((g) => g.id)).subscribe({
+      error: (err: unknown) => {
+        this._load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
       },
     });
   }

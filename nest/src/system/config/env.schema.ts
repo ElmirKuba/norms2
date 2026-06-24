@@ -43,6 +43,10 @@ export const envSchema = z.object({
   // Превышение → GOAL_MAX_DEPTH_REACHED (422). Менять → рестарт, без правок кода.
   ACCENT_GOAL_MAX_DEPTH: z.coerce.number().int().positive().default(2),
 
+  // Мягкий порог «в фокусе» целей (ADR-0053, combo A+C; дефолт 3 = «1 из 100, фокус»).
+  // Сверх порога — вопрос «что-то отпустишь?», НЕ блок. Менять → рестарт, без правок кода.
+  ACCENT_GOAL_FOCUS_SOFT_LIMIT: z.coerce.number().int().positive().default(3),
+
   // git-SHA билда (деплой); версия продукта — в файле VERSION (ADR-0044, пересмотр).
   GIT_COMMIT: z.string().default(''),
 });

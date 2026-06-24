@@ -141,6 +141,13 @@
       "when": 1782296721515,
       "tag": "0019_plain_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1782299074568,
+      "tag": "0020_rich_vampiro",
+      "breakpoints": true
     }
   ]
 }

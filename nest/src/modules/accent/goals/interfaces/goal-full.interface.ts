@@ -85,6 +85,8 @@ export interface GoalFull {
   isStarter: boolean;
   /** Фокус (ADR-0053, 2.5·24): null = не в фокусе; не-null = в фокусе + ранг (порядок внутри фокуса). */
   focusOrder: number | null;
+  /** Ручной порядок в списке (ADR-0054, 2.5·27): drag-to-reorder, per-account. */
+  position: number;
   /** Начало текущей паузы (ISO) или null. */
   pausedAt: Date | null;
   /** История пауз (для `activeDays` в forecast). */

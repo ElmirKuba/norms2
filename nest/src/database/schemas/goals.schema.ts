@@ -63,6 +63,8 @@ export const goals = defineTableWithSchema<GoalFull>()(
     isStarter: boolean('is_starter').notNull().default(false),
     // Фокус (ADR-0053, 2.5·24): null = не в фокусе; не-null = в фокусе + ранг (порядок).
     focusOrder: integer('focus_order'),
+    // Ручной порядок в списке (ADR-0054, 2.5·27): drag-to-reorder, per-account; бэкфилл по created_at.
+    position: integer('position').notNull().default(0),
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseHistory: jsonb('pause_history')
       .$type<GoalPausePeriod[]>()

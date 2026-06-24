@@ -373,4 +373,21 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       WHERE g.id = v.id AND g.account_id = ${accountId}
     `);
   }
+
+  /**
+   * Переставляет ранг фокуса (ADR-0053/0054): `focus_order = индекс` для переданных (фокусных) id.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок фокусных целей (сверху вниз).
+   */
+  public async reorderFocus(accountId: string, ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const tuples = ids.map((id, i) => sql`(${id}, ${i})`);
+    await this._db.execute(sql`
+      UPDATE ${goals} AS g SET focus_order = v.ord::int
+      FROM (VALUES ${sql.join(tuples, sql`, `)}) AS v(id, ord)
+      WHERE g.id = v.id AND g.account_id = ${accountId}
+    `);
+  }
 }

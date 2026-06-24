@@ -205,4 +205,11 @@ export interface AccentGoalRepositoryPort {
    * @param ids Желаемый порядок (полный видимый список).
    */
   reorder(accountId: string, ids: readonly string[]): Promise<void>;
+
+  /**
+   * Переставляет ранг фокуса (ADR-0053/0054): `focus_order = индекс` для переданных фокусных id.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок фокусных целей.
+   */
+  reorderFocus(accountId: string, ids: readonly string[]): Promise<void>;
 }

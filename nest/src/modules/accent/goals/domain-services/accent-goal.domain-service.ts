@@ -105,6 +105,15 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Перестановка ранга фокуса перетаскиванием (ADR-0053/0054). Скоуп по аккаунту в репозитории.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок фокусных целей.
+   */
+  public async reorderFocus(accountId: string, ids: readonly string[]): Promise<void> {
+    await this._repository.reorderFocus(accountId, ids);
+  }
+
+  /**
    * Цель владельца или 404.
    * @param id Идентификатор цели.
    * @param accountId Идентификатор аккаунта-владельца.

@@ -43,6 +43,7 @@ import { ClearGoalStartersUseCase } from '../use-cases/clear-goal-starters.use-c
 import { AdoptGoalUseCase } from '../use-cases/adopt-goal.use-case';
 import { ToggleGoalFocusUseCase } from '../use-cases/toggle-goal-focus.use-case';
 import { ReorderGoalsUseCase } from '../use-cases/reorder-goals.use-case';
+import { ReorderGoalFocusUseCase } from '../use-cases/reorder-goal-focus.use-case';
 import { reorderGoalsSchema } from '../dtos/reorder-goals.dto';
 import type { ReorderGoalsDto } from '../dtos/reorder-goals.dto';
 import { RemoveGoalEntryUseCase } from '../use-cases/remove-goal-entry.use-case';
@@ -98,6 +99,7 @@ export class GoalsController {
     private readonly _adopt: AdoptGoalUseCase,
     private readonly _toggleFocus: ToggleGoalFocusUseCase,
     private readonly _reorder: ReorderGoalsUseCase,
+    private readonly _reorderFocus: ReorderGoalFocusUseCase,
   ) {}
 
   /**
@@ -150,6 +152,21 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     await this._reorder.execute(request.account.id, body.ids);
+  }
+
+  /**
+   * Перестановка ранга фокуса перетаскиванием (ADR-0053/0054): тело `{ ids }` фокусных целей.
+   * Объявлен ДО `:id`. 204.
+   * @param body Желаемый порядок фокусных id.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Put('goals/focus-reorder')
+  @HttpCode(204)
+  public async reorderFocus(
+    @Body(new ZodValidationPipe(reorderGoalsSchema)) body: ReorderGoalsDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._reorderFocus.execute(request.account.id, body.ids);
   }
 
   /**

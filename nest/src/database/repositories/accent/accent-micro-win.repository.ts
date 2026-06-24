@@ -94,7 +94,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
     const rows = await this._db
       .insert(microWins)
       .values(
-        items.map((data) => ({
+        items.map((data, index) => ({
           id: generateId(),
           accountId: data.accountId,
           title: data.title,
@@ -104,6 +104,9 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
           effect: data.effect ?? null,
           disabledForStates: data.disabledForStates ?? null,
           isStarter: data.isStarter ?? false,
+          // Сев — в конец списка по порядку (ADR-0054, ·28.A3): position = max+1+index.
+          // Без этого стартовый пак получал position=0 (дефолт) → всплывал над своими и шёл вразнобой.
+          position: sql<number>`(select coalesce(max(${microWins.position}), -1) from ${microWins} where ${microWins.accountId} = ${data.accountId}) + ${index + 1}`,
         })),
       )
       .returning({ id: microWins.id });

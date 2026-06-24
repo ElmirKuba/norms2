@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import {
   CdkDrag,
   CdkDragHandle,
@@ -52,7 +51,6 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
 @Component({
   selector: 'app-goals',
   imports: [
-    NgTemplateOutlet,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
@@ -136,9 +134,36 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         }
         @if (focusedItems().length > 0) {
           <h3 class="goals__section">⭐ В фокусе</h3>
-          <ul class="goals__list" cdkDropList [cdkDropListSortingDisabled]="true">
+          <ul class="goals__list">
             @for (g of focusedItems(); track g.id) {
-              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g, drag: false }" />
+              <li>
+                <app-card>
+                  <div class="goals__item">
+                    <div class="goals__top">
+                      <span class="goals__badge">{{ directionLabel(g) }}</span>
+                      @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
+                      @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
+                      @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
+                      @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
+                        <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
+                          [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
+                          [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
+                      }
+                    </div>
+                    <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
+                    @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                    <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
+                      <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
+                    </div>
+                    <div class="goals__metrics">
+                      <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
+                      <span class="goals__amount">{{ amountLabel(g) }}</span>
+                      @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
+                    </div>
+                    @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+                  </div>
+                </app-card>
+              </li>
             }
           </ul>
         }
@@ -148,64 +173,40 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           }
           <ul class="goals__list" cdkDropList (cdkDropListDropped)="dropGoal($event)">
             @for (g of unfocusedItems(); track g.id) {
-              <ng-container [ngTemplateOutlet]="goalCard" [ngTemplateOutletContext]="{ $implicit: g, drag: true }" />
+              <li cdkDrag>
+                <app-card>
+                  <div class="goals__item">
+                    <div class="goals__top">
+                      <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
+                      <span class="goals__badge">{{ directionLabel(g) }}</span>
+                      @if (g.isStarter) { <span class="goals__badge goals__badge--example">пример</span> }
+                      @if (g.status !== 'active') { <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span> }
+                      @if (g.domainKey) { <span class="goals__domain">{{ g.domainKey }}</span> }
+                      @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
+                        <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
+                          [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
+                          [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
+                      }
+                    </div>
+                    <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
+                    @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                    <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
+                      <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
+                    </div>
+                    <div class="goals__metrics">
+                      <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
+                      <span class="goals__amount">{{ amountLabel(g) }}</span>
+                      @if (g.forecast) { <span class="goals__forecast goals__forecast--{{ g.forecast }}">{{ forecastLabel(g.forecast) }}</span> }
+                    </div>
+                    @if (deadlineLabel(g); as dl) { <span class="goals__deadline">{{ dl }}</span> }
+                  </div>
+                </app-card>
+              </li>
             }
           </ul>
         }
       }
     </section>
-
-    <ng-template #goalCard let-g let-drag="drag">
-      <li cdkDrag [cdkDragDisabled]="!drag">
-        <app-card>
-          <div class="goals__item">
-            <div class="goals__top">
-              @if (drag) {
-                <button type="button" class="goals__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
-              }
-              <span class="goals__badge">{{ directionLabel(g) }}</span>
-              @if (g.isStarter) {
-                <span class="goals__badge goals__badge--example">пример</span>
-              }
-              @if (g.status !== 'active') {
-                <span class="goals__status goals__status--{{ g.status }}">{{ statusLabel(g.status) }}</span>
-              }
-              @if (g.domainKey) {
-                <span class="goals__domain">{{ g.domainKey }}</span>
-              }
-              @if (!g.isStarter && (g.status === 'active' || g.focusOrder !== null)) {
-                <button type="button" class="goals__star" [class.goals__star--on]="g.focusOrder !== null"
-                  [attr.aria-label]="g.focusOrder !== null ? 'Убрать из фокуса' : 'Добавить в фокус'"
-                  [disabled]="focusBusy()" (click)="toggleFocus(g)">{{ g.focusOrder !== null ? '★' : '☆' }}</button>
-              }
-            </div>
-
-            <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
-            @if (g.whyItMatters) {
-              <span class="goals__why">{{ g.whyItMatters }}</span>
-            }
-
-            <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
-              <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
-            </div>
-
-            <div class="goals__metrics">
-              <span class="goals__pct">{{ g.percentage === null ? '—' : g.percentage + '%' }}</span>
-              <span class="goals__amount">{{ amountLabel(g) }}</span>
-              @if (g.forecast) {
-                <span class="goals__forecast goals__forecast--{{ g.forecast }}">
-                  {{ forecastLabel(g.forecast) }}
-                </span>
-              }
-            </div>
-
-            @if (deadlineLabel(g); as dl) {
-              <span class="goals__deadline">{{ dl }}</span>
-            }
-          </div>
-        </app-card>
-      </li>
-    </ng-template>
   `,
   styles: [
     `

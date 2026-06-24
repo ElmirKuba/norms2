@@ -7,6 +7,7 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
+import { ModalService } from '../../../shared/modals/modal.service';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_LABELS } from '../accent.types';
 import type { AccentRefItem, GoalForecast, GoalProgressView, GoalStatus } from '../accent.types';
@@ -363,6 +364,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
 export class GoalsComponent {
   private readonly _api = inject(AccentApiService);
   private readonly _dialog = inject(MatDialog);
+  private readonly _modal = inject(ModalService);
 
   /** Цели текущего фильтра. */
   protected readonly items = signal<GoalProgressView[]>([]);
@@ -467,7 +469,10 @@ export class GoalsComponent {
         this.items.set(items);
         this.packBusy.set(false);
       },
-      error: () => { this.packBusy.set(false); },
+      error: (err: unknown) => {
+        this.packBusy.set(false);
+        this._modal.error('Не удалось получить пак', errorMessage(err));
+      },
     });
   }
 
@@ -479,7 +484,10 @@ export class GoalsComponent {
         this.items.set(items);
         this.packBusy.set(false);
       },
-      error: () => { this.packBusy.set(false); },
+      error: (err: unknown) => {
+        this.packBusy.set(false);
+        this._modal.error('Не удалось очистить примеры', errorMessage(err));
+      },
     });
   }
 

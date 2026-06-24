@@ -58,7 +58,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       } @else if (goal(); as g) {
         @if (g.parentGoalId) {
           <button type="button" class="gd__back gd__back--parent" (click)="backToParent(g)">
-            ↑ К родительской цели
+            ↑ {{ parentTitle() ? 'К цели «' + parentTitle() + '»' : 'К родительской цели' }}
           </button>
         }
         <header class="gd__head">
@@ -643,6 +643,8 @@ export class GoalDetailComponent {
   protected readonly editControl = new FormControl<number | null>(null);
   /** Прямые подцели. */
   protected readonly children = signal<GoalProgressView[]>([]);
+  /** Заголовок родительской цели (для крошки «↑ К цели …») или null. */
+  protected readonly parentTitle = signal<string | null>(null);
   /** Вехи цели. */
   protected readonly milestones = signal<MilestoneView[]>([]);
   /** Форма новой вехи (FormGroup — чтобы `(ngSubmit)` эмитился, см. триаж 2.5·23 #1). */
@@ -721,6 +723,7 @@ export class GoalDetailComponent {
     this.entries.set([]);
     this.milestones.set([]);
     this.children.set([]);
+    this.parentTitle.set(null);
     this.hasMore.set(false);
     this.error.set(null);
     this.menuOpen.set(false);
@@ -1013,6 +1016,7 @@ export class GoalDetailComponent {
         this._loadEntries();
         this._loadMilestones();
         this._loadChildren();
+        this._loadParentTitle(goal.parentGoalId);
       },
       error: (err: unknown) => {
         this.error.set(errorMessage(err));
@@ -1105,6 +1109,18 @@ export class GoalDetailComponent {
       error: () => undefined,
     });
     this._loadMilestones();
+  }
+
+  /** Грузит заголовок родителя для крошки (F#9-полировка); null, если цель — корень. */
+  private _loadParentTitle(parentGoalId: string | null): void {
+    if (parentGoalId === null) {
+      this.parentTitle.set(null);
+      return;
+    }
+    this._api.getGoal(parentGoalId).subscribe({
+      next: (parent) => { this.parentTitle.set(parent.title); },
+      error: () => undefined,
+    });
   }
 
   /** Грузит прямые подцели (эндпоинт `/children`, P3#5). */

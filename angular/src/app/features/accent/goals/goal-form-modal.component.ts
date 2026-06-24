@@ -49,7 +49,7 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
 
       <label class="gf__field">
         <span class="gf__label">Зачем это важно (опц.)</span>
-        <textarea class="gf__input" rows="2" formControlName="whyItMatters"
+        <textarea class="gf__input" rows="2" maxlength="2000" formControlName="whyItMatters"
           placeholder="Якорь смысла — к чему ведёт эта цель"></textarea>
       </label>
 

@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { AccentApiService } from '../services/accent-api.service';
+import { ModalService } from '../../../shared/modals/modal.service';
+import { errorMessage } from '../../../core/http/error-message.util';
 import type { GoalProgressView } from '../accent.types';
 
 /**
@@ -111,6 +113,7 @@ import type { GoalProgressView } from '../accent.types';
 })
 export class AccentDashboardComponent {
   private readonly _api = inject(AccentApiService);
+  private readonly _modal = inject(ModalService);
 
   /** Момент начала паузы (ISO) или null. */
   protected readonly pausedFrom = signal<string | null>(null);
@@ -162,7 +165,10 @@ export class AccentDashboardComponent {
         this.busy.set(false);
         this._load();
       },
-      error: () => { this.busy.set(false); },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        this._modal.error('Не удалось поставить на паузу', errorMessage(err));
+      },
     });
   }
 
@@ -176,7 +182,10 @@ export class AccentDashboardComponent {
         this.busy.set(false);
         this._load();
       },
-      error: () => { this.busy.set(false); },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        this._modal.error('Не удалось снять с паузы', errorMessage(err));
+      },
     });
   }
 }

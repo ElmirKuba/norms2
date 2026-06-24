@@ -13,6 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { ModalService } from '../../../shared/modals/modal.service';
+import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
@@ -64,6 +65,9 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         <header class="gd__head">
           <div class="gd__head-main">
             <span class="gd__badge">{{ directionLabel(g) }}</span>
+            @if (g.focusOrder !== null) {
+              <span class="gd__badge gd__badge--focus">⭐ В фокусе</span>
+            }
             @if (g.status !== 'active') {
               <span class="gd__status">{{ statusLabel(g.status) }}</span>
             }
@@ -79,6 +83,11 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                 (click)="toggleMenu($event)">⋯</button>
               @if (menuOpen()) {
                 <div class="gd__menu" (click)="$event.stopPropagation()">
+                  @if (!g.isStarter) {
+                    <button type="button" class="gd__menu-item" (click)="toggleFocus(g)">
+                      {{ g.focusOrder !== null ? '☆ Убрать из фокуса' : '⭐ В фокус' }}
+                    </button>
+                  }
                   @if (g.status === 'active') {
                     <button type="button" class="gd__menu-item" (click)="pause()">⏸ На паузу</button>
                     <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
@@ -282,6 +291,10 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         border: 1px solid var(--color-accent);
         border-radius: var(--radius-sm);
         padding: 0 var(--space-1);
+      }
+      .gd__badge--focus {
+        background: var(--color-accent);
+        color: var(--color-on-accent, #fff);
       }
       .gd__status {
         font-size: var(--fs-xs);
@@ -940,6 +953,26 @@ export class GoalDetailComponent {
         this.adoptBusy.set(false);
         this._modal.error('Не удалось добавить себе', errorMessage(err));
       },
+    });
+  }
+
+  /** Переключает «фокус» цели (ADR-0053) из меню «⋯»; реактивно перечитывает; overLimit → мягкая подсказка. */
+  protected toggleFocus(goal: GoalProgressView): void {
+    this.menuOpen.set(false);
+    const req =
+      goal.focusOrder === null ? this._api.focusGoal(goal.id) : this._api.unfocusGoal(goal.id);
+    req.subscribe({
+      next: (res) => {
+        this._reloadGoal();
+        if (res.overLimit) {
+          this._modal.message(
+            'Многовато в фокусе',
+            ModalHeaderClassIcon.Info,
+            `Уже ${String(res.focusedCount)} целей в фокусе. Фокус — про единицы: что-то можно отпустить.`,
+          );
+        }
+      },
+      error: (err: unknown) => { this._modal.error('Не удалось изменить фокус', errorMessage(err)); },
     });
   }
 

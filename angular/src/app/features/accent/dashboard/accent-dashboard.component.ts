@@ -34,7 +34,7 @@ import type { GoalProgressView } from '../accent.types';
           <ul class="dash__goal-list">
             @for (g of activeGoals(); track g.id) {
               <li class="dash__goal">
-                <a class="dash__goal-link" [routerLink]="['../goals', g.id]">{{ g.title }}</a>
+                <a class="dash__goal-link" [routerLink]="['../goals', g.id]">{{ g.focusOrder !== null ? '⭐ ' : '' }}{{ g.title }}</a>
                 <span class="dash__goal-bar">
                   <span class="dash__goal-fill" [style.width.%]="g.percentage ?? 0"></span>
                 </span>
@@ -149,8 +149,23 @@ export class AccentDashboardComponent {
       error: () => undefined,
     });
     this._api.listGoals('active').subscribe({
-      // Примеры (is_starter) не считаются «в работе» — только присвоенные цели.
-      next: (goals) => { this.activeGoals.set(goals.filter((g) => !g.isStarter).slice(0, 5)); },
+      // Примеры (is_starter) не считаются «в работе»; фокусные — первыми (ADR-0053).
+      next: (goals) => {
+        const visible = goals.filter((g) => !g.isStarter);
+        visible.sort((a, b) => {
+          if (a.focusOrder !== null && b.focusOrder !== null) {
+            return a.focusOrder - b.focusOrder;
+          }
+          if (a.focusOrder !== null) {
+            return -1;
+          }
+          if (b.focusOrder !== null) {
+            return 1;
+          }
+          return 0;
+        });
+        this.activeGoals.set(visible.slice(0, 5));
+      },
       error: () => undefined,
     });
   }

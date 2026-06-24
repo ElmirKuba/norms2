@@ -1,4 +1,11 @@
 import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -21,7 +28,15 @@ import type { HabitFormData } from './habit-form-modal.component';
  */
 @Component({
   selector: 'app-habits',
-  imports: [ButtonComponent, CardComponent, EmptyStateComponent, HscrollHintDirective],
+  imports: [
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    ButtonComponent,
+    CardComponent,
+    EmptyStateComponent,
+    HscrollHintDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="hb">
@@ -125,11 +140,12 @@ import type { HabitFormData } from './habit-form-modal.component';
           @if (hasStarters()) {
             <p class="hb__hint">«Добавить себе» или «⋯» → ✏️ Изменить оставит привычку себе — и она начнёт давать задачи.</p>
           }
-          <ul class="hb__list">
+          <ul class="hb__list" cdkDropList (cdkDropListDropped)="dropHabit($event)">
             @for (h of habits(); track h.id) {
-              <li>
+              <li cdkDrag>
                 <app-card>
                   <div class="hb__item">
+                    <button type="button" class="hb__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                     <div class="hb__main">
                       <span class="hb__name-row">
                         <strong class="hb__name">{{ h.icon ? h.icon + ' ' : '' }}{{ h.title }}</strong>
@@ -398,6 +414,25 @@ import type { HabitFormData } from './habit-form-modal.component';
         gap: var(--space-4);
         flex-wrap: wrap;
       }
+      .hb__grip {
+        border: none;
+        background: transparent;
+        cursor: grab;
+        color: var(--color-text-muted);
+        font-size: var(--fs-md);
+        line-height: 1;
+        padding: 0 var(--space-1);
+        touch-action: none;
+      }
+      .hb__grip:active {
+        cursor: grabbing;
+      }
+      .cdk-drag-preview {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      }
+      .cdk-drag-placeholder {
+        opacity: 0.4;
+      }
       .hb__main {
         display: flex;
         flex-direction: column;
@@ -640,6 +675,22 @@ export class HabitsComponent {
       error: (err: unknown) => {
         this.error.set(errorMessage(err));
         this.loading.set(false);
+      },
+    });
+  }
+
+  /** Drag-reorder привычек (ADR-0054, → priority): оптимистично + reorderHabits; откат при ошибке. */
+  protected dropHabit(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.habits()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.habits.set(next);
+    this._api.reorderHabits(next.map((h) => h.id)).subscribe({
+      error: (err: unknown) => {
+        this._load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
       },
     });
   }

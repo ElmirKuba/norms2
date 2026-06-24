@@ -1,4 +1,11 @@
 import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -23,7 +30,15 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
  */
 @Component({
   selector: 'app-micro-wins',
-  imports: [ButtonComponent, CardComponent, EmptyStateComponent, HscrollHintDirective],
+  imports: [
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    ButtonComponent,
+    CardComponent,
+    EmptyStateComponent,
+    HscrollHintDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mw">
@@ -79,11 +94,12 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         @if (hasStarters()) {
           <p class="mw__hint">Нажми ✓ или «⋯» → ✏️ Изменить — и пример станет твоим.</p>
         }
-        <ul class="mw__list">
+        <ul class="mw__list" cdkDropList (cdkDropListDropped)="dropMicroWin($event)">
           @for (mw of items(); track mw.id) {
-            <li>
+            <li cdkDrag>
               <app-card>
                 <div class="mw__item">
+                  <button type="button" class="mw__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                   <div class="mw__main">
                     <span class="mw__title-row">
                       <strong class="mw__name">{{ mw.title }}</strong>
@@ -239,6 +255,25 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
         justify-content: space-between;
         gap: var(--space-4);
         flex-wrap: wrap;
+      }
+      .mw__grip {
+        border: none;
+        background: transparent;
+        cursor: grab;
+        color: var(--color-text-muted);
+        font-size: var(--fs-md);
+        line-height: 1;
+        padding: 0 var(--space-1);
+        touch-action: none;
+      }
+      .mw__grip:active {
+        cursor: grabbing;
+      }
+      .cdk-drag-preview {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      }
+      .cdk-drag-placeholder {
+        opacity: 0.4;
       }
       .mw__main {
         display: flex;
@@ -425,6 +460,22 @@ export class MicroWinsComponent {
       error: (err: unknown) => {
         this.error.set(errorMessage(err));
         this.loading.set(false);
+      },
+    });
+  }
+
+  /** Drag-reorder (ADR-0054): оптимистично + reorderMicroWins; откат при ошибке. */
+  protected dropMicroWin(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.items()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.set(next);
+    this._api.reorderMicroWins(next.map((mw) => mw.id)).subscribe({
+      error: (err: unknown) => {
+        this._load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
       },
     });
   }

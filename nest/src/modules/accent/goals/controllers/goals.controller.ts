@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -41,6 +42,9 @@ import { SeedGoalStarterPackUseCase } from '../use-cases/seed-goal-starter-pack.
 import { ClearGoalStartersUseCase } from '../use-cases/clear-goal-starters.use-case';
 import { AdoptGoalUseCase } from '../use-cases/adopt-goal.use-case';
 import { ToggleGoalFocusUseCase } from '../use-cases/toggle-goal-focus.use-case';
+import { ReorderGoalsUseCase } from '../use-cases/reorder-goals.use-case';
+import { reorderGoalsSchema } from '../dtos/reorder-goals.dto';
+import type { ReorderGoalsDto } from '../dtos/reorder-goals.dto';
 import { RemoveGoalEntryUseCase } from '../use-cases/remove-goal-entry.use-case';
 import { UpdateGoalEntryUseCase } from '../use-cases/update-goal-entry.use-case';
 import { updateGoalEntrySchema } from '../dtos/update-goal-entry.dto';
@@ -93,6 +97,7 @@ export class GoalsController {
     private readonly _clearStarters: ClearGoalStartersUseCase,
     private readonly _adopt: AdoptGoalUseCase,
     private readonly _toggleFocus: ToggleGoalFocusUseCase,
+    private readonly _reorder: ReorderGoalsUseCase,
   ) {}
 
   /**
@@ -130,6 +135,21 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalView> {
     return this._create.execute(request.account.id, body);
+  }
+
+  /**
+   * Ручная сортировка целей перетаскиванием (ADR-0054): тело `{ ids }` — желаемый порядок.
+   * Объявлен ДО `:id`. 204 без тела.
+   * @param body Желаемый порядок id.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Put('goals/reorder')
+  @HttpCode(204)
+  public async reorder(
+    @Body(new ZodValidationPipe(reorderGoalsSchema)) body: ReorderGoalsDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._reorder.execute(request.account.id, body.ids);
   }
 
   /**

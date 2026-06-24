@@ -197,4 +197,12 @@ export interface AccentGoalRepositoryPort {
    * @returns Макс. ранг или null (нет фокусных).
    */
   maxFocusOrder(accountId: string): Promise<number | null>;
+
+  /**
+   * Переставляет цели аккаунта в порядок `ids` (ADR-0054, drag-reorder): `position = индекс`
+   * для **своих** id (чужие/неизвестные игнорируются). Атомарно одним UPDATE.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (полный видимый список).
+   */
+  reorder(accountId: string, ids: readonly string[]): Promise<void>;
 }

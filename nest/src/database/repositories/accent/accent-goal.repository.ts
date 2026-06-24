@@ -46,7 +46,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .select()
       .from(goals)
       .where(and(...conds))
-      .orderBy(asc(goals.createdAt));
+      .orderBy(asc(goals.position), asc(goals.createdAt));
   }
 
   /**
@@ -108,6 +108,8 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
         fallbackVersion: data.fallbackVersion ?? null,
         tradeoff: data.tradeoff ?? null,
         isStarter: data.isStarter ?? false,
+        // Новая цель — в конец списка (ADR-0054): position = max(текущих)+1 для аккаунта.
+        position: sql<number>`(select coalesce(max(${goals.position}), -1) + 1 from ${goals} where ${goals.accountId} = ${data.accountId})`,
       })
       .returning();
     const row = rows[0];
@@ -352,5 +354,23 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .where(and(eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
     const m = rows[0]?.m;
     return m === null || m === undefined ? null : Number(m);
+  }
+
+  /**
+   * Переставляет цели аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих id,
+   * одним атомарным UPDATE ... FROM (VALUES …). Чужие id не затрагиваются (скоуп по account_id).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок.
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const tuples = ids.map((id, i) => sql`(${id}, ${i})`);
+    await this._db.execute(sql`
+      UPDATE ${goals} AS g SET position = v.pos::int
+      FROM (VALUES ${sql.join(tuples, sql`, `)}) AS v(id, pos)
+      WHERE g.id = v.id AND g.account_id = ${accountId}
+    `);
   }
 }

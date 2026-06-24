@@ -95,6 +95,16 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Переставляет цели аккаунта в заданный порядок (ADR-0054, drag-reorder). Репозиторий скоупит
+   * по аккаунту (чужие id игнорируются), поэтому доменной проверки владения по каждому id не нужно.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (видимый список).
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    await this._repository.reorder(accountId, ids);
+  }
+
+  /**
    * Цель владельца или 404.
    * @param id Идентификатор цели.
    * @param accountId Идентификатор аккаунта-владельца.

@@ -131,7 +131,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .insert(goals)
       .values(
-        items.map((data) => ({
+        items.map((data, index) => ({
           id: generateId(),
           accountId: data.accountId,
           parentGoalId: data.parentGoalId ?? null,
@@ -147,6 +147,8 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
           fallbackVersion: data.fallbackVersion ?? null,
           tradeoff: data.tradeoff ?? null,
           isStarter: data.isStarter ?? false,
+          // Сев — в конец списка по порядку (ADR-0054, ·28.A1): position = max+1+index.
+          position: sql<number>`(select coalesce(max(${goals.position}), -1) from ${goals} where ${goals.accountId} = ${data.accountId}) + ${index + 1}`,
         })),
       )
       .returning({ id: goals.id });
@@ -287,7 +289,9 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
   public async markCompleted(id: string, accountId: string): Promise<GoalFull | null> {
     const rows = await this._db
       .update(goals)
-      .set({ status: 'completed', completedAt: new Date() })
+      // Завершение снимает фокус (·28.A1): достигнутая цель — из рабочего фокуса. Пауза фокус НЕ
+      // снимает (временна, слот освобождается через countFocused-active, вернётся при resume).
+      .set({ status: 'completed', completedAt: new Date(), focusOrder: null })
       .where(
         and(
           eq(goals.id, id),

@@ -929,6 +929,15 @@ export class GoalDetailComponent {
 
   /** Открывает форму создания подцели (родитель предзадан). */
   protected addSubgoal(): void {
+    // Гард ДО формы (триаж 2.5·23 F#8): цель со своими записями не может стать родителем (P3#7,
+    // rollup не смешивается со своими записями). Объясняем сразу, не давая впустую заполнять форму.
+    if (this.entries().length > 0) {
+      this._modal.error(
+        'Подцели недоступны',
+        'У этой цели уже есть свои записи прогресса — её нельзя разбить на подцели: прогресс родителя считается из подцелей и затёр бы её собственные записи. Подцели можно добавлять цели без своих записей.',
+      );
+      return;
+    }
     const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
       GoalFormModalComponent,
       { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { presetParentId: this._id } },

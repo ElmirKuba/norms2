@@ -79,6 +79,34 @@ export interface AccentGoalEntryRepositoryPort {
   count(goalId: string): Promise<number>;
 
   /**
+   * Adherence для maintain-цели (ADR-0052): сколько замеров в коридоре `[low, high]` и всего —
+   * за окно (`occurred_on >= sinceYmd`; `sinceYmd=null` → все замеры).
+   * @param goalId Идентификатор цели.
+   * @param low Нижняя граница коридора (включительно).
+   * @param high Верхняя граница коридора (включительно).
+   * @param sinceYmd Начало окна YYYY-MM-DD или null (все замеры).
+   * @returns `{ inBand, total }`.
+   */
+  maintainAdherence(
+    goalId: string,
+    low: number,
+    high: number,
+    sinceYmd: string | null,
+  ): Promise<{ inBand: number; total: number }>;
+
+  /**
+   * Adherence ВСЕХ maintain-целей аккаунта (батч, без N+1): per-goal число замеров в коридоре
+   * `[goals.start_value, goals.target_value]` и всего, за окно (`occurred_on >= sinceYmd`). ADR-0053.
+   * @param accountId Идентификатор аккаунта.
+   * @param sinceYmd Начало окна YYYY-MM-DD.
+   * @returns Карта `goalId → { inBand, total }`.
+   */
+  maintainAdherenceByAccount(
+    accountId: string,
+    sinceYmd: string,
+  ): Promise<Map<string, { inBand: number; total: number }>>;
+
+  /**
    * Удаляет записи цели, порождённые задачей-источником (откат прогресса при uncomplete,
    * 2.5·23 P2). Идемпотентно: нет таких записей → 0.
    * @param goalId Идентификатор цели.

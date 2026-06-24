@@ -89,6 +89,9 @@ export function isGoalReached(
   currentValue: number | null,
   base: number | null,
 ): boolean {
+  if (goal.direction === 'maintain') {
+    return false; // maintain длится бесконечно — нет «достигнуто»/авто-завершения (ADR-0052)
+  }
   if (currentValue === null) {
     return false;
   }
@@ -124,6 +127,9 @@ export function isMilestoneReached(
   if (currentValue === null) {
     return false;
   }
+  if (goal.direction === 'maintain') {
+    return false; // у maintain нет «достижения» порога — вехи не применяются (ADR-0052)
+  }
   // Направление: reduce при target<base → идём вниз; иначе вверх (accumulate base=0).
   const goingDown =
     goal.direction === 'reduce' && base !== null && goal.targetValue < base;
@@ -147,7 +153,28 @@ export function computeGoalProgress(
   base: number | null,
   todayYmd: string,
   now: Date,
+  maintainAdherence?: number | null,
 ): GoalProgress {
+  // maintain (ADR-0052): прогресс = adherence (доля замеров в коридоре за окно); нет forecast/
+  // прогноза-к-дате/авто-завершения. `currentValue` — последний замер; `daysLeft` — если есть срок.
+  if (goal.direction === 'maintain') {
+    const daysLeft =
+      goal.deadline === null
+        ? null
+        : Math.round((ymdToUtcMs(goal.deadline) - ymdToUtcMs(todayYmd)) / DAY_MS);
+    const adherence = maintainAdherence ?? null;
+    return {
+      currentValue,
+      percentage: adherence === null ? null : Math.round(adherence * 100),
+      daysLeft,
+      pace: null,
+      forecast: null,
+      projectedCompletionDate: null,
+      rollup: false,
+      subgoalsTotal: 0,
+      subgoalsCompleted: 0,
+    };
+  }
   const f = progressFraction(goal, currentValue, base);
   const fb = forecastBlock(goal, f, todayYmd, now);
   return {

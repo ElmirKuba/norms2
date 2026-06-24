@@ -46,6 +46,8 @@ interface ProgressContext {
   latest: Map<string, number>;
   /** `goalId → первый замер` (база reach/reduce). */
   earliest: Map<string, number>;
+  /** `goalId → adherence [0,1] или null` (maintain, ADR-0052). */
+  maintainAdherence: Map<string, number | null>;
   /** `parentGoalId → активные подцели` (дерево для rollup). */
   childrenByParent: Map<string, GoalFull[]>;
   /** Сегодня в TZ пользователя (YYYY-MM-DD). */
@@ -545,12 +547,22 @@ export class AccentGoalDomainService {
     if (filtered.length === 0) {
       return [];
     }
-    const [all, sums, latest, earliest] = await Promise.all([
+    const todayYmd = todayInTimezone(timezone);
+    const windowDays = this._config.get('ACCENT_GOAL_MAINTAIN_WINDOW_DAYS', { infer: true });
+    const maintainSince = new Date(Date.parse(`${todayYmd}T00:00:00Z`) - windowDays * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const [all, sums, latest, earliest, adherenceRaw] = await Promise.all([
       this._repository.listByAccount(accountId),
       this._entryRepository.sumValuesByAccount(accountId),
       this._entryRepository.latestValuesByAccount(accountId),
       this._entryRepository.earliestValuesByAccount(accountId),
+      this._entryRepository.maintainAdherenceByAccount(accountId, maintainSince),
     ]);
+    const maintainAdherence = new Map<string, number | null>();
+    for (const [goalId, { inBand, total }] of adherenceRaw) {
+      maintainAdherence.set(goalId, total > 0 ? inBand / total : null);
+    }
     const childrenByParent = new Map<string, GoalFull[]>();
     for (const goal of all) {
       if (goal.parentGoalId !== null && goal.status !== 'archived') {
@@ -563,8 +575,9 @@ export class AccentGoalDomainService {
       sums,
       latest,
       earliest,
+      maintainAdherence,
       childrenByParent,
-      todayYmd: todayInTimezone(timezone),
+      todayYmd,
       now: new Date(),
     };
     return filtered.map((goal) => ({ goal, progress: this._progressFromContext(goal, ctx) }));
@@ -595,6 +608,16 @@ export class AccentGoalDomainService {
       base = goal.startValue ?? ctx.earliest.get(goal.id) ?? null;
       current = ctx.latest.get(goal.id) ?? base;
     }
+    if (goal.direction === 'maintain') {
+      return computeGoalProgress(
+        goal,
+        current,
+        base,
+        ctx.todayYmd,
+        ctx.now,
+        ctx.maintainAdherence.get(goal.id) ?? null,
+      );
+    }
     return computeGoalProgress(goal, current, base, ctx.todayYmd, ctx.now);
   }
 
@@ -621,7 +644,38 @@ export class AccentGoalDomainService {
       return computeRollupProgress(goal, percentages, completed, todayYmd, now);
     }
     const { current, base } = await this._currentAndBase(goal);
+    if (goal.direction === 'maintain') {
+      return computeGoalProgress(
+        goal,
+        current,
+        base,
+        todayYmd,
+        now,
+        await this._maintainAdherence(goal, todayYmd),
+      );
+    }
     return computeGoalProgress(goal, current, base, todayYmd, now);
+  }
+
+  /**
+   * Adherence maintain-цели (ADR-0052): доля замеров в коридоре `[startValue, targetValue]` за
+   * окно `ACCENT_GOAL_MAINTAIN_WINDOW_DAYS` дней. null — если в окне нет замеров («нет свежих»).
+   * @param goal Цель (maintain).
+   * @param todayYmd Сегодня (TZ пользователя).
+   * @returns Доля [0,1] или null.
+   */
+  private async _maintainAdherence(goal: GoalFull, todayYmd: string): Promise<number | null> {
+    const windowDays = this._config.get('ACCENT_GOAL_MAINTAIN_WINDOW_DAYS', { infer: true });
+    const since = new Date(Date.parse(`${todayYmd}T00:00:00Z`) - windowDays * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const { inBand, total } = await this._entryRepository.maintainAdherence(
+      goal.id,
+      goal.startValue ?? 0,
+      goal.targetValue,
+      since,
+    );
+    return total > 0 ? inBand / total : null;
   }
 
   /**
@@ -806,6 +860,16 @@ export class AccentGoalDomainService {
     if (direction === 'accumulate') {
       if (target <= 0) {
         throw new ValidationError('Для накопительной цели целевое значение должно быть > 0.');
+      }
+      return;
+    }
+    if (direction === 'maintain') {
+      // Коридор [start=ниж, target=верх] (ADR-0052): обе границы обязательны, ниж < верх.
+      if (start === null || !Number.isFinite(start)) {
+        throw new ValidationError('Для «удерживать» укажи нижнюю границу коридора.');
+      }
+      if (start >= target) {
+        throw new ValidationError('Нижняя граница коридора должна быть меньше верхней.');
       }
       return;
     }

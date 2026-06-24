@@ -3,12 +3,16 @@
  * Хранится строкой-ключом (varchar):
  * - `accumulate` — накопление: `currentValue` = Σ записей, база 0 («прочитать 50 книг»);
  * - `reach` — выйти на уровень: `currentValue` = последний замер («15 подтягиваний»);
- * - `reduce` — снизить: то же, что `reach`, но `target < startValue` («курить 0»).
+ * - `reduce` — снизить: то же, что `reach`, но `target < startValue` («курить 0»);
+ * - `maintain` — удерживать уровень в коридоре `[startValue, targetValue]` (ADR-0052): прогресс
+ *   = **доля замеров в коридоре** за окно (adherence); без авто-завершения и прогноза-к-дате
+ *   («вес 75–78», «экран ≤1ч» с ниж=0).
  *
  * `reduce` математически = `reach` с `target<start` (общая формула доли `f`); отдельный
- * ключ оставлен ради тона forecast и валидации-подсказок (ADR-0052).
+ * ключ оставлен ради тона forecast и валидации-подсказок (ADR-0052). `maintain` — отдельная
+ * семантика (коридор+adherence), не сводится к `f`-доле.
  */
-export const GOAL_DIRECTIONS = ['accumulate', 'reach', 'reduce'] as const;
+export const GOAL_DIRECTIONS = ['accumulate', 'reach', 'reduce', 'maintain'] as const;
 
 /** Род цели (производно от `GOAL_DIRECTIONS`). */
 export type GoalDirection = (typeof GOAL_DIRECTIONS)[number];

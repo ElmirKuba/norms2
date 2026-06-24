@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { goalEntries } from '../../schemas/goal-entries.schema';
@@ -128,6 +128,66 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       .from(goalEntries)
       .where(eq(goalEntries.goalId, goalId));
     return Number(rows[0]?.n ?? 0);
+  }
+
+  /**
+   * Adherence для maintain (ADR-0052): замеров в коридоре `[low, high]` и всего за окно.
+   * @param goalId Идентификатор цели.
+   * @param low Нижняя граница (включительно).
+   * @param high Верхняя граница (включительно).
+   * @param sinceYmd Начало окна YYYY-MM-DD или null (все замеры).
+   * @returns `{ inBand, total }`.
+   */
+  public async maintainAdherence(
+    goalId: string,
+    low: number,
+    high: number,
+    sinceYmd: string | null,
+  ): Promise<{ inBand: number; total: number }> {
+    const conds = [eq(goalEntries.goalId, goalId)];
+    if (sinceYmd !== null) {
+      conds.push(gte(goalEntries.occurredOn, sinceYmd));
+    }
+    const rows = await this._db
+      .select({
+        total: sql<number>`count(*)::int`,
+        inBand: sql<number>`count(*) filter (where ${goalEntries.value} between ${low} and ${high})::int`,
+      })
+      .from(goalEntries)
+      .where(and(...conds));
+    return { total: Number(rows[0]?.total ?? 0), inBand: Number(rows[0]?.inBand ?? 0) };
+  }
+
+  /**
+   * Adherence всех maintain-целей аккаунта (батч): per-goal в коридоре `[goals.start_value,
+   * goals.target_value]` и всего, за окно. ADR-0053.
+   * @param accountId Идентификатор аккаунта.
+   * @param sinceYmd Начало окна YYYY-MM-DD.
+   * @returns Карта `goalId → { inBand, total }`.
+   */
+  public async maintainAdherenceByAccount(
+    accountId: string,
+    sinceYmd: string,
+  ): Promise<Map<string, { inBand: number; total: number }>> {
+    const rows = await this._db
+      .select({
+        goalId: goalEntries.goalId,
+        total: sql<number>`count(*)::int`,
+        inBand: sql<number>`count(*) filter (where ${goalEntries.value} between ${goals.startValue} and ${goals.targetValue})::int`,
+      })
+      .from(goalEntries)
+      .innerJoin(goals, eq(goals.id, goalEntries.goalId))
+      .where(
+        and(
+          eq(goals.accountId, accountId),
+          eq(goals.direction, 'maintain'),
+          gte(goalEntries.occurredOn, sinceYmd),
+        ),
+      )
+      .groupBy(goalEntries.goalId);
+    return new Map(
+      rows.map((r) => [r.goalId, { inBand: Number(r.inBand), total: Number(r.total) }]),
+    );
   }
 
   /**

@@ -47,6 +47,10 @@ export const envSchema = z.object({
   // Сверх порога — вопрос «что-то отпустишь?», НЕ блок. Менять → рестарт, без правок кода.
   ACCENT_GOAL_FOCUS_SOFT_LIMIT: z.coerce.number().int().positive().default(3),
 
+  // Окно (дней) для adherence maintain-целей «удерживать уровень» (ADR-0052; дефолт 30).
+  // Прогресс = доля замеров в коридоре за последние N дней (фолбэк — все замеры).
+  ACCENT_GOAL_MAINTAIN_WINDOW_DAYS: z.coerce.number().int().positive().default(30),
+
   // git-SHA билда (деплой); версия продукта — в файле VERSION (ADR-0044, пересмотр).
   GIT_COMMIT: z.string().default(''),
 });

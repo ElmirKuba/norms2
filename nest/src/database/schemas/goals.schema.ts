@@ -2,6 +2,7 @@ import {
   boolean,
   date,
   doublePrecision,
+  integer,
   jsonb,
   text,
   timestamp,
@@ -57,6 +58,8 @@ export const goals = defineTableWithSchema<GoalFull>()(
     completedAt: timestamp('completed_at', { withTimezone: true }),
     fallbackVersion: text('fallback_version'),
     isStarter: boolean('is_starter').notNull().default(false),
+    // Фокус (ADR-0053, 2.5·24): null = не в фокусе; не-null = в фокусе + ранг (порядок).
+    focusOrder: integer('focus_order'),
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     pauseHistory: jsonb('pause_history')
       .$type<GoalPausePeriod[]>()

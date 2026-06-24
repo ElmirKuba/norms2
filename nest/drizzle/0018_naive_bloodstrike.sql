@@ -1,0 +1,1 @@
+ALTER TABLE "goals" ADD COLUMN "focus_order" integer;

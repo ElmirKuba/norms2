@@ -127,6 +127,13 @@
       "when": 1782226966203,
       "tag": "0017_gorgeous_human_torch",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1782291978286,
+      "tag": "0018_naive_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

@@ -29,7 +29,7 @@ export type GoalFormResult =
   | { mode: 'update'; payload: GoalUpdatePayload };
 
 /** Роды цели для select. */
-const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
+const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', 'maintain'];
 
 /**
  * Модалка создания/редактирования цели (2.5·16). Reactive-форма; в режиме edit `direction`/
@@ -78,7 +78,7 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
 
       <div class="gf__row">
         <label class="gf__field gf__field--num">
-          <span class="gf__label">Цель ({{ form.controls.unit.value || 'ед.' }})</span>
+          <span class="gf__label">{{ isMaintain() ? 'Верхняя граница' : 'Цель' }} ({{ form.controls.unit.value || 'ед.' }})</span>
           <input class="gf__input" type="number" step="any" formControlName="targetValue" />
         </label>
         <app-text-field label="Единица" [control]="unitControl" [error]="unitError()" />
@@ -86,10 +86,17 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce'];
 
       @if (showStart()) {
         <label class="gf__field">
-          <span class="gf__label">Старт (текущий замер{{ isEdit ? ', неизменен' : '' }})</span>
-          <input class="gf__input" type="number" step="any" formControlName="startValue"
-            [readOnly]="isEdit" />
-          <span class="gf__hint">От него считается прогресс. Для «снизить» цель ниже старта.</span>
+          @if (isMaintain()) {
+            <span class="gf__label">Нижняя граница{{ isEdit ? ' (неизменна)' : '' }}</span>
+            <input class="gf__input" type="number" step="any" formControlName="startValue"
+              [readOnly]="isEdit" />
+            <span class="gf__hint">Замер «в коридоре», если между нижней и верхней границей.</span>
+          } @else {
+            <span class="gf__label">Старт (текущий замер{{ isEdit ? ', неизменен' : '' }})</span>
+            <input class="gf__input" type="number" step="any" formControlName="startValue"
+              [readOnly]="isEdit" />
+            <span class="gf__hint">От него считается прогресс. Для «снизить» цель ниже старта.</span>
+          }
         </label>
       }
 
@@ -283,6 +290,8 @@ export class GoalFormModalComponent {
   protected readonly showStart = computed(() => this._direction() !== 'accumulate');
   /** Накопительная цель? — для mission-подсказки и поля «ради чего откажусь» (ADR-0053). */
   protected readonly isAccumulate = computed(() => this._direction() === 'accumulate');
+  /** Удерживать-цель? — для подписей границ коридора (ADR-0052, maintain). */
+  protected readonly isMaintain = computed(() => this._direction() === 'maintain');
 
   /** Показывать ли выбор родителя (не edit и не предзадан). */
   protected readonly showParentSelect = (): boolean =>
@@ -395,7 +404,16 @@ export class GoalFormModalComponent {
       this.formError.set('Для накопительной цели целевое значение должно быть больше 0.');
       return;
     }
-    if (v.direction !== 'accumulate' && v.startValue !== null && target === v.startValue) {
+    if (v.direction === 'maintain') {
+      if (v.startValue === null || !Number.isFinite(v.startValue)) {
+        this.formError.set('Для «удерживать» укажи нижнюю границу коридора.');
+        return;
+      }
+      if (v.startValue >= target) {
+        this.formError.set('Нижняя граница должна быть меньше верхней.');
+        return;
+      }
+    } else if (v.direction !== 'accumulate' && v.startValue !== null && target === v.startValue) {
       this.formError.set('Цель должна отличаться от стартового замера.');
       return;
     }

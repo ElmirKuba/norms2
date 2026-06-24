@@ -283,7 +283,7 @@ export interface OneOffTaskPayload {
 // ─────────────────────────── Цели (2.5) ───────────────────────────
 
 /** Род цели — как трактуется значение/прогресс (ADR-0052). */
-export type GoalDirection = 'accumulate' | 'reach' | 'reduce';
+export type GoalDirection = 'accumulate' | 'reach' | 'reduce' | 'maintain';
 
 /** Статус цели. */
 export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
@@ -296,6 +296,7 @@ export const GOAL_DIRECTION_LABELS: Readonly<Record<GoalDirection, string>> = {
   accumulate: 'Накопить',
   reach: 'Достичь уровня',
   reduce: 'Снизить',
+  maintain: 'Удерживать',
 };
 
 /** Подсказки рода цели (для формы). */
@@ -303,6 +304,7 @@ export const GOAL_DIRECTION_DESCRIPTIONS: Readonly<Record<GoalDirection, string>
   accumulate: 'Копить количество: каждая запись — вклад «+N» (напр. «50 книг»).',
   reach: 'Выйти на уровень: запись — текущий замер (напр. «15 подтягиваний»).',
   reduce: 'Снизить до цели: запись — текущий замер, цель ниже старта (напр. «курить 0»).',
+  maintain: 'Держать замер в коридоре: укажи нижнюю и верхнюю границу (напр. «экран 0–1 ч»).',
 };
 
 /** Базовая проекция цели (мутации `POST`/`PATCH`/lifecycle возвращают её). */

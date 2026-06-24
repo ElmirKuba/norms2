@@ -504,6 +504,10 @@ export class GoalsComponent {
       return `${String(goal.subgoalsCompleted)} из ${String(goal.subgoalsTotal)} подцелей`;
     }
     const current = goal.currentValue === null ? '—' : String(goal.currentValue);
+    if (goal.direction === 'maintain') {
+      // Коридор [startValue, targetValue] + последний замер (ADR-0052).
+      return `${String(goal.startValue ?? 0)}–${String(goal.targetValue)} ${goal.unit} · сейчас ${current}`;
+    }
     const sep = goal.direction === 'accumulate' ? '/' : '→';
     return `${current} ${sep} ${String(goal.targetValue)} ${goal.unit}`;
   }

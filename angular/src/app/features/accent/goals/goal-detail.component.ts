@@ -836,6 +836,10 @@ export class GoalDetailComponent {
     if (goal.direction === 'accumulate') {
       return `${current} из ${String(goal.targetValue)} ${goal.unit}`;
     }
+    if (goal.direction === 'maintain') {
+      // Коридор + последний замер; % = доля замеров в коридоре (ADR-0052).
+      return `коридор ${String(goal.startValue ?? 0)}–${String(goal.targetValue)} ${goal.unit} · сейчас ${current}`;
+    }
     // reach/reduce: показываем путь старт → сейчас → цель (виден прогресс, а не «сколько осталось»).
     if (goal.startValue !== null) {
       return `старт ${String(goal.startValue)} · сейчас ${current} · цель ${String(goal.targetValue)} ${goal.unit}`;
@@ -856,7 +860,10 @@ export class GoalDetailComponent {
 
   /** Подпись поля записи по роду. */
   protected recordLabel(goal: GoalProgressView): string {
-    return goal.direction === 'accumulate' ? 'Добавить прогресс (+):' : 'Записать текущий замер:';
+    if (goal.direction === 'accumulate') {
+      return 'Добавить прогресс (+):';
+    }
+    return goal.direction === 'maintain' ? 'Записать замер (в коридоре?):' : 'Записать текущий замер:';
   }
 
   /** Подпись дедлайна. */

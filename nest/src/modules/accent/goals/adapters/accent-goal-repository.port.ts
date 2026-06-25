@@ -159,6 +159,14 @@ export interface AccentGoalRepositoryPort {
   restore(id: string, accountId: string): Promise<GoalFull | null>;
 
   /**
+   * Возврат в работу (атомарно, только из `completed`): `status='active'`, `completed_at=null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `completed`).
+   */
+  reopen(id: string, accountId: string): Promise<GoalFull | null>;
+
+  /**
    * Авто-завершение (ADR-0052): атомарно `status='completed'`, `completed_at=now` **только
    * если `completed_at IS NULL`** (идемпотентно — фиксируется один раз; гонок нет, без version).
    * @param id Идентификатор цели.

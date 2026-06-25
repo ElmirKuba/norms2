@@ -14,6 +14,7 @@ import { CreateGoalUseCase } from './use-cases/create-goal.use-case';
 import { UpdateGoalUseCase } from './use-cases/update-goal.use-case';
 import { ArchiveGoalUseCase } from './use-cases/archive-goal.use-case';
 import { RestoreGoalUseCase } from './use-cases/restore-goal.use-case';
+import { ReopenGoalUseCase } from './use-cases/reopen-goal.use-case';
 import { PauseGoalUseCase } from './use-cases/pause-goal.use-case';
 import { ResumeGoalUseCase } from './use-cases/resume-goal.use-case';
 import { AddGoalEntryUseCase } from './use-cases/add-goal-entry.use-case';
@@ -53,6 +54,7 @@ import { ReorderGoalFocusUseCase } from './use-cases/reorder-goal-focus.use-case
     UpdateGoalUseCase,
     ArchiveGoalUseCase,
     RestoreGoalUseCase,
+    ReopenGoalUseCase,
     PauseGoalUseCase,
     ResumeGoalUseCase,
     AddGoalEntryUseCase,

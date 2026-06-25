@@ -280,6 +280,27 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
   }
 
   /**
+   * Возврат в работу (атомарно, только из `completed`): `status='active'`, `completed_at=null`.
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая строка или null (нет / не ваша / не в `completed`).
+   */
+  public async reopen(id: string, accountId: string): Promise<GoalFull | null> {
+    const rows = await this._db
+      .update(goals)
+      .set({ status: 'active', completedAt: null })
+      .where(
+        and(
+          eq(goals.id, id),
+          eq(goals.accountId, accountId),
+          eq(goals.status, 'completed'),
+        ),
+      )
+      .returning();
+    return rows[0] ?? null;
+  }
+
+  /**
    * Авто-завершение (ADR-0052): `status='completed'`, `completed_at=now` только при
    * `completed_at IS NULL` (идемпотентно, без version).
    * @param id Идентификатор цели.

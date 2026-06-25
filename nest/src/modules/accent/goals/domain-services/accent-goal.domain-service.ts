@@ -352,6 +352,21 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Возвращает завершённую цель в работу (из `completed` в `active`, сбрасывает `completedAt`).
+   * Нужно, когда цель авто-завершилась, но прогресс изменился (например, записи удалены) и цель
+   * снова надо вести. Авто-завершение при следующем достижении target сработает заново (ADR-0052).
+   * @param id Идентификатор цели.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Активная цель.
+   * @throws {GoalNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если цель не завершена.
+   */
+  public async reopen(id: string, accountId: string): Promise<GoalFull> {
+    const updated = await this._repository.reopen(id, accountId);
+    return updated ?? this._failTransition(id, accountId, 'вернуть в работу можно только завершённую цель');
+  }
+
+  /**
    * Добавляет запись прогресса к цели (append-only) и при достижении target — авто-завершает
    * (атомарно, идемпотентно; ADR-0052). На паузе → `GOAL_PAUSED` 409; в архиве → `VALIDATION_ERROR`.
    * @param goalId Идентификатор цели.
@@ -430,10 +445,33 @@ export class AccentGoalDomainService {
     entryId: string,
     accountId: string,
   ): Promise<void> {
-    await this.getOwned(goalId, accountId);
+    const goal = await this.getOwned(goalId, accountId);
     const removed = await this._entryRepository.removeById(entryId, goalId);
     if (!removed) {
       throw new GoalNotFoundError('Запись не найдена.');
+    }
+    // Если из-за удаления записи завершённая цель упала ниже target — честно вернуть в работу.
+    await this._syncCompletion(goal, accountId);
+  }
+
+  /**
+   * Синхронизирует статус цели с фактом достижения после правки записей (append/правка/удаление):
+   * `active`+достигнута → авто-завершение; `completed`+больше НЕ достигнута → возврат в работу
+   * (reopen). Делает «завершена = достигнута» честным в обе стороны (ADR-0052; ревизия F#4 —
+   * удаление записей у достигнутой больше не оставляет противоречивый «completed + <100%»).
+   * @param goal Цель (со статусом ДО правки).
+   * @param accountId Идентификатор аккаунта-владельца.
+   */
+  private async _syncCompletion(goal: GoalFull, accountId: string): Promise<void> {
+    if (goal.status !== 'active' && goal.status !== 'completed') {
+      return;
+    }
+    const { current, base } = await this._currentAndBase(goal);
+    const reached = isGoalReached(goal, current, base);
+    if (goal.status === 'active' && reached) {
+      await this._repository.markCompleted(goal.id, accountId);
+    } else if (goal.status === 'completed' && !reached) {
+      await this._repository.reopen(goal.id, accountId);
     }
   }
 
@@ -466,6 +504,8 @@ export class AccentGoalDomainService {
     if (!updated) {
       throw new GoalNotFoundError('Запись не найдена.');
     }
+    // Правка значения могла как достичь target (active→completed), так и уронить ниже (completed→active).
+    await this._syncCompletion(goal, accountId);
     return updated;
   }
 

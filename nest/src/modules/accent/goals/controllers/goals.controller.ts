@@ -29,6 +29,7 @@ import { CreateGoalUseCase } from '../use-cases/create-goal.use-case';
 import { UpdateGoalUseCase } from '../use-cases/update-goal.use-case';
 import { ArchiveGoalUseCase } from '../use-cases/archive-goal.use-case';
 import { RestoreGoalUseCase } from '../use-cases/restore-goal.use-case';
+import { ReopenGoalUseCase } from '../use-cases/reopen-goal.use-case';
 import { PauseGoalUseCase } from '../use-cases/pause-goal.use-case';
 import { ResumeGoalUseCase } from '../use-cases/resume-goal.use-case';
 import { AddGoalEntryUseCase } from '../use-cases/add-goal-entry.use-case';
@@ -84,6 +85,7 @@ export class GoalsController {
     private readonly _update: UpdateGoalUseCase,
     private readonly _archive: ArchiveGoalUseCase,
     private readonly _restore: RestoreGoalUseCase,
+    private readonly _reopen: ReopenGoalUseCase,
     private readonly _pause: PauseGoalUseCase,
     private readonly _resume: ResumeGoalUseCase,
     private readonly _addEntry: AddGoalEntryUseCase,
@@ -382,6 +384,20 @@ export class GoalsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<GoalView> {
     return this._restore.execute(id, request.account.id);
+  }
+
+  /**
+   * Возвращает завершённую цель в работу (из `completed` в `active`).
+   * @param id Идентификатор цели.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция вернувшейся в работу цели.
+   */
+  @Post('goals/:id/reopen')
+  public reopen(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<GoalView> {
+    return this._reopen.execute(id, request.account.id);
   }
 
   /**

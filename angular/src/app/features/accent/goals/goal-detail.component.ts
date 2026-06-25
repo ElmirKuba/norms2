@@ -12,6 +12,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
+import { ChartComponent } from '../../../shared/ui/chart/chart.component';
+import type { ChartPoint } from '../../../shared/ui/chart/chart.component';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
@@ -46,7 +48,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goal-detail',
-  imports: [RouterLink, ReactiveFormsModule, ButtonComponent, CardComponent],
+  imports: [RouterLink, ReactiveFormsModule, ButtonComponent, CardComponent, ChartComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="gd">
@@ -95,6 +97,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                     <button type="button" class="gd__menu-item" (click)="resume()">▶ Снять с паузы</button>
                     <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
                   } @else if (g.status === 'completed') {
+                    <button type="button" class="gd__menu-item" (click)="reopen()">↩ Вернуть в работу</button>
                     <button type="button" class="gd__menu-item" (click)="archive()">🗄 В архив</button>
                   } @else {
                     <button type="button" class="gd__menu-item" (click)="restore()">↩ Восстановить</button>
@@ -127,15 +130,17 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </div>
         </app-card>
 
-        @if (chart(); as c) {
+        @if (chartPoints(); as pts) {
           <app-card>
             <div class="gd__chart-wrap">
-              <span class="gd__chart-label">Динамика</span>
-              <svg class="gd__chart" [attr.viewBox]="'0 0 ' + c.w + ' ' + c.h"
-                preserveAspectRatio="none" role="img" aria-label="График прогресса">
-                <polyline [attr.points]="c.points" fill="none" stroke="var(--color-accent)"
-                  stroke-width="2" vector-effect="non-scaling-stroke" />
-              </svg>
+              <span class="gd__chart-label">Динамика{{ g.unit ? ', ' + g.unit : '' }}</span>
+              <app-chart
+                [points]="pts"
+                [unit]="g.unit"
+                [seriesName]="g.direction === 'accumulate' ? 'Накоплено' : 'Замер'"
+                xType="datetime"
+                type="line"
+              />
             </div>
           </app-card>
         }
@@ -555,11 +560,6 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
       }
-      .gd__chart {
-        width: 100%;
-        height: 60px;
-        display: block;
-      }
       .gd__entry {
         display: flex;
         gap: var(--space-3);
@@ -678,10 +678,11 @@ export class GoalDetailComponent {
   private _id = '';
 
   /**
-   * SVG-спарклайн динамики из загруженных записей: для accumulate — нарастающая сумма, для
-   * reach/reduce — сами замеры. null, если точек < 2 или цель rollup.
+   * Точки графика «Динамика» из загруженных записей (для `app-chart`/ApexCharts, ADR-0055):
+   * accumulate — нарастающая сумма по датам; reach/reduce — сами замеры по датам. null, если
+   * точек < 2 или цель rollup (у rollup свой прогресс — из детей).
    */
-  protected readonly chart = computed<{ points: string; w: number; h: number } | null>(() => {
+  protected readonly chartPoints = computed<ChartPoint[] | null>(() => {
     const goal = this.goal();
     if (goal === null || goal.rollup) {
       return null;
@@ -692,28 +693,11 @@ export class GoalDetailComponent {
     if (sorted.length < 2) {
       return null;
     }
-    let series: number[];
     if (goal.direction === 'accumulate') {
       let acc = 0;
-      series = sorted.map((e) => (acc += e.value));
-    } else {
-      series = sorted.map((e) => e.value);
+      return sorted.map((e) => ({ x: e.occurredOn, y: (acc += e.value) }));
     }
-    const W = 300;
-    const H = 60;
-    const pad = 4;
-    const min = Math.min(...series);
-    const max = Math.max(...series);
-    const span = max - min || 1;
-    const n = series.length;
-    const points = series
-      .map((v, i) => {
-        const x = pad + (i / (n - 1)) * (W - 2 * pad);
-        const y = H - pad - ((v - min) / span) * (H - 2 * pad);
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .join(' ');
-    return { points, w: W, h: H };
+    return sorted.map((e) => ({ x: e.occurredOn, y: e.value }));
   });
 
   public constructor() {
@@ -793,6 +777,11 @@ export class GoalDetailComponent {
   /** Восстанавливает цель из архива. */
   protected restore(): void {
     this._lifecycle(this._api.restoreGoal(this._id));
+  }
+
+  /** Возвращает завершённую цель в работу (completed → active) — можно снова вести прогресс. */
+  protected reopen(): void {
+    this._lifecycle(this._api.reopenGoal(this._id));
   }
 
   /**
@@ -875,9 +864,11 @@ export class GoalDetailComponent {
       return `Срок прошёл (${this.fmt(goal.deadline)})`;
     }
     if (goal.daysLeft === 0) {
-      return 'Срок сегодня';
+      return `Крайний срок — сегодня (${this.fmt(goal.deadline)})`;
     }
-    return `Осталось ${String(goal.daysLeft)} дн.`;
+    // daysLeft = дней от сегодня до даты дедлайна (этот день — крайний/последний). Показываем
+    // и счётчик, и саму дату, чтобы не гадать «включительно или нет».
+    return `Осталось ${String(goal.daysLeft)} дн. — крайний срок ${this.fmt(goal.deadline)}`;
   }
 
   /** Форматирует YYYY-MM-DD в «5 окт». */

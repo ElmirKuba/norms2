@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_DESCRIPTIONS, GOAL_DIRECTION_LABELS } from '../accent.types';
+import { FieldGuideModalComponent } from '../field-guide-modal.component';
+import type { FieldGuideData } from '../field-guide-modal.component';
 import type {
   AccentRefItem,
   GoalDirection,
@@ -32,24 +34,130 @@ export type GoalFormResult =
 const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', 'maintain'];
 
 /**
+ * Контекстные мини-гиды «что это?» по полям формы цели. Открываются общим
+ * `FieldGuideModalComponent`. Тексты — просто, по-человечески ([[ui-copy-plain-simple]]).
+ */
+const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
+  title: {
+    title: 'Название цели',
+    paragraphs: [
+      'Чего хочешь достичь, коротко: «Пробежать полумарафон», «Накопить подушку на 6 месяцев».',
+      'Конкретная формулировка с числом легче измеряется и сильнее мотивирует, чем размытое «заняться спортом».',
+    ],
+  },
+  why: {
+    title: 'Зачем это важно',
+    paragraphs: [
+      'Якорь смысла: к чему ведёт цель, ради чего она. Необязательно.',
+      'В трудный момент это «зачем» удержит, когда мотивация просядет.',
+    ],
+  },
+  tradeoff: {
+    title: 'Ради чего откажусь',
+    paragraphs: [
+      'Что ты сознательно отложишь или уберёшь ради этой цели (время, другие дела, привычки).',
+      '«Акцент» — про выбор главного через отказ от лишнего. Это поле нужно, чтобы взять накопительную цель в фокус: фокус — про единицы, а не про «ещё одну цель в кучу».',
+    ],
+  },
+  direction: {
+    title: 'Род цели',
+    paragraphs: ['Четыре рода — от рода зависит, как считается прогресс и какие поля нужны:'],
+    bullets: [
+      { term: 'Накопить', desc: 'растишь сумму к числу: книги, деньги, км.' },
+      { term: 'Достичь уровня', desc: 'приходишь к значению от старта: вес, время забега.' },
+      { term: 'Снизить', desc: 'уменьшаешь ниже старта: вес, траты, экранное время.' },
+      { term: 'Удерживать', desc: 'держишь значение в коридоре: сон, пульс.' },
+    ],
+  },
+  target: {
+    title: 'Целевое значение',
+    paragraphs: [
+      'Число, к которому идёшь. Для «удерживать» — верхняя граница коридора.',
+      'Для «накопить» — больше 0; для «достичь/снизить» — должно отличаться от стартового замера.',
+    ],
+  },
+  unit: {
+    title: 'Единица',
+    paragraphs: [
+      'В чём измеряешь: км, кг, ₽, книги, часы, минуты…',
+      'Просто подпись к числам, чтобы прогресс читался понятно.',
+    ],
+  },
+  start: {
+    title: 'Старт / нижняя граница',
+    paragraphs: [
+      'Для «достичь/снизить» — текущий замер, от которого считается прогресс (для «снизить» цель ниже старта).',
+      'Для «удерживать» — нижняя граница коридора: замер «в коридоре», если он между нижней и верхней границей.',
+    ],
+  },
+  deadline: {
+    title: 'Срок',
+    paragraphs: [
+      'Дата, к которой хочешь прийти. Необязательно.',
+      'Со сроком появляется прогноз: «при текущем темпе — успеешь / стоит поднажать».',
+    ],
+  },
+  domain: {
+    title: 'Сфера',
+    paragraphs: [
+      'Область жизни цели (здоровье, финансы, отношения…). Необязательно.',
+      'Помогает видеть баланс — не перекошены ли все цели в одну сторону.',
+    ],
+  },
+  attributes: {
+    title: 'Что прокачивает',
+    paragraphs: [
+      'Как в RPG: цель качает характеристику (силу, дисциплину, ум…). Необязательно.',
+      'Для наглядного «роста персонажа». Не уверен — пропусти.',
+    ],
+  },
+  parent: {
+    title: 'Родительская цель',
+    paragraphs: [
+      'Можешь сделать эту цель подцелью другой — тогда её прогресс вносит вклад в родителя.',
+      'Необязательно. Так большие цели разбиваются на понятные шаги.',
+    ],
+  },
+  fallback: {
+    title: 'Версия на плохой день',
+    paragraphs: [
+      'Минимальная версия движения к цели, когда нет сил на полноценный шаг.',
+      'Смысл — не обнулиться: сделал хоть минимум — цель жива, темп не рвётся.',
+    ],
+  },
+};
+
+/**
  * Модалка создания/редактирования цели (2.5·16). Reactive-форма; в режиме edit `direction`/
  * `startValue`/`parentGoalId` **иммутабельны** (скрыты) — зеркало бэка (ADR-0052). Числовые
  * инварианты (accumulate `target>0`; reach/reduce `target≠start`) проверяются и здесь
- * (дружелюбно), и на бэке. Сферы/атрибуты/родитель грузятся из API. Тон подсказок — помощь
- * людям. Возвращает `GoalFormResult` (create/update) или null (отмена).
+ * (дружелюбно), и на бэке. Справка — контекстные «что это?» по полям (`FieldGuideModalComponent`).
+ * Возвращает `GoalFormResult` (create/update) или null (отмена).
  */
 @Component({
   selector: 'app-goal-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent],
+  imports: [ReactiveFormsModule, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form class="gf" [formGroup]="form" (ngSubmit)="save()">
       <h3 class="gf__title">{{ isEdit ? 'Изменить цель' : 'Новая цель' }}</h3>
 
-      <app-text-field label="Название" [control]="titleControl" [error]="titleError()" />
+      <label class="gf__field">
+        <span class="gf__label">
+          Название
+          <button type="button" class="gf__help" (click)="openGuide('title')">что это?</button>
+        </span>
+        <input class="gf__input" type="text" maxlength="160" formControlName="title" />
+        @if (titleError()) {
+          <span class="gf__hint gf__hint--err">{{ titleError() }}</span>
+        }
+      </label>
 
       <label class="gf__field">
-        <span class="gf__label">Зачем это важно (опц.)</span>
+        <span class="gf__label">
+          Зачем это важно <span class="gf__opt">(опц.)</span>
+          <button type="button" class="gf__help" (click)="openGuide('why')">что это?</button>
+        </span>
         <textarea class="gf__input" rows="2" maxlength="2000" formControlName="whyItMatters"
           placeholder="Якорь смысла — к чему ведёт эта цель"></textarea>
       </label>
@@ -57,7 +165,10 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
       @if (isAccumulate()) {
         <p class="gf__mission-hint">Это про важное — или просто «делать больше»?</p>
         <label class="gf__field">
-          <span class="gf__label">Ради чего откажусь (опц.)</span>
+          <span class="gf__label">
+            Ради чего откажусь <span class="gf__opt">(опц.)</span>
+            <button type="button" class="gf__help" (click)="openGuide('tradeoff')">что это?</button>
+          </span>
           <input class="gf__input" type="text" maxlength="280" formControlName="tradeoff"
             placeholder="Что отложу ради этой цели" />
           <span class="gf__hint">Нужно, чтобы взять цель в фокус.</span>
@@ -66,7 +177,10 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
 
       @if (!isEdit) {
         <label class="gf__field">
-          <span class="gf__label">Род цели</span>
+          <span class="gf__label">
+            Род цели
+            <button type="button" class="gf__help" (click)="openGuide('direction')">что это?</button>
+          </span>
           <select class="gf__input" formControlName="direction">
             @for (d of directions; track d) {
               <option [value]="d">{{ directionLabel(d) }}</option>
@@ -78,36 +192,54 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
 
       <div class="gf__row">
         <label class="gf__field gf__field--num">
-          <span class="gf__label">{{ isMaintain() ? 'Верхняя граница' : 'Цель' }} ({{ form.controls.unit.value || 'ед.' }})</span>
+          <span class="gf__label">
+            {{ isMaintain() ? 'Верхняя граница' : 'Цель' }} ({{ form.controls.unit.value || 'ед.' }})
+            <button type="button" class="gf__help" (click)="openGuide('target')">что это?</button>
+          </span>
           <input class="gf__input" type="number" step="any" formControlName="targetValue" />
         </label>
-        <app-text-field label="Единица" [control]="unitControl" [error]="unitError()" />
+        <label class="gf__field gf__field--num">
+          <span class="gf__label">
+            Единица
+            <button type="button" class="gf__help" (click)="openGuide('unit')">что это?</button>
+          </span>
+          <input class="gf__input" type="text" maxlength="32" formControlName="unit" />
+          @if (unitError()) {
+            <span class="gf__hint gf__hint--err">{{ unitError() }}</span>
+          }
+        </label>
       </div>
 
       @if (showStart()) {
         <label class="gf__field">
+          <span class="gf__label">
+            {{ isMaintain() ? 'Нижняя граница' : 'Старт (текущий замер' }}{{ isMaintain() ? (isEdit ? ' (неизменна)' : '') : (isEdit ? ', неизменен)' : ')') }}
+            <button type="button" class="gf__help" (click)="openGuide('start')">что это?</button>
+          </span>
+          <input class="gf__input" type="number" step="any" formControlName="startValue"
+            [readOnly]="isEdit" />
           @if (isMaintain()) {
-            <span class="gf__label">Нижняя граница{{ isEdit ? ' (неизменна)' : '' }}</span>
-            <input class="gf__input" type="number" step="any" formControlName="startValue"
-              [readOnly]="isEdit" />
             <span class="gf__hint">Замер «в коридоре», если между нижней и верхней границей.</span>
           } @else {
-            <span class="gf__label">Старт (текущий замер{{ isEdit ? ', неизменен' : '' }})</span>
-            <input class="gf__input" type="number" step="any" formControlName="startValue"
-              [readOnly]="isEdit" />
             <span class="gf__hint">От него считается прогресс. Для «снизить» цель ниже старта.</span>
           }
         </label>
       }
 
       <label class="gf__field">
-        <span class="gf__label">Срок (опц.)</span>
+        <span class="gf__label">
+          Срок <span class="gf__opt">(опц.)</span>
+          <button type="button" class="gf__help" (click)="openGuide('deadline')">что это?</button>
+        </span>
         <input class="gf__input" type="date" formControlName="deadline" />
       </label>
 
       @if (domains().length > 0) {
         <label class="gf__field">
-          <span class="gf__label">Сфера (опц.)</span>
+          <span class="gf__label">
+            Сфера <span class="gf__opt">(опц.)</span>
+            <button type="button" class="gf__help" (click)="openGuide('domain')">что это?</button>
+          </span>
           <select class="gf__input" formControlName="domainKey">
             <option [ngValue]="null">— не выбрана —</option>
             @for (dm of domains(); track dm.key) {
@@ -119,7 +251,10 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
 
       @if (attributesCatalog().length > 0) {
         <div class="gf__field">
-          <span class="gf__label">Что прокачивает (опц.)</span>
+          <span class="gf__label">
+            Что прокачивает <span class="gf__opt">(опц.)</span>
+            <button type="button" class="gf__help" (click)="openGuide('attributes')">что это?</button>
+          </span>
           <div class="gf__chips">
             @for (a of attributesCatalog(); track a.key) {
               <button type="button" class="gf__chip" [class.gf__chip--on]="attrs().has(a.key)"
@@ -131,7 +266,10 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
 
       @if (showParentSelect() && parents().length > 0) {
         <label class="gf__field">
-          <span class="gf__label">Родительская цель (опц. — сделать подцелью)</span>
+          <span class="gf__label">
+            Родительская цель <span class="gf__opt">(опц. — сделать подцелью)</span>
+            <button type="button" class="gf__help" (click)="openGuide('parent')">что это?</button>
+          </span>
           <select class="gf__input" formControlName="parentGoalId">
             <option [ngValue]="null">— самостоятельная —</option>
             @for (p of parents(); track p.id) {
@@ -142,7 +280,10 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
       }
 
       <label class="gf__field">
-        <span class="gf__label">Версия на плохой день (опц.)</span>
+        <span class="gf__label">
+          Версия на плохой день <span class="gf__opt">(опц.)</span>
+          <button type="button" class="gf__help" (click)="openGuide('fallback')">что это?</button>
+        </span>
         <input class="gf__input" type="text" maxlength="280" formControlName="fallbackVersion"
           placeholder="Минимум, который держит цель живой" />
       </label>
@@ -188,6 +329,20 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
       }
+      .gf__opt {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .gf__help {
+        margin-left: var(--space-2);
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: var(--fs-xs);
+        color: var(--color-accent);
+        text-decoration: underline;
+      }
       .gf__input {
         width: 100%;
         padding: var(--space-2) var(--space-3);
@@ -200,6 +355,9 @@ const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', '
       .gf__hint {
         font-size: var(--fs-xs);
         color: var(--color-text-muted);
+      }
+      .gf__hint--err {
+        color: var(--color-danger);
       }
       .gf__mission-hint {
         margin: calc(-1 * var(--space-1)) 0 0;
@@ -245,6 +403,7 @@ export class GoalFormModalComponent {
     MatDialogRef,
   );
   private readonly _api = inject(AccentApiService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Режим редактирования. */
   protected readonly isEdit = this._data.goal !== undefined;
@@ -335,16 +494,6 @@ export class GoalFormModalComponent {
     }
   }
 
-  /** FormControl названия (для TextField). */
-  protected get titleControl(): FormControl<string> {
-    return this.form.controls.title;
-  }
-
-  /** FormControl единицы (для TextField). */
-  protected get unitControl(): FormControl<string> {
-    return this.form.controls.unit;
-  }
-
   /** Ошибка названия (если тронуто/отправлено). */
   protected titleError(): string | null {
     const c = this.form.controls.title;
@@ -383,6 +532,19 @@ export class GoalFormModalComponent {
         next.add(key);
       }
       return next;
+    });
+  }
+
+  /** Открывает контекстный мини-гид «что это?» по полю (вложенный диалог; ввод не теряется). */
+  protected openGuide(key: string): void {
+    const data = GOAL_FIELD_GUIDES[key];
+    if (data === undefined) {
+      return;
+    }
+    this._dialog.open(FieldGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      data,
     });
   }
 

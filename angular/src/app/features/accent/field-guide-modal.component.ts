@@ -2,12 +2,22 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 
-/** Данные мини-гида поля: заголовок + абзацы простого пояснения «что/зачем». */
+/** Пункт маркированного списка в гиде: жирный термин + пояснение. */
+export interface FieldGuideBullet {
+  /** Термин (жирный). */
+  term: string;
+  /** Пояснение к термину. */
+  desc: string;
+}
+
+/** Данные мини-гида поля: заголовок + абзацы и/или маркированный список (перечисления). */
 export interface FieldGuideData {
   /** Заголовок модалки (что объясняем). */
   title: string;
-  /** Абзацы пояснения (каждый — отдельная строка). */
-  paragraphs: string[];
+  /** Абзацы пояснения (вступление до списка). */
+  paragraphs?: string[];
+  /** Маркированный список (перечисления вроде родов цели / типов привычки). */
+  bullets?: FieldGuideBullet[];
 }
 
 /**
@@ -25,8 +35,15 @@ export interface FieldGuideData {
     <div class="dlg">
       <div class="dlg__head"><h2>{{ data.title }}</h2></div>
       <div class="dlg__body">
-        @for (p of data.paragraphs; track $index) {
+        @for (p of data.paragraphs ?? []; track $index) {
           <p class="fg__p">{{ p }}</p>
+        }
+        @if (data.bullets; as bullets) {
+          <ul class="fg__list">
+            @for (b of bullets; track b.term) {
+              <li><b>{{ b.term }}</b> — {{ b.desc }}</li>
+            }
+          </ul>
         }
       </div>
       <div class="dlg__foot">
@@ -43,6 +60,30 @@ export interface FieldGuideData {
       }
       .fg__p:last-child {
         margin-bottom: 0;
+      }
+      .fg__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .fg__list li {
+        position: relative;
+        padding-left: var(--space-4);
+      }
+      .fg__list li::before {
+        content: '•';
+        position: absolute;
+        left: var(--space-1);
+        color: var(--color-accent);
+      }
+      .fg__list b {
+        color: var(--color-text);
+        font-weight: var(--fw-medium);
       }
     `,
   ],

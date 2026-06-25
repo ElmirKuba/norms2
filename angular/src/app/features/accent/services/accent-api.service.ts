@@ -268,6 +268,11 @@ export class AccentApiService {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/restore`, {});
   }
 
+  /** Вернуть завершённую цель в работу (completed → active). */
+  public reopenGoal(id: string): Observable<GoalView> {
+    return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/reopen`, {});
+  }
+
   /** Поставить цель на паузу. */
   public pauseGoal(id: string): Observable<GoalView> {
     return this._http.post<GoalView>(`${API_PREFIX}/accent/goals/${id}/pause`, {});

@@ -83,6 +83,14 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         </div>
       </header>
 
+      <aside class="goals__why">
+        <span class="goals__why-icon" aria-hidden="true">🎯</span>
+        <p class="goals__why-text">
+          <strong>Большое — измеримым прогрессом.</strong> Фокус про единицы: выбери главное и
+          откажись от лишнего, иначе цели превращаются в список, который давит.
+        </p>
+      </aside>
+
       <div class="goals__filters" role="tablist" aria-label="Фильтр по статусу"
         appHscrollHint [appHscrollHintDelay]="1300">
         @for (f of statusFilters; track f.value) {
@@ -290,6 +298,28 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       }
       .goals__muted {
         color: var(--color-text-muted);
+      }
+      .goals__why {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        margin: var(--space-3) 0 0;
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-surface-2);
+        border-left: 3px solid var(--color-accent);
+        border-radius: var(--radius-md);
+      }
+      .goals__why-icon {
+        font-size: var(--fs-lg);
+        line-height: 1.3;
+      }
+      .goals__why-text {
+        margin: 0;
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .goals__why-text strong {
+        color: var(--color-text);
       }
       .goals__error {
         color: var(--color-danger);

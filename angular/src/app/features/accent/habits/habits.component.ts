@@ -62,6 +62,14 @@ import type { HabitFormData } from './habit-form-modal.component';
         </div>
       </header>
 
+      <aside class="hb__why">
+        <span class="hb__why-icon" aria-hidden="true">🪜</span>
+        <p class="hb__why-text">
+          <strong>Не идеально, а постоянно.</strong> Маленькие регулярные шаги; лесенка бережёт от
+          выгорания — в трудный день делаешь минимум, и серия цела.
+        </p>
+      </aside>
+
       <nav class="hb__tabs">
         <button type="button" [class.active]="tab() === 'today'" (click)="selectTab('today')">Сегодня</button>
         <button type="button" [class.active]="tab() === 'templates'" (click)="selectTab('templates')">Шаблоны</button>
@@ -337,6 +345,28 @@ import type { HabitFormData } from './habit-form-modal.component';
       }
       .hb__muted {
         color: var(--color-text-muted);
+      }
+      .hb__why {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        margin: var(--space-3) 0 0;
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-surface-2);
+        border-left: 3px solid var(--color-accent);
+        border-radius: var(--radius-md);
+      }
+      .hb__why-icon {
+        font-size: var(--fs-lg);
+        line-height: 1.3;
+      }
+      .hb__why-text {
+        margin: 0;
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .hb__why-text strong {
+        color: var(--color-text);
       }
       .hb__empty-cta {
         display: flex;

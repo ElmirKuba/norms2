@@ -85,7 +85,8 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5) var(--space-3);
+  // Боковой паддинг 16 (а не 24): контенту больше места (M#B3-3).
+  padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--color-border);
 
   h2 {
@@ -106,13 +107,36 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-5);
+  // 16 вместо 24 — контенту больше места (M#B3-3); вертикаль чуть просторнее боков.
+  padding: var(--space-5) var(--space-4);
 }
 
 .dlg__foot {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-5) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
   border-top: 1px solid var(--color-border);
+}
+
+// Мобила: своя flush-модалка занимает почти всю ширину (а не 80vw по умолчанию —
+// большие пустоты по бокам на телефоне, M#B3-3), паддинги ещё компактнее.
+@media (max-width: 520px) {
+  .modal-flush.mat-mdc-dialog-panel,
+  .modal-flush.cdk-overlay-pane {
+    width: calc(100vw - 2 * var(--space-3)) !important;
+    max-width: calc(100vw - 2 * var(--space-3)) !important;
+  }
+
+  .dlg__head {
+    padding: var(--space-3) var(--space-3) var(--space-2);
+  }
+
+  .dlg__body {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .dlg__foot {
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
 }

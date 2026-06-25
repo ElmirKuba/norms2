@@ -265,7 +265,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
   styles: [
     `
       .gd {
-        padding: var(--space-5);
+        padding: var(--space-4) 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-4);

@@ -3,7 +3,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { AccentApiService } from '../services/accent-api.service';
@@ -17,7 +16,8 @@ import {
   parseRecurrence,
 } from './recurrence-builder.util';
 import type { RecurrenceMode } from './recurrence-builder.util';
-import { HabitGuideModalComponent } from './habit-guide-modal.component';
+import { FieldGuideModalComponent } from '../field-guide-modal.component';
+import type { FieldGuideData } from '../field-guide-modal.component';
 
 /** Данные в модалку: если `habit` задан — режим редактирования. */
 export interface HabitFormData {
@@ -39,33 +39,119 @@ const ICON_OPTIONS: readonly string[] = [
 ];
 
 /**
+ * Контекстные мини-гиды «что это?» по полям формы привычки (заменяют одну большую
+ * справку-простыню — объясняем точечно). Открываются общим `FieldGuideModalComponent`.
+ * Тексты — просто, по-человечески ([[ui-copy-plain-simple]]).
+ */
+const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
+  title: {
+    title: 'Название привычки',
+    paragraphs: [
+      'Что именно делаешь, коротко и конкретно: «Отжимания», «Стакан воды утром», «10 страниц».',
+      'Чем конкретнее, тем легче понять, сделал ты сегодня или нет. «Спорт» — размыто, «10 приседаний» — ясно.',
+    ],
+  },
+  icon: {
+    title: 'Иконка',
+    paragraphs: [
+      'Необязательный значок, чтобы быстро узнавать привычку в списке глазами.',
+      'Чисто для удобства, на механику не влияет. Не хочешь — оставь без иконки.',
+    ],
+  },
+  description: {
+    title: 'Описание',
+    paragraphs: [
+      'Короткая заметка «зачем тебе это». Необязательно.',
+      'В трудный день напомнит будущему тебе, ради чего привычка вообще нужна.',
+    ],
+  },
+  kind: {
+    title: 'Тип привычки',
+    paragraphs: [
+      '«Сделал / не сделал» — простая галочка (зарядка была или нет). «Число» — считаешь количество (отжимания, страницы). «Время» — засекаешь длительность (планка, медитация).',
+      'От типа зависит, что отмечаешь в задаче на сегодня: галочку, число или секунды.',
+    ],
+  },
+  recurrence: {
+    title: 'Повтор',
+    paragraphs: [
+      'Как часто привычка появляется задачей: каждый день, по будням, по выбранным дням недели или раз в N дней.',
+      'Задачи на вкладке «Сегодня» создаются по этому расписанию автоматически.',
+    ],
+  },
+  ladder: {
+    title: 'Лесенка',
+    paragraphs: [
+      'Чтобы не сгореть: план начинается с минимума (что не стыдно даже в худший день) и постепенно растёт к цели.',
+      '«Минимум» — нижняя планка. «Сейчас» — текущая норма. «Цель» — куда идёшь (необязательно).',
+      '«Адаптивно» = планка сама поднимается, когда легко, и отступает на шаг, когда тяжело. «Вручную» — меняешь сам.',
+    ],
+  },
+  domain: {
+    title: 'Сфера',
+    paragraphs: [
+      'Область жизни, к которой относится привычка (здоровье, работа, отношения…). Необязательно.',
+      'Помогает потом видеть баланс — не ушла ли вся энергия в одну сторону.',
+    ],
+  },
+  goal: {
+    title: 'Вклад в цель',
+    paragraphs: [
+      'Если есть накопительная цель (например, «прочитать 50 книг»), выполнение привычки будет добавлять в неё прогресс.',
+      'Необязательно. Поле появляется, только если у тебя есть активные накопительные цели.',
+    ],
+  },
+  attributes: {
+    title: 'Атрибуты',
+    paragraphs: [
+      'Как в RPG: дело прокачивает характеристику (силу, дисциплину, фокус…). Необязательно.',
+      'Чисто для наглядного «роста персонажа». Не уверен — пропусти.',
+    ],
+  },
+  minVersion: {
+    title: 'Минимум на плохой день',
+    paragraphs: [
+      'Самая урезанная версия привычки на день, когда совсем нет сил: «1 отжимание» вместо полной тренировки.',
+      'Смысл — не обнулить серию. Сделал хоть микро-версию — день засчитан, привычка жива.',
+    ],
+  },
+};
+
+/**
  * Модалка создания/редактирования привычки (MatDialog, ADR-0026) — ядро (2.4·16a):
  * название/иконка/описание/тип + пикер расписания (RRULE-пресеты) + лесенка
  * (min·current·goal·step·policy; для binary авто 1/1) + minVersion. Сфера/атрибуты — ·16b.
+ * Справка — контекстные «что это?» по полям (`FieldGuideModalComponent`), без простыни.
  * Закрывается с `HabitPayload` (сохранить) или `null` (отмена).
  */
 @Component({
   selector: 'app-habit-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent, HscrollHintDirective],
+  imports: [ReactiveFormsModule, ButtonComponent, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
       <div class="dlg__head">
         <h2>{{ isEdit ? 'Изменить привычку' : 'Новая привычка' }}</h2>
-        <button type="button" class="hf__guide" (click)="openGuide()">Как заполнять?</button>
       </div>
 
       <form class="dlg__form" [formGroup]="form" (ngSubmit)="save()">
         <div class="dlg__body hf__fields">
-        <app-text-field
-          label="Название"
-          [control]="titleControl"
-          placeholder="Напр. Отжимания"
-          [required]="true"
-          [error]="titleError()"
-        />
+        <label class="hf__field">
+          <span class="hf__label">
+            Название <span class="hf__req">*</span>
+            <button type="button" class="hf__help" (click)="openGuide('title')">что это?</button>
+          </span>
+          <input class="hf__input" type="text" maxlength="120" formControlName="title" placeholder="Напр. Отжимания" />
+          @if (titleError()) {
+            <span class="hf__error">{{ titleError() }}</span>
+          }
+        </label>
+
         <div class="hf__field">
-          <span class="hf__label">Иконка (необязательно)</span>
+          <span class="hf__label">
+            Иконка <span class="hf__opt">(необязательно)</span>
+            <button type="button" class="hf__help" (click)="openGuide('icon')">что это?</button>
+          </span>
           <div class="hf__icons" appHscrollHint>
             <button
               type="button"
@@ -84,10 +170,20 @@ const ICON_OPTIONS: readonly string[] = [
             }
           </div>
         </div>
-        <app-text-field label="Описание" [control]="descriptionControl" placeholder="Коротко зачем" />
 
         <label class="hf__field">
-          <span class="hf__label">Тип</span>
+          <span class="hf__label">
+            Описание
+            <button type="button" class="hf__help" (click)="openGuide('description')">что это?</button>
+          </span>
+          <input class="hf__input" type="text" formControlName="description" placeholder="Коротко зачем" />
+        </label>
+
+        <label class="hf__field">
+          <span class="hf__label">
+            Тип
+            <button type="button" class="hf__help" (click)="openGuide('kind')">что это?</button>
+          </span>
           <select class="hf__input" formControlName="kind">
             @for (k of kinds; track k.value) {
               <option [ngValue]="k.value">{{ k.label }}</option>
@@ -97,7 +193,10 @@ const ICON_OPTIONS: readonly string[] = [
         </label>
 
         <label class="hf__field">
-          <span class="hf__label">Повтор</span>
+          <span class="hf__label">
+            Повтор
+            <button type="button" class="hf__help" (click)="openGuide('recurrence')">что это?</button>
+          </span>
           <select class="hf__input" formControlName="recurrenceMode">
             <option [ngValue]="'daily'">Каждый день</option>
             <option [ngValue]="'weekdays'">По будням (Пн–Пт)</option>
@@ -130,7 +229,10 @@ const ICON_OPTIONS: readonly string[] = [
 
         @if (isQuantitative()) {
           <div class="hf__ladder">
-            <span class="hf__label">Лесенка (план растёт от минимума к цели)</span>
+            <span class="hf__label">
+              Лесенка (план растёт от минимума к цели)
+              <button type="button" class="hf__help" (click)="openGuide('ladder')">что это?</button>
+            </span>
             <span class="hf__hint">
               Минимум — что не стыдно даже в худший день. «Адаптивно» = планка сама растёт, когда
               легко, и отступает, когда тяжело.
@@ -168,7 +270,10 @@ const ICON_OPTIONS: readonly string[] = [
         }
 
         <label class="hf__field">
-          <span class="hf__label">Сфера (опц.)</span>
+          <span class="hf__label">
+            Сфера <span class="hf__opt">(опц.)</span>
+            <button type="button" class="hf__help" (click)="openGuide('domain')">что это?</button>
+          </span>
           <select class="hf__input" formControlName="domainKey">
             <option [ngValue]="null">— не выбрана —</option>
             @for (d of domains(); track d.key) {
@@ -179,7 +284,10 @@ const ICON_OPTIONS: readonly string[] = [
 
         @if (goalsForLink().length > 0) {
           <label class="hf__field">
-            <span class="hf__label">Вклад в цель (опц.)</span>
+            <span class="hf__label">
+              Вклад в цель <span class="hf__opt">(опц.)</span>
+              <button type="button" class="hf__help" (click)="openGuide('goal')">что это?</button>
+            </span>
             <select class="hf__input" formControlName="goalId">
               <option [ngValue]="null">— не привязана —</option>
               @for (g of goalsForLink(); track g.id) {
@@ -192,7 +300,10 @@ const ICON_OPTIONS: readonly string[] = [
 
         @if (attributesCatalog().length > 0) {
           <div class="hf__field">
-            <span class="hf__label">Прокачивает атрибуты (опц.)</span>
+            <span class="hf__label">
+              Прокачивает атрибуты <span class="hf__opt">(опц.)</span>
+              <button type="button" class="hf__help" (click)="openGuide('attributes')">что это?</button>
+            </span>
             <span class="hf__hint">Как в RPG: дело качает характеристику. Не уверен — пропусти.</span>
             <div class="hf__chips" appHscrollHint>
               @for (a of attributesCatalog(); track a.key) {
@@ -209,7 +320,13 @@ const ICON_OPTIONS: readonly string[] = [
           </div>
         }
 
-        <app-text-field label="Минимум на плохой день (опц.)" [control]="minVersionControl" />
+        <label class="hf__field">
+          <span class="hf__label">
+            Минимум на плохой день <span class="hf__opt">(опц.)</span>
+            <button type="button" class="hf__help" (click)="openGuide('minVersion')">что это?</button>
+          </span>
+          <input class="hf__input" type="text" formControlName="minVersion" />
+        </label>
 
         @if (formError()) {
           <span class="hf__error">{{ formError() }}</span>
@@ -225,13 +342,13 @@ const ICON_OPTIONS: readonly string[] = [
   `,
   styles: [
     `
-      .hf__guide {
-        flex-shrink: 0;
+      .hf__help {
+        margin-left: var(--space-2);
         padding: 0;
         background: none;
         border: none;
         cursor: pointer;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--color-accent);
         text-decoration: underline;
       }
@@ -252,6 +369,13 @@ const ICON_OPTIONS: readonly string[] = [
       }
       .hf__label {
         font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .hf__req {
+        color: var(--color-danger);
+      }
+      .hf__opt {
+        font-size: var(--fs-xs);
         color: var(--color-text-muted);
       }
       .hf__sub {
@@ -480,19 +604,6 @@ export class HabitFormModalComponent {
     }
   }
 
-  /** Контрол названия. */
-  protected get titleControl(): FormControl<string> {
-    return this.form.controls.title;
-  }
-  /** Контрол описания. */
-  protected get descriptionControl(): FormControl<string> {
-    return this.form.controls.description;
-  }
-  /** Контрол «минимум на плохой день». */
-  protected get minVersionControl(): FormControl<string> {
-    return this.form.controls.minVersion;
-  }
-
   /** RU-подпись дня недели. */
   protected weekdayLabel(code: string): string {
     return WEEKDAY_LABELS[code] ?? code;
@@ -585,11 +696,16 @@ export class HabitFormModalComponent {
     this._ref.close(null);
   }
 
-  /** Открывает гид «как заполнять» поверх формы (вложенный диалог; ввод не теряется). */
-  protected openGuide(): void {
-    this._dialog.open(HabitGuideModalComponent, {
+  /** Открывает контекстный мини-гид «что это?» по полю (вложенный диалог; ввод не теряется). */
+  protected openGuide(key: string): void {
+    const data = HABIT_FIELD_GUIDES[key];
+    if (data === undefined) {
+      return;
+    }
+    this._dialog.open(FieldGuideModalComponent, {
       width: MODAL_SMALL_WIDTH,
       panelClass: 'modal-flush',
+      data,
     });
   }
 }

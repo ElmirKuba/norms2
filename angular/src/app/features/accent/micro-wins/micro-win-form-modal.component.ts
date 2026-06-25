@@ -3,10 +3,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { MICRO_WIN_CATEGORY_DESCRIPTIONS, MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
 import { CategoryGuideModalComponent } from './category-guide-modal.component';
+import { FieldGuideModalComponent } from '../field-guide-modal.component';
+import type { FieldGuideData } from '../field-guide-modal.component';
 import type { MicroWinCategory, MicroWinPayload, MicroWinView } from '../accent.types';
 
 /** Данные в модалку: если `microWin` задан — режим редактирования (префилл). */
@@ -23,7 +24,7 @@ export interface MicroWinFormData {
  */
 @Component({
   selector: 'app-micro-win-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent, TextFieldComponent],
+  imports: [ReactiveFormsModule, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
@@ -33,13 +34,16 @@ export interface MicroWinFormData {
 
       <form class="dlg__form" [formGroup]="form" (ngSubmit)="save()">
         <div class="dlg__body mwf__form">
-        <app-text-field
-          label="Название"
-          [control]="titleControl"
-          placeholder="Напр. 1 отжимание"
-          [required]="true"
-          [error]="titleError()"
-        />
+        <label class="mwf__field">
+          <span class="mwf__label">
+            Название <span class="mwf__req">*</span>
+            <button type="button" class="mwf__help" (click)="openTitleGuide()">что это?</button>
+          </span>
+          <input class="mwf__input" type="text" maxlength="120" formControlName="title" placeholder="Напр. 1 отжимание" />
+          @if (titleError()) {
+            <span class="mwf__error">{{ titleError() }}</span>
+          }
+        </label>
 
         <label class="mwf__field">
           <span class="mwf__label">
@@ -55,7 +59,10 @@ export interface MicroWinFormData {
         </label>
 
         <label class="mwf__field">
-          <span class="mwf__label">Длительность, сек <span class="mwf__req">*</span></span>
+          <span class="mwf__label">
+            Длительность, сек <span class="mwf__req">*</span>
+            <button type="button" class="mwf__help" (click)="openDurationGuide()">что это?</button>
+          </span>
           <input class="mwf__input" type="number" min="0" max="300" formControlName="durationSeconds" />
           @if (durationError()) {
             <span class="mwf__error">{{ durationError() }}</span>
@@ -63,7 +70,10 @@ export interface MicroWinFormData {
         </label>
 
         <label class="mwf__field">
-          <span class="mwf__label">Цена энергии</span>
+          <span class="mwf__label">
+            Цена энергии
+            <button type="button" class="mwf__help" (click)="openEnergyGuide()">что это?</button>
+          </span>
           <select class="mwf__input" formControlName="energyCost">
             <option [ngValue]="1">1 — низкая</option>
             <option [ngValue]="2">2 — средняя</option>
@@ -71,11 +81,13 @@ export interface MicroWinFormData {
           </select>
         </label>
 
-        <app-text-field
-          label="Эффект (необязательно)"
-          [control]="effectControl"
-          placeholder="Что это даёт"
-        />
+        <label class="mwf__field">
+          <span class="mwf__label">
+            Эффект <span class="mwf__opt">(необязательно)</span>
+            <button type="button" class="mwf__help" (click)="openEffectGuide()">что это?</button>
+          </span>
+          <input class="mwf__input" type="text" formControlName="effect" placeholder="Что это даёт" />
+        </label>
 
         </div>
 
@@ -104,6 +116,10 @@ export interface MicroWinFormData {
       }
       .mwf__req {
         color: var(--color-danger);
+      }
+      .mwf__opt {
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
       }
       .mwf__input {
         width: 100%;
@@ -194,16 +210,6 @@ export class MicroWinFormModalComponent {
     }
   }
 
-  /** Контрол названия (для TextFieldComponent). */
-  protected get titleControl(): FormControl<string> {
-    return this.form.controls.title;
-  }
-
-  /** Контрол эффекта (для TextFieldComponent). */
-  protected get effectControl(): FormControl<string> {
-    return this.form.controls.effect;
-  }
-
   /** Текст ошибки названия (после касания/submit). */
   protected titleError(): string | null {
     const c = this.form.controls.title;
@@ -250,6 +256,59 @@ export class MicroWinFormModalComponent {
     this._dialog.open(CategoryGuideModalComponent, {
       width: MODAL_SMALL_WIDTH,
       panelClass: 'modal-flush',
+    });
+  }
+
+  /** «Что это?» по названию. */
+  protected openTitleGuide(): void {
+    this._openGuide({
+      title: 'Что писать в названии',
+      paragraphs: [
+        'Назови самый маленький, почти смешной шаг действия — такой, что отказаться от него сложнее, чем сделать.',
+        'Не «тренировка», а «1 отжимание». Не «уборка», а «убрать одну вещь со стола». Смысл микро-победы — сдвинуться с нуля в плохой день, а не успеть много.',
+      ],
+    });
+  }
+
+  /** «Что это?» по длительности. */
+  protected openDurationGuide(): void {
+    this._openGuide({
+      title: 'Зачем длительность',
+      paragraphs: [
+        'Примерная оценка, сколько секунд занимает действие (0–300). Помогает выбрать что-то крошечное, когда нет сил и времени совсем.',
+        'Это ориентир для тебя, а не таймер: сейчас он ничего не запускает. Возможность включать обратный отсчёт по длительности — в планах на будущее.',
+      ],
+    });
+  }
+
+  /** «Что это?» по цене энергии. */
+  protected openEnergyGuide(): void {
+    this._openGuide({
+      title: 'Что значит цена энергии',
+      paragraphs: [
+        'Сколько внутреннего усилия нужно: 1 — низкая (почти даром), 2 — средняя, 3 — высокая.',
+        'В тяжёлый день выбирай дешёвые (1) — их реально сделать даже на нуле. Дорогие (3) приберегаешь на дни, когда есть ресурс.',
+      ],
+    });
+  }
+
+  /** «Что это?» по эффекту. */
+  protected openEffectGuide(): void {
+    this._openGuide({
+      title: 'Зачем поле «Эффект»',
+      paragraphs: [
+        'Короткая заметка, что это действие тебе даёт: «просыпаюсь», «сбиваю тревогу», «выхожу из залипания».',
+        'Необязательно. Но в плохой день эта строчка напомнит будущему тебе, ради чего вообще стоит сделать этот маленький шаг.',
+      ],
+    });
+  }
+
+  /** Открывает универсальный мини-гид поля поверх формы (ввод не теряется). */
+  private _openGuide(data: FieldGuideData): void {
+    this._dialog.open(FieldGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      data,
     });
   }
 }

@@ -23,7 +23,7 @@ import type { GoalProgressView } from '../accent.types';
           <p>Раздел активен.</p>
           <app-button [loading]="busy()" (click)="pause()">Поставить на паузу</app-button>
         } @else {
-          <p>На паузе с {{ pausedLabel() }} — серии и ролловер заморожены.</p>
+          <p>На паузе с {{ pausedLabel() }} — вернёшься, когда будешь готов.</p>
           <app-button [loading]="busy()" (click)="resume()">Снять паузу</app-button>
         }
       </div>
@@ -50,7 +50,7 @@ import type { GoalProgressView } from '../accent.types';
   styles: [
     `
       .dash {
-        padding: var(--space-5);
+        padding: var(--space-4) 0;
       }
       .dash__pause {
         margin-top: var(--space-4);

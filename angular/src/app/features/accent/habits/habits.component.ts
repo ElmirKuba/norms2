@@ -81,8 +81,11 @@ import type { HabitFormData } from './habit-form-modal.component';
         } @else if (tasks().length === 0) {
           <app-empty-state
             title="На сегодня задач нет"
-            text="Заведи привычку во вкладке «Шаблоны» — задачи появятся по её расписанию."
+            text="Создай привычку в «Шаблонах» — и задачи появятся здесь по её расписанию."
           />
+          <div class="hb__empty-cta">
+            <app-button (click)="selectTab('templates')">Перейти в шаблоны</app-button>
+          </div>
         } @else {
           <div class="hb__progress">
             <span>Сегодня сделано: <b>{{ donePercent() }}%</b></span>
@@ -203,7 +206,7 @@ import type { HabitFormData } from './habit-form-modal.component';
   styles: [
     `
       .hb {
-        padding: var(--space-5);
+        padding: var(--space-4) 0;
       }
       .hb__head {
         display: flex;
@@ -335,6 +338,11 @@ import type { HabitFormData } from './habit-form-modal.component';
       .hb__muted {
         color: var(--color-text-muted);
       }
+      .hb__empty-cta {
+        display: flex;
+        justify-content: center;
+        margin-top: var(--space-4);
+      }
       .hb__flash {
         display: flex;
         align-items: center;
@@ -460,7 +468,7 @@ export class HabitsComponent {
   private readonly _dialog = inject(MatDialog);
 
   /** Активная вкладка. */
-  protected readonly tab = signal<'today' | 'templates'>('templates');
+  protected readonly tab = signal<'today' | 'templates'>('today');
   /** Список привычек. */
   protected readonly habits = signal<HabitView[]>([]);
   /** Идёт загрузка. */
@@ -510,8 +518,6 @@ export class HabitsComponent {
   protected readonly busyTaskId = signal<string | null>(null);
   /** Фидбэк движения лесенки (баннер «планка выросла / мягче») или null. */
   protected readonly ladderFlash = signal<{ event: 'raised' | 'lowered'; text: string } | null>(null);
-  /** Таймер авто-скрытия баннера. */
-  private _flashTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** % дня: задачи с прогрессом (done/partial) от всех непропущенных. */
   protected readonly donePercent = computed(() => {
@@ -525,6 +531,12 @@ export class HabitsComponent {
 
   public constructor() {
     this._load();
+    // Дефолтная вкладка — «Сегодня»: грузим задачи сразу на старте (а не только по клику
+    // на вкладку). Иначе при заходе/обновлении страницы прямо на «Сегодня» список пуст,
+    // пока не переключишь вкладки (H#B2-4).
+    if (this.tab() === 'today') {
+      this._loadTasks();
+    }
   }
 
   /** Переключает вкладку; при «Сегодня» — (пере)загружает задачи (материализация на бэке). */
@@ -535,14 +547,17 @@ export class HabitsComponent {
     }
   }
 
-  /** Метаданные задачи (тип + цель/сделано). */
+  /** Метаданные задачи (тип + явные «надо/сделано» — без неявной дроби). */
   protected taskMeta(task: TaskView): string {
     const kind = HABIT_KIND_LABELS[task.kind];
     if (task.targetValue === null) {
-      return kind;
+      return kind; // бинарная — без чисел
     }
-    const done = task.doneValue === null ? '' : `${String(task.doneValue)}/`;
-    return `${kind} · ${done}${String(task.targetValue)}`;
+    const need = `надо: ${String(task.targetValue)}`;
+    if (task.doneValue === null) {
+      return `${kind} · ${need}`; // ещё не выполнена
+    }
+    return `${kind} · ${need}, сделано: ${String(task.doneValue)}`;
   }
 
   /** Подпись статуса задачи. */
@@ -572,35 +587,33 @@ export class HabitsComponent {
     this._api.completeTask(task.id, doneValue).subscribe({
       next: (result) => {
         this._patchTask(result.task);
-        this._flashLadder(result.ladderEvent);
+        this._flashLadder(result.ladderEvent, task);
         this.busyTaskId.set(null);
       },
       error: () => this.busyTaskId.set(null),
     });
   }
 
-  /** Показывает баннер-фидбэк движения лесенки (авто-скрытие ~7с). null — ничего. */
-  private _flashLadder(event: LadderEventView): void {
+  /**
+   * Показывает баннер-фидбэк движения лесенки. Текст — конкретный: какая привычка и
+   * было→стало (с «сек» для timed). НЕ авто-скрывается — пользователь закрывает сам
+   * (крестик), чтобы успеть прочитать похвалу. null — ничего.
+   */
+  private _flashLadder(event: LadderEventView, task: TaskView): void {
     if (event === null) {
       return;
     }
+    const unit = task.kind === 'timed' ? ' сек' : '';
+    const change = `${String(event.prevTarget)}${unit} → ${String(event.newTarget)}${unit}`;
     const text =
-      event === 'raised'
-        ? '🎉 Планка выросла — стало чуть сложнее. Ты справляешься!'
-        : '🌙 Сегодня планка мягче — это нормально, серия цела.';
-    this.ladderFlash.set({ event, text });
-    if (this._flashTimer !== null) {
-      clearTimeout(this._flashTimer);
-    }
-    this._flashTimer = setTimeout(() => this.ladderFlash.set(null), 7000);
+      event.direction === 'raised'
+        ? `🎉 «${task.title}»: планка выросла, ${change} — стало чуть сложнее. Ты справляешься!`
+        : `🌙 «${task.title}»: планка мягче, ${change} — это нормально, серия цела.`;
+    this.ladderFlash.set({ event: event.direction, text });
   }
 
   /** Закрывает баннер-фидбэк вручную. */
   protected dismissFlash(): void {
-    if (this._flashTimer !== null) {
-      clearTimeout(this._flashTimer);
-      this._flashTimer = null;
-    }
     this.ladderFlash.set(null);
   }
 

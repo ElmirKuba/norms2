@@ -209,7 +209,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
   styles: [
     `
       .goals {
-        padding: var(--space-5);
+        padding: var(--space-4) 0;
       }
       .goals__head {
         display: flex;

@@ -165,7 +165,7 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
   styles: [
     `
       .mw {
-        padding: var(--space-5);
+        padding: var(--space-4) 0;
       }
       .mw__head {
         display: flex;

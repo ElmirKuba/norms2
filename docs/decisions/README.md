@@ -102,6 +102,9 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0050](./0050-accent-module-architecture.md) | «Акцент»: мультимодуль (область = модуль, как ф.1) + тонкий зонтик `AccentModule` + правило слоёв (контроллер→use-case всегда; кросс-домен/кросс-фаза вниз через domain-service; свой порт/ds по необходимости) | accepted | [accent] [phase2] [backend] [architecture] |
 | [0051](./0051-starter-habits-inert-showcase.md) | «Акцент»: стартовый пак привычек — инертная витрина (примеры не материализуют задачи/не двигают лесенку до явного «Добавить себе» или «Изм.»); зеркало механизма 2.3 (`is_starter`+seed+endpoints); обратимо к «живым» примерам | accepted | [accent] [phase2] [product] |
 | [0052](./0052-accent-goal-direction-and-computed-progress.md) | «Акцент» Цели (2.5): `direction` ∈ accumulate/reach/reduce (+`start_value`); все агрегаты (currentValue/%/pace/forecast/rollup) **вычисляются на чтение** из `goal_entries`/детей → без хранимого счётчика/`version`; forecast в едином пространстве доли `f`; rollup = среднее % детей; тон forecast проективный, не обвиняющий | accepted | [accent] [phase2] [product] [backend] |
+| [0053](./0053-goal-focus-and-mission-filter.md) | «Акцент» Цели (2.5): «Фокус» (`focus_order`, мягкий лимит) + mission-filter (накопительную в фокус — только с заполненным «ради чего откажусь»/`tradeoff`) | accepted | [accent] [phase2] [product] |
+| [0054](./0054-tracker-manual-reorder-dragdrop.md) | «Акцент»: ручная сортировка трекеров перетаскиванием (`position` на сервере, per-account; `PUT …/reorder {ids}`; DnD = Angular CDK, уже в зависимостях) | accepted | [accent] [phase2] [frontend] |
+| [0055](./0055-progress-charts-apexcharts.md) | «Акцент»/общее: графики прогресса — **ApexCharts** (`ng-apexcharts`, MIT, self-host) за СВОИМ wrapper-компонентом (движок заменяем); вес в lazy-чанке; осознанное исключение к «без раздутых UI-китов» | accepted | [accent] [phase2] [frontend] |
 
 ### Ожидают решения
 

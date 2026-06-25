@@ -33,8 +33,15 @@ export interface TaskView {
   completedAt: string | null;
 }
 
-/** Событие лесенки после выполнения adaptive-привычки: подъём/откат планки или null. */
-export type LadderEventView = 'raised' | 'lowered' | null;
+/**
+ * Событие лесенки после выполнения adaptive-привычки: направление + было/стало планки
+ * (`currentTarget`) — для конкретного фидбэка «планка 20→30». null — нет движения.
+ */
+export type LadderEventView = {
+  direction: 'raised' | 'lowered';
+  prevTarget: number;
+  newTarget: number;
+} | null;
 
 /**
  * Результат выполнения задачи (`POST /accent/tasks/:id/complete`): обновлённая задача

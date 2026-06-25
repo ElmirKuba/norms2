@@ -9,8 +9,15 @@ const EASE_THRESHOLD = 3;
 /** Порог недоборов подряд для мягкого отката. */
 const MISS_THRESHOLD = 2;
 
-/** Результат подстройки лесенки. */
-export type LadderEvent = 'raised' | 'lowered' | null;
+/**
+ * Результат подстройки лесенки: направление + было/стало (`currentTarget`) — чтобы фидбэк
+ * объяснял КОНКРЕТНО, что изменилось («планка 20→30»), а не абстрактно. null — нет движения.
+ */
+export type LadderEvent = {
+  direction: 'raised' | 'lowered';
+  prevTarget: number;
+  newTarget: number;
+} | null;
 
 /**
  * `LadderEngine` — ядро адаптивности (алгоритм gamification §7). На выполнение
@@ -68,6 +75,7 @@ export class AccentLadderEngine {
    */
   private _apply(ladder: HabitLadder, performed: number): { ladder: HabitLadder; event: LadderEvent } {
     const step = ladder.step ?? 1;
+    const prevTarget = ladder.currentTarget;
     let { currentTarget, easyStreak, missStreak } = ladder;
     let event: LadderEvent = null;
 
@@ -80,7 +88,7 @@ export class AccentLadderEngine {
         const raised = currentTarget + step;
         currentTarget = ladder.goalTarget === null ? raised : Math.min(raised, ladder.goalTarget);
         easyStreak = 0;
-        event = 'raised';
+        event = { direction: 'raised', prevTarget, newTarget: currentTarget };
       }
     } else if (performed >= ladder.minTarget) {
       // Минимальная победа: серия цела, планку не растим.
@@ -93,7 +101,7 @@ export class AccentLadderEngine {
       if (missStreak >= MISS_THRESHOLD) {
         currentTarget = Math.max(ladder.minTarget, currentTarget - step);
         missStreak = 0;
-        event = 'lowered';
+        event = { direction: 'lowered', prevTarget, newTarget: currentTarget };
       }
     }
 

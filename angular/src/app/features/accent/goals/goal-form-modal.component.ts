@@ -197,6 +197,9 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
             <button type="button" class="gf__help" (click)="openGuide('target')">что это?</button>
           </span>
           <input class="gf__input" type="number" step="any" formControlName="targetValue" />
+          @if (targetError()) {
+            <span class="gf__hint gf__hint--err">{{ targetError() }}</span>
+          }
         </label>
         <label class="gf__field gf__field--num">
           <span class="gf__label">
@@ -218,6 +221,9 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
           </span>
           <input class="gf__input" type="number" step="any" formControlName="startValue"
             [readOnly]="isEdit" />
+          @if (startError()) {
+            <span class="gf__hint gf__hint--err">{{ startError() }}</span>
+          }
           @if (isMaintain()) {
             <span class="gf__hint">Замер «в коридоре», если между нижней и верхней границей.</span>
           } @else {
@@ -419,8 +425,12 @@ export class GoalFormModalComponent {
   protected readonly attrs = signal<Set<string>>(new Set(this._data.goal?.attributes ?? []));
   /** Отправлено (для показа ошибок). */
   protected readonly submitted = signal(false);
-  /** Общая ошибка формы. */
+  /** Общая ошибка формы (для редких неполевых случаев). */
   protected readonly formError = signal<string | null>(null);
+  /** Инлайн-ошибка у поля «Цель/Верхняя граница». */
+  protected readonly targetError = signal<string | null>(null);
+  /** Инлайн-ошибка у поля «Старт/Нижняя граница». */
+  protected readonly startError = signal<string | null>(null);
 
   /** Реактивная форма. */
   protected readonly form = new FormGroup({
@@ -552,6 +562,8 @@ export class GoalFormModalComponent {
   protected save(): void {
     this.submitted.set(true);
     this.formError.set(null);
+    this.targetError.set(null);
+    this.startError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -559,24 +571,24 @@ export class GoalFormModalComponent {
     const v = this.form.getRawValue();
     const target = v.targetValue;
     if (target === null || !Number.isFinite(target)) {
-      this.formError.set('Укажи целевое значение числом.');
+      this.targetError.set('Укажи целевое значение числом.');
       return;
     }
     if (v.direction === 'accumulate' && target <= 0) {
-      this.formError.set('Для накопительной цели целевое значение должно быть больше 0.');
+      this.targetError.set('Для «накопить» должно быть больше 0.');
       return;
     }
     if (v.direction === 'maintain') {
       if (v.startValue === null || !Number.isFinite(v.startValue)) {
-        this.formError.set('Для «удерживать» укажи нижнюю границу коридора.');
+        this.startError.set('Укажи нижнюю границу коридора.');
         return;
       }
       if (v.startValue >= target) {
-        this.formError.set('Нижняя граница должна быть меньше верхней.');
+        this.startError.set('Нижняя граница должна быть меньше верхней.');
         return;
       }
     } else if (v.direction !== 'accumulate' && v.startValue !== null && target === v.startValue) {
-      this.formError.set('Цель должна отличаться от стартового замера.');
+      this.targetError.set('Цель должна отличаться от старта.');
       return;
     }
     const trimmedWhy = v.whyItMatters.trim();

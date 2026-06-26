@@ -31,6 +31,8 @@ export interface TaskView {
   deadline: string | null;
   /** Момент выполнения (ISO) или null. */
   completedAt: string | null;
+  /** Задача всплыла из вчерашнего переноса (`postponed_from_task_id != null`) — для метки «со вчера». */
+  carriedFromPostpone: boolean;
 }
 
 /**
@@ -75,5 +77,6 @@ export function toTaskView(full: TaskFull): TaskView {
     category: full.category,
     deadline: full.deadline?.toISOString() ?? null,
     completedAt: full.completedAt?.toISOString() ?? null,
+    carriedFromPostpone: full.postponedFromTaskId !== null,
   };
 }

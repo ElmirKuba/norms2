@@ -347,7 +347,7 @@ const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
 
         <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
-          <app-button type="submit" [disabled]="busy()">{{ busy() ? 'Сохранение…' : 'Сохранить' }}</app-button>
+          <app-button type="submit" [loading]="busy()">Сохранить</app-button>
         </div>
       </form>
     </div>

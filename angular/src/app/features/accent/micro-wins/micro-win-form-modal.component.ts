@@ -103,7 +103,7 @@ export interface MicroWinFormData {
         }
         <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
-          <app-button type="submit" [disabled]="form.invalid || busy()">{{ busy() ? 'Сохранение…' : 'Сохранить' }}</app-button>
+          <app-button type="submit" [disabled]="form.invalid" [loading]="busy()">Сохранить</app-button>
         </div>
       </form>
     </div>

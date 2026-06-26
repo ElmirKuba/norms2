@@ -212,6 +212,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           <p class="gd__muted">Прогресс этой цели складывается из подцелей — записывай его в них.</p>
         }
 
+        @if (!g.rollup && g.direction !== 'maintain') {
         <h3 class="gd__sub">Вехи</h3>
         @if (milestones().length > 0) {
           <ul class="gd__milestones">
@@ -239,6 +240,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           @if (msError()) {
             <span class="gd__error">{{ msError() }}</span>
           }
+        }
         }
 
         <h3 class="gd__sub">История</h3>

@@ -62,10 +62,18 @@ export class ChartComponent {
   /** Тип оси X. */
   public readonly xType = input<'datetime' | 'category' | 'numeric'>('datetime');
 
-  /** Ряд для ApexCharts. */
-  protected readonly series = computed<ApexAxisChartSeries>(() => [
-    { name: this.seriesName(), data: this.points().map((p) => ({ x: p.x, y: p.y })) },
-  ]);
+  /**
+   * Ряд для ApexCharts. Для `category`-оси — ПРОСТЫЕ y-значения (разнос по индексу; метки-даты
+   * в `xaxis.categories`), иначе точки `{x,y}` схлопнулись бы при одинаковых датах. Для
+   * datetime/numeric — пары `{x,y}`.
+   */
+  protected readonly series = computed<ApexAxisChartSeries>(() => {
+    const pts = this.points();
+    if (this.xType() === 'category') {
+      return [{ name: this.seriesName(), data: pts.map((p) => p.y) }];
+    }
+    return [{ name: this.seriesName(), data: pts.map((p) => ({ x: p.x, y: p.y })) }];
+  });
 
   /** Опции холста (зум/тулбар, прозрачный фон, наш шрифт). */
   protected readonly chart = computed<ApexChart>(() => ({
@@ -93,18 +101,27 @@ export class ChartComponent {
   /** Подписи значений на точках — выкл. */
   protected readonly dataLabels: ApexDataLabels = { enabled: false };
 
-  /** Ось X (категории/даты), цвета — из темы; даты `YYYY-MM-DD` сокращаем до `DD.MM`. */
-  protected readonly xaxis = computed<ApexXAxis>(() => ({
-    type: this.xType(),
-    labels: {
-      style: { colors: this._cssVar('--color-text-muted', '#888888') },
-      hideOverlappingLabels: true,
-      formatter: (value: string): string => this._fmtX(value),
-    },
-    axisBorder: { color: this._cssVar('--color-border', '#dddddd') },
-    axisTicks: { color: this._cssVar('--color-border', '#dddddd') },
-    tooltip: { enabled: false },
-  }));
+  /**
+   * Ось X. Для `category` — метки берём из `categories` (по индексу, могут повторяться при
+   * замерах в один день); даты `YYYY-MM-DD` сокращаем до `DD.MM`. Цвета — из темы.
+   */
+  protected readonly xaxis = computed<ApexXAxis>(() => {
+    const base: ApexXAxis = {
+      type: this.xType(),
+      labels: {
+        style: { colors: this._cssVar('--color-text-muted', '#888888') },
+        hideOverlappingLabels: true,
+        formatter: (value: string): string => this._fmtX(value),
+      },
+      axisBorder: { color: this._cssVar('--color-border', '#dddddd') },
+      axisTicks: { color: this._cssVar('--color-border', '#dddddd') },
+      tooltip: { enabled: false },
+    };
+    if (this.xType() === 'category') {
+      base.categories = this.points().map((p) => String(p.x));
+    }
+    return base;
+  });
 
   /** Ось Y с единицей. */
   protected readonly yaxis = computed<ApexYAxis>(() => ({

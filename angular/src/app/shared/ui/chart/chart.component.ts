@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input } from '@angular/core';
 import {
   NgApexchartsModule,
+  type ApexAnnotations,
   type ApexAxisChartSeries,
   type ApexChart,
   type ApexDataLabels,
@@ -41,6 +42,7 @@ export interface ChartPoint {
       [stroke]="stroke"
       [markers]="markers"
       [grid]="grid()"
+      [annotations]="annotations()"
       [tooltip]="tooltip()"
       [dataLabels]="dataLabels"
     />
@@ -61,6 +63,8 @@ export class ChartComponent {
   public readonly height = input(220);
   /** Тип оси X. */
   public readonly xType = input<'datetime' | 'category' | 'numeric'>('datetime');
+  /** Коридор (для «Удерживать»): закрашенная зона между нижней/верхней границей. null — нет. */
+  public readonly corridor = input<{ lower: number; upper: number } | null>(null);
 
   /**
    * Ряд для ApexCharts. Для `category`-оси — ПРОСТЫЕ y-значения (разнос по индексу; метки-даты
@@ -136,6 +140,39 @@ export class ChartComponent {
     borderColor: this._cssVar('--color-border', '#eeeeee'),
     strokeDashArray: 4,
   }));
+
+  /**
+   * Аннотации: для «Удерживать» — закрашенная зона-коридор между нижней/верхней границей
+   * (видно, попадают ли замеры в коридор). Без коридора — пусто.
+   */
+  protected readonly annotations = computed<ApexAnnotations>(() => {
+    const c = this.corridor();
+    if (c === null) {
+      return {};
+    }
+    const accent = this._cssVar('--color-accent', '#c2703d');
+    return {
+      yaxis: [
+        {
+          y: c.lower,
+          y2: c.upper,
+          fillColor: accent,
+          opacity: 0.1,
+          borderColor: this._cssVar('--color-border', '#dddddd'),
+          label: {
+            text: `коридор ${this._withUnit(c.lower)}–${this._withUnit(c.upper)}`,
+            position: 'left',
+            textAnchor: 'start',
+            style: {
+              color: this._cssVar('--color-text-muted', '#888888'),
+              background: 'transparent',
+              fontSize: '11px',
+            },
+          },
+        },
+      ],
+    };
+  });
 
   /** Тултип со значением + единицей. */
   protected readonly tooltip = computed<ApexTooltip>(() => ({

@@ -138,6 +138,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                 [points]="pts"
                 [unit]="g.unit"
                 [seriesName]="g.direction === 'accumulate' ? 'Накоплено' : 'Замер'"
+                [corridor]="g.direction === 'maintain' && g.startValue !== null ? { lower: g.startValue, upper: g.targetValue } : null"
                 xType="category"
                 type="line"
               />

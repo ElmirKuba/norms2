@@ -49,6 +49,12 @@ export function errorCode(error: unknown): string | null {
  */
 export function errorMessage(error: unknown, fallback = 'Что-то пошло не так. Попробуйте ещё раз.'): string {
   const env = envelope(error);
+  // VALIDATION_ERROR несёт КОНКРЕТНОЕ пользовательское сообщение от бэка (RU, готовое к показу:
+  // «впиши ради чего откажусь», «цель должна быть больше 0» и т.п.) — показываем его, а не
+  // generic из словаря (иначе mission-filter и прочие валидации теряют смысл). Generic — фолбэк.
+  if (env?.code === 'VALIDATION_ERROR' && env.message !== undefined && env.message.trim() !== '') {
+    return env.message;
+  }
   if (env?.code !== undefined) {
     const mapped = MESSAGES[env.code];
     if (mapped !== undefined) {

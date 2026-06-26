@@ -5,6 +5,7 @@ import {
   type ApexChart,
   type ApexDataLabels,
   type ApexGrid,
+  type ApexMarkers,
   type ApexStroke,
   type ApexTooltip,
   type ApexXAxis,
@@ -38,6 +39,7 @@ export interface ChartPoint {
       [yaxis]="yaxis()"
       [colors]="colors()"
       [stroke]="stroke"
+      [markers]="markers"
       [grid]="grid()"
       [tooltip]="tooltip()"
       [dataLabels]="dataLabels"
@@ -84,17 +86,24 @@ export class ChartComponent {
   /** Цвет линии — наш акцент. */
   protected readonly colors = computed<string[]>(() => [this._cssVar('--color-accent', '#c2703d')]);
 
-  /** Линия (без точек-маркеров, прямая). */
+  /** Линия (прямая). */
   protected readonly stroke: ApexStroke = { curve: 'straight', width: 2 };
+  /** Видимые точки-маркеры (чтобы при малом числе/одинаковых датах данные были видны). */
+  protected readonly markers: ApexMarkers = { size: 4, strokeWidth: 0, hover: { sizeOffset: 2 } };
   /** Подписи значений на точках — выкл. */
   protected readonly dataLabels: ApexDataLabels = { enabled: false };
 
-  /** Ось X (даты/категории), цвета — из темы. */
+  /** Ось X (категории/даты), цвета — из темы; даты `YYYY-MM-DD` сокращаем до `DD.MM`. */
   protected readonly xaxis = computed<ApexXAxis>(() => ({
     type: this.xType(),
-    labels: { style: { colors: this._cssVar('--color-text-muted', '#888888') } },
+    labels: {
+      style: { colors: this._cssVar('--color-text-muted', '#888888') },
+      hideOverlappingLabels: true,
+      formatter: (value: string): string => this._fmtX(value),
+    },
     axisBorder: { color: this._cssVar('--color-border', '#dddddd') },
     axisTicks: { color: this._cssVar('--color-border', '#dddddd') },
+    tooltip: { enabled: false },
   }));
 
   /** Ось Y с единицей. */
@@ -116,6 +125,12 @@ export class ChartComponent {
     theme: 'dark',
     y: { formatter: (v: number): string => this._withUnit(v) },
   }));
+
+  /** Подпись оси X: дату `YYYY-MM-DD` сокращает до `DD.MM`, остальное — как есть. */
+  private _fmtX(value: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    return m ? `${m[3]}.${m[2]}` : value;
+  }
 
   /** Добавляет единицу к числу (если задана). */
   private _withUnit(v: number): string {

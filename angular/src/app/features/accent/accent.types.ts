@@ -249,6 +249,8 @@ export interface TaskView {
   deadline: string | null;
   /** Момент выполнения (ISO) или null. */
   completedAt: string | null;
+  /** Задача всплыла из вчерашнего переноса — для метки «со вчера». */
+  carriedFromPostpone: boolean;
 }
 
 /**

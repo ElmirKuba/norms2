@@ -105,7 +105,12 @@ import type { HabitFormData } from './habit-form-modal.component';
                 <app-card>
                   <div class="hb__item">
                     <div class="hb__main">
-                      <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
+                      <span class="hb__name-row">
+                        <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
+                        @if (t.carriedFromPostpone) {
+                          <span class="hb__carried" title="Перенесена с прошлого дня">⤴ со вчера</span>
+                        }
+                      </span>
                       <span class="hb__meta">{{ taskMeta(t) }}</span>
                     </div>
                     <div class="hb__actions">
@@ -267,6 +272,14 @@ import type { HabitFormData } from './habit-form-modal.component';
         border: 1px solid var(--color-accent);
         border-radius: var(--radius-sm);
         padding: 0 var(--space-2);
+      }
+      .hb__carried {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+        background: var(--color-surface-2);
+        border-radius: var(--radius-sm);
+        padding: 0 var(--space-2);
+        white-space: nowrap;
       }
       .hb__menu-wrap {
         position: relative;

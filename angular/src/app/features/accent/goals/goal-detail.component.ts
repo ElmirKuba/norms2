@@ -138,7 +138,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                 [points]="pts"
                 [unit]="g.unit"
                 [seriesName]="g.direction === 'accumulate' ? 'Накоплено' : 'Замер'"
-                xType="datetime"
+                xType="category"
                 type="line"
               />
             </div>

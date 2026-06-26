@@ -144,6 +144,15 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
               />
             </div>
           </app-card>
+        } @else if (!g.rollup) {
+          <app-card>
+            <div class="gd__chart-wrap">
+              <span class="gd__chart-label">Динамика</span>
+              <p class="gd__chart-empty">
+                📈 Для графика нужно ещё чуть данных — запиши хотя бы пару замеров, и здесь появится твоя динамика. Продолжай в том же духе!
+              </p>
+            </div>
+          </app-card>
         }
 
         @if (g.fallbackVersion) {
@@ -560,6 +569,12 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .gd__chart-label {
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
+      }
+      .gd__chart-empty {
+        margin: var(--space-2) 0 0;
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        line-height: 1.5;
       }
       .gd__entry {
         display: flex;

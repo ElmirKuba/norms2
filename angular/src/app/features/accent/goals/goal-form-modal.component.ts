@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_DESCRIPTIONS, GOAL_DIRECTION_LABELS } from '../accent.types';
 import { FieldGuideModalComponent } from '../field-guide-modal.component';
@@ -18,17 +20,23 @@ import type {
 } from '../accent.types';
 
 /** Данные в модалку: если `goal` задан — режим редактирования. */
+/** Результат: payload создания (новая цель) или обновления (edit) — по полю `mode`. */
+export type GoalFormResult =
+  | { mode: 'create'; payload: GoalPayload }
+  | { mode: 'update'; payload: GoalUpdatePayload };
+
+/** Данные в модалку: если `goal` задан — режим редактирования. */
 export interface GoalFormData {
   /** Редактируемая цель (или undefined — создание). */
   goal?: GoalView;
   /** Предзаданный родитель (создать подцелью этой цели) — скрывает выбор родителя. */
   presetParentId?: string;
+  /**
+   * Сохранение: форма САМА зовёт API и закрывается лишь при успехе; при ошибке остаётся
+   * открытой с текстом ошибки — ввод не теряется (H#B2-9).
+   */
+  submit?: (result: GoalFormResult) => Observable<unknown>;
 }
-
-/** Результат: payload создания (новая цель) или обновления (edit) — по полю `mode`. */
-export type GoalFormResult =
-  | { mode: 'create'; payload: GoalPayload }
-  | { mode: 'update'; payload: GoalUpdatePayload };
 
 /** Роды цели для select. */
 const DIRECTIONS: readonly GoalDirection[] = ['accumulate', 'reach', 'reduce', 'maintain'];
@@ -300,7 +308,7 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
 
       <div class="gf__actions">
         <app-button variant="ghost" type="button" (click)="cancel()">Отмена</app-button>
-        <app-button type="submit">Сохранить</app-button>
+        <app-button type="submit" [disabled]="busy()">{{ busy() ? 'Сохранение…' : 'Сохранить' }}</app-button>
       </div>
     </form>
   `,
@@ -427,6 +435,8 @@ export class GoalFormModalComponent {
   protected readonly submitted = signal(false);
   /** Общая ошибка формы (для редких неполевых случаев). */
   protected readonly formError = signal<string | null>(null);
+  /** Идёт сохранение (форма сама зовёт API) — кнопка заблокирована, ввод сохранён (H#B2-9). */
+  protected readonly busy = signal(false);
   /** Инлайн-ошибка у поля «Цель/Верхняя граница». */
   protected readonly targetError = signal<string | null>(null);
   /** Инлайн-ошибка у поля «Старт/Нижняя граница». */
@@ -558,8 +568,11 @@ export class GoalFormModalComponent {
     });
   }
 
-  /** Сохраняет — валидирует, собирает payload, закрывает диалог. */
+  /** Сохраняет — валидирует, собирает payload, зовёт API; закрывается лишь при успехе. */
   protected save(): void {
+    if (this.busy()) {
+      return;
+    }
     this.submitted.set(true);
     this.formError.set(null);
     this.targetError.set(null);
@@ -608,7 +621,7 @@ export class GoalFormModalComponent {
         fallbackVersion: trimmedFallback === '' ? null : trimmedFallback,
         tradeoff: trimmedTradeoff === '' ? null : trimmedTradeoff,
       };
-      this._ref.close({ mode: 'update', payload });
+      this._submit({ mode: 'update', payload });
       return;
     }
     const payload: GoalPayload = {
@@ -625,7 +638,27 @@ export class GoalFormModalComponent {
       fallbackVersion: trimmedFallback === '' ? null : trimmedFallback,
       tradeoff: trimmedTradeoff === '' ? null : trimmedTradeoff,
     };
-    this._ref.close({ mode: 'create', payload });
+    this._submit({ mode: 'create', payload });
+  }
+
+  /**
+   * Зовёт сохранение через `data.submit` (форма владеет вызовом API): при успехе закрывает с
+   * результатом, при ошибке — оставляет форму открытой и показывает текст ошибки (H#B2-9). Без
+   * `submit` (страховка) — старое поведение: просто закрыть с результатом.
+   */
+  private _submit(result: GoalFormResult): void {
+    const run = this._data.submit;
+    if (run === undefined) {
+      this._ref.close(result);
+      return;
+    }
+    this.busy.set(true);
+    run(result)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: () => this._ref.close(result),
+        error: (err: unknown) => this.formError.set(errorMessage(err)),
+      });
   }
 
   /** Отмена. */

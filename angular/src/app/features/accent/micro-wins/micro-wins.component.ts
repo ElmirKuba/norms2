@@ -559,14 +559,13 @@ export class MicroWinsComponent {
   ): void {
     const ref = this._dialog.open<MicroWinFormModalComponent, MicroWinFormData, MicroWinPayload | null>(
       MicroWinFormModalComponent,
-      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data },
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { ...data, submit } },
     );
-    ref.afterClosed().subscribe((payload) => {
-      if (payload) {
-        submit(payload).subscribe({
-          next: () => this._load(),
-          error: (err: unknown) => this._modal.error('Не удалось сохранить', errorMessage(err)),
-        });
+    // Сохранение делает САМА форма (закрывается лишь при успехе); ошибка показывается внутри неё,
+    // ввод не теряется (H#B2-9). Здесь — только перезагрузка списка.
+    ref.afterClosed().subscribe((saved) => {
+      if (saved) {
+        this._load();
       }
     });
   }

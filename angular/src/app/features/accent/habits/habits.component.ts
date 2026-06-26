@@ -808,14 +808,13 @@ export class HabitsComponent {
   ): void {
     const ref = this._dialog.open<HabitFormModalComponent, HabitFormData, HabitPayload | null>(
       HabitFormModalComponent,
-      { width: MODAL_MEDIUM_WIDTH, panelClass: 'modal-flush', data },
+      { width: MODAL_MEDIUM_WIDTH, panelClass: 'modal-flush', data: { ...data, submit } },
     );
-    ref.afterClosed().subscribe((payload) => {
-      if (payload) {
-        submit(payload).subscribe({
-          next: () => this._load(),
-          error: (err: unknown) => this._modal.error('Не удалось сохранить привычку', errorMessage(err)),
-        });
+    // Сохранение делает САМА форма (закрывается лишь при успехе) → здесь только перезагрузка
+    // списка. Ошибка показывается внутри формы, ввод не теряется (H#B2-9).
+    ref.afterClosed().subscribe((saved) => {
+      if (saved) {
+        this._load();
       }
     });
   }

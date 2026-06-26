@@ -821,22 +821,20 @@ export class GoalsComponent {
 
   /** Открывает модалку формы и применяет результат (create/update) → reload. */
   private _openForm(data: GoalFormData): void {
+    // Сохранение делает САМА форма (закрывается лишь при успехе); ошибка показывается внутри неё,
+    // ввод не теряется (H#B2-9). Здесь — только сам вызов API и перезагрузка списка.
+    const submit = (result: GoalFormResult) =>
+      result.mode === 'create'
+        ? this._api.createGoal(result.payload)
+        : this._api.updateGoal(data.goal!.id, result.payload);
     const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
       GoalFormModalComponent,
-      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data },
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { ...data, submit } },
     );
     ref.afterClosed().subscribe((result) => {
-      if (!result) {
-        return;
+      if (result) {
+        this._load();
       }
-      const request =
-        result.mode === 'create'
-          ? this._api.createGoal(result.payload)
-          : this._api.updateGoal(data.goal!.id, result.payload);
-      request.subscribe({
-        next: () => { this._load(); },
-        error: (err: unknown) => this._modal.error('Не удалось сохранить цель', errorMessage(err)),
-      });
     });
   }
 

@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { errorMessage } from '../../../core/http/error-message.util';
 import { MICRO_WIN_CATEGORY_DESCRIPTIONS, MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
 import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import { FieldGuideModalComponent } from '../field-guide-modal.component';
@@ -14,6 +16,11 @@ import type { MicroWinCategory, MicroWinPayload, MicroWinView } from '../accent.
 export interface MicroWinFormData {
   /** Редактируемая микро-победа (или undefined — создание). */
   microWin?: MicroWinView;
+  /**
+   * Сохранение: форма САМА зовёт API и закрывается лишь при успехе; при ошибке остаётся
+   * открытой с текстом ошибки — ввод не теряется (H#B2-9).
+   */
+  submit?: (payload: MicroWinPayload) => Observable<unknown>;
 }
 
 /**
@@ -91,9 +98,12 @@ export interface MicroWinFormData {
 
         </div>
 
+        @if (formError(); as fe) {
+          <span class="mwf__error">{{ fe }}</span>
+        }
         <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
-          <app-button type="submit" [disabled]="form.invalid">Сохранить</app-button>
+          <app-button type="submit" [disabled]="form.invalid || busy()">{{ busy() ? 'Сохранение…' : 'Сохранить' }}</app-button>
         </div>
       </form>
     </div>
@@ -187,6 +197,10 @@ export class MicroWinFormModalComponent {
 
   /** Триггер пере-вычисления ошибок после попытки сохранить. */
   protected readonly submitted = signal(false);
+  /** Текст ошибки сохранения (сервер/сеть) — показывается в футере, ввод не теряется (H#B2-9). */
+  protected readonly formError = signal<string | null>(null);
+  /** Идёт сохранение (форма сама зовёт API) — кнопка заблокирована (H#B2-9). */
+  protected readonly busy = signal(false);
 
   /** Текущая выбранная категория (реактивно для подсказки). */
   private readonly _selectedCategory = toSignal(this.form.controls.category.valueChanges, {
@@ -228,22 +242,47 @@ export class MicroWinFormModalComponent {
     return 'Длительность: 0–300 секунд.';
   }
 
-  /** Сохраняет — закрывает диалог с payload, если форма валидна. */
+  /** Сохраняет — собирает payload, зовёт API; закрывается лишь при успехе. */
   protected save(): void {
+    if (this.busy()) {
+      return;
+    }
     this.submitted.set(true);
+    this.formError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const v = this.form.getRawValue();
     const effect = v.effect.trim();
-    this._ref.close({
+    const payload: MicroWinPayload = {
       title: v.title.trim(),
       category: v.category,
       durationSeconds: v.durationSeconds,
       energyCost: v.energyCost,
       effect: effect.length > 0 ? effect : null,
-    });
+    };
+    this._submit(payload);
+  }
+
+  /**
+   * Зовёт сохранение через `data.submit` (форма владеет вызовом API): при успехе закрывает с
+   * payload, при ошибке — оставляет форму открытой и показывает текст ошибки (H#B2-9). Без
+   * `submit` (страховка) — старое поведение: просто закрыть с payload.
+   */
+  private _submit(payload: MicroWinPayload): void {
+    const run = this._data.submit;
+    if (run === undefined) {
+      this._ref.close(payload);
+      return;
+    }
+    this.busy.set(true);
+    run(payload)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: () => this._ref.close(payload),
+        error: (err: unknown) => this.formError.set(errorMessage(err)),
+      });
   }
 
   /** Отмена — закрывает без результата. */

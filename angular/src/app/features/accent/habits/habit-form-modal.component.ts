@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_DESCRIPTIONS, HABIT_KIND_LABELS } from '../accent.types';
 import type { AccentRefItem, HabitKind, HabitPayload, HabitView, LadderPolicy } from '../accent.types';
@@ -23,6 +25,11 @@ import type { FieldGuideData } from '../field-guide-modal.component';
 export interface HabitFormData {
   /** Редактируемая привычка (или undefined — создание). */
   habit?: HabitView;
+  /**
+   * Сохранение: форма САМА зовёт API и закрывается лишь при успехе; при ошибке остаётся
+   * открытой с текстом ошибки — ввод не теряется (H#B2-9).
+   */
+  submit?: (payload: HabitPayload) => Observable<unknown>;
 }
 
 /**
@@ -340,7 +347,7 @@ const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
 
         <div class="dlg__foot">
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
-          <app-button type="submit">Сохранить</app-button>
+          <app-button type="submit" [disabled]="busy()">{{ busy() ? 'Сохранение…' : 'Сохранить' }}</app-button>
         </div>
       </form>
     </div>
@@ -515,6 +522,8 @@ export class HabitFormModalComponent {
   protected readonly submitted = signal(false);
   /** Ошибка формы (кросс-поля лесенки). */
   protected readonly formError = signal<string | null>(null);
+  /** Идёт сохранение (форма сама зовёт API) — кнопка заблокирована, ввод сохранён (H#B2-9). */
+  protected readonly busy = signal(false);
 
   /** Реактивная форма. */
   protected readonly form = new FormGroup({
@@ -649,8 +658,11 @@ export class HabitFormModalComponent {
     });
   }
 
-  /** Сохраняет — собирает payload (recurrence + ladder), закрывает диалог. */
+  /** Сохраняет — собирает payload (recurrence + ladder), зовёт API; закрывается лишь при успехе. */
   protected save(): void {
+    if (this.busy()) {
+      return;
+    }
     this.submitted.set(true);
     this.formError.set(null);
     if (this.form.invalid) {
@@ -693,7 +705,27 @@ export class HabitFormModalComponent {
       attributes: [...this.attrs()],
       minVersion: v.minVersion.trim() === '' ? null : v.minVersion.trim(),
     };
-    this._ref.close(payload);
+    this._submit(payload);
+  }
+
+  /**
+   * Зовёт сохранение через `data.submit` (форма владеет вызовом API): при успехе закрывает с
+   * payload, при ошибке — оставляет форму открытой и показывает текст ошибки (H#B2-9). Без
+   * `submit` (страховка) — старое поведение: просто закрыть с payload.
+   */
+  private _submit(payload: HabitPayload): void {
+    const run = this._data.submit;
+    if (run === undefined) {
+      this._ref.close(payload);
+      return;
+    }
+    this.busy.set(true);
+    run(payload)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: () => this._ref.close(payload),
+        error: (err: unknown) => this.formError.set(errorMessage(err)),
+      });
   }
 
   /** Отмена — закрывает без результата. */

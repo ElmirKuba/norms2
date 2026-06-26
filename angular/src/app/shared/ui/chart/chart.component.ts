@@ -160,7 +160,7 @@ export class ChartComponent {
           opacity: 0.1,
           borderColor: this._cssVar('--color-border', '#dddddd'),
           label: {
-            text: `коридор ${this._withUnit(c.lower)}–${this._withUnit(c.upper)}`,
+            text: `коридор ${c.lower}–${this._withUnit(c.upper)}`,
             position: 'left',
             textAnchor: 'start',
             style: {

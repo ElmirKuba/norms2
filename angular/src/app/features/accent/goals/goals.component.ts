@@ -13,6 +13,8 @@ import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { firstValueFrom } from 'rxjs';
+import { FocusTradeoffModalComponent } from './focus-tradeoff-modal.component';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
@@ -653,9 +655,28 @@ export class GoalsComponent {
    * мягкого порога — ненавязчивая подсказка (не блок).
    */
   protected toggleFocus(goal: GoalProgressView): void {
+    // Убрать из фокуса — без гейта.
+    if (goal.focusOrder !== null) {
+      this._runFocus(this._api.unfocusGoal(goal.id), 'Не удалось изменить фокус');
+      return;
+    }
+    // Взять в фокус — сперва mission-filter гейт (accumulate без «ради чего откажусь» → заполнить).
     this.focusBusy.set(true);
-    const req =
-      goal.focusOrder === null ? this._api.focusGoal(goal.id) : this._api.unfocusGoal(goal.id);
+    void this._ensureTradeoff(goal).then((ok) => {
+      if (!ok) {
+        this.focusBusy.set(false);
+        return;
+      }
+      this._runFocus(this._api.focusGoal(goal.id), 'Не удалось взять в фокус');
+    });
+  }
+
+  /** Выполняет focus/unfocus-запрос: reload + мягкая подсказка лимита; ошибка → модалка. */
+  private _runFocus(
+    req: ReturnType<AccentApiService['focusGoal']>,
+    errorTitle: string,
+  ): void {
+    this.focusBusy.set(true);
     req.subscribe({
       next: (res) => {
         this.focusBusy.set(false);
@@ -670,9 +691,32 @@ export class GoalsComponent {
       },
       error: (err: unknown) => {
         this.focusBusy.set(false);
-        this._modal.error('Не удалось изменить фокус', errorMessage(err));
+        this._modal.error(errorTitle, errorMessage(err));
       },
     });
+  }
+
+  /**
+   * Mission-filter гейт (ADR-0053): чтобы взять накопительную цель в фокус, нужна заполненная
+   * «ради чего откажусь». Если её нет — вместо тупиковой ошибки открываем мини-модалку заполнения
+   * (одно поле + дружеское «зачем» + название цели) и сохраняем `tradeoff`. Возвращает true, если
+   * можно фокусировать (поле было/только что заполнено), false — если отмена.
+   * @param goal Цель.
+   */
+  private async _ensureTradeoff(goal: GoalProgressView): Promise<boolean> {
+    if (goal.direction !== 'accumulate' || (goal.tradeoff !== null && goal.tradeoff.trim() !== '')) {
+      return true;
+    }
+    const ref = this._dialog.open<FocusTradeoffModalComponent, { goalTitle: string }, string | null>(
+      FocusTradeoffModalComponent,
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { goalTitle: goal.title } },
+    );
+    const tradeoff = await firstValueFrom(ref.afterClosed());
+    if (tradeoff === undefined || tradeoff === null || tradeoff.trim() === '') {
+      return false;
+    }
+    await firstValueFrom(this._api.updateGoal(goal.id, { tradeoff: tradeoff.trim() }));
+    return true;
   }
 
   /**
@@ -700,24 +744,31 @@ export class GoalsComponent {
     }
     const focusedIds = this.focusedItems().map((g) => g.id);
     focusedIds.splice(event.currentIndex, 0, goal.id);
-    this._api.focusGoal(goal.id).subscribe({
-      next: (res) => {
-        this._api.reorderGoalFocus(focusedIds).subscribe({
-          next: () => this._load(),
-          error: () => this._load(),
-        });
-        if (res.overLimit) {
-          this._modal.message(
-            'Многовато в фокусе',
-            ModalHeaderClassIcon.Info,
-            `Уже ${String(res.focusedCount)} целей в фокусе. Фокус — про единицы: что-то можно отпустить.`,
-          );
-        }
-      },
-      error: (err: unknown) => {
-        this._load();
-        this._modal.error('Не удалось взять в фокус', errorMessage(err));
-      },
+    // Mission-filter гейт (как у звезды): accumulate без «ради чего откажусь» → заполнить, потом фокус.
+    void this._ensureTradeoff(goal).then((ok) => {
+      if (!ok) {
+        this._load(); // отмена → откат оптимистики
+        return;
+      }
+      this._api.focusGoal(goal.id).subscribe({
+        next: (res) => {
+          this._api.reorderGoalFocus(focusedIds).subscribe({
+            next: () => this._load(),
+            error: () => this._load(),
+          });
+          if (res.overLimit) {
+            this._modal.message(
+              'Многовато в фокусе',
+              ModalHeaderClassIcon.Info,
+              `Уже ${String(res.focusedCount)} целей в фокусе. Фокус — про единицы: что-то можно отпустить.`,
+            );
+          }
+        },
+        error: (err: unknown) => {
+          this._load();
+          this._modal.error('Не удалось взять в фокус', errorMessage(err));
+        },
+      });
     });
   }
 

@@ -48,6 +48,11 @@ export function errorCode(error: unknown): string | null {
  * @returns Сообщение для пользователя.
  */
 export function errorMessage(error: unknown, fallback = 'Что-то пошло не так. Попробуйте ещё раз.'): string {
+  // Сеть недоступна / сервер не ответил (status 0 — нет HTTP-ответа): частый и понятный кейс,
+  // отдельный человечный текст вместо generic ([[ui-copy-plain-simple]]).
+  if (error instanceof HttpErrorResponse && error.status === 0) {
+    return 'Нет соединения — проверь сеть и попробуй ещё раз.';
+  }
   const env = envelope(error);
   // VALIDATION_ERROR несёт КОНКРЕТНОЕ пользовательское сообщение от бэка (RU, готовое к показу:
   // «впиши ради чего откажусь», «цель должна быть больше 0» и т.п.) — показываем его, а не

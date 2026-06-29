@@ -36,7 +36,10 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
       .select()
       .from(habits)
       .where(and(eq(habits.accountId, accountId), eq(habits.isActive, true)))
-      .orderBy(desc(habits.priority), asc(habits.createdAt));
+      // Тай-брейкер `id` (uuidv7 ≈ порядок вставки): drag-сортировка пишет в priority; при равных
+      // priority+created_at (напр. сид: priority=0, один batch created_at) без него порядок
+      // недетерминирован — привычка «прыгает» после edit (2.5.1). id делает порядок стабильным.
+      .orderBy(desc(habits.priority), asc(habits.createdAt), asc(habits.id));
   }
 
   /**

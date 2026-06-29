@@ -46,7 +46,9 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .select()
       .from(goals)
       .where(and(...conds))
-      .orderBy(asc(goals.position), asc(goals.createdAt));
+      // Тай-брейкер `id` (uuidv7 ≈ порядок вставки) — стабильный порядок при равных
+      // position+created_at, иначе строка «прыгает» после edit (2.5.1).
+      .orderBy(asc(goals.position), asc(goals.createdAt), asc(goals.id));
   }
 
   /**
@@ -65,7 +67,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .where(
         and(eq(goals.parentGoalId, parentGoalId), eq(goals.accountId, accountId)),
       )
-      .orderBy(asc(goals.createdAt));
+      .orderBy(asc(goals.createdAt), asc(goals.id));
   }
 
   /**

@@ -34,7 +34,10 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
       .select()
       .from(microWins)
       .where(and(eq(microWins.accountId, accountId), eq(microWins.isActive, true)))
-      .orderBy(asc(microWins.position), asc(microWins.createdAt));
+      // Тай-брейкер `id` (uuidv7 ≈ порядок вставки): без него при равных position+created_at
+      // (напр. весь стартер-пак: position=0, один batch created_at) порядок недетерминирован —
+      // строка «прыгает» после UPDATE/edit (2.5.1). id делает порядок стабильным.
+      .orderBy(asc(microWins.position), asc(microWins.createdAt), asc(microWins.id));
   }
 
   /**

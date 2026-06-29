@@ -15,6 +15,8 @@ export interface MicroWinCreateData {
   title: string;
   /** Категория нагрузки. */
   category: MicroWinCategory;
+  /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1). */
+  domainKey?: string | null;
   /** Длительность в секундах (≤300). */
   durationSeconds: number;
   /** Цена энергии 1..3. */
@@ -35,6 +37,7 @@ export interface MicroWinCreateData {
 export interface MicroWinUpdateData {
   title?: string | undefined;
   category?: MicroWinCategory | undefined;
+  domainKey?: string | null | undefined;
   durationSeconds?: number | undefined;
   energyCost?: number | undefined;
   effect?: string | null | undefined;

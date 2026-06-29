@@ -14,8 +14,10 @@ export interface MicroWinView {
   id: string;
   /** Название действия. */
   title: string;
-  /** Категория нагрузки. */
+  /** Категория нагрузки (ось модальности). */
   category: MicroWinCategory;
+  /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1) или null. */
+  domainKey: string | null;
   /** Длительность в секундах. */
   durationSeconds: number;
   /** Цена энергии 1..3. */
@@ -41,6 +43,7 @@ export function toMicroWinView(full: MicroWinFull, completedToday: boolean): Mic
     id: full.id,
     title: full.title,
     category: full.category,
+    domainKey: full.domainKey,
     durationSeconds: full.durationSeconds,
     energyCost: full.energyCost,
     effect: full.effect,

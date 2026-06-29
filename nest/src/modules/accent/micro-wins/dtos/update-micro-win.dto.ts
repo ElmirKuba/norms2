@@ -13,6 +13,7 @@ export const updateMicroWinSchema = z
   .object({
     title: z.string().min(1, 'Название обязательно.').max(120, 'Название: максимум 120.'),
     category: z.enum(MICRO_WIN_CATEGORIES),
+    domainKey: z.string().max(64).nullish(),
     durationSeconds: z
       .number()
       .int('Длительность — целое.')

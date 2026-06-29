@@ -25,6 +25,7 @@ export class CreateMicroWinUseCase {
       accountId,
       title: dto.title,
       category: dto.category,
+      domainKey: dto.domainKey ?? null,
       durationSeconds: dto.durationSeconds,
       energyCost: dto.energyCost,
       effect: dto.effect ?? null,

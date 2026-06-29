@@ -1,0 +1,1 @@
+ALTER TABLE "micro_wins" ADD COLUMN "domain_key" varchar(64);

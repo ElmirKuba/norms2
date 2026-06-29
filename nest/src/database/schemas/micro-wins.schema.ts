@@ -24,6 +24,8 @@ export const microWins = defineTableWithSchema<MicroWinFull>()(
       .references(() => accounts.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     category: varchar('category', { length: 16 }).$type<MicroWinCategory>().notNull(),
+    // Мягкий ключ сферы (опц., без FK) — общая ось со целями/привычками (ADR-0056, M#B3-1).
+    domainKey: varchar('domain_key', { length: 64 }),
     durationSeconds: integer('duration_seconds').notNull(),
     energyCost: integer('energy_cost').notNull(),
     effect: text('effect'),

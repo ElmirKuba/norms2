@@ -87,7 +87,7 @@ account (фаза 1)
 ## 6. MicroWin (микро-победа)
 
 Быстрое действие 10 сек–5 мин, доступное даже в плохой день — техническая форма «1 отжимание = победа».
-- **MicroWin:** `id`, `account_id`, `title`, `category` (`physical|mental|emotional|social|sensory|household`), `durationSeconds` (≤ ~300), `energyCost` (1..3), `effect?`, `disabledForStates?` (UserState[]), `isActive`.
+- **MicroWin:** `id`, `account_id`, `title`, `category` (ось модальности «какой сброс»: `physical|mental|emotional|social|sensory|household|digital|rest|spiritual|nature|boundaries`), `domainKey?` (опц. вторая ось — сфера жизни, общая со целями/привычками; ADR-0056, M#B3-1), `durationSeconds` (≤ ~300), `energyCost` (1..3), `effect?`, `disabledForStates?` (UserState[]), `isActive`, `position`.
 - **MicroWinLog:** `id`, `account_id`, `microWinId`, `occurred_on`, `created_at` — факт выполнения (даёт очки, идемпотентно по `(microWinId, occurred_on)` для дневного лимита).
 - Стартовый набор создаётся при онбординге; в survival/recovery система рекомендует именно MicroWin.
 

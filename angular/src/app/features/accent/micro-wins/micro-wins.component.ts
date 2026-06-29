@@ -20,6 +20,8 @@ import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import type { MicroWinPayload, MicroWinView } from '../accent.types';
 import { MicroWinFormModalComponent } from './micro-win-form-modal.component';
 import type { MicroWinFormData } from './micro-win-form-modal.component';
+import { MicroWinTimerModalComponent } from './micro-win-timer-modal.component';
+import type { MicroWinTimerData, MicroWinTimerResult } from './micro-win-timer-modal.component';
 
 /**
  * Экран микро-побед (`/accent/micro-wins`): список «сделать сейчас» с дневным фидбэком
@@ -119,6 +121,15 @@ import type { MicroWinFormData } from './micro-win-form-modal.component';
                     @if (mw.completedToday) {
                       <span class="mw__done">✓ Сегодня</span>
                     } @else {
+                      @if (mw.durationSeconds > 0) {
+                        <span class="tooltip-host" [attr.data-tooltip]="'Запустить таймер'">
+                          <app-button
+                            variant="ghost"
+                            ariaLabel="Запустить таймер"
+                            (click)="openTimer(mw)"
+                          >▶</app-button>
+                        </span>
+                      }
                       <span class="tooltip-host" [attr.data-tooltip]="'Я сегодня это сделал'">
                         <app-button
                           ariaLabel="Я сегодня это сделал"
@@ -526,6 +537,29 @@ export class MicroWinsComponent {
         this.busyId.set(null);
       },
       error: () => this.busyId.set(null),
+    });
+  }
+
+  /**
+   * Запускает таймер микро-победы (M#B3-4): фокус-модалка с обратным отсчётом; по «Готово»/
+   * подтверждению на нуле — засчитываем через обычный `complete` (дневной лог). disableClose —
+   * фокус-режим (выход через «Отмена» внутри).
+   */
+  protected openTimer(mw: MicroWinView): void {
+    const ref = this._dialog.open<
+      MicroWinTimerModalComponent,
+      MicroWinTimerData,
+      MicroWinTimerResult | null
+    >(MicroWinTimerModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      disableClose: true,
+      data: { title: mw.title, durationSeconds: mw.durationSeconds },
+    });
+    ref.afterClosed().subscribe((result) => {
+      if (result === 'done') {
+        this.complete(mw);
+      }
     });
   }
 

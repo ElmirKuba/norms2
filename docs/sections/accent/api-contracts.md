@@ -60,7 +60,7 @@
 - `POST /accent/tasks/:id/postpone` → новый Task на завтра, текущий `skipped/postponed`.
 
 ## 6. MicroWins (микро-победы)
-- `GET /accent/micro-wins` · `POST /accent/micro-wins` Body `{ title, category, domainKey?, durationSeconds, energyCost, effect?, disabledForStates? }`. `category` — ось модальности (обяз.); `domainKey` — опц. сфера жизни (вторая ось, общая со целями/привычками; ADR-0056, M#B3-1).
+- `GET /accent/micro-wins` · `POST /accent/micro-wins` Body `{ title, category, domainKey?, durationSeconds, prepSeconds?, energyCost, effect?, disabledForStates? }`. `category` — ось модальности (обяз.); `domainKey` — опц. сфера жизни (вторая ось, общая со целями/привычками; ADR-0056, M#B3-1); `prepSeconds` — опц. время на подготовку перед действием таймера (0..300; null/0 = без подготовки; M#B3-4).
 - `PATCH/DELETE /accent/micro-wins/:id`.
 - `POST /accent/micro-wins/:id/complete` Body `{ occurredOn? }` → 201 (дневной лимит на 1 MicroWin; даёт очки).
 

@@ -1,12 +1,19 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { errorMessage } from '../../../core/http/error-message.util';
 
 /** Данные модалки: название цели, ради фокуса которой просим «ради чего откажусь». */
 export interface FocusTradeoffData {
   /** Название цели (для ясности, какую именно описываем). */
   goalTitle: string;
+  /**
+   * Сохранение `tradeoff`: модалка САМА зовёт API и закрывается лишь при успехе; при ошибке
+   * остаётся открытой с текстом — ввод не теряется, focusBusy не залипает (H#B2-9 класс).
+   */
+  save?: (tradeoff: string) => Observable<unknown>;
 }
 
 /**
@@ -33,10 +40,13 @@ export interface FocusTradeoffData {
           <input class="ft__input" type="text" maxlength="280" [formControl]="control"
             placeholder="Например: меньше сериалов вечером" (keydown.enter)="save()" autofocus />
         </label>
+        @if (error(); as e) {
+          <span class="ft__error">{{ e }}</span>
+        }
       </div>
       <div class="dlg__foot">
         <app-button variant="ghost" (click)="cancel()">Не сейчас</app-button>
-        <app-button [disabled]="control.value.trim() === ''" (click)="save()">В фокус</app-button>
+        <app-button [disabled]="control.value.trim() === ''" [loading]="busy()" (click)="save()">В фокус</app-button>
       </div>
     </div>
   `,
@@ -77,6 +87,10 @@ export interface FocusTradeoffData {
       .ft__input:focus {
         border-color: var(--color-accent);
       }
+      .ft__error {
+        font-size: var(--fs-sm);
+        color: var(--color-danger);
+      }
     `,
   ],
 })
@@ -86,16 +100,37 @@ export class FocusTradeoffModalComponent {
   protected readonly data = inject<FocusTradeoffData>(MAT_DIALOG_DATA);
   /** Поле «ради чего откажусь». */
   protected readonly control = new FormControl('', { nonNullable: true });
-  /** Идёт ли что-то (резерв). */
+  /** Идёт сохранение (модалка сама зовёт API) — кнопка-спиннер, ввод сохранён. */
   protected readonly busy = signal(false);
+  /** Текст ошибки сохранения (сервер/сеть) — ввод не теряется (H#B2-9 класс). */
+  protected readonly error = signal<string | null>(null);
 
-  /** Сохраняет — закрывает с введённой строкой (если не пусто). */
+  /**
+   * Сохраняет «ради чего откажусь»: зовёт `data.save` (модалка владеет вызовом API) — при успехе
+   * закрывает с введённой строкой, при ошибке остаётся открытой с текстом (ввод сохранён, не
+   * молчит). Без `save` (страховка) — просто закрыть со строкой.
+   */
   protected save(): void {
+    if (this.busy()) {
+      return;
+    }
     const value = this.control.value.trim();
     if (value === '') {
       return;
     }
-    this._ref.close(value);
+    const run = this.data.save;
+    if (run === undefined) {
+      this._ref.close(value);
+      return;
+    }
+    this.error.set(null);
+    this.busy.set(true);
+    run(value)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: () => this._ref.close(value),
+        error: (err: unknown) => this.error.set(errorMessage(err)),
+      });
   }
 
   /** Отмена — закрывает с null. */

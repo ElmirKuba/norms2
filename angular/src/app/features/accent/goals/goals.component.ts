@@ -15,6 +15,7 @@ import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive'
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { firstValueFrom } from 'rxjs';
 import { FocusTradeoffModalComponent } from './focus-tradeoff-modal.component';
+import type { FocusTradeoffData } from './focus-tradeoff-modal.component';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
@@ -668,7 +669,7 @@ export class GoalsComponent {
         return;
       }
       this._runFocus(this._api.focusGoal(goal.id), 'Не удалось взять в фокус');
-    });
+    }).catch(() => this.focusBusy.set(false));
   }
 
   /** Выполняет focus/unfocus-запрос: reload + мягкая подсказка лимита; ошибка → модалка. */
@@ -707,16 +708,21 @@ export class GoalsComponent {
     if (goal.direction !== 'accumulate' || (goal.tradeoff !== null && goal.tradeoff.trim() !== '')) {
       return true;
     }
-    const ref = this._dialog.open<FocusTradeoffModalComponent, { goalTitle: string }, string | null>(
+    // Сохранение tradeoff делает САМА модалка (закрывается лишь при успехе); при ошибке остаётся
+    // открытой с текстом — ввод не теряется, focusBusy не залипает (H#B2-9 класс).
+    const ref = this._dialog.open<FocusTradeoffModalComponent, FocusTradeoffData, string | null>(
       FocusTradeoffModalComponent,
-      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { goalTitle: goal.title } },
+      {
+        width: MODAL_SMALL_WIDTH,
+        panelClass: 'modal-flush',
+        data: {
+          goalTitle: goal.title,
+          save: (tradeoff: string) => this._api.updateGoal(goal.id, { tradeoff }),
+        },
+      },
     );
     const tradeoff = await firstValueFrom(ref.afterClosed());
-    if (tradeoff === undefined || tradeoff === null || tradeoff.trim() === '') {
-      return false;
-    }
-    await firstValueFrom(this._api.updateGoal(goal.id, { tradeoff: tradeoff.trim() }));
-    return true;
+    return tradeoff !== undefined && tradeoff !== null && tradeoff.trim() !== '';
   }
 
   /**
@@ -769,7 +775,7 @@ export class GoalsComponent {
           this._modal.error('Не удалось взять в фокус', errorMessage(err));
         },
       });
-    });
+    }).catch(() => this._load());
   }
 
   /**

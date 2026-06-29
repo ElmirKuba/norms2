@@ -8,13 +8,21 @@ import {
   viewChild,
 } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
+import { errorMessage } from '../../../core/http/error-message.util';
 
 /** Данные, передаваемые в crop-модалку. */
 export interface AvatarCropData {
   /** Исходный файл, выбранный пользователем. */
   file: File;
+  /**
+   * Загрузка нарезанного файла: модалка САМА зовёт API и закрывается лишь при успехе; при ошибке
+   * остаётся открытой с уже обрезанным фото — пере-кропать не нужно (H#B2-9 класс). Возвращает
+   * результат загрузки (например, обновлённый аккаунт), который прилетит в `afterClosed`.
+   */
+  submit: (file: File) => Observable<unknown>;
 }
 
 /** Сторона квадратного viewport (CSS-пиксели). */
@@ -42,7 +50,7 @@ const JPEG_QUALITY = 0.9;
 })
 export class AvatarCropModalComponent {
   private readonly _ref =
-    inject<MatDialogRef<AvatarCropModalComponent, Blob | null>>(MatDialogRef);
+    inject<MatDialogRef<AvatarCropModalComponent, unknown>>(MatDialogRef);
   private readonly _data = inject<AvatarCropData>(MAT_DIALOG_DATA);
   private readonly _canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
 
@@ -54,6 +62,10 @@ export class AvatarCropModalComponent {
   protected readonly loading = signal(true);
   /** Ошибка открытия файла. */
   protected readonly error = signal<string | null>(null);
+  /** Идёт загрузка нарезанного аватара (модалка сама зовёт API) — кнопки заблокированы. */
+  protected readonly busy = signal(false);
+  /** Ошибка загрузки (сервер/сеть) — модалка остаётся открытой, кроп сохранён (H#B2-9 класс). */
+  protected readonly saveError = signal<string | null>(null);
 
   private readonly _img = new Image();
   private _naturalW = 0;
@@ -139,9 +151,9 @@ export class AvatarCropModalComponent {
     return MAX_ZOOM;
   }
 
-  /** Рендерит видимый квадрат и закрывает модалку с Blob. */
+  /** Рендерит видимый квадрат и загружает его (сама модалка); закрывается лишь при успехе. */
   protected confirm(): void {
-    if (!this._imageReady) {
+    if (!this._imageReady || this.busy()) {
       return;
     }
     const eff = this._coverScale * this.zoom();
@@ -154,13 +166,40 @@ export class AvatarCropModalComponent {
     out.height = OUTPUT;
     const ctx = out.getContext('2d');
     if (ctx === null) {
-      this._ref.close(null);
+      this.saveError.set('Не удалось подготовить изображение.');
       return;
     }
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, OUTPUT, OUTPUT);
     ctx.drawImage(this._img, sx, sy, sSize, sSize, 0, 0, OUTPUT, OUTPUT);
-    out.toBlob((blob) => this._ref.close(blob), 'image/jpeg', JPEG_QUALITY);
+    this.saveError.set(null);
+    this.busy.set(true);
+    out.toBlob(
+      (blob) => {
+        if (blob === null) {
+          this.busy.set(false);
+          this.saveError.set('Не удалось подготовить изображение.');
+          return;
+        }
+        this._upload(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+      },
+      'image/jpeg',
+      JPEG_QUALITY,
+    );
+  }
+
+  /**
+   * Загружает нарезанный файл через `data.submit`: при успехе закрывает с результатом, при ошибке —
+   * оставляет модалку открытой с уже обрезанным фото и показывает текст (H#B2-9 класс).
+   */
+  private _upload(file: File): void {
+    this._data
+      .submit(file)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (result) => this._ref.close(result),
+        error: (err: unknown) => this.saveError.set(errorMessage(err)),
+      });
   }
 
   /** Закрывает модалку без результата. */

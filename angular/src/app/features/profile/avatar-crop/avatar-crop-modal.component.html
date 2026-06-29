@@ -36,8 +36,12 @@
     <p class="crop__hint">Перетаскивайте изображение, ползунком меняйте масштаб.</p>
   }
 
+  @if (saveError(); as se) {
+    <p class="crop__error">{{ se }}</p>
+  }
+
   <div class="crop__actions">
-    <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
-    <app-button (click)="confirm()" [disabled]="loading() || error() !== null">Сохранить</app-button>
+    <app-button variant="ghost" [disabled]="busy()" (click)="cancel()">Отмена</app-button>
+    <app-button (click)="confirm()" [disabled]="loading() || error() !== null" [loading]="busy()">Сохранить</app-button>
   </div>
 </div>

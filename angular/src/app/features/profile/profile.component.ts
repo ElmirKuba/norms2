@@ -132,11 +132,12 @@ export class ProfileComponent {
       this.avatarError.set('Нужен файл изображения (JPEG, PNG или WEBP).');
       return;
     }
-    const blob = await this._avatarCrop.open(file);
-    if (blob === null) {
-      return;
+    // Кроп + загрузку делает сама модалка (закрывается лишь при успехе; при ошибке остаётся
+    // открытой с обрезанным фото — H#B2-9 класс). Сюда прилетает обновлённый аккаунт или null.
+    const account = await this._avatarCrop.open(file, (cropped) => this._accountApi.uploadAvatar(cropped));
+    if (account !== null) {
+      this.authStore.setAccount(account);
     }
-    this._uploadAvatar(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
   }
 
   /** Удаляет аватар (с подтверждением). */
@@ -165,21 +166,6 @@ export class ProfileComponent {
     });
   }
 
-  /** Отправляет нарезанный аватар на бэк → обновляет стор. */
-  private _uploadAvatar(file: File): void {
-    this.avatarBusy.set(true);
-    this.avatarError.set(null);
-    this._accountApi.uploadAvatar(file).subscribe({
-      next: (account) => {
-        this.authStore.setAccount(account);
-        this.avatarBusy.set(false);
-      },
-      error: (error: unknown) => {
-        this.avatarError.set(errorMessage(error));
-        this.avatarBusy.set(false);
-      },
-    });
-  }
 
   /** Первая буква псевдонима (для плейсхолдера аватара). */
   protected initial(alias: string): string {

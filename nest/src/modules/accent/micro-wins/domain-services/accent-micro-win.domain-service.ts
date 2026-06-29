@@ -116,6 +116,9 @@ export class AccentMicroWinDomainService {
     if (patch.domainKey !== undefined) {
       clean.domainKey = patch.domainKey;
     }
+    if (patch.prepSeconds !== undefined) {
+      clean.prepSeconds = patch.prepSeconds;
+    }
     if (patch.durationSeconds !== undefined) {
       this._validateDuration(patch.durationSeconds);
       clean.durationSeconds = patch.durationSeconds;

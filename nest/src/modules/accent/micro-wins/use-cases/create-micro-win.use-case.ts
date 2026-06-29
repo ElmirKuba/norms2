@@ -27,6 +27,7 @@ export class CreateMicroWinUseCase {
       category: dto.category,
       domainKey: dto.domainKey ?? null,
       durationSeconds: dto.durationSeconds,
+      prepSeconds: dto.prepSeconds ?? null,
       energyCost: dto.energyCost,
       effect: dto.effect ?? null,
       disabledForStates: dto.disabledForStates ?? null,

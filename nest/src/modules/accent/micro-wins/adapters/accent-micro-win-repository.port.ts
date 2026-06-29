@@ -17,8 +17,10 @@ export interface MicroWinCreateData {
   category: MicroWinCategory;
   /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1). */
   domainKey?: string | null;
-  /** Длительность в секундах (≤300). */
+  /** Длительность действия в секундах (≤300). */
   durationSeconds: number;
+  /** Время на подготовку в секундах (опц.; null = без подготовки). */
+  prepSeconds?: number | null;
   /** Цена энергии 1..3. */
   energyCost: number;
   /** Ожидаемый эффект (опц.). */
@@ -39,6 +41,7 @@ export interface MicroWinUpdateData {
   category?: MicroWinCategory | undefined;
   domainKey?: string | null | undefined;
   durationSeconds?: number | undefined;
+  prepSeconds?: number | null | undefined;
   energyCost?: number | undefined;
   effect?: string | null | undefined;
   disabledForStates?: UserState[] | null | undefined;

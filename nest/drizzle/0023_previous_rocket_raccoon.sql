@@ -1,0 +1,1 @@
+ALTER TABLE "micro_wins" ADD COLUMN "prep_seconds" integer;

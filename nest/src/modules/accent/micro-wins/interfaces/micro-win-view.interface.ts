@@ -18,8 +18,10 @@ export interface MicroWinView {
   category: MicroWinCategory;
   /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1) или null. */
   domainKey: string | null;
-  /** Длительность в секундах. */
+  /** Длительность действия в секундах. */
   durationSeconds: number;
+  /** Время на подготовку в секундах (опц.; null = без подготовки). */
+  prepSeconds: number | null;
   /** Цена энергии 1..3. */
   energyCost: number;
   /** Ожидаемый эффект или null. */
@@ -45,6 +47,7 @@ export function toMicroWinView(full: MicroWinFull, completedToday: boolean): Mic
     category: full.category,
     domainKey: full.domainKey,
     durationSeconds: full.durationSeconds,
+    prepSeconds: full.prepSeconds,
     energyCost: full.energyCost,
     effect: full.effect,
     disabledForStates: full.disabledForStates,

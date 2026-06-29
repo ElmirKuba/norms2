@@ -27,6 +27,8 @@ export const microWins = defineTableWithSchema<MicroWinFull>()(
     // Мягкий ключ сферы (опц., без FK) — общая ось со целями/привычками (ADR-0056, M#B3-1).
     domainKey: varchar('domain_key', { length: 64 }),
     durationSeconds: integer('duration_seconds').notNull(),
+    // Время на подготовку перед действием (M#B3-4, опц.): null = без подготовки (сразу действие).
+    prepSeconds: integer('prep_seconds'),
     energyCost: integer('energy_cost').notNull(),
     effect: text('effect'),
     disabledForStates: jsonb('disabled_for_states').$type<UserState[]>(),

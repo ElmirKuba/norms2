@@ -19,6 +19,12 @@ export const updateMicroWinSchema = z
       .int('Длительность — целое.')
       .min(0, 'Длительность ≥ 0.')
       .max(300, 'Длительность: максимум 300 секунд.'),
+    prepSeconds: z
+      .number()
+      .int('Время на подготовку — целое.')
+      .min(0, 'Время на подготовку ≥ 0.')
+      .max(300, 'Время на подготовку: максимум 300 секунд.')
+      .nullish(),
     energyCost: z.number().int('Цена энергии — целое.').min(1, 'Цена энергии ≥ 1.').max(3, 'Цена энергии ≤ 3.'),
     effect: z.string().max(280, 'Эффект: максимум 280.').nullish(),
     disabledForStates: z.array(z.enum(USER_STATES)).nullish(),

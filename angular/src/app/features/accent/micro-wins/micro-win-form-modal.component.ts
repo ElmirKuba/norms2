@@ -7,10 +7,11 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { MICRO_WIN_CATEGORY_DESCRIPTIONS, MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
+import { AccentApiService } from '../services/accent-api.service';
 import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import { FieldGuideModalComponent } from '../field-guide-modal.component';
 import type { FieldGuideData } from '../field-guide-modal.component';
-import type { MicroWinCategory, MicroWinPayload, MicroWinView } from '../accent.types';
+import type { AccentRefItem, MicroWinCategory, MicroWinPayload, MicroWinView } from '../accent.types';
 
 /** Данные в модалку: если `microWin` задан — режим редактирования (префилл). */
 export interface MicroWinFormData {
@@ -64,6 +65,19 @@ export interface MicroWinFormData {
           </select>
           <span class="mwf__hint">{{ categoryHint() }}</span>
         </label>
+
+        @if (domains().length > 0) {
+          <label class="mwf__field">
+            <span class="mwf__label">Сфера <span class="mwf__opt">(опц.)</span></span>
+            <select class="mwf__input" formControlName="domainKey">
+              <option [ngValue]="null">— не выбрана —</option>
+              @for (dm of domains(); track dm.key) {
+                <option [ngValue]="dm.key">{{ dm.title }}</option>
+              }
+            </select>
+            <span class="mwf__hint">Какую область жизни это питает — как у целей и привычек (необязательно).</span>
+          </label>
+        }
 
         <label class="mwf__field">
           <span class="mwf__label">
@@ -169,6 +183,10 @@ export class MicroWinFormModalComponent {
     inject<MatDialogRef<MicroWinFormModalComponent, MicroWinPayload | null>>(MatDialogRef);
   private readonly _data = inject<MicroWinFormData>(MAT_DIALOG_DATA);
   private readonly _dialog = inject(MatDialog);
+  private readonly _api = inject(AccentApiService);
+
+  /** Сферы жизни (опц. ось M#B3-1) — справочник `accent_domains`, общий со целями/привычками. */
+  protected readonly domains = signal<AccentRefItem[]>([]);
 
   /** Режим редактирования (иначе создание). */
   protected readonly isEdit = this._data.microWin !== undefined;
@@ -184,6 +202,7 @@ export class MicroWinFormModalComponent {
       validators: [Validators.required, Validators.maxLength(120)],
     }),
     category: new FormControl<MicroWinCategory>('physical', { nonNullable: true }),
+    domainKey: new FormControl<string | null>(null),
     durationSeconds: new FormControl(60, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0), Validators.max(300)],
@@ -212,11 +231,13 @@ export class MicroWinFormModalComponent {
   );
 
   public constructor() {
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     const mw = this._data.microWin;
     if (mw !== undefined) {
       this.form.setValue({
         title: mw.title,
         category: mw.category,
+        domainKey: mw.domainKey,
         durationSeconds: mw.durationSeconds,
         energyCost: mw.energyCost,
         effect: mw.effect ?? '',
@@ -258,6 +279,7 @@ export class MicroWinFormModalComponent {
     const payload: MicroWinPayload = {
       title: v.title.trim(),
       category: v.category,
+      domainKey: v.domainKey ?? null,
       durationSeconds: v.durationSeconds,
       energyCost: v.energyCost,
       effect: effect.length > 0 ? effect : null,

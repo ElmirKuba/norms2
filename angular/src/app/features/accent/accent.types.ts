@@ -35,8 +35,10 @@ export interface MicroWinView {
   id: string;
   /** Название действия. */
   title: string;
-  /** Категория нагрузки. */
+  /** Категория нагрузки (ось модальности «какой сброс»). */
   category: MicroWinCategory;
+  /** Сфера жизни (мягкий ключ, опц.; ось «какую сферу питает», M#B3-1) или null. */
+  domainKey: string | null;
   /** Длительность в секундах. */
   durationSeconds: number;
   /** Цена энергии 1..3. */
@@ -55,8 +57,10 @@ export interface MicroWinView {
 export interface MicroWinPayload {
   /** Название действия. */
   title: string;
-  /** Категория нагрузки. */
+  /** Категория нагрузки (ось модальности). */
   category: MicroWinCategory;
+  /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1). */
+  domainKey?: string | null;
   /** Длительность в секундах (0..300). */
   durationSeconds: number;
   /** Цена энергии 1..3. */
@@ -75,7 +79,7 @@ export const MICRO_WIN_CATEGORY_LABELS: Readonly<Record<MicroWinCategory, string
   household: '🧹 Быт',
   digital: '📵 Цифровое',
   rest: '😴 Отдых',
-  spiritual: '🌱 Дух / смысл',
+  spiritual: '🧘 Тишина / смысл',
   nature: '🌿 Природа',
   boundaries: '🛡 Границы',
 };
@@ -90,7 +94,7 @@ export const MICRO_WIN_CATEGORY_DESCRIPTIONS: Readonly<Record<MicroWinCategory, 
   household: 'Среда вокруг — порядок снаружи = внутри',
   digital: 'Гигиена внимания — против залипания в ленте',
   rest: 'Отдых — разрешить паузу тоже победа',
-  spiritual: 'Дух и смысл — благодарность, «зачем»',
+  spiritual: 'Тишина и смысл — пауза, благодарность, «зачем» (это вид действия, не сфера жизни)',
   nature: 'Природа — свет, воздух, небо',
   boundaries: 'Сказать «нет» лишнему — сберечь силы и время',
 };

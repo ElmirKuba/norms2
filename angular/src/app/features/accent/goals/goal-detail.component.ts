@@ -924,18 +924,19 @@ export class GoalDetailComponent {
     });
   }
 
-  /** Открывает форму редактирования; на сохранении обновляет и перезагружает. */
+  /** Открывает форму редактирования; форма сама сохраняет (H#B2-9), здесь — перезагрузка при успехе. */
   protected openEdit(goal: GoalProgressView): void {
+    const submit = (result: GoalFormResult) =>
+      result.mode === 'create'
+        ? this._api.createGoal(result.payload)
+        : this._api.updateGoal(this._id, result.payload);
     const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
       GoalFormModalComponent,
-      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { goal } },
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { goal, submit } },
     );
     ref.afterClosed().subscribe((result) => {
-      if (result?.mode === 'update') {
-        this._api.updateGoal(this._id, result.payload).subscribe({
-          next: () => { this._load(); },
-          error: (err: unknown) => { this._modal.error('Не удалось сохранить цель', errorMessage(err)); },
-        });
+      if (result) {
+        this._load();
       }
     });
   }
@@ -1003,16 +1004,18 @@ export class GoalDetailComponent {
       );
       return;
     }
+    const submit = (result: GoalFormResult) =>
+      result.mode === 'create'
+        ? this._api.createGoal(result.payload)
+        : this._api.updateGoal(this._id, result.payload);
     const ref = this._dialog.open<GoalFormModalComponent, GoalFormData, GoalFormResult | null>(
       GoalFormModalComponent,
-      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { presetParentId: this._id } },
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush', data: { presetParentId: this._id, submit } },
     );
+    // Форма сама создаёт подцель (закрывается лишь при успехе; ошибка внутри, ввод не теряется — H#B2-9).
     ref.afterClosed().subscribe((result) => {
-      if (result?.mode === 'create') {
-        this._api.createGoal(result.payload).subscribe({
-          next: () => { this._load(); },
-          error: (err: unknown) => { this._modal.error('Не удалось создать подцель', errorMessage(err)); },
-        });
+      if (result) {
+        this._load();
       }
     });
   }

@@ -42,4 +42,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.4 — «Акцент»: Привычки и адаптивная лесенка',
     contentFile: 'notifications/release-2.4.19.md',
   },
+  {
+    key: 'release-2.5.0',
+    title: 'Нормисы 2.5 — «Акцент»: Цели, графики и фокус',
+    contentFile: 'notifications/release-2.5.0.md',
+  },
 ];

@@ -250,21 +250,42 @@ export class MicroWinTimerModalComponent implements OnDestroy {
     }
   }
 
-  /** Сигнал «финиш» — мягкий двухнотный, восходящий (время действия вышло). */
+  // Ноты (Гц): мажорная гамма для торжественных арпеджио.
+  private static readonly C5 = 523.25;
+  private static readonly E5 = 659.25;
+  private static readonly G5 = 783.99;
+  private static readonly C6 = 1046.5;
+  private static readonly E6 = 1318.51;
+
+  /** Сигнал «финиш» — победная фанфара «да-да-да-да-ДАМ»: восходящий бег + мощный держащийся аккорд. */
   private _chime(): void {
+    const T = MicroWinTimerModalComponent;
     this._tones([
-      { freq: 660, start: 0, dur: 0.35 },
-      { freq: 880, start: 0.18, dur: 0.4 },
+      { freq: T.C5, start: 0.0, dur: 0.16, gain: 0.95 }, // да
+      { freq: T.E5, start: 0.14, dur: 0.16, gain: 0.95 }, // да
+      { freq: T.G5, start: 0.28, dur: 0.16, gain: 0.97 }, // да
+      { freq: T.C6, start: 0.42, dur: 0.16, gain: 1.0 }, // да
+      { freq: T.E6, start: 0.58, dur: 1.1, gain: 0.9 }, // ДАМ! (верх, держится)
+      { freq: T.C6, start: 0.58, dur: 1.1, gain: 0.6 }, // полнота аккорда
     ]);
   }
 
-  /** Сигнал «старт» — одиночная ясная нота (подготовка кончилась, начинай действие). */
+  /** Сигнал «старт» — короткое бодрое «та-ДАМ» (подготовка кончилась, начинай). */
   private _startChime(): void {
-    this._tones([{ freq: 990, start: 0, dur: 0.45 }]);
+    const T = MicroWinTimerModalComponent;
+    this._tones([
+      { freq: T.G5, start: 0.0, dur: 0.13, gain: 0.9 }, // та
+      { freq: T.C6, start: 0.12, dur: 0.65, gain: 1.0 }, // ДАМ (держится)
+    ]);
   }
 
-  /** Проигрывает набор синус-нот через Web Audio (без аудио-файла). */
-  private _tones(notes: readonly { freq: number; start: number; dur: number }[]): void {
+  /**
+   * Проигрывает набор нот через Web Audio (без аудио-файла) колокольным тембром: основная синус-нота
+   * + тихая октавная гармоника + мягкая bell-огибающая (быстрая атака, плавный спад). Выход — на
+   * полную шкалу (громкость = системная громкость устройства, не приглушаем своим гейном); лимитер
+   * (компрессор) ловит наложения аккорда, чтобы было громко, но без хрипа.
+   */
+  private _tones(notes: readonly { freq: number; start: number; dur: number; gain: number }[]): void {
     try {
       const Ctx =
         window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -272,21 +293,48 @@ export class MicroWinTimerModalComponent implements OnDestroy {
         return;
       }
       const ctx = new Ctx();
+      // Лимитер: позволяет гнать ноты на полную шкалу (ride системной громкости) без клиппинга.
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -2;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.12;
+      const master = ctx.createGain();
+      master.gain.value = 1.0;
+      master.connect(limiter).connect(ctx.destination);
       let end = 0;
+      // Нота = фундамент + 2-я и 3-я гармоники (плотный спектр) с сустейном (держим, не роняем
+      // сразу) → высокий RMS → воспринимается громко, как музыка/видео, а не тонкий «пик».
+      const partials: readonly (readonly [number, number])[] = [
+        [1, 1.0],
+        [2, 0.5],
+        [3, 0.28],
+      ];
+      const voice = (freq: number, at: number, dur: number, peak: number): void => {
+        const t0 = ctx.currentTime + at;
+        const rel = Math.min(0.1, dur * 0.4);
+        const sustainEnd = Math.max(t0 + 0.02, t0 + dur - rel);
+        for (const [mult, rel0] of partials) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq * mult;
+          const pk = peak * rel0;
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(pk, t0 + 0.008); // атака
+          gain.gain.setValueAtTime(pk, sustainEnd); // сустейн-плато
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); // релиз
+          osc.connect(gain).connect(master);
+          osc.start(t0);
+          osc.stop(t0 + dur);
+        }
+      };
       for (const n of notes) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = n.freq;
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.start);
-        gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + n.start + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.start + n.dur);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(ctx.currentTime + n.start);
-        osc.stop(ctx.currentTime + n.start + n.dur);
+        voice(n.freq, n.start, n.dur, n.gain);
         end = Math.max(end, n.start + n.dur);
       }
-      setTimeout(() => void ctx.close(), (end + 0.2) * 1000);
+      setTimeout(() => void ctx.close(), (end + 0.3) * 1000);
     } catch {
       /* звук не критичен */
     }

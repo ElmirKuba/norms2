@@ -6,8 +6,10 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 export interface MicroWinTimerData {
   /** Название действия (заголовок фокус-экрана). */
   title: string;
-  /** Длительность в секундах (> 0). */
+  /** Длительность действия в секундах (> 0). */
   durationSeconds: number;
+  /** Время на подготовку в секундах (опц.; null/0 = без подготовки, сразу действие). */
+  prepSeconds: number | null;
 }
 
 /** Результат: `done` — засчитать выполнение, иначе `null`/`cancel` — без записи. */
@@ -33,7 +35,15 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
 
       <h2 class="tm__title">{{ data.title }}</h2>
 
-      @if (phase() === 'running') {
+      @if (phase() === 'prep') {
+        <p class="tm__phase">Подготовка — приготовься 🧍</p>
+        <div class="tm__clock" role="timer" [attr.aria-label]="'Подготовка: ' + clock()">{{ clock() }}</div>
+        <div class="tm__bar"><span class="tm__bar-fill" [style.width.%]="progress()"></span></div>
+        <div class="tm__foot">
+          <app-button (click)="skipPrep()">Начать сейчас</app-button>
+          <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
+        </div>
+      } @else if (phase() === 'running') {
         <div class="tm__clock" role="timer" [attr.aria-label]="'Осталось ' + clock()">{{ clock() }}</div>
         <div class="tm__bar"><span class="tm__bar-fill" [style.width.%]="progress()"></span></div>
         <div class="tm__foot">
@@ -81,6 +91,11 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
         font-size: var(--fs-md);
         color: var(--color-text);
       }
+      .tm__phase {
+        margin: 0;
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
       .tm__clock {
         font-size: 4rem;
         font-weight: 700;
@@ -124,11 +139,13 @@ export class MicroWinTimerModalComponent implements OnDestroy {
   /** Данные таймера. */
   protected readonly data = inject<MicroWinTimerData>(MAT_DIALOG_DATA);
 
-  /** Оставшиеся секунды. */
-  protected readonly remaining = signal(this.data.durationSeconds);
-  /** Фаза: идёт отсчёт или спрашиваем «Сделал?». */
-  protected readonly phase = signal<'running' | 'ask'>('running');
-  /** Звук на нуле (по умолчанию вкл; запоминается в localStorage). */
+  /** Есть ли фаза подготовки. */
+  private readonly _hasPrep = (this.data.prepSeconds ?? 0) > 0;
+  /** Оставшиеся секунды (стартуем с подготовки, если она есть, иначе с длительности). */
+  protected readonly remaining = signal(this._hasPrep ? (this.data.prepSeconds ?? 0) : this.data.durationSeconds);
+  /** Фаза: подготовка / действие / спрашиваем «Сделал?». */
+  protected readonly phase = signal<'prep' | 'running' | 'ask'>(this._hasPrep ? 'prep' : 'running');
+  /** Звук (по умолчанию вкл; запоминается в localStorage). */
   protected readonly soundOn = signal(this._readSound());
 
   /** Отсчёт в формате m:ss. */
@@ -136,9 +153,9 @@ export class MicroWinTimerModalComponent implements OnDestroy {
     const s = Math.max(0, this.remaining());
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   });
-  /** Доля пройденного времени (для полосы). */
+  /** Доля пройденного времени текущей фазы (для полосы). */
   protected readonly progress = computed(() => {
-    const total = this.data.durationSeconds;
+    const total = this.phase() === 'prep' ? (this.data.prepSeconds ?? 0) : this.data.durationSeconds;
     return total > 0 ? ((total - this.remaining()) / total) * 100 : 100;
   });
 
@@ -152,11 +169,19 @@ export class MicroWinTimerModalComponent implements OnDestroy {
     this._stop();
   }
 
-  /** Тик раз в секунду: уменьшает остаток; на нуле — переход в «Сделал?» + звук. */
+  /**
+   * Тик раз в секунду. На нуле подготовки — звук «старт» и переход к отсчёту действия (интервал не
+   * останавливаем). На нуле действия — звук «финиш» и переход к «Сделал?».
+   */
   private _tick(): void {
     const next = this.remaining() - 1;
     this.remaining.set(next);
-    if (next <= 0) {
+    if (next > 0) {
+      return;
+    }
+    if (this.phase() === 'prep') {
+      this._beginAction();
+    } else {
       this._stop();
       this.remaining.set(0);
       this.phase.set('ask');
@@ -164,6 +189,20 @@ export class MicroWinTimerModalComponent implements OnDestroy {
         this._chime();
       }
     }
+  }
+
+  /** Завершает подготовку → отсчёт действия: звук «старт», сброс остатка на длительность. */
+  private _beginAction(): void {
+    if (this.soundOn()) {
+      this._startChime();
+    }
+    this.phase.set('running');
+    this.remaining.set(this.data.durationSeconds);
+  }
+
+  /** Пропустить подготовку — сразу к действию. */
+  protected skipPrep(): void {
+    this._beginAction();
   }
 
   /** Закончил раньше срока — выполнил → засчитываем. */
@@ -211,8 +250,21 @@ export class MicroWinTimerModalComponent implements OnDestroy {
     }
   }
 
-  /** Мягкий двухнотный сигнал через Web Audio (без аудио-файла). */
+  /** Сигнал «финиш» — мягкий двухнотный, восходящий (время действия вышло). */
   private _chime(): void {
+    this._tones([
+      { freq: 660, start: 0, dur: 0.35 },
+      { freq: 880, start: 0.18, dur: 0.4 },
+    ]);
+  }
+
+  /** Сигнал «старт» — одиночная ясная нота (подготовка кончилась, начинай действие). */
+  private _startChime(): void {
+    this._tones([{ freq: 990, start: 0, dur: 0.45 }]);
+  }
+
+  /** Проигрывает набор синус-нот через Web Audio (без аудио-файла). */
+  private _tones(notes: readonly { freq: number; start: number; dur: number }[]): void {
     try {
       const Ctx =
         window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -220,21 +272,21 @@ export class MicroWinTimerModalComponent implements OnDestroy {
         return;
       }
       const ctx = new Ctx();
-      const play = (freq: number, start: number, dur: number): void => {
+      let end = 0;
+      for (const n of notes) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + start + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+        osc.frequency.value = n.freq;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.start);
+        gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + n.start + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.start + n.dur);
         osc.connect(gain).connect(ctx.destination);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + dur);
-      };
-      play(660, 0, 0.35);
-      play(880, 0.18, 0.4);
-      setTimeout(() => void ctx.close(), 900);
+        osc.start(ctx.currentTime + n.start);
+        osc.stop(ctx.currentTime + n.start + n.dur);
+        end = Math.max(end, n.start + n.dur);
+      }
+      setTimeout(() => void ctx.close(), (end + 0.2) * 1000);
     } catch {
       /* звук не критичен */
     }

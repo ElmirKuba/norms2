@@ -90,6 +90,21 @@ export interface MicroWinFormData {
           }
         </label>
 
+        <div class="mwf__field">
+          <span class="mwf__check">
+            <label class="mwf__check-lbl">
+              <input type="checkbox" [checked]="needsPrep()" (change)="toggleNeedsPrep()" />
+              Нужно время на подготовку
+            </label>
+            <button type="button" class="mwf__help" (click)="openPrepGuide()">что это?</button>
+          </span>
+          @if (needsPrep()) {
+            <input class="mwf__input" type="number" min="0" max="300" formControlName="prepSeconds"
+              placeholder="например, 10" />
+            <span class="mwf__hint">Отсчёт перед действием: успеть отложить телефон и приготовиться.</span>
+          }
+        </div>
+
         <label class="mwf__field">
           <span class="mwf__label">
             Цена энергии
@@ -137,6 +152,19 @@ export interface MicroWinFormData {
       .mwf__label {
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
+      }
+      .mwf__check {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .mwf__check-lbl {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--fs-sm);
+        color: var(--color-text);
+        cursor: pointer;
       }
       .mwf__req {
         color: var(--color-danger);
@@ -207,6 +235,10 @@ export class MicroWinFormModalComponent {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0), Validators.max(300)],
     }),
+    prepSeconds: new FormControl<number>(10, {
+      nonNullable: true,
+      validators: [Validators.min(0), Validators.max(300)],
+    }),
     energyCost: new FormControl(1, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(1), Validators.max(3)],
@@ -220,6 +252,11 @@ export class MicroWinFormModalComponent {
   protected readonly formError = signal<string | null>(null);
   /** Идёт сохранение (форма сама зовёт API) — кнопка заблокирована (H#B2-9). */
   protected readonly busy = signal(false);
+  /**
+   * Нужно ли время на подготовку (M#B3-4) — UI-галочка, в таблицу НЕ пишется. Вкл → виден input
+   * `prepSeconds`; выкл → при сохранении `prepSeconds = null` (без подготовки).
+   */
+  protected readonly needsPrep = signal(false);
 
   /** Текущая выбранная категория (реактивно для подсказки). */
   private readonly _selectedCategory = toSignal(this.form.controls.category.valueChanges, {
@@ -234,15 +271,37 @@ export class MicroWinFormModalComponent {
     this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     const mw = this._data.microWin;
     if (mw !== undefined) {
+      this.needsPrep.set(mw.prepSeconds !== null && mw.prepSeconds > 0);
       this.form.setValue({
         title: mw.title,
         category: mw.category,
         domainKey: mw.domainKey,
         durationSeconds: mw.durationSeconds,
+        prepSeconds: mw.prepSeconds ?? 10,
         energyCost: mw.energyCost,
         effect: mw.effect ?? '',
       });
     }
+  }
+
+  /** Переключает «нужна подготовка» (UI-галочка). */
+  protected toggleNeedsPrep(): void {
+    this.needsPrep.update((v) => !v);
+  }
+
+  /** Открывает гид «что это?» по времени на подготовку. */
+  protected openPrepGuide(): void {
+    this._dialog.open<FieldGuideModalComponent, FieldGuideData>(FieldGuideModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      data: {
+        title: 'Время на подготовку',
+        paragraphs: [
+          'Отсчёт ПЕРЕД самим действием — чтобы успеть приготовиться: нажать «старт», отложить телефон, лечь на пол, встать в планку.',
+          'Когда подготовка закончится — прозвучит сигнал «начали», и пойдёт отсчёт самого действия. Если подготовка не нужна — оставь галочку снятой, действие начнётся сразу.',
+        ],
+      },
+    });
   }
 
   /** Текст ошибки названия (после касания/submit). */
@@ -281,6 +340,7 @@ export class MicroWinFormModalComponent {
       category: v.category,
       domainKey: v.domainKey ?? null,
       durationSeconds: v.durationSeconds,
+      prepSeconds: this.needsPrep() ? v.prepSeconds : null,
       energyCost: v.energyCost,
       effect: effect.length > 0 ? effect : null,
     };

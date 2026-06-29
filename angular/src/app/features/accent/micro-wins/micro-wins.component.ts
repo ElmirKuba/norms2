@@ -554,7 +554,7 @@ export class MicroWinsComponent {
       width: MODAL_SMALL_WIDTH,
       panelClass: 'modal-flush',
       disableClose: true,
-      data: { title: mw.title, durationSeconds: mw.durationSeconds },
+      data: { title: mw.title, durationSeconds: mw.durationSeconds, prepSeconds: mw.prepSeconds },
     });
     ref.afterClosed().subscribe((result) => {
       if (result === 'done') {

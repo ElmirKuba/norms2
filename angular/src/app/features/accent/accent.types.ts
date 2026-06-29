@@ -39,8 +39,10 @@ export interface MicroWinView {
   category: MicroWinCategory;
   /** Сфера жизни (мягкий ключ, опц.; ось «какую сферу питает», M#B3-1) или null. */
   domainKey: string | null;
-  /** Длительность в секундах. */
+  /** Длительность действия в секундах. */
   durationSeconds: number;
+  /** Время на подготовку в секундах (опц., M#B3-4) или null = без подготовки. */
+  prepSeconds: number | null;
   /** Цена энергии 1..3. */
   energyCost: number;
   /** Ожидаемый эффект или null. */
@@ -61,8 +63,10 @@ export interface MicroWinPayload {
   category: MicroWinCategory;
   /** Сфера жизни (мягкий ключ, опц.; ось M#B3-1). */
   domainKey?: string | null;
-  /** Длительность в секундах (0..300). */
+  /** Длительность действия в секундах (0..300). */
   durationSeconds: number;
+  /** Время на подготовку в секундах (опц., 0..300, M#B3-4); null = без подготовки. */
+  prepSeconds?: number | null;
   /** Цена энергии 1..3. */
   energyCost: number;
   /** Ожидаемый эффект (опц.). */

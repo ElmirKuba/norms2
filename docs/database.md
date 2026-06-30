@@ -6,7 +6,7 @@
 ## Конвенции (применяются ко всем таблицам)
 
 - **PK `id`** — `varchar(52)`, формат `uuidv7___unixmillis` (пример `019e7488-0147-7305-9b95-a553f2d00c8e___1780071500548`). Генерация — util `generateId()` на бэке/фронте. Все FK — тоже `varchar(52)`. ([ADR-0016](./decisions/0016-primary-key-format.md))
-- **Имена** — `snake_case` для таблиц и колонок; Drizzle-схемы (`system/orm-schemas`) маппят на camelCase в коде.
+- **Имена** — `snake_case` для таблиц и колонок; Drizzle-схемы (`database/schemas`) маппят на camelCase в коде.
 - **Таймстампы** — `created_at` и `updated_at` (`timestamptz not null`) на **каждой** таблице; `updated_at` автообновляется. ([ADR-0011](./decisions/0011-accounts-table-merge-rename.md))
 - **Soft-delete** — аккаунты физически не удаляются; FK на `accounts` — `ON DELETE RESTRICT` (удаления строки не происходит). ([ADR-0017](./decisions/0017-account-soft-delete.md))
 - **Хеши** — `password_hash` (пароль 3–64, [ADR-0032](./decisions/0032-phase1-refinements.md)), `answer_hash`, `token_hash` хранят argon2id-хеши (плейнтекст приходит по TLS, хешируется на бэке). ([ADR-0009](./decisions/0009-server-side-hashing.md))

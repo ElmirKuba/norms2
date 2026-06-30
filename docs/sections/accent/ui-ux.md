@@ -1,6 +1,6 @@
 # Акцент — UI/UX (Фаза 2)
 
-> Экраны, дизайн-язык, доступность, тон. Наследует дизайн фазы 1 ([ADR-0025](../../decisions/0025-ui-ux-design-language.md)): тёмная тема + переключатель, **чистый SCSS** (без Tailwind), свои компоненты, модалки через **MatDialog** ([ADR-0026](../../decisions/0026-modal-system.md)). Эндпоинты — [`api-contracts.md`](./api-contracts.md). Тон/принципы — [README §6](./README.md).
+> Экраны, дизайн-язык, доступность, тон. Наследует дизайн фазы 1 ([ADR-0025](../../decisions/0025-ui-ux-design-language.md)): тёмная тема + переключатель, **чистый SCSS** (без Tailwind), свои компоненты, модалки через **MatDialog** ([ADR-0026](../../decisions/0026-modal-system.md)); графики прогресса — **ApexCharts** за своим wrapper `app-chart` ([ADR-0055](../../decisions/0055-progress-charts-apexcharts.md)). Эндпоинты — [`api-contracts.md`](./api-contracts.md). Тон/принципы — [README §6](./README.md).
 
 ## 1. Тон: «интерес, не страх» (критично)
 Каждый текст двигает вперёд, не давит назад. Это не косметика — это механика удержания «Васи».
@@ -33,7 +33,7 @@
 ```
 /accent                       дашборд (главный)
 /accent/checkin               чек-ин состояния + тренды самочувствия 7/30/90 (из CheckIn)
-/accent/goals  /goals/:id     цели (список / деталь: donut, график, прогноз, вехи)
+/accent/goals  /goals/:id     цели (список / деталь: % + прогресс-бар, график динамики, прогноз, вехи)
 /accent/habits                привычки + дневной чеклист (вкладки Сегодня / Шаблоны)
 /accent/micro-wins            микро-победы (быстрый список «сделать сейчас»)
 /accent/anti-habits  /:id     анти-привычки (живой таймер дн:ч:мин:сек)
@@ -69,7 +69,7 @@ Desktop ≥1024 — 2 колонки (лево: сегодня+неделя+це
 - **Частичное выполнение:** для quantitative/timed — ввод факта (30 из 50) одним жестом; засчитывается пропорционально, ≥minTarget держит серию.
 
 ## 7. Компоненты раздела (свои, SCSS)
-ProgressDonut (SVG, число по центру), ProgressBar, XpBar, StreakBadge (🔥N), TaskCard (чекбокс/частичный ввод/swipe-перенос), GoalCard, MicroWinChip, AntiHabitTimer, CheckinSlider (1..10), Heatmap (как GitHub), **AttributeRadar (паучья диаграмма баланса атрибутов — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md))**, EmptyState (с CTA), Toast. Модалки/диалоги — только через MatDialog. (radar может уйти в волну 2.12+, модель — сразу).
+ProgressBar (прогресс цели: % + полоса — построено в 2.5), **Chart (`app-chart`) — линейный / area-график на ApexCharts за своим wrapper, тема из CSS-переменных, движок заменяем ([ADR-0055](../../decisions/0055-progress-charts-apexcharts.md))**, XpBar, StreakBadge (🔥N), TaskCard (чекбокс/частичный ввод/swipe-перенос), GoalCard, MicroWinChip, AntiHabitTimer, CheckinSlider (1..10), Heatmap (как GitHub), **AttributeRadar (паучья диаграмма баланса атрибутов — [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md))**, EmptyState (с CTA), Toast. Модалки/диалоги — только через MatDialog. (radar и ProgressDonut для недельного % на дашборде — план поздних волн, ещё не построены; модель под них — сразу).
 
 ## 8. Онбординг (волна, но заложить)
 Короткий: что важно (1–3 сферы) → первая цель (с подсказкой) → первая привычка (из шаблонов) → достижение «Первый шаг» сразу → мини-тур. Прогрессивное раскрытие сложных фич. Для «Васи» — первая победа за ~5 минут.

@@ -1,6 +1,6 @@
-# api-contracts.md — REST API фазы 1
+# api-contracts.md — REST API ЛК (фаза 1)
 
-> Единственный источник истины по **HTTP-контрактам**. Конвенции — [ADR-0020](./decisions/0020-api-conventions.md). Поведение/правила — [`domain-model.md`](./domain-model.md). Все пути под `/api/v1`.
+> Источник истины по HTTP-контрактам **ЛК / ядра платформы** (auth, профиль, инвайты, баны, сессии, восстановление, уведомления, version). Контракты разделов — в своих доменах: [accent](./sections/accent/api-contracts.md), [novaskil](./sections/novaskil/api-contracts.md). Конвенции — [ADR-0020](./decisions/0020-api-conventions.md). Поведение/правила — [`domain-model.md`](./domain-model.md). Все пути под `/api/v1`.
 
 ## Общее
 

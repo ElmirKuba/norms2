@@ -45,7 +45,7 @@
 Обновить упоминания во всех доках:
 - `CLAUDE.md` (всегда грузится): стек Drizzle, 5 слоёв, правило кросс-домена.
 - `architecture.md` — 5 слоёв, поток, правило «кросс-домен только вниз».
-- `backend.md` — Drizzle, npm, структура `controllers/domain-services/use-cases/adapters/repositories`.
+- `backend.md` — Drizzle, npm, структура `controllers/use-cases/domain-services/adapters/repositories`.
 - `database.md` — Drizzle-миграции (схема таблиц без изменений).
 - `getting-started.md`, `deployment.md` — npm.
 - `Technical-assignment.md` §стек — Drizzle, npm, 5 слоёв.

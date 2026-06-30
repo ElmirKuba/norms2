@@ -8,6 +8,8 @@
 >
 > Дока-источник: `docs/sections/accent/{README,domain-model,gamification,api-contracts,ui-ux}.md`
 > + ADR-0027 (ядро), ADR-0028 (timezone + домены). Фундамент (ЛК) — фаза 1, готова.
+>
+> Аудит безопасности фазы 2 — [`audit-phase2-security.md`](./audit-phase2-security.md).
 
 ## Текущая позиция (по факту)
 - **R0 (вычитка) ЗАВЕРШЁН:** README ✅ · domain-model ✅ · gamification ✅ ·

@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-30
-- **Решает:** Elmir (развилки R6, R10 из `../archive/phase2-analysis-map.md`)
+- **Решает:** Elmir (развилки R6, R10 — phase2-analysis-map в git-истории)
 - **Контекст-теги:** [accent] [phase2] [domain] [db]
 
 ## R6 — timezone хранится в `accounts` (платформенно)

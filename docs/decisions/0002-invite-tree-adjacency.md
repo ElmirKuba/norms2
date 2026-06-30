@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-29
-- **Решает:** Elmir + ToT в `../archive/decision-map.md` (пункт D2)
+- **Решает:** Elmir + ToT (decision-map, пункт D2 — карта в git-истории)
 - **Контекст-теги:** [domain] [db] [architecture]
 - **Частично заменён [ADR-0014](./0014-invitation-edge-table.md):** физическое хранение дерева переехало с колонки `accounts.inviter_id` в отдельную таблицу `invitations`. **Порт `InviteTreeRepository` и рекурсивный CTE — остаются в силе.**
 

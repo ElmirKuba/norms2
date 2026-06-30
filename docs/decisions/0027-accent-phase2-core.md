@@ -2,7 +2,7 @@
 
 - **Статус:** accepted
 - **Дата:** 2026-05-30
-- **Решает:** Elmir + ToT в `../archive/phase2-analysis-map.md` (развилки R2, R7, R17, R18)
+- **Решает:** Elmir + ToT (phase2-analysis-map, развилки R2, R7, R17, R18 — карта в git-истории)
 - **Контекст-теги:** [product] [accent] [phase2] [domain]
 
 ## Контекст

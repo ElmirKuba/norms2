@@ -41,7 +41,7 @@
 | [`152fz.md`](./152fz.md) | Юрисдикция, ПДн, что НЕ собираем, политика данных | ✅ v1 |
 | [`architecture.md`](./architecture.md) | Слои, границы модулей, shared kernel, потоки данных, ошибки, токены | ✅ v1 |
 | [`domain-model.md`](./domain-model.md) | Сущности и инварианты: Account, SecretQuestion, InviteCode, Invitation, Ban, Session | ✅ v1 (консолидировано из ADR) |
-| [`database.md`](./database.md) | Физическая схема (7 таблиц), индексы, миграции, security_logs, хеши | ✅ v1 (консолидировано из ADR) |
+| [`database.md`](./database.md) | Физическая схема (6 таблиц), индексы, миграции, хеши | ✅ v1 (консолидировано из ADR) |
 | [`api-contracts.md`](./api-contracts.md) | REST: эндпоинты, DTO (closed-shape), формат ошибок, rate-limit | ✅ v1 |
 | [`backend.md`](./backend.md) | Правила `./nest/`: структура модуля, тесты, DI, версии | ✅ v1 |
 | [`frontend.md`](./frontend.md) | Правила `./angular/`: feature-структура, Signals, HTTP-слой | ✅ v1 |

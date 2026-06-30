@@ -82,4 +82,4 @@ controllers (controller + DTO)
 
 ## Безопасность/приватность
 
-Плейнтекст-секреты только по TLS, хешируются в нижних слоях (argon2id, [ADR-0009](./decisions/0009-server-side-hashing.md)). `security_logs` — без связи с доменом ([152fz — приватный]). Бан — производное (`EXISTS active ban`, [ADR-0012](./decisions/0012-bans-derived-status.md)).
+Плейнтекст-секреты только по TLS, хешируются в нижних слоях (argon2id, [ADR-0009](./decisions/0009-server-side-hashing.md)). Бан — производное (`EXISTS active ban`, [ADR-0012](./decisions/0012-bans-derived-status.md)). (Логи безопасности в фазе 1 не ведём — [ADR-0032](./decisions/0032-phase1-refinements.md).)

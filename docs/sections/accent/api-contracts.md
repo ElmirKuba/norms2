@@ -92,8 +92,8 @@
 ## 12. Dashboard (агрегатор)
 - `GET /accent/dashboard?date=YYYY-MM-DD` → всё для главного экрана за 1 запрос: `{ state, recommendations, today:{tasks,percent,streak}, week:{donut,bars,best,worst}, goals:[...], checkinQuick, overdue, obstaclesActive }`. Серверная агрегация ([ADR-0019](../../decisions/0019-backend-architecture-conventions.md)).
 
-## 13. Ролловер (фон, не эндпоинт)
-`@nestjs/schedule`: материализация Task из активных Habit по RRULE в локальную полночь (по `timezone`, §0). В recovery/паузе — мягкий ролловер (минимальные версии). Sweep устаревших — по образцу фазы 1.
+## 13. Ролловер
+**Сейчас (2.4): ленивая материализация на чтение** — `ensureTasksForDay` создаёт задачи дня из активных Habit по RRULE при запросе `GET /accent/tasks?date=` (по `timezone`, §0). **Фоновый cron (`@nestjs/schedule`) отложен** (≈2.9, вместе с сериями — «не потерять»): тогда материализация/sweep уедут в фоновую задачу по локальной полуночи. В recovery/паузе — мягкий ролловер (минимальные версии).
 
 ## 14. AI-эндпоинты (волна, заложить путь)
 `POST /accent/ai/decompose-goal`, `POST /accent/ai/repack-after-relapse` — с границами безопасности (спек: не стыдить, не обещать лечение, объяснимость). Не в MVP.

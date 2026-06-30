@@ -32,7 +32,7 @@ src/
 - **Plain zod + кастомный `ZodValidationPipe`** (`shared/pipes/`) — БЕЗ `nestjs-zod` (совместимость с zod 4 + минимум зависимостей). Каждая DTO — zod-схема `.strict()` (closed-shape, лишние поля отвергаются); тип выводится `z.infer`. Пайп подключается на роуте: `@Body(new ZodValidationPipe(schema))`; на невалидном входе — BadRequest с ошибками по полям → в `details` конверта. Без class-validator-декораторов.
 
 ## Иерархия типов ([ADR-0033](./decisions/0033-type-hierarchy-convention.md))
-Каждое свойство объявляется **в одном месте**; «виды» сущности собираются из него, не переобъявляются. Слой `src/interfaces/<entity>/`:
+Каждое свойство объявляется **в одном месте**; «виды» сущности собираются из него, не переобъявляются. Контракты — в `modules/<feature>/interfaces/` (feature-first, [ADR-0034](./decisions/0034-feature-first-layout.md)):
 
 - `XxxPure` — содержательные поля (смысл), без `id`/FK/системных меток.
 - `XxxBase extends XxxPure` — + FK (`xxxId: string`) и поля для создания.
@@ -52,7 +52,7 @@ src/
 - `nestjs-pino`, структурный JSON, `request-id` на запрос. **Redact** тел с секретами (`password`, `answer`, `token`).
 
 ## Безопасность
-- Хеш-сервис `argon2id` (общий для пароля и `answer_hash`) в `infrastructure` ([ADR-0009](./decisions/0009-server-side-hashing.md)). Плейнтекст приходит по HTTPS.
+- Хеш-сервис `argon2id` (общий для пароля и `answer_hash`) в `shared/services` ([ADR-0009](./decisions/0009-server-side-hashing.md)). Плейнтекст приходит по HTTPS.
 - Access — JWT (`ACCESS_TTL`), stateless. Refresh — в таблице `sessions` ([ADR-0018](./decisions/0018-refresh-tokens-sessions.md)), ротация, детект повторного использования → отзыв всех сессий.
 - `AuthGuard` читает `Bearer`, проверяет вход разрешён: не `deleted`, не `deactivated`, не забанен (`EXISTS active ban`).
 - Refresh — в httpOnly+Secure+SameSite cookie ([ADR-0020](./decisions/0020-api-conventions.md)); CSRF: SameSite + проверка origin на мутациях.
@@ -66,9 +66,10 @@ src/
 - Регистрация по коду, погашение/отзыв инвайта — в **одной транзакции** (Drizzle transaction): консистентность `accounts` + `invitations` + `invite_codes` + счётчика ([ADR-0013](./decisions/0013-invites-lifecycle-cleanup.md), [ADR-0007](./decisions/0007-invite-quota-counter.md)).
 
 ## Миграции
-- Только явные миграции через **drizzle-kit**; auto-push в проде запрещён. Схемы — `system/orm-schemas`, связи — `system/orm-relations`.
+- Только явные миграции через **drizzle-kit**; auto-push в проде запрещён. Схемы — `database/schemas`, связи — `database/relations`.
 
 ## Тесты
+> **Статус (по факту):** автотесты пока **не пишем** — верификация ведётся **живыми прогонами** (live-смоук API + ручной браузер-прогон), решение Elmir. Целевая стратегия ниже — на будущее, когда вернёмся к тестам.
 - Unit (Jest) на use-cases с замоканными портами — основная масса.
 - e2e (supertest) на ключевые сценарии (регистрация в обоих режимах, login/ban/recovery) на тестовой БД.
 

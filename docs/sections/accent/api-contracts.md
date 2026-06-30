@@ -16,8 +16,8 @@
 ---
 
 ## 1. Настройки раздела
-- `GET /accent/settings` → `{ accentPausedFrom }` _(реализовано, 2.0.0)_; `overallStreakThreshold` добавится с сериями (2.8). timezone — в профиле ЛК, не здесь ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)).
-- `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200 _(в 2.8, когда появится поле; в 2.0.0 патчить нечего)_.
+- `GET /accent/settings` → `{ accentPausedFrom }` _(реализовано, 2.0.0)_; `overallStreakThreshold` добавится с сериями (2.9). timezone — в профиле ЛК, не здесь ([ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)).
+- `PATCH /accent/settings` Body `{ overallStreakThreshold? }` → 200 _(в 2.9, когда появится поле; в 2.0.0 патчить нечего)_.
 - `POST /accent/pause` / `POST /accent/resume` — пауза-режим (заморозка серий) → 204 _(реализовано, 2.0.0)_.
 
 ## 1a. Справочники (сферы, атрибуты)
@@ -76,7 +76,7 @@
 
 ## 9. Supporters (MVP — реестр)
 - `GET/POST /accent/supporters` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.
-- _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — поздняя волна 2.12+._
+- _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — поздняя волна 2.13+._
 
 ## 10. Недельный слой и журналы
 - `GET/POST/DELETE /accent/weekly-goals?week=YYYY-Www` (+ items: `PATCH /accent/weekly-goals/:id` toggle done).

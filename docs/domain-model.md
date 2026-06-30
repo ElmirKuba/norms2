@@ -18,7 +18,7 @@
 ## Сущности и инварианты
 
 ### `Account` (корень)
-Поля (доменный вид): `id`, `login: Login`, `alias: Alias`, `passwordHash`, `registrationSource: free|invite|seed`, `invitesRemaining`, `recoveryRequiredCount?`, `timezone` (IANA, default UTC — [ADR-0028](./decisions/0028-accent-timezone-and-domains.md)), `avatar?` (путь; задел — [ADR-0031](./decisions/0031-file-storage-uploads.md)), `deactivatedAt?`, `deletedAt?`, `version` (optimistic-lock — [ADR-0035](./decisions/0035-concurrency-control.md)).
+Поля (доменный вид): `id`, `login: Login`, `alias: Alias`, `passwordHash`, `registrationSource: free|invite|seed`, `invitesRemaining`, `recoveryRequiredCount?`, `timezone` (IANA, default UTC — [ADR-0028](./decisions/0028-accent-timezone-and-domains.md)), `avatar?` (путь к файлу; реализовано в фазе 1 — [ADR-0040](./decisions/0040-avatar-storage-convention.md), [ADR-0042](./decisions/0042-avatar-crop-own-canvas.md)), `deactivatedAt?`, `deletedAt?`, `version` (optimistic-lock — [ADR-0035](./decisions/0035-concurrency-control.md)).
 Инварианты:
 - `invitesRemaining ≥ 0`; создать код можно только при `> 0`. ([ADR-0007](./decisions/0007-invite-quota-counter.md))
 - **Вход разрешён ⇔** `deletedAt == null` И `deactivatedAt == null` И не забанен. ([ADR-0017](./decisions/0017-account-soft-delete.md), [ADR-0012](./decisions/0012-bans-derived-status.md))
@@ -41,7 +41,7 @@
 
 > Логи безопасности (`security_logs`) в фазе 1 **не ведём** ([ADR-0032](./decisions/0032-phase1-refinements.md)).
 
-## Порты (интерфейсы репозиториев, в `application/`)
+## Порты (интерфейсы репозиториев, в `modules/<feature>/adapters/`)
 
 - `AccountRepository` — CRUD + поиск по `lower(login)`; дефолтный scope исключает `deletedAt != null`.
 - `SecretQARepository` — вопросы аккаунта.
@@ -50,7 +50,7 @@
 - `BanRepository` — активные баны по target; запись/деактивация своей.
 - `SessionRepository` — создание/ротация/отзыв/листинг.
 
-## Use-cases (в `application/`)
+## Use-cases (в `modules/<feature>/use-cases/`)
 
 **Регистрация/вход** ([ADR-0010](./decisions/0010-registration-auth-flow.md)):
 - `RegisterAccount(alias, login, password, inviteCode?)` — режим по `FREE_REGISTRATION`. Free → корень (`source=free`). Invite → транзакция: проверить+погасить код, создать `Invitation`, `source=invite`. **Токены не выдаёт.**

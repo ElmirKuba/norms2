@@ -87,19 +87,27 @@ export class SessionRepository implements SessionRepositoryPort {
   }
 
   /**
-   * Аккаунт по архивному хешу токена (join history → sessions) — reuse-detect
-   * реплея уже ротированного токена.
+   * Владелец архивного (уже ротированного) хеша токена + время архивации — для
+   * reuse-detect с грейс-окном (2.5.2). По `archivedAt` домен отличает benign-гонку
+   * двойного refresh (в пределах грейса) от реального реплея украденного токена.
    * @param tokenHash SHA-256 предъявленного токена.
-   * @returns accountId или null.
+   * @returns `{ sessionId, accountId, archivedAt }` или null.
    */
-  public async findAccountIdByHistoricalTokenHash(tokenHash: string): Promise<string | null> {
+  public async findHistoricalTokenOwner(
+    tokenHash: string,
+  ): Promise<{ sessionId: string; accountId: string; archivedAt: Date } | null> {
     const rows = await this._db
-      .select({ accountId: sessions.accountId })
+      .select({
+        sessionId: sessionTokenHistory.sessionId,
+        accountId: sessions.accountId,
+        archivedAt: sessionTokenHistory.createdAt,
+      })
       .from(sessionTokenHistory)
       .innerJoin(sessions, eq(sessions.id, sessionTokenHistory.sessionId))
       .where(eq(sessionTokenHistory.tokenHash, tokenHash))
       .limit(1);
-    return rows[0]?.accountId ?? null;
+    const row = rows[0];
+    return row ? { sessionId: row.sessionId, accountId: row.accountId, archivedAt: row.archivedAt } : null;
   }
 
   /**

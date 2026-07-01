@@ -29,7 +29,7 @@ export interface SessionRepositoryPort {
    * CAS-ротация: меняет token_hash и срок только если текущий хеш совпал и
    * сессия не отозвана (ADR-0035). Атомарно (одна транзакция) архивирует старый
    * хеш в session_token_history → реплей ротированного токена ловится потом
-   * `findAccountIdByHistoricalTokenHash` (reuse-detect).
+   * `findHistoricalTokenOwner` (reuse-detect с грейсом, 2.5.2).
    * @param id Идентификатор сессии.
    * @param oldTokenHash Ожидаемый текущий хеш (уйдёт в архив).
    * @param newTokenHash Новый хеш.
@@ -46,13 +46,16 @@ export interface SessionRepositoryPort {
   ): Promise<SessionFull | null>;
 
   /**
-   * Ищет аккаунт по архивному (уже ротированному) хешу токена — для reuse-detect:
-   * предъявлен токен, которого нет среди активных, но он есть в истории →
-   * реплей ротированного → отзыв всех сессий аккаунта.
+   * Владелец архивного (уже ротированного) хеша токена + время архивации — для
+   * reuse-detect с грейс-окном (2.5.2): по `archivedAt` домен отличает benign-гонку
+   * двойного refresh (в пределах грейса → мягкий отказ без отзыва) от реального
+   * реплея украденного токена (вне грейса → отзыв ТОЛЬКО этой сессии, не аккаунта).
    * @param tokenHash SHA-256 предъявленного токена.
-   * @returns accountId сессии, которой принадлежал хеш, или null.
+   * @returns `{ sessionId, accountId, archivedAt }` или null.
    */
-  findAccountIdByHistoricalTokenHash(tokenHash: string): Promise<string | null>;
+  findHistoricalTokenOwner(
+    tokenHash: string,
+  ): Promise<{ sessionId: string; accountId: string; archivedAt: Date } | null>;
 
   /**
    * Отзывает сессию по id (logout).

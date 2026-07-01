@@ -18,6 +18,13 @@ import type { Env } from '../../../system/config/env.schema';
 @Injectable()
 export class SessionDomainService {
   /**
+   * Грейс-окно (мс): повторное предъявление только что ротированного токена в этом
+   * окне = benign-гонка двойного refresh (мягкий отказ, не кара). Вне окна архивный
+   * токен = реальный реплей → отзыв ТОЛЬКО той сессии. (2.5.2, ADR-0046)
+   */
+  private static readonly REUSE_GRACE_MS = 15_000;
+
+  /**
    * @param _sessionRepository Порт репозитория сессий.
    * @param _configService Конфиг (REFRESH_TTL).
    */
@@ -56,7 +63,10 @@ export class SessionDomainService {
 
   /**
    * Ротация: проверяет refresh-токен, выдаёт новый, отзывает старый (CAS).
-   * Reuse (отозванный токен / проигранный CAS) → отзыв всех сессий аккаунта.
+   * Reuse-detect с грейс-окном (2.5.2, ADR-0046): benign-гонка двойного refresh
+   * (CAS-loss / архивный токен в пределах грейса) → мягкий отказ БЕЗ отзыва;
+   * реальный реплей ротированного токена (вне грейса) → отзыв ТОЛЬКО той сессии,
+   * не всего аккаунта (раньше revoke-all нукал все устройства — кросс-девайс кик).
    * @param refreshToken Плейнтекст предъявленного refresh-токена.
    * @returns Новый refresh-токен + id аккаунта и сессии (для access-токена). Id
    *   сессии стабилен через ротацию (та же строка) → claim `sid` не меняется.
@@ -78,18 +88,22 @@ export class SessionDomainService {
     const session = await this._sessionRepository.findByTokenHash(tokenHash);
 
     if (session === null) {
-      // Нет среди активных. Если хеш есть в архиве — это реплей УЖЕ РОТИРОВАННОГО
-      // токена (украден и предъявлен после ротации) → reuse → отзыв всех сессий
-      // аккаунта. Нет нигде — просто неизвестный токен.
-      const accountId = await this._sessionRepository.findAccountIdByHistoricalTokenHash(tokenHash);
-      if (accountId !== null) {
-        await this._sessionRepository.revokeAllByAccount(accountId);
+      // Нет среди активных. Возможно — уже ротированный (архивный) токен.
+      const owner = await this._sessionRepository.findHistoricalTokenOwner(tokenHash);
+      if (
+        owner !== null &&
+        Date.now() - owner.archivedAt.getTime() > SessionDomainService.REUSE_GRACE_MS
+      ) {
+        // Архивный токен предъявлен ПОЗЖЕ грейса → реальный реплей ротированного
+        // токена (вероятная кража) → отзыв ТОЛЬКО этой сессии (не всего аккаунта).
+        await this._sessionRepository.revokeById(owner.sessionId);
       }
+      // В пределах грейса (benign-гонка двойного refresh) или неизвестный токен —
+      // мягкий отказ без отзыва: победивший параллельный refresh уже выдал новый токен.
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
     if (session.revokedAt !== null) {
-      // Предъявлен отозванный токен → подозрение на reuse → отзываем все сессии.
-      await this._sessionRepository.revokeAllByAccount(session.accountId);
+      // Токен отозванной сессии: она уже мертва, другие устройства не трогаем.
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
     if (session.expiresAt.getTime() <= Date.now()) {
@@ -105,8 +119,8 @@ export class SessionDomainService {
       generateId(),
     );
     if (rotated === null) {
-      // CAS не прошёл (параллельная ротация тем же токеном) → reuse → отзыв всех.
-      await this._sessionRepository.revokeAllByAccount(session.accountId);
+      // CAS не прошёл = параллельная ротация ЭТОЙ ЖЕ активной сессии (benign двойной
+      // refresh) → мягкий отказ без отзыва; победивший запрос уже выдал новый токен.
       throw new InvalidRefreshError('Недействительный refresh-токен.');
     }
     return { refreshToken: newRefreshToken, accountId: rotated.accountId, sessionId: rotated.id };

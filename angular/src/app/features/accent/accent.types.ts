@@ -179,6 +179,8 @@ export interface HabitView {
   kind: HabitKind;
   /** Расписание (RRULE). */
   recurrence: string;
+  /** Дата старта расписания `YYYY-MM-DD` или null (якорь для «каждые N дней»/чередования). */
+  startDate: string | null;
   /** Активна ли. */
   isActive: boolean;
   /** Стартовый пример (бейдж «пример»; не материализует задачи до присвоения). */
@@ -197,6 +199,8 @@ export interface HabitPayload {
   kind: HabitKind;
   /** Расписание (RRULE). */
   recurrence: string;
+  /** Дата старта расписания `YYYY-MM-DD` (опц.; null/не задано → якорь = дата создания). */
+  startDate?: string | null;
   /** Лесенка (без счётчиков — их ставит бэк). */
   ladder: {
     minTarget: number;

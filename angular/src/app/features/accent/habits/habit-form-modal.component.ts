@@ -129,6 +129,12 @@ const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
   },
 };
 
+/** Сегодняшняя локальная дата в формате `YYYY-MM-DD` (дефолт для «начать не сегодня»). */
+function todayYmd(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * Модалка создания/редактирования привычки (MatDialog, ADR-0026) — ядро (2.4·16a):
  * название/иконка/описание/тип + пикер расписания (RRULE-пресеты) + лесенка
@@ -236,6 +242,21 @@ const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
           <label class="hf__field">
             <span class="hf__label">Каждые N дней</span>
             <input class="hf__input" type="number" min="2" formControlName="intervalN" />
+          </label>
+        }
+
+        <label class="hf__check">
+          <input type="checkbox" formControlName="startNotToday" />
+          <span>Начать не сегодня?</span>
+        </label>
+        @if (showStartPicker()) {
+          <label class="hf__field">
+            <span class="hf__label">Начать с</span>
+            <input class="hf__input" type="date" formControlName="startDate" />
+            <span class="hf__hint">
+              С этого дня пойдёт отсчёт расписания. Для «каждые N дней» сдвиг на день ставит
+              две привычки в противофазу — они чередуются.
+            </span>
           </label>
         }
 
@@ -410,6 +431,19 @@ const HABIT_FIELD_GUIDES: Record<string, FieldGuideData> = {
         display: flex;
         gap: var(--space-3);
       }
+      .hf__check {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        cursor: pointer;
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .hf__check input {
+        width: auto;
+        min-height: 0;
+        cursor: pointer;
+      }
       .hf__ladder {
         display: flex;
         flex-direction: column;
@@ -544,6 +578,10 @@ export class HabitFormModalComponent {
     domainKey: new FormControl<string | null>(null),
     goalId: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
+    // «Начать не сегодня»: якорь расписания (BUG-2). Выкл → старт с даты создания;
+    // вкл → с выбранной даты (для «каждые N дней» сдвиг даёт чередование в противофазе).
+    startNotToday: new FormControl(false, { nonNullable: true }),
+    startDate: new FormControl(todayYmd(), { nonNullable: true }),
   });
 
   private readonly _kind = toSignal(this.form.controls.kind.valueChanges, {
@@ -554,6 +592,9 @@ export class HabitFormModalComponent {
   });
   private readonly _policy = toSignal(this.form.controls.policy.valueChanges, {
     initialValue: this.form.controls.policy.value,
+  });
+  private readonly _startNotToday = toSignal(this.form.controls.startNotToday.valueChanges, {
+    initialValue: this.form.controls.startNotToday.value,
   });
   /** Текущее значение иконки (для подсветки выбранной в пикере). */
   protected readonly iconValue = toSignal(this.form.controls.icon.valueChanges, {
@@ -575,6 +616,8 @@ export class HabitFormModalComponent {
   protected readonly showCustomWeek = computed(() => this._mode() === 'custom-week');
   /** Показывать ли интервал. */
   protected readonly showInterval = computed(() => this._mode() === 'every-n');
+  /** Показывать ли выбор даты старта (галка «начать не сегодня» включена). */
+  protected readonly showStartPicker = computed(() => this._startNotToday());
   /** Подсказка по выбранному типу. */
   protected readonly kindHint = computed(() => HABIT_KIND_DESCRIPTIONS[this._kind()]);
   /** Подсказка по выбранному режиму расписания. */
@@ -614,6 +657,8 @@ export class HabitFormModalComponent {
         domainKey: habit.domainKey,
         goalId: habit.goalId,
         minVersion: habit.minVersion ?? '',
+        startNotToday: habit.startDate !== null,
+        startDate: habit.startDate ?? todayYmd(),
       });
     }
   }
@@ -697,6 +742,8 @@ export class HabitFormModalComponent {
       title: v.title.trim(),
       kind: v.kind,
       recurrence,
+      // Якорь расписания только если явно «начать не сегодня»; иначе null → бэк берёт дату создания.
+      startDate: v.startNotToday ? v.startDate : null,
       ladder,
       description: v.description.trim() === '' ? null : v.description.trim(),
       icon: v.icon.trim() === '' ? null : v.icon.trim(),

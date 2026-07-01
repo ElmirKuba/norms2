@@ -17,6 +17,8 @@ export interface HabitCreateData {
   kind: HabitKind;
   /** Расписание (RRULE-строка). */
   recurrence: string;
+  /** Дата старта расписания `YYYY-MM-DD` (опц.; null/undefined → фолбэк на дату создания). */
+  startDate?: string | null;
   /** Лесенка (со счётчиками easyStreak/missStreak = 0 на старте — ставит домен). */
   ladder: HabitLadder;
   /** Описание (опц.). */
@@ -48,6 +50,7 @@ export interface HabitUpdateData {
   priority?: number | undefined;
   kind?: HabitKind | undefined;
   recurrence?: string | undefined;
+  startDate?: string | null | undefined;
   ladder?: HabitLadder | undefined;
   isActive?: boolean | undefined;
   minVersion?: string | null | undefined;

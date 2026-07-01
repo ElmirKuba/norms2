@@ -26,6 +26,13 @@ export const habitBodyShape = {
   priority: z.number().int().min(0).max(1000).optional(),
   kind: z.enum(HABIT_KINDS),
   recurrence: z.string().min(1, 'Расписание обязательно.').max(500),
+  // Дата старта расписания `YYYY-MM-DD` (опц.). null/не задано → якорь = дата создания.
+  // Позволяет «начать не сегодня» и чередовать привычки в противофазе (BUG-2).
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата старта: ГГГГ-ММ-ДД.')
+    .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00.000Z`)), 'Некорректная дата старта.')
+    .nullish(),
   ladder: ladderSchema,
   minVersion: z.string().max(280).nullish(),
 };

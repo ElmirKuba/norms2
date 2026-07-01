@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, text, varchar } from 'drizzle-orm/pg-core';
+import { boolean, date, integer, jsonb, text, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
@@ -31,6 +31,10 @@ export const habits = defineTableWithSchema<HabitFull>()(
     priority: integer('priority').notNull().default(0),
     kind: varchar('kind', { length: 16 }).$type<HabitKind>().notNull(),
     recurrence: text('recurrence').notNull(),
+    // Якорь расписания (dtstart для INTERVAL-правил «каждые N дней», BUG-2). Nullable:
+    // null → фолбэк на дату создания в TZ аккаунта. Пользователь может стартовать не с
+    // сегодня (напр. завтра) → две привычки «каждые 2 дня» в противофазе (чередование).
+    startDate: date('start_date'),
     isActive: boolean('is_active').notNull().default(true),
     isStarter: boolean('is_starter').notNull().default(false),
     ladder: jsonb('ladder').$type<HabitLadder>().notNull(),

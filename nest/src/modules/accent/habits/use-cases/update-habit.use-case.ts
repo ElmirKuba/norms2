@@ -33,6 +33,7 @@ export class UpdateHabitUseCase {
       priority: dto.priority,
       kind: dto.kind,
       recurrence: dto.recurrence,
+      startDate: dto.startDate,
       minVersion: dto.minVersion,
       ladder:
         dto.ladder === undefined

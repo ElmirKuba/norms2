@@ -26,6 +26,7 @@ export class CreateHabitUseCase {
       title: dto.title,
       kind: dto.kind,
       recurrence: dto.recurrence,
+      startDate: dto.startDate ?? null,
       ladder: {
         minTarget: dto.ladder.minTarget,
         currentTarget: dto.ladder.currentTarget,

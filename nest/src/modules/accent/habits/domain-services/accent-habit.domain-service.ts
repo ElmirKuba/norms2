@@ -135,6 +135,9 @@ export class AccentHabitDomainService {
       this._validateRecurrence(patch.recurrence);
       clean.recurrence = patch.recurrence;
     }
+    if (patch.startDate !== undefined) {
+      clean.startDate = patch.startDate;
+    }
     if (patch.description !== undefined) {
       clean.description = patch.description;
     }

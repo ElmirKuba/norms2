@@ -36,6 +36,8 @@ export interface HabitView {
   kind: HabitKind;
   /** Расписание (RRULE). */
   recurrence: string;
+  /** Дата старта расписания `YYYY-MM-DD` или null (якорь для «каждые N дней»/чередования). */
+  startDate: string | null;
   /** Активна ли. */
   isActive: boolean;
   /** Стартовый пример (бейдж «пример»; не материализует задачи до присвоения). */
@@ -63,6 +65,7 @@ export function toHabitView(full: HabitFull): HabitView {
     priority: full.priority,
     kind: full.kind,
     recurrence: full.recurrence,
+    startDate: full.startDate,
     isActive: full.isActive,
     isStarter: full.isStarter,
     ladder: {

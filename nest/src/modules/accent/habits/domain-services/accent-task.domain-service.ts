@@ -58,7 +58,8 @@ export class AccentTaskDomainService {
       if (habit.isStarter) {
         continue;
       }
-      const dtstart = localYmd(habit.createdAt, timezone);
+      // Якорь расписания: пользовательская старт-дата (BUG-2), иначе дата создания в TZ.
+      const dtstart = habit.startDate ?? localYmd(habit.createdAt, timezone);
       if (!isHabitDueOn(habit.recurrence, dtstart, date)) {
         continue;
       }

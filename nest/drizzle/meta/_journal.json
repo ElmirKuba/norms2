@@ -169,6 +169,13 @@
       "when": 1782717967663,
       "tag": "0023_previous_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1782898189368,
+      "tag": "0024_habit_start_date",
+      "breakpoints": true
     }
   ]
 }

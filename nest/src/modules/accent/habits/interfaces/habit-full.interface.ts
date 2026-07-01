@@ -64,6 +64,9 @@ export interface HabitFull {
   kind: HabitKind;
   /** Расписание — строка RRULE (iCalendar). */
   recurrence: string;
+  /** Дата старта расписания `YYYY-MM-DD` (якорь dtstart для INTERVAL-правил) или null →
+   * фолбэк на дату создания в TZ аккаунта. Позволяет «начать не сегодня» / чередовать (BUG-2). */
+  startDate: string | null;
   /** Активна ли (мягкое отключение из материализации). */
   isActive: boolean;
   /** Стартовый пример (`is_starter`): виден в «Шаблонах» с бейджем, но НЕ материализует

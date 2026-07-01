@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { API_PREFIX } from '../config/api.constants';
 import { FeatureFlagsStore } from '../feature-flags/feature-flags-store.service';
 import { AuthStore } from './auth-store.service';
+import { TokenRefreshService } from './token-refresh.service';
 import type { FeatureFlags } from '../interfaces/feature-flags.interface';
 import type { AccountRead } from '../interfaces/account-read.interface';
 
@@ -19,6 +20,7 @@ export function sessionInitializer(): Promise<void> {
   const http = inject(HttpClient);
   const flagsStore = inject(FeatureFlagsStore);
   const authStore = inject(AuthStore);
+  const tokenRefresh = inject(TokenRefreshService);
 
   return (async (): Promise<void> => {
     try {
@@ -29,10 +31,9 @@ export function sessionInitializer(): Promise<void> {
     }
 
     try {
-      const tokens = await firstValueFrom(
-        http.post<{ accessToken: string }>(`${API_PREFIX}/auth/refresh`, null),
-      );
-      authStore.setAccessToken(tokens.accessToken);
+      // Через единый координатор ротации (single-flight + Web Locks): восстановление
+      // сессии на старте не конкурирует с refresh соседней вкладки тем же токеном.
+      await tokenRefresh.refresh();
       const me = await firstValueFrom(http.get<AccountRead>(`${API_PREFIX}/accounts/me`));
       authStore.setAccount(me);
     } catch {

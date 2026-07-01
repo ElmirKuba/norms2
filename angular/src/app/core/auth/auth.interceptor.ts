@@ -1,12 +1,12 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import type { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, finalize, map, shareReplay, switchMap, throwError } from 'rxjs';
-import type { Observable } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PREFIX } from '../config/api.constants';
 import { AuthStore } from './auth-store.service';
+import { TokenRefreshService } from './token-refresh.service';
 import { ModalService } from '../../shared/modals/modal.service';
 
 /** Деталь активного бана из конверта `ACCOUNT_BANNED.details.bans`. */
@@ -31,9 +31,6 @@ const NO_REFRESH_PATHS = [
   `${API_PREFIX}/auth/reactivate`,
   `${API_PREFIX}/auth/refresh`,
 ];
-
-/** Single-flight: общий поток refresh для всех параллельных 401. */
-let refresh$: Observable<string> | null = null;
 
 /** Машинный код ошибки из конверта `{error:{code}}` или null. */
 function errorCodeOf(error: HttpErrorResponse): string | null {
@@ -92,42 +89,15 @@ function decorate<T>(request: HttpRequest<T>, token: string | null, apiBase: str
 }
 
 /**
- * Запускает (или переиспользует) ротацию: `POST /auth/refresh` по cookie. Успех →
- * кладёт новый access в стор и отдаёт его; провал → сбрасывает сессию и ведёт на
- * login. `shareReplay`+memo — один refresh на пачку одновременных 401.
- */
-function runRefresh(http: HttpClient, apiBase: string, authStore: AuthStore, router: Router): Observable<string> {
-  if (refresh$ !== null) {
-    return refresh$;
-  }
-  refresh$ = http
-    .post<{ accessToken: string }>(`${API_PREFIX}/auth/refresh`, null)
-    .pipe(
-      map((response): string => {
-        authStore.setAccessToken(response.accessToken);
-        return response.accessToken;
-      }),
-      catchError((error: unknown) => {
-        authStore.clear();
-        void router.navigate(['/login']);
-        return throwError(() => error);
-      }),
-      finalize(() => {
-        refresh$ = null;
-      }),
-      shareReplay(1),
-    );
-  return refresh$;
-}
-
-/**
  * HTTP-интерсептор аутентификации (ADR-0020): подставляет Bearer/credentials/base,
- * на `401` (кроме самого refresh) — ротирует токен и повторяет исходный запрос.
+ * на `401` (кроме самого refresh) — ротирует токен через `TokenRefreshService`
+ * (единый single-flight внутри вкладки + Web Locks между вкладками) и повторяет
+ * исходный запрос. Провал ротации (реально мёртвый токен) → сброс сессии + login.
  */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authStore = inject(AuthStore);
   const router = inject(Router);
-  const http = inject(HttpClient);
+  const tokenRefresh = inject(TokenRefreshService);
   const modal = inject(ModalService);
   const apiBase = environment.apiBase;
   const skipRefresh = NO_REFRESH_PATHS.some((path) => request.url.includes(path));
@@ -148,7 +118,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       if (!(error instanceof HttpErrorResponse) || error.status !== 401 || skipRefresh) {
         return throwError(() => error);
       }
-      return runRefresh(http, apiBase, authStore, router).pipe(
+      return from(tokenRefresh.refresh()).pipe(
+        catchError((refreshError: unknown) => {
+          authStore.clear();
+          void router.navigate(['/login']);
+          return throwError(() => refreshError);
+        }),
         switchMap((token) => next(decorate(request, token, apiBase))),
       );
     }),

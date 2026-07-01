@@ -6,7 +6,8 @@ import type { AuthTokens } from '../interfaces/auth-tokens.interface';
 
 /**
  * Use-case обновления токенов: ротирует сессию по refresh-cookie (CAS,
- * reuse-detect → revoke all внутри sessions) и выдаёт новые access+refresh.
+ * reuse-detect с грейс-окном → отзыв ТОЛЬКО реплейнутой сессии, не всего
+ * аккаунта — 2.5.2, ADR-0046) и выдаёт новые access+refresh.
  */
 @Injectable()
 export class RefreshTokensUseCase {

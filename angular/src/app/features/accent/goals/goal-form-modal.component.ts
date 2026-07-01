@@ -147,9 +147,12 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
   imports: [ReactiveFormsModule, ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form class="gf" [formGroup]="form" (ngSubmit)="save()">
-      <h3 class="gf__title">{{ isEdit ? 'Изменить цель' : 'Новая цель' }}</h3>
-
+    <div class="dlg">
+      <div class="dlg__head">
+        <h2>{{ isEdit ? 'Изменить цель' : 'Новая цель' }}</h2>
+      </div>
+      <form class="dlg__form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="dlg__body gf__fields">
       <label class="gf__field">
         <span class="gf__label">
           Название
@@ -305,23 +308,21 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
       @if (formError(); as fe) {
         <p class="gf__error">{{ fe }}</p>
       }
+        </div>
 
-      <div class="gf__actions">
-        <app-button variant="ghost" type="button" (click)="cancel()">Отмена</app-button>
-        <app-button type="submit" [loading]="busy()">Сохранить</app-button>
-      </div>
-    </form>
+        <div class="dlg__foot">
+          <app-button variant="ghost" type="button" (click)="cancel()">Отмена</app-button>
+          <app-button type="submit" [loading]="busy()">Сохранить</app-button>
+        </div>
+      </form>
+    </div>
   `,
   styles: [
     `
-      .gf {
+      .gf__fields {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
-        padding: var(--space-4);
-      }
-      .gf__title {
-        margin: 0;
       }
       .gf__field {
         display: flex;
@@ -401,12 +402,6 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
         color: var(--color-danger);
         margin: 0;
         font-size: var(--fs-sm);
-      }
-      .gf__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: var(--space-2);
-        margin-top: var(--space-2);
       }
     `,
   ],

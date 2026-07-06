@@ -96,6 +96,10 @@ account (фаза 1)
 - **AntiHabit:** `id`, `account_id`, `title`, `description?`, `isActive`, `currentAttemptStartedAt` (unix ms), `attemptNumber` (≥1), `recordDays`, `recordAttemptStartedAt?`, `targetDays?` (цель, напр. 365). Серия = `floor((now − startedAt)/86_400_000)` (фронт считает в реальном времени).
 - **AntiHabitRelapse:** `id`, `anti_habit_id`, `relapseAt` (unix ms), `attemptDurationMs`, `triggerTag?` (анализ триггеров срывов), `note?`, `created_at`.
 - **Рецидив:** `startedAt=now`, `attemptNumber++`, рекорд обновляется если текущая серия > recordDays; milestone-очки на 3/7/14/30… планируются (отложенные задачи `@nestjs/schedule`), при рецидиве отменяются.
+- **Инвариант (важно):** серия НЕ хранится — вычисляется из `currentAttemptStartedAt`. `recordDays` хранится **отдельно и переживает срыв** (это «лучшая попытка за всё время», рецидивом не обнуляется; `recordAttemptStartedAt?` — когда рекорд поставлен). Anti-burnout: одна осечка не стирает историю.
+- **Конкурентность:** рецидив идёт под optimistic `version` на `anti_habits` (CAS, [ADR-0035](../../decisions/0035-concurrency-control.md)) — гонка двух `relapse` разрешается (одна применяется, вторая перечитывает). Доменный гард `ALREADY_RELAPSED`: нельзя срыв без активной попытки / повторный срыв в тот же момент.
+- **События (хуки для 2.9):** `relapse` эмитит `anti_habit.relapsed`, «держится/веха» — `anti_habit.held` ([gamification §7](./gamification.md)). Слушателей/очков нет до 2.9 — 2.6 только эмитит.
+- **ПДн:** `triggerTag`/`note`/`description` — свободные поля → подсказка «без реальных имён/телефонов/адресов» ([ADR-0001](../../decisions/0001-data-minimization-no-pii.md), ui-ux §9).
 
 ## 8. Obstacle + Counterplay (препятствие)
 

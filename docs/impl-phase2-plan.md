@@ -1275,11 +1275,11 @@ _Заземлено на существующую доку: `domain-model §7`, 
 - **Человек (anti-burnout, из требований к 2.6 выше):** копирайт «Срыв» → «Новая попытка» (не «провал»); **рекорд и сумма переживают срыв** (модель это уже позволяет — рекорд отдельно от текущей серии); после срыва — короткая цель на возврат импульса; захват триггера без стыда; никакой аналитики залипания.
 - **Нарезка (B/S/A/verify) — resumable подпункты:**
   - **2.6·C1 (docs)** — досверка спеки (файл-эталон готовой спеки: `domain-model §5–7`):
-    - [ ] C1.1 `domain-model §7`: подтвердить поля `AntiHabit`/`AntiHabitRelapse` + явно зафиксировать инвариант «серия НЕ хранится (вычисляется), `recordDays` отдельно от текущей попытки, переживает срыв».
-    - [ ] C1.2 `api-contracts §7`: 5 эндпоинтов + тела + `ALREADY_RELAPSED` + cursor-пагинация `relapses`.
-    - [ ] C1.3 решить concurrency рецидива: optimistic `version` на `anti_habits` → рецидив = CAS (ADR-0035); описать в domain-model.
-    - [ ] C1.4 зафиксировать событие-хуки `anti_habit.held`/`anti_habit.relapsed` (эмит в domain-service; слушателей нет до 2.9).
-    - [ ] C1.5 PII-подсказка на `triggerTag`/`note`/`description` (ADR-0001) — отметить в `ui-ux`.
+    - [x] C1.1 `domain-model §7`: поля подтверждены + добавлен явный инвариант «серия НЕ хранится (вычисляется), `recordDays` отдельно, **переживает срыв**». ✅ 2026-07-06.
+    - [x] C1.2 `api-contracts §7`: 5 эндпоинтов на месте; добавлены `ALREADY_RELAPSED (409)` + явная cursor-пагинация `relapses`. ✅ 2026-07-06.
+    - [x] C1.3 concurrency рецидива: зафиксирован optimistic `version`/CAS ([ADR-0035](../decisions/0035-concurrency-control.md)) в `domain-model §7`. ✅ 2026-07-06.
+    - [x] C1.4 событие-хуки `anti_habit.held`/`anti_habit.relapsed` — уже в `gamification §7`; продублировано в `domain-model §7` (2.6 эмитит, слушатели в 2.9). ✅ 2026-07-06.
+    - [x] C1.5 PII-подсказка на `triggerTag`/`note`/`description` — уже в `ui-ux §9` («причина срыва»); явно связано из `domain-model §7`. ✅ 2026-07-06.
   - **2.6·C2 (БД)** — эталон: `nest/src/database/schemas/habits.schema.ts`, `repositories/accent/accent-habit.repository.ts`:
     - [ ] C2.1 `schemas/anti-habits.schema.ts`: поля §7 + PK `uuidv7___unixmillis`, `version`, `created/updated_at`.
     - [ ] C2.2 `schemas/anti-habit-relapses.schema.ts`: FK `anti_habit_id` `ON DELETE CASCADE` + `relapseAt`/`attemptDurationMs`/`triggerTag?`/`note?`/`created_at`.

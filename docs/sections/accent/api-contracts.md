@@ -67,8 +67,8 @@
 
 ## 7. AntiHabits
 - `GET /accent/anti-habits` (с вычисл. `currentDays` на фронте) · `POST` Body `{ title, description?, targetDays? }`.
-- `GET/PATCH /accent/anti-habits/:id` · `POST .../relapse` Body `{ triggerTag?, note? }` → сброс таймера, рекорд, история.
-- `GET /accent/anti-habits/:id/relapses?cursor` — история попыток.
+- `GET/PATCH /accent/anti-habits/:id` · `POST .../relapse` Body `{ triggerTag?, note? }` → сброс таймера, обновление рекорда, запись попытки. Ошибка **`ALREADY_RELAPSED` (409)** — срыв без активной попытки / повторный в тот же момент. Рецидив идёт под optimistic `version` (CAS, domain-model §7). Эмитит `anti_habit.relapsed` (хук для 2.9).
+- `GET /accent/anti-habits/:id/relapses?cursor` — история попыток (cursor-пагинация `{ items, nextCursor }`, см. §0).
 
 ## 8. Obstacles + Counterplays
 - `GET/POST /accent/obstacles` Body `{ name, type?, trigger?, symptoms?, intensity? }`.

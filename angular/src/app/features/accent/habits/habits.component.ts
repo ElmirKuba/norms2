@@ -656,7 +656,8 @@ export class HabitsComponent {
    */
   protected openTimer(task: TaskView): void {
     const done = task.doneValue ?? 0;
-    const remaining = Math.max(0, (task.targetValue ?? 0) - done);
+    const target = task.targetValue ?? 0;
+    const remaining = Math.max(0, target - done);
     if (remaining <= 0) {
       return; // цель уже набрана — таймер не нужен
     }
@@ -666,13 +667,23 @@ export class HabitsComponent {
         width: MODAL_SMALL_WIDTH,
         panelClass: 'modal-flush',
         disableClose: true,
-        data: { title: task.title, durationSeconds: remaining, prepSeconds: null, mode: 'duration' },
+        // Полная длительность = target; при наличии прогресса — предложить выбор «продолжить с остатка».
+        data: {
+          title: task.title,
+          durationSeconds: target,
+          prepSeconds: null,
+          mode: 'duration',
+          resumeSeconds: done > 0 ? remaining : null,
+        },
       },
     );
     ref.afterClosed().subscribe((result) => {
-      if (result?.status === 'done') {
-        this.completeTask(task, String(done + result.performedSeconds));
+      if (result?.status !== 'done') {
+        return;
       }
+      // «Сначала» (fromRestart) — заменить прогресс; «Продолжить» — накопить к сделанному.
+      const total = result.fromRestart ? result.performedSeconds : done + result.performedSeconds;
+      this.completeTask(task, String(total));
     });
   }
 

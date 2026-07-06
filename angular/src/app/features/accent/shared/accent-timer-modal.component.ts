@@ -14,16 +14,27 @@ export type AccentTimerMode = 'binary' | 'duration';
 export interface AccentTimerData {
   /** Название действия (заголовок фокус-экрана). */
   title: string;
-  /** Длительность действия в секундах (> 0). */
+  /** Полная длительность действия в секундах (> 0) — вариант «начать сначала». */
   durationSeconds: number;
   /** Время на подготовку в секундах (опц.; null/0 = без подготовки, сразу действие). */
   prepSeconds: number | null;
   /** Откуда открыт таймер — определяет семантику «Готово раньше»/зачёта. */
   mode: AccentTimerMode;
+  /**
+   * Остаток для «продолжить с места» (опц.). Если задан и `0 < resumeSeconds < durationSeconds` —
+   * первый экран предлагает ВЫБОР: «Продолжить (остаток)» или «Начать сначала (полная длительность)».
+   */
+  resumeSeconds?: number | null;
 }
 
-/** Результат: `done` + сколько секунд фактически засчитать (для `binary` = вся длительность); иначе `cancel`. */
-export type AccentTimerResult = { status: 'done'; performedSeconds: number } | { status: 'cancel' };
+/**
+ * Результат: `done` + сколько секунд действия фактически пройдено (`performedSeconds`) и был ли выбран
+ * рестарт (`fromRestart`: true → зачесть как есть/заменить; false → «продолжить» → вызывающий
+ * прибавляет к уже сделанному). Для `binary` `performedSeconds` = вся длительность. Иначе — `cancel`.
+ */
+export type AccentTimerResult =
+  | { status: 'done'; performedSeconds: number; fromRestart: boolean }
+  | { status: 'cancel' };
 
 // Ключ прежний (был у таймера микро-побед) — чтобы сохранить выбор звука пользователей при обобщении.
 const SOUND_KEY = 'accent.microWinTimer.sound';
@@ -48,7 +59,14 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
 
       <h2 class="tm__title">{{ data.title }}</h2>
 
-      @if (phase() === 'prep') {
+      @if (phase() === 'choose') {
+        <p class="tm__phase">Уже засчитано — продолжить или заново?</p>
+        <div class="tm__foot tm__foot--col">
+          <app-button (click)="chooseResume()">▶ Продолжить (осталось {{ fmt(data.resumeSeconds ?? 0) }})</app-button>
+          <app-button variant="ghost" (click)="chooseRestart()">↻ Начать сначала ({{ fmt(data.durationSeconds) }})</app-button>
+          <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
+        </div>
+      } @else if (phase() === 'prep') {
         <p class="tm__phase">Подготовка — приготовься 🧍</p>
         <div class="tm__clock" role="timer" [attr.aria-label]="'Подготовка: ' + clock()">{{ clock() }}</div>
         <div class="tm__bar"><span class="tm__bar-fill" [style.width.%]="progress()"></span></div>
@@ -145,6 +163,11 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
         justify-content: center;
         flex-wrap: wrap;
       }
+      .tm__foot--col {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+      }
     `,
   ],
 })
@@ -156,23 +179,37 @@ export class AccentTimerModalComponent implements OnDestroy {
 
   /** Есть ли фаза подготовки. */
   private readonly _hasPrep = (this.data.prepSeconds ?? 0) > 0;
-  /** Оставшиеся секунды (стартуем с подготовки, если она есть, иначе с длительности). */
-  protected readonly remaining = signal(this._hasPrep ? (this.data.prepSeconds ?? 0) : this.data.durationSeconds);
-  /** Фаза: подготовка / действие / спрашиваем «Сделал?». */
-  protected readonly phase = signal<'prep' | 'running' | 'ask'>(this._hasPrep ? 'prep' : 'running');
+  /** Нужен ли экран выбора «продолжить/сначала» (есть валидный остаток меньше полной длительности). */
+  private readonly _hasChoice =
+    (this.data.resumeSeconds ?? 0) > 0 && (this.data.resumeSeconds ?? 0) < this.data.durationSeconds;
+  /** Длительность выбранного действия (по умолчанию полная; «продолжить» ставит остаток). */
+  private readonly _actionSeconds = signal(this.data.durationSeconds);
+  /** Был ли выбран рестарт (true → зачесть как есть; false → «продолжить» → вызывающий накопит). */
+  private _fromRestart = true;
+  /** Оставшиеся секунды (в фазе выбора — 0, экран без часов). */
+  protected readonly remaining = signal(
+    this._hasChoice ? 0 : this._hasPrep ? (this.data.prepSeconds ?? 0) : this.data.durationSeconds,
+  );
+  /** Фаза: выбор / подготовка / действие / «Сделал?». */
+  protected readonly phase = signal<'choose' | 'prep' | 'running' | 'ask'>(
+    this._hasChoice ? 'choose' : this._hasPrep ? 'prep' : 'running',
+  );
   /** Звук (по умолчанию вкл; запоминается в localStorage). */
   protected readonly soundOn = signal(this._readSound());
   /** На паузе ли отсчёт (интервал тикает, но время не убывает). */
   protected readonly paused = signal(false);
 
+  /** Формат m:ss. */
+  protected fmt(s: number): string {
+    const x = Math.max(0, Math.floor(s));
+    return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`;
+  }
+
   /** Отсчёт в формате m:ss. */
-  protected readonly clock = computed(() => {
-    const s = Math.max(0, this.remaining());
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  });
+  protected readonly clock = computed(() => this.fmt(this.remaining()));
   /** Доля пройденного времени текущей фазы (для полосы). */
   protected readonly progress = computed(() => {
-    const total = this.phase() === 'prep' ? (this.data.prepSeconds ?? 0) : this.data.durationSeconds;
+    const total = this.phase() === 'prep' ? (this.data.prepSeconds ?? 0) : this._actionSeconds();
     return total > 0 ? ((total - this.remaining()) / total) * 100 : 100;
   });
 
@@ -194,6 +231,9 @@ export class AccentTimerModalComponent implements OnDestroy {
     if (this.paused()) {
       return; // на паузе время не убывает
     }
+    if (this.phase() !== 'prep' && this.phase() !== 'running') {
+      return; // фазы выбора/«Сделал?» не тикают
+    }
     const next = this.remaining() - 1;
     this.remaining.set(next);
     if (next > 0) {
@@ -211,18 +251,42 @@ export class AccentTimerModalComponent implements OnDestroy {
     }
   }
 
-  /** Завершает подготовку → отсчёт действия: звук «старт», сброс остатка на длительность. */
+  /** Завершает подготовку → отсчёт действия: звук «старт», сброс остатка на длительность действия. */
   private _beginAction(): void {
     if (this.soundOn()) {
       this._startChime();
     }
     this.phase.set('running');
-    this.remaining.set(this.data.durationSeconds);
+    this.remaining.set(this._actionSeconds());
   }
 
   /** Пропустить подготовку — сразу к действию. */
   protected skipPrep(): void {
     this._beginAction();
+  }
+
+  /** Выбор «Продолжить»: длительность = остаток, зачёт накопительный (вызывающий прибавит к сделанному). */
+  protected chooseResume(): void {
+    this._actionSeconds.set(this.data.resumeSeconds ?? this.data.durationSeconds);
+    this._fromRestart = false;
+    this._enterAction();
+  }
+
+  /** Выбор «Начать сначала»: полная длительность, зачёт заменяет прежний прогресс. */
+  protected chooseRestart(): void {
+    this._actionSeconds.set(this.data.durationSeconds);
+    this._fromRestart = true;
+    this._enterAction();
+  }
+
+  /** После выбора: подготовка (если есть) или сразу отсчёт действия. */
+  private _enterAction(): void {
+    if (this._hasPrep) {
+      this.phase.set('prep');
+      this.remaining.set(this.data.prepSeconds ?? 0);
+    } else {
+      this._beginAction();
+    }
   }
 
   /** Пауза/продолжение отсчёта действия (время замирает, прогресс сохраняется). */
@@ -237,20 +301,20 @@ export class AccentTimerModalComponent implements OnDestroy {
    */
   private _performed(): number {
     if (this.data.mode === 'binary') {
-      return this.data.durationSeconds;
+      return this._actionSeconds();
     }
-    return Math.max(0, this.data.durationSeconds - Math.max(0, this.remaining()));
+    return Math.max(0, this._actionSeconds() - Math.max(0, this.remaining()));
   }
 
   /** Досрочно: `binary` — засчитать полностью; `duration` — засчитать фактически пройденное. */
   protected finishEarly(): void {
     this._stop();
-    this._ref.close({ status: 'done', performedSeconds: this._performed() });
+    this._ref.close({ status: 'done', performedSeconds: this._performed(), fromRestart: this._fromRestart });
   }
 
-  /** Подтвердил выполнение на нуле — засчитываем полную длительность. */
+  /** Подтвердил выполнение на нуле — засчитываем полную длительность действия. */
   protected confirmDone(): void {
-    this._ref.close({ status: 'done', performedSeconds: this._performed() });
+    this._ref.close({ status: 'done', performedSeconds: this._performed(), fromRestart: this._fromRestart });
   }
 
   /** Отмена/«не сейчас» — без записи. */

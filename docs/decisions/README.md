@@ -106,6 +106,7 @@ ADR и `decision-map.md` (🗄 в архиве — фаза 0 завершена
 | [0054](./0054-tracker-manual-reorder-dragdrop.md) | «Акцент»: ручная сортировка трекеров перетаскиванием (`position` на сервере, per-account; `PUT …/reorder {ids}`; DnD = Angular CDK, уже в зависимостях) | accepted | [accent] [phase2] [frontend] |
 | [0055](./0055-progress-charts-apexcharts.md) | «Акцент»/общее: графики прогресса — **ApexCharts** (`ng-apexcharts`, MIT, self-host) за СВОИМ wrapper-компонентом (движок заменяем); вес в lazy-чанке; осознанное исключение к «без раздутых UI-китов» | accepted | [accent] [phase2] [frontend] |
 | [0056](./0056-micro-win-two-axis-taxonomy.md) | «Акцент»: микро-победы — ДВЕ оси (M#B3-1): `category` модальность «какой сброс» (обяз.) + опц. `domainKey` сфера «какую область питает» (общая со целями/привычками, под будущий «баланс сфер»); развод коллизии ярлыка spiritual | accepted | [accent] [phase2] |
+| [0057](./0057-unified-tracker-timer-component.md) | «Акцент»: единый фронт-компонент таймера **обратного отсчёта** для трекеров (микро-победы + `timed`-привычки, FEAT-H1 2.6.x); «живой таймер» анти-привычек (счёт-вверх) — отдельный компонент, не сводим | accepted | [accent] [phase2] [frontend] |
 
 ### Ожидают решения
 

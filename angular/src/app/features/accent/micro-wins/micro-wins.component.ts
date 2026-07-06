@@ -554,10 +554,10 @@ export class MicroWinsComponent {
       width: MODAL_SMALL_WIDTH,
       panelClass: 'modal-flush',
       disableClose: true,
-      data: { title: mw.title, durationSeconds: mw.durationSeconds, prepSeconds: mw.prepSeconds },
+      data: { title: mw.title, durationSeconds: mw.durationSeconds, prepSeconds: mw.prepSeconds, mode: 'binary' },
     });
     ref.afterClosed().subscribe((result) => {
-      if (result === 'done') {
+      if (result?.status === 'done') {
         this.complete(mw);
       }
     });

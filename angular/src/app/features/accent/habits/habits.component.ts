@@ -662,12 +662,12 @@ export class HabitsComponent {
         width: MODAL_SMALL_WIDTH,
         panelClass: 'modal-flush',
         disableClose: true,
-        data: { title: task.title, durationSeconds: seconds, prepSeconds: null },
+        data: { title: task.title, durationSeconds: seconds, prepSeconds: null, mode: 'duration' },
       },
     );
     ref.afterClosed().subscribe((result) => {
-      if (result === 'done') {
-        this.completeTask(task, String(seconds));
+      if (result?.status === 'done') {
+        this.completeTask(task, String(result.performedSeconds));
       }
     });
   }

@@ -2,7 +2,15 @@ import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 
-/** Данные таймера: что и на сколько. */
+/**
+ * Режим зачёта — таймер должен знать, откуда открыт (иначе «Готово раньше» врёт факт):
+ * - `binary` — микро-победы: факт бинарный, длительность не важна; «Готово раньше» = засчитать полностью.
+ * - `duration` — `timed`-привычки: длительность И ЕСТЬ цель; кнопка «Засчитать сейчас» возвращает
+ *   реально прошедшие секунды (частичный зачёт: `partial ≥ minTarget` держит серию).
+ */
+export type AccentTimerMode = 'binary' | 'duration';
+
+/** Данные таймера: что, на сколько и в каком режиме зачёта. */
 export interface AccentTimerData {
   /** Название действия (заголовок фокус-экрана). */
   title: string;
@@ -10,10 +18,12 @@ export interface AccentTimerData {
   durationSeconds: number;
   /** Время на подготовку в секундах (опц.; null/0 = без подготовки, сразу действие). */
   prepSeconds: number | null;
+  /** Откуда открыт таймер — определяет семантику «Готово раньше»/зачёта. */
+  mode: AccentTimerMode;
 }
 
-/** Результат: `done` — засчитать выполнение, иначе `null`/`cancel` — без записи. */
-export type AccentTimerResult = 'done' | 'cancel';
+/** Результат: `done` + сколько секунд фактически засчитать (для `binary` = вся длительность); иначе `cancel`. */
+export type AccentTimerResult = { status: 'done'; performedSeconds: number } | { status: 'cancel' };
 
 // Ключ прежний (был у таймера микро-побед) — чтобы сохранить выбор звука пользователей при обобщении.
 const SOUND_KEY = 'accent.microWinTimer.sound';
@@ -50,7 +60,7 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
         <div class="tm__clock" role="timer" [attr.aria-label]="'Осталось ' + clock()">{{ clock() }}</div>
         <div class="tm__bar"><span class="tm__bar-fill" [style.width.%]="progress()"></span></div>
         <div class="tm__foot">
-          <app-button (click)="finishEarly()">Готово раньше</app-button>
+          <app-button (click)="finishEarly()">{{ data.mode === 'duration' ? 'Засчитать сейчас' : 'Готово раньше' }}</app-button>
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
         </div>
       } @else {
@@ -208,21 +218,33 @@ export class AccentTimerModalComponent implements OnDestroy {
     this._beginAction();
   }
 
-  /** Закончил раньше срока — выполнил → засчитываем. */
-  protected finishEarly(): void {
-    this._stop();
-    this._ref.close('done');
+  /**
+   * Сколько секунд засчитать. `binary` (микро-победа) — вся длительность (число не важно).
+   * `duration` (привычка) — фактически прошедшие секунды действия (частичный зачёт при досрочной
+   * остановке; на нуле = вся длительность).
+   */
+  private _performed(): number {
+    if (this.data.mode === 'binary') {
+      return this.data.durationSeconds;
+    }
+    return Math.max(0, this.data.durationSeconds - Math.max(0, this.remaining()));
   }
 
-  /** Подтвердил выполнение на нуле — засчитываем. */
+  /** Досрочно: `binary` — засчитать полностью; `duration` — засчитать фактически пройденное. */
+  protected finishEarly(): void {
+    this._stop();
+    this._ref.close({ status: 'done', performedSeconds: this._performed() });
+  }
+
+  /** Подтвердил выполнение на нуле — засчитываем полную длительность. */
   protected confirmDone(): void {
-    this._ref.close('done');
+    this._ref.close({ status: 'done', performedSeconds: this._performed() });
   }
 
   /** Отмена/«не сейчас» — без записи. */
   protected cancel(): void {
     this._stop();
-    this._ref.close('cancel');
+    this._ref.close({ status: 'cancel' });
   }
 
   /** Переключает звук и запоминает выбор. */

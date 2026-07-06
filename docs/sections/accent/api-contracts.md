@@ -49,6 +49,7 @@
 
 ## 5. Habits (TaskTemplate) + Tasks + лесенка
 - `GET /accent/habits` · `POST /accent/habits` Body `{ title, description?, icon?, domainKey?, attributes?, goalId?, priority?, kind, recurrence, ladder:{minTarget,currentTarget,goalTarget?,step?,policy}, minVersion? }` → 201.
+  - **Полярность/время (план 2.6.x, [ADR-0058](../../decisions/0058-habit-ladder-polarity-and-clock-kind.md)):** `kind` допускает `clock`; `ladder` расширяется опц. `direction` (`raise|lower`, дефолт `raise`) и `anchorMinutes?` (для `clock` — минуты от вечернего якоря). Аддитивно, дефолт = текущее поведение; кросс-инвариант (`clock` требует якорь, `lower` переворачивает порядок целей) проверяет domain-service.
 - `GET/PATCH /accent/habits/:id` · `POST /accent/habits/:id/deactivate` (мягко: `isActive=false` → уходит из материализации; **+ удаляет ещё не тронутые `pending`-задачи этой привычки**, `done`/`partial`/`skipped` оставляет ради истории — удаление шаблона намеренное).
 - `POST /accent/habits/starter-pack` → засевает примеры-привычки (`is_starter=true`, дедуп по названию, только докидывает) → свежий список. `DELETE` → удаляет непринятые примеры → свежий список. **Инертная витрина (ADR-0051):** примеры видны в «Шаблонах» с бейджем, но НЕ материализуют задачи / не двигают лесенку до присвоения.
 - `POST /accent/habits/:id/adopt` → «Добавить себе»: снимает `is_starter` (привычка начинает материализовать задачи). Adoption также при `PATCH` (редактирование).

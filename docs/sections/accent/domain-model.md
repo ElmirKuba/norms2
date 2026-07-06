@@ -32,7 +32,8 @@ account (фаза 1)
 - **`UserState`** = `survival | recovery | stability | growth | sprint | maintenance` (+ производные «перегружен/откатился» вычисляются, не хранятся). **Старт (реш. #3):** `StateResolver` начинает с упрощённого набора (`survival | stability | growth` + `paused`); полный список — поздний инкремент **без миграции** (UserState вычисляется, не хранится).
 - **`DomainKey`** — сфера жизни: `health | sleep | sport | work | money | relationships | learning | home | creativity | purpose` (расширяемо; справочник, не жёсткий enum в БД).
 - **`Attribute`** (RPG-прокачка, [ADR-0028](../../decisions/0028-accent-timezone-and-domains.md)) — `strength | discipline | intellect | spirit | social | health` (расширяемо). Цель/привычка может прокачивать 0..N атрибутов → «паучья диаграмма» баланса + связь с Identity. Сфера (факт) и атрибуты (игра) — параллельны, не взаимоисключающи.
-- **`HabitKind`** = `binary | quantitative | timed` (тип измерения выполнения).
+- **`HabitKind`** = `binary | quantitative | timed` (тип измерения выполнения) **+ `clock`** (целевое ВРЕМЯ суток / дедлайн — план 2.6.x, [ADR-0058](../../decisions/0058-habit-ladder-polarity-and-clock-kind.md)).
+- **`LadderDirection`** = `raise | lower` (полярность лесенки, дефолт `raise` = «выше лучше»; `lower` = «ниже/раньше лучше» — план 2.6.x, [ADR-0058](../../decisions/0058-habit-ladder-polarity-and-clock-kind.md)).
 - **`Priority`** = `low | normal | high | urgent`.
 - **`ProgressUnit`** — свободная строка (`раз`, `км`, `страниц`, `мин`). Числа прогресса — `numeric`, не float.
 
@@ -79,6 +80,7 @@ account (фаза 1)
 - `currentTarget` — текущая «дневная цель» привычки.
 - `goalTarget?` — желаемый потолок (напр. 100 отжиманий).
 - `step?`, `policy` (`manual | adaptive`). При `adaptive`: N лёгких выполнений подряд → `currentTarget += step`; срыв/тяжело → откат к `minTarget` или ниже. Алгоритм — в `gamification.md`.
+- `direction?` (`raise|lower`, дефолт `raise` — план 2.6.x, [ADR-0058](../../decisions/0058-habit-ladder-polarity-and-clock-kind.md)): при `lower` успех = `performed ≤ currentTarget`, планка двигается ВНИЗ, инвариант переворачивается (`goalTarget ≤ currentTarget ≤ minTarget`). Для `kind='clock'` цели/факт хранятся как **`anchorMinutes`** — минуты от вечернего якоря (midnight-safe).
 
 **Task** (инстанс на день): `id`, `account_id`, `templateId?` (null = разовая задача, one-off), `goalId?`, `title`, `occurred_on` (date), `kind`, `targetValue?` (снимок currentTarget на день), `doneValue?` (сколько фактически — частичное выполнение), `status` (`pending|done|partial|skipped`), `skipReason?` (`postponed|cancelled`), `postponedFromTaskId?`, `priority`, `category?` (для разовых), `deadline?` (для разовых), `completedAt?`, `created_at`.
 - **Инварианты:** уник `(templateId, occurred_on)` где templateId не null — 1 инстанс/день; `done`/`partial` требует `doneValue` и `completedAt`; **`partial` при `doneValue ≥ minTarget` засчитывается как победа и держит серию**; `complete` идемпотентен; `uncomplete` → pending + revoke PointEvent; `postpone` → новый Task на завтра + текущий `skipped/postponed`.

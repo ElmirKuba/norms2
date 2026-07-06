@@ -214,13 +214,53 @@ export class AccentTimerModalComponent implements OnDestroy {
   });
 
   private _intervalId: ReturnType<typeof setInterval> | null = null;
+  /** Персистентный аудио-контекст (создаётся лениво, «разблокируется» пользовательским жестом). */
+  private _audioCtx: AudioContext | null = null;
+
+  /**
+   * Разблокировка аудио: `resume()` контекста ДОЛЖЕН произойти внутри пользовательского жеста
+   * (иначе iOS Safari держит контекст `suspended` и звук не играет; Android/десктоп мягче).
+   * Arrow-поле — стабильная ссылка для add/removeEventListener. Идемпотентно и дёшево.
+   */
+  private readonly _unlockAudio = (): void => {
+    const ctx = this._ensureAudioCtx();
+    if (ctx !== null && ctx.state === 'suspended') {
+      void ctx.resume();
+    }
+  };
 
   public constructor() {
     this._intervalId = setInterval(() => this._tick(), 1000);
+    // Готовим/будим аудио: best-effort сейчас (конструктор — в стеке клика, открывшего модалку) +
+    // на первом тапе где угодно (capture, чтобы поймать раньше). Снимаем слушатели в ngOnDestroy.
+    this._unlockAudio();
+    document.addEventListener('pointerdown', this._unlockAudio, true);
+    document.addEventListener('touchstart', this._unlockAudio, true);
   }
 
   public ngOnDestroy(): void {
     this._stop();
+    document.removeEventListener('pointerdown', this._unlockAudio, true);
+    document.removeEventListener('touchstart', this._unlockAudio, true);
+    void this._audioCtx?.close();
+    this._audioCtx = null;
+  }
+
+  /** Лениво создаёт аудио-контекст (Web Audio; webkit-префикс для старых Safari). */
+  private _ensureAudioCtx(): AudioContext | null {
+    if (this._audioCtx === null) {
+      const Ctx =
+        window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctx === undefined) {
+        return null;
+      }
+      try {
+        this._audioCtx = new Ctx();
+      } catch {
+        return null;
+      }
+    }
+    return this._audioCtx;
   }
 
   /**
@@ -388,12 +428,15 @@ export class AccentTimerModalComponent implements OnDestroy {
    */
   private _tones(notes: readonly { freq: number; start: number; dur: number; gain: number }[]): void {
     try {
-      const Ctx =
-        window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctx === undefined) {
+      // Переиспользуем персистентный, «разбуженный» жестом контекст (iOS не даёт играть свежесозданный
+      // вне жеста). Если по какой-то причине завис в suspended — пробуем добудить (на десктопе сработает).
+      const ctx = this._ensureAudioCtx();
+      if (ctx === null) {
         return;
       }
-      const ctx = new Ctx();
+      if (ctx.state === 'suspended') {
+        void ctx.resume();
+      }
       // Лимитер: позволяет гнать ноты на полную шкалу (ride системной громкости) без клиппинга.
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -2;
@@ -404,7 +447,6 @@ export class AccentTimerModalComponent implements OnDestroy {
       const master = ctx.createGain();
       master.gain.value = 1.0;
       master.connect(limiter).connect(ctx.destination);
-      let end = 0;
       // Нота = фундамент + 2-я и 3-я гармоники (плотный спектр) с сустейном (держим, не роняем
       // сразу) → высокий RMS → воспринимается громко, как музыка/видео, а не тонкий «пик».
       const partials: readonly (readonly [number, number])[] = [
@@ -433,9 +475,7 @@ export class AccentTimerModalComponent implements OnDestroy {
       };
       for (const n of notes) {
         voice(n.freq, n.start, n.dur, n.gain);
-        end = Math.max(end, n.start + n.dur);
       }
-      setTimeout(() => void ctx.close(), (end + 0.3) * 1000);
     } catch {
       /* звук не критичен */
     }

@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 
 /** Данные таймера: что и на сколько. */
-export interface MicroWinTimerData {
+export interface AccentTimerData {
   /** Название действия (заголовок фокус-экрана). */
   title: string;
   /** Длительность действия в секундах (> 0). */
@@ -13,19 +13,22 @@ export interface MicroWinTimerData {
 }
 
 /** Результат: `done` — засчитать выполнение, иначе `null`/`cancel` — без записи. */
-export type MicroWinTimerResult = 'done' | 'cancel';
+export type AccentTimerResult = 'done' | 'cancel';
 
+// Ключ прежний (был у таймера микро-побед) — чтобы сохранить выбор звука пользователей при обобщении.
 const SOUND_KEY = 'accent.microWinTimer.sound';
 
 /**
- * Фокус-модалка таймера микро-победы (M#B3-4): крупный обратный отсчёт на спокойном экране —
- * превращает телефон в одну считающую поверхность вместо ленты (anti-doomscroll,
+ * Единый фокус-таймер обратного отсчёта для трекеров «Акцента» ([ADR-0057]): крупный отсчёт на
+ * спокойном экране — превращает телефон в одну считающую поверхность вместо ленты (anti-doomscroll,
  * [[accent-core-why-anti-doomscroll]]). На нуле — мягкий звук (опц., по умолч. вкл) и вопрос
  * «Сделал?»: засчитываем по подтверждению, не автоматом. Бэк не нужен — завершение делает
- * вызывающий через существующий `completeMicroWin`. Тексты просто ([[ui-copy-plain-simple]]).
+ * вызывающий (микро-победа → `completeMicroWin`; `timed`-привычка → `completeTask`, FEAT-H1).
+ * Тексты просто ([[ui-copy-plain-simple]]). «Живой таймер» анти-привычек (счёт-вверх) — ДРУГОЙ
+ * компонент, сюда не сводится ([ADR-0057]).
  */
 @Component({
-  selector: 'app-micro-win-timer-modal',
+  selector: 'app-accent-timer-modal',
   imports: [ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -133,11 +136,11 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
     `,
   ],
 })
-export class MicroWinTimerModalComponent implements OnDestroy {
+export class AccentTimerModalComponent implements OnDestroy {
   private readonly _ref =
-    inject<MatDialogRef<MicroWinTimerModalComponent, MicroWinTimerResult | null>>(MatDialogRef);
+    inject<MatDialogRef<AccentTimerModalComponent, AccentTimerResult | null>>(MatDialogRef);
   /** Данные таймера. */
-  protected readonly data = inject<MicroWinTimerData>(MAT_DIALOG_DATA);
+  protected readonly data = inject<AccentTimerData>(MAT_DIALOG_DATA);
 
   /** Есть ли фаза подготовки. */
   private readonly _hasPrep = (this.data.prepSeconds ?? 0) > 0;
@@ -259,7 +262,7 @@ export class MicroWinTimerModalComponent implements OnDestroy {
 
   /** Сигнал «финиш» — победная фанфара «да-да-да-да-ДАМ»: восходящий бег + мощный держащийся аккорд. */
   private _chime(): void {
-    const T = MicroWinTimerModalComponent;
+    const T = AccentTimerModalComponent;
     this._tones([
       { freq: T.C5, start: 0.0, dur: 0.16, gain: 0.95 }, // да
       { freq: T.E5, start: 0.14, dur: 0.16, gain: 0.95 }, // да
@@ -272,7 +275,7 @@ export class MicroWinTimerModalComponent implements OnDestroy {
 
   /** Сигнал «старт» — короткое бодрое «та-ДАМ» (подготовка кончилась, начинай). */
   private _startChime(): void {
-    const T = MicroWinTimerModalComponent;
+    const T = AccentTimerModalComponent;
     this._tones([
       { freq: T.G5, start: 0.0, dur: 0.13, gain: 0.9 }, // та
       { freq: T.C6, start: 0.12, dur: 0.65, gain: 1.0 }, // ДАМ (держится)

@@ -20,8 +20,8 @@ import { CategoryGuideModalComponent } from './category-guide-modal.component';
 import type { MicroWinPayload, MicroWinView } from '../accent.types';
 import { MicroWinFormModalComponent } from './micro-win-form-modal.component';
 import type { MicroWinFormData } from './micro-win-form-modal.component';
-import { MicroWinTimerModalComponent } from './micro-win-timer-modal.component';
-import type { MicroWinTimerData, MicroWinTimerResult } from './micro-win-timer-modal.component';
+import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
+import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
 
 /**
  * Экран микро-побед (`/accent/micro-wins`): список «сделать сейчас» с дневным фидбэком
@@ -547,10 +547,10 @@ export class MicroWinsComponent {
    */
   protected openTimer(mw: MicroWinView): void {
     const ref = this._dialog.open<
-      MicroWinTimerModalComponent,
-      MicroWinTimerData,
-      MicroWinTimerResult | null
-    >(MicroWinTimerModalComponent, {
+      AccentTimerModalComponent,
+      AccentTimerData,
+      AccentTimerResult | null
+    >(AccentTimerModalComponent, {
       width: MODAL_SMALL_WIDTH,
       panelClass: 'modal-flush',
       disableClose: true,

@@ -12,7 +12,7 @@ import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { ModalService } from '../../../shared/modals/modal.service';
-import { MODAL_MEDIUM_WIDTH } from '../../../shared/modals/modals.constants';
+import { MODAL_MEDIUM_WIDTH, MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
@@ -20,6 +20,8 @@ import type { HabitPayload, HabitView, LadderEventView, TaskView } from '../acce
 import { recurrenceLabel } from './recurrence-label.util';
 import { HabitFormModalComponent } from './habit-form-modal.component';
 import type { HabitFormData } from './habit-form-modal.component';
+import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
+import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
 
 /**
  * Экран привычек (`/accent/habits`, 2.4) — вкладки **Сегодня** (дневной чеклист, ·17) и
@@ -121,6 +123,14 @@ import type { HabitFormData } from './habit-form-modal.component';
                         } @else {
                           <input #val class="hb__numin" type="number" min="0" [value]="t.targetValue ?? 1" />
                           <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t, val.value)">Отметить</app-button>
+                          @if (t.kind === 'timed') {
+                            <app-button
+                              variant="ghost"
+                              [disabled]="busyTaskId() === t.id"
+                              title="Засечь время с таймером"
+                              (click)="openTimer(t, val.value)"
+                            >▶ засечь</app-button>
+                          }
                         }
                       }
                       @if (t.status === 'done' || t.status === 'partial') {
@@ -634,6 +644,31 @@ export class HabitsComponent {
         this.busyTaskId.set(null);
       },
       error: () => this.busyTaskId.set(null),
+    });
+  }
+
+  /**
+   * Фокус-таймер для `timed`-задачи (FEAT-H1, [ADR-0057]): обратный отсчёт на длительность из поля
+   * ввода (или снимок `targetValue`, дефолт 60с). По подтверждению — зачёт через обычный
+   * `completeTask` (doneValue = секунды ≥ target → лесенка двигается на бэке). Отмена — без записи.
+   * Переиспользует общий таймер-компонент (тот же, что у микро-побед). Бэк не трогается.
+   */
+  protected openTimer(task: TaskView, rawValue?: string): void {
+    const parsed = rawValue !== undefined && rawValue.trim() !== '' ? Number(rawValue) : Number.NaN;
+    const seconds = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : (task.targetValue ?? 60);
+    const ref = this._dialog.open<AccentTimerModalComponent, AccentTimerData, AccentTimerResult | null>(
+      AccentTimerModalComponent,
+      {
+        width: MODAL_SMALL_WIDTH,
+        panelClass: 'modal-flush',
+        disableClose: true,
+        data: { title: task.title, durationSeconds: seconds, prepSeconds: null },
+      },
+    );
+    ref.afterClosed().subscribe((result) => {
+      if (result === 'done') {
+        this.completeTask(task, String(seconds));
+      }
     });
   }
 

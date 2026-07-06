@@ -127,8 +127,8 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                             <app-button
                               variant="ghost"
                               [disabled]="busyTaskId() === t.id"
-                              title="Засечь время с таймером"
-                              (click)="openTimer(t, val.value)"
+                              title="Засечь время с таймером (с остатка, с паузой)"
+                              (click)="openTimer(t)"
                             >▶ засечь</app-button>
                           }
                         }
@@ -648,26 +648,30 @@ export class HabitsComponent {
   }
 
   /**
-   * Фокус-таймер для `timed`-задачи (FEAT-H1, [ADR-0057]): обратный отсчёт на длительность из поля
-   * ввода (или снимок `targetValue`, дефолт 60с). По подтверждению — зачёт через обычный
-   * `completeTask` (doneValue = секунды ≥ target → лесенка двигается на бэке). Отмена — без записи.
-   * Переиспользует общий таймер-компонент (тот же, что у микро-побед). Бэк не трогается.
+   * Фокус-таймер для `timed`-задачи (FEAT-H1, [ADR-0057]): считает **остаток** = `target − сделано`
+   * (напр. час на дорожке, 30 мин уже сделано → таймер на оставшиеся 30 мин), с паузой. По зачёту —
+   * общий `completeTask` с **накопленным** значением (`сделано + прошедшее`, не заново; бэк
+   * перезаписывает `doneValue`). `≥ target` → done, иначе partial (`≥ minTarget` держит серию).
+   * Отмена — без записи. Общий таймер-компонент (как у микро-побед). Бэк не трогается.
    */
-  protected openTimer(task: TaskView, rawValue?: string): void {
-    const parsed = rawValue !== undefined && rawValue.trim() !== '' ? Number(rawValue) : Number.NaN;
-    const seconds = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : (task.targetValue ?? 60);
+  protected openTimer(task: TaskView): void {
+    const done = task.doneValue ?? 0;
+    const remaining = Math.max(0, (task.targetValue ?? 0) - done);
+    if (remaining <= 0) {
+      return; // цель уже набрана — таймер не нужен
+    }
     const ref = this._dialog.open<AccentTimerModalComponent, AccentTimerData, AccentTimerResult | null>(
       AccentTimerModalComponent,
       {
         width: MODAL_SMALL_WIDTH,
         panelClass: 'modal-flush',
         disableClose: true,
-        data: { title: task.title, durationSeconds: seconds, prepSeconds: null, mode: 'duration' },
+        data: { title: task.title, durationSeconds: remaining, prepSeconds: null, mode: 'duration' },
       },
     );
     ref.afterClosed().subscribe((result) => {
       if (result?.status === 'done') {
-        this.completeTask(task, String(result.performedSeconds));
+        this.completeTask(task, String(done + result.performedSeconds));
       }
     });
   }

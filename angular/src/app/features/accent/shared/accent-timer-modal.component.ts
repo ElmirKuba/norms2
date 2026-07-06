@@ -57,9 +57,11 @@ const SOUND_KEY = 'accent.microWinTimer.sound';
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
         </div>
       } @else if (phase() === 'running') {
+        @if (paused()) { <p class="tm__phase">На паузе ⏸</p> }
         <div class="tm__clock" role="timer" [attr.aria-label]="'Осталось ' + clock()">{{ clock() }}</div>
         <div class="tm__bar"><span class="tm__bar-fill" [style.width.%]="progress()"></span></div>
         <div class="tm__foot">
+          <app-button variant="ghost" (click)="togglePause()">{{ paused() ? '▶ Продолжить' : '⏸ Пауза' }}</app-button>
           <app-button (click)="finishEarly()">{{ data.mode === 'duration' ? 'Засчитать сейчас' : 'Готово раньше' }}</app-button>
           <app-button variant="ghost" (click)="cancel()">Отмена</app-button>
         </div>
@@ -160,6 +162,8 @@ export class AccentTimerModalComponent implements OnDestroy {
   protected readonly phase = signal<'prep' | 'running' | 'ask'>(this._hasPrep ? 'prep' : 'running');
   /** Звук (по умолчанию вкл; запоминается в localStorage). */
   protected readonly soundOn = signal(this._readSound());
+  /** На паузе ли отсчёт (интервал тикает, но время не убывает). */
+  protected readonly paused = signal(false);
 
   /** Отсчёт в формате m:ss. */
   protected readonly clock = computed(() => {
@@ -187,6 +191,9 @@ export class AccentTimerModalComponent implements OnDestroy {
    * останавливаем). На нуле действия — звук «финиш» и переход к «Сделал?».
    */
   private _tick(): void {
+    if (this.paused()) {
+      return; // на паузе время не убывает
+    }
     const next = this.remaining() - 1;
     this.remaining.set(next);
     if (next > 0) {
@@ -216,6 +223,11 @@ export class AccentTimerModalComponent implements OnDestroy {
   /** Пропустить подготовку — сразу к действию. */
   protected skipPrep(): void {
     this._beginAction();
+  }
+
+  /** Пауза/продолжение отсчёта действия (время замирает, прогресс сохраняется). */
+  protected togglePause(): void {
+    this.paused.update((p) => !p);
   }
 
   /**

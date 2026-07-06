@@ -35,6 +35,8 @@ export const habitBodyShape = {
     .nullish(),
   ladder: ladderSchema,
   minVersion: z.string().max(280).nullish(),
+  // Время подготовки перед timed-таймером, сек (опц., FEAT-H1) — как у микро-побед.
+  prepSeconds: z.number().int('prepSeconds — целое.').min(0, 'prepSeconds ≥ 0.').max(3600, 'prepSeconds ≤ 3600.').nullish(),
 };
 
 /** Схема тела POST /accent/habits (closed-shape). */

@@ -43,6 +43,7 @@ export class CreateHabitUseCase {
       goalId: dto.goalId ?? null,
       priority: dto.priority ?? 0,
       minVersion: dto.minVersion ?? null,
+      prepSeconds: dto.prepSeconds ?? null,
     });
     return toHabitView(created);
   }

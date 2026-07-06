@@ -35,6 +35,7 @@ export class UpdateHabitUseCase {
       recurrence: dto.recurrence,
       startDate: dto.startDate,
       minVersion: dto.minVersion,
+      prepSeconds: dto.prepSeconds,
       ladder:
         dto.ladder === undefined
           ? undefined

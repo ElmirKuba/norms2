@@ -76,6 +76,8 @@ export interface HabitFull {
   ladder: HabitLadder;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion: string | null;
+  /** Время подготовки (сек) перед timed-таймером (опц., FEAT-H1). */
+  prepSeconds: number | null;
   /** Версия строки для оптимистичного лока (ADR-0035; движок лесенки пишет через CAS). */
   version: number;
   /** Когда создано. */

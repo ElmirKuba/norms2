@@ -46,6 +46,8 @@ export interface HabitView {
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */
   minVersion: string | null;
+  /** Время подготовки (сек) перед timed-таймером или null (FEAT-H1). */
+  prepSeconds: number | null;
 }
 
 /**
@@ -76,5 +78,6 @@ export function toHabitView(full: HabitFull): HabitView {
       policy: full.ladder.policy,
     },
     minVersion: full.minVersion,
+    prepSeconds: full.prepSeconds,
   };
 }

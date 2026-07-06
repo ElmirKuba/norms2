@@ -159,6 +159,9 @@ export class AccentHabitDomainService {
     if (patch.minVersion !== undefined) {
       clean.minVersion = patch.minVersion;
     }
+    if (patch.prepSeconds !== undefined) {
+      clean.prepSeconds = patch.prepSeconds;
+    }
     if (patch.isActive !== undefined) {
       clean.isActive = patch.isActive;
     }

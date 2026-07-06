@@ -39,6 +39,8 @@ export const habits = defineTableWithSchema<HabitFull>()(
     isStarter: boolean('is_starter').notNull().default(false),
     ladder: jsonb('ladder').$type<HabitLadder>().notNull(),
     minVersion: text('min_version'),
+    // Время подготовки (сек) перед timed-таймером (опц., FEAT-H1); как у микро-побед.
+    prepSeconds: integer('prep_seconds'),
     // Оптимистичный лок (ADR-0035): движок лесенки пишет через CAS по version,
     // любой update bump'ает version (правки целей лесенки vs движок при мультидевайсе).
     version: integer('version').notNull().default(0),

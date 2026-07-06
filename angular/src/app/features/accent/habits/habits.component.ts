@@ -661,6 +661,8 @@ export class HabitsComponent {
     if (remaining <= 0) {
       return; // цель уже набрана — таймер не нужен
     }
+    // Время подготовки берём с самой привычки (шаблона задачи), если задано (FEAT-H1).
+    const prep = this.habits().find((h) => h.id === task.templateId)?.prepSeconds ?? null;
     const ref = this._dialog.open<AccentTimerModalComponent, AccentTimerData, AccentTimerResult | null>(
       AccentTimerModalComponent,
       {
@@ -671,7 +673,7 @@ export class HabitsComponent {
         data: {
           title: task.title,
           durationSeconds: target,
-          prepSeconds: null,
+          prepSeconds: prep,
           mode: 'duration',
           resumeSeconds: done > 0 ? remaining : null,
         },

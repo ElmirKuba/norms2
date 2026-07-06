@@ -189,6 +189,8 @@ export interface HabitView {
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */
   minVersion: string | null;
+  /** Время подготовки (сек) перед timed-таймером или null (FEAT-H1). */
+  prepSeconds: number | null;
 }
 
 /** Тело создания/обновления привычки (`POST`/`PATCH /accent/habits`). */
@@ -223,6 +225,8 @@ export interface HabitPayload {
   priority?: number;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion?: string | null;
+  /** Время подготовки (сек) перед timed-таймером (опц., FEAT-H1). */
+  prepSeconds?: number | null;
 }
 
 /** Статус задачи. */

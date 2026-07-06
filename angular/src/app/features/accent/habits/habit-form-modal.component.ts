@@ -302,6 +302,14 @@ function todayYmd(): string {
           </div>
         }
 
+        @if (isTimed()) {
+          <label class="hf__field">
+            <span class="hf__label">Подготовка перед таймером <span class="hf__opt">(опц., сек)</span></span>
+            <input class="hf__input" type="number" min="0" max="3600" formControlName="prepSeconds" placeholder="напр. 5" />
+            <span class="hf__hint">Обратный отсчёт «приготовься» перед стартом. Пусто — без подготовки.</span>
+          </label>
+        }
+
         <label class="hf__field">
           <span class="hf__label">
             Сфера <span class="hf__opt">(опц.)</span>
@@ -578,6 +586,8 @@ export class HabitFormModalComponent {
     domainKey: new FormControl<string | null>(null),
     goalId: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
+    // Время подготовки перед таймером (сек), только для timed (опц., FEAT-H1).
+    prepSeconds: new FormControl<number | null>(null),
     // «Начать не сегодня»: якорь расписания (BUG-2). Выкл → старт с даты создания;
     // вкл → с выбранной даты (для «каждые N дней» сдвиг даёт чередование в противофазе).
     startNotToday: new FormControl(false, { nonNullable: true }),
@@ -610,6 +620,7 @@ export class HabitFormModalComponent {
 
   /** Показывать ли поля лесенки (не binary). */
   protected readonly isQuantitative = computed(() => this._kind() !== 'binary');
+  protected readonly isTimed = computed(() => this._kind() === 'timed');
   /** Адаптивная ли политика (показ шага). */
   protected readonly isAdaptive = computed(() => this._policy() === 'adaptive');
   /** Показывать ли выбор дней недели. */
@@ -657,6 +668,7 @@ export class HabitFormModalComponent {
         domainKey: habit.domainKey,
         goalId: habit.goalId,
         minVersion: habit.minVersion ?? '',
+        prepSeconds: habit.prepSeconds ?? null,
         startNotToday: habit.startDate !== null,
         startDate: habit.startDate ?? todayYmd(),
       });
@@ -751,6 +763,8 @@ export class HabitFormModalComponent {
       goalId: v.goalId,
       attributes: [...this.attrs()],
       minVersion: v.minVersion.trim() === '' ? null : v.minVersion.trim(),
+      // Подготовка — только для timed и только положительная; иначе null.
+      prepSeconds: v.kind === 'timed' && v.prepSeconds !== null && v.prepSeconds > 0 ? v.prepSeconds : null,
     };
     this._submit(payload);
   }

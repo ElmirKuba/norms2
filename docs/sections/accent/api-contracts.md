@@ -56,6 +56,7 @@
 - `GET /accent/tasks/overdue` · `GET /accent/tasks/due-today` (для разовых с deadline).
 - `POST /accent/tasks` Body `{ title, occurredOn, kind, targetValue?, category?, deadline?, priority? }` → разовая (one-off).
 - `POST /accent/tasks/:id/complete` Body `{ doneValue? }` → **`{ task, ladderEvent }`** (done/partial, идемпотентно). `ladderEvent` = `'raised' | 'lowered' | null` — движение адаптивной планки для фидбэка («планка выросла / сегодня мягче»; null = нет движения / manual / разовая). `partial≥minTarget` держит серию; триггерит `LadderEngine`.
+  - **Таймер `timed`-привычки (Трек A / FEAT-H1, план `2.6.x`):** завершение фокус-таймера = зачёт через **этот же** эндпоинт с `doneValue = отсчитанные секунды` (обычно = `ladder.currentTarget`, но зачитывается по факту); отмена/сброс таймера — **без** вызова (ничего не пишет). **Нового эндпоинта/поля не требуется** — таймер целиком фронтовый поверх существующего контракта.
 - `POST /accent/tasks/:id/uncomplete` → pending + revoke очков.
 - `POST /accent/tasks/:id/postpone` → новый Task на завтра, текущий `skipped/postponed`.
 

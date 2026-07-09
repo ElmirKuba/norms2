@@ -25,7 +25,7 @@
         │     architecture · domain-model · database · api-contracts
         │     · backend · frontend · ui-ux · deployment · getting-started
         │
-        └─ РАЗДЕЛЫ (позже)  sections/accent.md (ф.2) · sections/novaskil.md (ф.3) · …
+        └─ РАЗДЕЛЫ (позже)  sections/accent.md (ф.2) · sections/novaskil.md (ф.4) · …
 ```
 
 **Правило загрузки** (из CLAUDE.md): не читать весь `docs/` сразу. Брать файл под текущую задачу. CLAUDE.md и `Technical-assignment.md` — единственное, что читается всегда в начале.
@@ -54,7 +54,7 @@
 |---|---|---|
 | [`sections/_shared/modal-system.md`](./sections/_shared/modal-system.md) | Общая модальная система (MatDialog): контракт, код, partials, паттерны, схема | ✅ v1 |
 | [`sections/accent/`](./sections/accent/README.md) | Фаза 2 «Акцент»: цели, привычки, микро-победы, геймификация (README, domain-model, gamification, api-contracts, ui-ux) | ✅ v1 (дока готова) |
-| [`sections/novaskil/`](./sections/novaskil/README.md) | Фаза 3 «НоваСкил»: LMS-курсы (README, domain-model, content-format, api-contracts, ui-ux) | ✅ v1 (дока готова) |
+| [`sections/novaskil/`](./sections/novaskil/README.md) | Фаза 4 «НоваСкил»: LMS-курсы (README, domain-model, content-format, api-contracts, ui-ux) | ✅ v1 (дока готова) |
 
 Документы Фазы 3 (`sections/novaskil/`) и далее появятся при старте соответствующих фаз. Рабочие карты переваривания источников (фазы 2 и 3) отработали и удалены — история в git.
 

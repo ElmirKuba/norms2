@@ -1,4 +1,4 @@
-# НоваСкил — API-контракты (Фаза 3)
+# НоваСкил — API-контракты (Фаза 4)
 
 > Конвенции фазы 1: `/api/v1`, конверт ошибок `{error:{code,message}}`, zod-DTO, access-JWT ([ADR-0020](../../decisions/0020-api-conventions.md)). Все пути под `/api/v1/novaskil/...`, требуют аутентификации. Запись контента — только роль `admin` (`AdminGuard`, [domain-model](./domain-model.md)). id — `uuidv7___unixmillis`.
 

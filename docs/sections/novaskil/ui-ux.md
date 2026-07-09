@@ -1,4 +1,4 @@
-# НоваСкил — UI/UX (Фаза 3)
+# НоваСкил — UI/UX (Фаза 4)
 
 > Наследует дизайн фазы 1 ([ADR-0025](../../decisions/0025-ui-ux-design-language.md)): тёмная+toggle, чистый SCSS (без Tailwind), свои компоненты, модалки `MatDialog` ([ADR-0026](../../decisions/0026-modal-system.md)). Эндпоинты — [api-contracts](./api-contracts.md). Тон «интерес не страх», accessibility-first.
 

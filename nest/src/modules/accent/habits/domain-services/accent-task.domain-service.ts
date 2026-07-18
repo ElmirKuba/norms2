@@ -226,12 +226,19 @@ export class AccentTaskDomainService {
   }
 
   /**
-   * Переносит задачу на завтра: создаёт копию на следующий день (как one-off,
-   * `templateId=null` → без конфликта уник `(template_id, occurred_on)`; ссылка
-   * `postponedFromTaskId` хранит происхождение), текущую помечает `skipped/postponed`.
+   * Переносит задачу на завтра: создаёт копию на следующий день (**наследует `templateId`** —
+   * чтобы занять слот уник `(template_id, occurred_on)`; ссылка `postponedFromTaskId` хранит
+   * происхождение для метки «со вчера»), текущую помечает `skipped/postponed`.
+   *
+   * **Почему наследуем `templateId` (фикс дубля, BUG-5):** раньше копия шла `templateId=null`
+   * («чтобы не конфликтовать»), но тогда она НЕ занимала слот привычки на завтра — и материализация
+   * дня (`ensureTasksForDay`, `createMany` c `onConflictDoNothing`) создавала ВТОРОЙ инстанс той же
+   * ежедневной/через-день привычки → задача двоилась. Наследуя `templateId`, перенос занимает слот,
+   * и материализация его пропускает. Разовые (`templateId=null`) остаются one-off, как были.
+   *
    * @param id Идентификатор задачи.
    * @param accountId Идентификатор аккаунта-владельца.
-   * @returns Новая задача на завтра.
+   * @returns Задача на завтра (новая или уже существовавший инстанс этой привычки на завтра).
    * @throws {TaskNotFoundError} Если нет / не ваша.
    * @throws {ValidationError} Если задача уже пропущена/перенесена.
    */
@@ -240,16 +247,29 @@ export class AccentTaskDomainService {
     if (task.status === 'skipped') {
       throw new ValidationError('Задача уже пропущена или перенесена.');
     }
+    const nextDay = this._nextDay(task.occurredOn);
+    // Для привычки (templateId != null): если завтра УЖЕ есть её инстанс (материализованный или
+    // ранее перенесённый) — не плодим дубль и не ловим конфликт уника: закрываем исходную и
+    // возвращаем существующий. (Разовые задачи слота не имеют — идут обычным путём ниже.)
+    if (task.templateId !== null) {
+      const existing = (await this._repository.listByAccountOn(accountId, nextDay)).find(
+        (t) => t.templateId === task.templateId && t.id !== task.id,
+      );
+      if (existing !== undefined) {
+        await this._repository.update(id, accountId, { status: 'skipped', skipReason: 'postponed' });
+        return existing;
+      }
+    }
     // Атомарно: создать завтрашнюю копию + закрыть исходную (иначе при сбое/повторе —
     // дубль завтрашней задачи или незакрытая исходная).
     return this._transactionRunner.run(async (tx) => {
       const created = await this._repository.create(
         {
           accountId,
-          templateId: null,
+          templateId: task.templateId,
           goalId: task.goalId,
           title: task.title,
-          occurredOn: this._nextDay(task.occurredOn),
+          occurredOn: nextDay,
           kind: task.kind,
           targetValue: task.targetValue,
           category: task.category,

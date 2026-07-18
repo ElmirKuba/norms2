@@ -66,13 +66,15 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         }
         <header class="gd__head">
           <div class="gd__head-main">
-            <span class="gd__badge">{{ directionLabel(g) }}</span>
-            @if (g.focusOrder !== null) {
-              <span class="gd__badge gd__badge--focus">⭐ В фокусе</span>
-            }
-            @if (g.status !== 'active') {
-              <span class="gd__status">{{ statusLabel(g.status) }}</span>
-            }
+            <div class="gd__badges">
+              <span class="gd__badge">{{ directionLabel(g) }}</span>
+              @if (g.focusOrder !== null) {
+                <span class="gd__badge gd__badge--focus">⭐ В фокусе</span>
+              }
+              @if (g.status !== 'active') {
+                <span class="gd__status">{{ statusLabel(g.status) }}</span>
+              }
+            </div>
             <h2 class="gd__title">{{ g.title }}</h2>
             @if (g.whyItMatters) {
               <p class="gd__why">{{ g.whyItMatters }}</p>
@@ -302,12 +304,19 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         justify-content: space-between;
         gap: var(--space-3);
       }
+      .gd__badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1) var(--space-2);
+      }
       .gd__badge {
         font-size: var(--fs-xs);
         color: var(--color-accent);
         border: 1px solid var(--color-accent);
         border-radius: var(--radius-sm);
         padding: 0 var(--space-1);
+        white-space: nowrap;
       }
       .gd__badge--focus {
         background: var(--color-accent);
@@ -316,7 +325,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .gd__status {
         font-size: var(--fs-xs);
         color: var(--color-text-muted);
-        margin-left: var(--space-2);
+        white-space: nowrap;
       }
       .gd__title {
         margin: var(--space-1) 0 0;
@@ -465,6 +474,10 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         display: flex;
         gap: var(--space-2);
         align-items: center;
+        flex-wrap: wrap;
+      }
+      .gd__rec-row .gd__input {
+        min-width: 7rem;
       }
       .gd__input {
         flex: 1;

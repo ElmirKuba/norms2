@@ -14,6 +14,7 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { ChartComponent } from '../../../shared/ui/chart/chart.component';
 import type { ChartPoint } from '../../../shared/ui/chart/chart.component';
+import { NumberFieldComponent } from '../../../shared/ui/number-field/number-field.component';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog-modal.types';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
@@ -48,7 +49,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
  */
 @Component({
   selector: 'app-goal-detail',
-  imports: [RouterLink, ReactiveFormsModule, ButtonComponent, CardComponent, ChartComponent],
+  imports: [RouterLink, ReactiveFormsModule, ButtonComponent, CardComponent, ChartComponent, NumberFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="gd">
@@ -201,8 +202,8 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
             <form class="gd__record" [formGroup]="recordForm" (ngSubmit)="record(g)">
               <label class="gd__rec-label">{{ recordLabel(g) }}</label>
               <div class="gd__rec-row">
-                <input class="gd__input" type="number" step="any" formControlName="value"
-                  [placeholder]="g.unit" />
+                <app-number-field class="gd__rec-nf" formControlName="value"
+                  [placeholder]="g.unit" [label]="recordLabel(g)" />
                 <app-button type="submit" [loading]="busy()">Записать</app-button>
               </div>
               @if (recordError()) {
@@ -476,7 +477,8 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         align-items: center;
         flex-wrap: wrap;
       }
-      .gd__rec-row .gd__input {
+      .gd__rec-row .gd__rec-nf {
+        flex: 1;
         min-width: 7rem;
       }
       .gd__input {

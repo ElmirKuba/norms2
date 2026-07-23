@@ -236,8 +236,8 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           <form class="gd__ms-form" [formGroup]="msForm" (ngSubmit)="addMilestone()">
             <input class="gd__input" type="text" maxlength="160" formControlName="title"
               placeholder="Название вехи" />
-            <input class="gd__input gd__input--thr" type="number" step="any" formControlName="thresholdValue"
-              [placeholder]="'порог (' + g.unit + ')'" />
+            <app-number-field class="gd__thr-nf" formControlName="thresholdValue"
+              [placeholder]="'порог (' + g.unit + ')'" label="Порог вехи" />
             <app-button type="submit" variant="ghost" [loading]="msBusy()">Добавить веху</app-button>
           </form>
           @if (msError()) {
@@ -538,6 +538,11 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       }
       .gd__input--thr {
         max-width: 140px;
+      }
+      .gd__thr-nf {
+        flex: 1 1 8rem;
+        min-width: 6rem;
+        max-width: 12rem;
       }
       .gd__subgoals-head {
         display: flex;

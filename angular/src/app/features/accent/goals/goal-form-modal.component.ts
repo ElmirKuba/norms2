@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { NumberFieldComponent } from '../../../shared/ui/number-field/number-field.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
@@ -144,7 +145,7 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
  */
 @Component({
   selector: 'app-goal-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, NumberFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
@@ -207,7 +208,7 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
             {{ isMaintain() ? 'Верхняя граница' : 'Цель' }} ({{ form.controls.unit.value || 'ед.' }})
             <button type="button" class="gf__help" (click)="openGuide('target')">что это?</button>
           </span>
-          <input class="gf__input" type="number" step="any" formControlName="targetValue" />
+          <app-number-field formControlName="targetValue" label="Цель" />
           @if (targetError()) {
             <span class="gf__hint gf__hint--err">{{ targetError() }}</span>
           }
@@ -230,8 +231,8 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
             {{ isMaintain() ? 'Нижняя граница' : 'Старт (текущий замер' }}{{ isMaintain() ? (isEdit ? ' (неизменна)' : '') : (isEdit ? ', неизменен)' : ')') }}
             <button type="button" class="gf__help" (click)="openGuide('start')">что это?</button>
           </span>
-          <input class="gf__input" type="number" step="any" formControlName="startValue"
-            [readOnly]="isEdit" />
+          <app-number-field formControlName="startValue" label="Старт"
+            [isReadonly]="isEdit" />
           @if (startError()) {
             <span class="gf__hint gf__hint--err">{{ startError() }}</span>
           }

@@ -37,7 +37,7 @@ export interface NumberFieldModalData {
           [value]="value() ?? ''"
           [attr.min]="data.min"
           [attr.max]="data.max"
-          [attr.step]="data.step"
+          step="any"
           [attr.placeholder]="data.placeholder"
           (input)="onInput(inp.value)"
         />

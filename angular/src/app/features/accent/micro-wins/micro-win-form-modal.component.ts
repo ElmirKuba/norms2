@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { NumberFieldComponent } from '../../../shared/ui/number-field/number-field.component';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { MICRO_WIN_CATEGORY_DESCRIPTIONS, MICRO_WIN_CATEGORY_LABELS } from '../accent.types';
@@ -32,7 +33,7 @@ export interface MicroWinFormData {
  */
 @Component({
   selector: 'app-micro-win-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, NumberFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
@@ -84,7 +85,7 @@ export interface MicroWinFormData {
             Длительность, сек <span class="mwf__req">*</span>
             <button type="button" class="mwf__help" (click)="openDurationGuide()">что это?</button>
           </span>
-          <input class="mwf__input" type="number" min="0" max="300" formControlName="durationSeconds" />
+          <app-number-field formControlName="durationSeconds" [min]="0" [max]="300" label="Длительность (сек)" />
           @if (durationError()) {
             <span class="mwf__error">{{ durationError() }}</span>
           }
@@ -99,7 +100,7 @@ export interface MicroWinFormData {
             <button type="button" class="mwf__help" (click)="openPrepGuide()">что это?</button>
           </span>
           @if (needsPrep()) {
-            <input class="mwf__input" type="number" min="0" max="300" formControlName="prepSeconds"
+            <app-number-field formControlName="prepSeconds" [min]="0" [max]="300" label="Подготовка (сек)"
               placeholder="например, 10" />
             <span class="mwf__hint">Отсчёт перед действием: успеть отложить телефон и приготовиться.</span>
           }

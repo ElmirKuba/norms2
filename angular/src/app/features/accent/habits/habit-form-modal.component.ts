@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { NumberFieldComponent } from '../../../shared/ui/number-field/number-field.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
@@ -144,7 +145,7 @@ function todayYmd(): string {
  */
 @Component({
   selector: 'app-habit-form-modal',
-  imports: [ReactiveFormsModule, ButtonComponent, HscrollHintDirective],
+  imports: [ReactiveFormsModule, ButtonComponent, NumberFieldComponent, HscrollHintDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dlg">
@@ -241,7 +242,7 @@ function todayYmd(): string {
         @if (showInterval()) {
           <label class="hf__field">
             <span class="hf__label">Каждые N дней</span>
-            <input class="hf__input" type="number" min="2" formControlName="intervalN" />
+            <app-number-field formControlName="intervalN" [min]="2" label="Каждые N дней" />
           </label>
         }
 
@@ -273,15 +274,15 @@ function todayYmd(): string {
             <div class="hf__row">
               <label class="hf__field">
                 <span class="hf__sub">Минимум</span>
-                <input class="hf__input" type="number" min="1" formControlName="minTarget" />
+                <app-number-field formControlName="minTarget" [min]="1" label="Минимум" />
               </label>
               <label class="hf__field">
                 <span class="hf__sub">Сейчас</span>
-                <input class="hf__input" type="number" min="1" formControlName="currentTarget" />
+                <app-number-field formControlName="currentTarget" [min]="1" label="Сейчас" />
               </label>
               <label class="hf__field">
                 <span class="hf__sub">Цель (опц.)</span>
-                <input class="hf__input" type="number" min="1" formControlName="goalTarget" />
+                <app-number-field formControlName="goalTarget" [min]="1" label="Цель (опц.)" />
               </label>
             </div>
             <div class="hf__row">
@@ -295,7 +296,7 @@ function todayYmd(): string {
               @if (isAdaptive()) {
                 <label class="hf__field">
                   <span class="hf__sub">Шаг</span>
-                  <input class="hf__input" type="number" min="1" formControlName="step" />
+                  <app-number-field formControlName="step" [min]="1" label="Шаг" />
                 </label>
               }
             </div>
@@ -305,7 +306,7 @@ function todayYmd(): string {
         @if (isTimed()) {
           <label class="hf__field">
             <span class="hf__label">Подготовка перед таймером <span class="hf__opt">(опц., сек)</span></span>
-            <input class="hf__input" type="number" min="0" max="3600" formControlName="prepSeconds" placeholder="напр. 5" />
+            <app-number-field formControlName="prepSeconds" [min]="0" [max]="3600" placeholder="напр. 5" label="Подготовка (сек)" />
             <span class="hf__hint">Обратный отсчёт «приготовься» перед стартом. Пусто — без подготовки.</span>
           </label>
         }

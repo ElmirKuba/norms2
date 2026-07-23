@@ -25,7 +25,7 @@ import type { NumberFieldModalData } from './number-field-modal.component';
   template: `
     <div class="nf">
       <div class="nf__inline">
-        <button type="button" class="nf__btn" aria-label="Убавить" [disabled]="disabled()" (click)="dec()">−</button>
+        <button type="button" class="nf__btn" aria-label="Убавить" [disabled]="disabled() || isReadonly" (click)="dec()">−</button>
         <input
           #inp
           class="nf__input"
@@ -33,21 +33,22 @@ import type { NumberFieldModalData } from './number-field-modal.component';
           inputmode="decimal"
           [value]="value() ?? ''"
           [disabled]="disabled()"
+          [readonly]="isReadonly"
           [attr.min]="min"
           [attr.max]="max"
-          [attr.step]="step"
+          step="any"
           [attr.placeholder]="placeholder"
           [attr.aria-label]="label || null"
           (input)="onInput(inp.value)"
           (blur)="onTouched()"
         />
-        <button type="button" class="nf__btn" aria-label="Прибавить" [disabled]="disabled()" (click)="inc()">+</button>
+        <button type="button" class="nf__btn" aria-label="Прибавить" [disabled]="disabled() || isReadonly" (click)="inc()">+</button>
       </div>
       <button
         type="button"
         class="nf__collapsed"
         [class.nf__collapsed--empty]="value() === null"
-        [disabled]="disabled()"
+        [disabled]="disabled() || isReadonly"
         (click)="openModal()"
       >{{ value() ?? placeholder }}</button>
     </div>
@@ -141,6 +142,8 @@ export class NumberFieldComponent implements ControlValueAccessor {
   @Input() public placeholder = '';
   /** Подпись (для aria и заголовка модалки узкого режима). */
   @Input() public label = '';
+  /** Только чтение (кнопки/модалка недоступны, значение показывается, но не меняется). */
+  @Input() public isReadonly = false;
 
   /** Текущее значение. */
   protected readonly value = signal<number | null>(null);

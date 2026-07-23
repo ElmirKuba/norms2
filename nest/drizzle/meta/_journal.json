@@ -183,6 +183,13 @@
       "when": 1783337839782,
       "tag": "0025_gigantic_gateway",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1784827527270,
+      "tag": "0026_military_black_queen",
+      "breakpoints": true
     }
   ]
 }

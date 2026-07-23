@@ -18,3 +18,5 @@ export * from './tasks.schema';
 export * from './goals.schema';
 export * from './goal-entries.schema';
 export * from './milestones.schema';
+export * from './anti-habits.schema';
+export * from './anti-habit-relapses.schema';

@@ -75,8 +75,11 @@ import type { NumberFieldModalData } from './number-field-modal.component';
           display: none;
         }
         .nf__collapsed {
-          display: block;
+          display: flex;
+          align-items: center;
+          box-sizing: border-box;
           width: 100%;
+          min-height: 2.5rem;
           text-align: left;
           padding: var(--space-2) var(--space-3);
           border: 1px solid var(--color-border);

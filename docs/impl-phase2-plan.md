@@ -1307,14 +1307,15 @@ _Заземлено на существующую доку: `domain-model §7`, 
     - [x] C2.5 репозитории ✅ — `accent-anti-habit.repository.ts` (list/find/create/update + `setAttemptCas` под version, ADR-0035) + `accent-anti-habit-relapse.repository.ts` (insert + `listRelapses` keyset-курсор по `(relapse_at,id)` desc). Порты `adapters/accent-anti-habit{,-relapse}-repository.port.ts` + интерфейсы `interfaces/anti-habit{,-relapse}-full.interface.ts` подтянуты вперёд (нужны схеме+репо для типов; это C3.1/C3.2 частично).
   - **2.6·C3 (домен+API)** — эталон: слайс `modules/accent/goals/` (свежий полный):
     - [x] C3.1 порты ✅ (сделаны в C2) — `adapters/accent-anti-habit-repository.port.ts` + `accent-anti-habit-relapse-repository.port.ts` (интерфейсы + DI-токены `ACCENT_ANTI_HABIT_REPOSITORY`/`…_RELAPSE_REPOSITORY`; чистая граница, без drizzle-типов).
-    - [x] C3.2 интерфейсы ✅ (частично; сделаны в C2) — `interfaces/anti-habit-full.interface.ts` + `anti-habit-relapse-full.interface.ts` (Full 1:1 со схемой). `anti-habit-view.interface.ts` (view для API с вычисляемой серией) — при C3.5/C3.6.
-    - [ ] C3.3 `dtos/`: `create-anti-habit.dto.ts` `{title, description?, targetDays?}`, `update-anti-habit.dto.ts`, `relapse.dto.ts` `{triggerTag?, note?}` — zod closed-shape `.strict()`.
-    - [ ] C3.4 `domain-services/accent-anti-habit.domain-service.ts`: create/patch/relapse; **рецидив под CAS** (`startedAt=now`, `attemptNumber++`, обновить `recordDays` если серия > рекорда, записать relapse c `attemptDurationMs`); гард `ALREADY_RELAPSED`; helper вычисления серии (или отдаём `startedAt`, серию считает фронт).
-    - [ ] C3.5 `use-cases/`: create/list/get/update/relapse/list-relapses (гранулярность как в goals).
-    - [ ] C3.6 `controllers/anti-habits.controller.ts`: 5 маршрутов + auth-guard + проверка владения (ownership).
-    - [ ] C3.7 эмит `anti_habit.held`/`anti_habit.relapsed` (хуки, без начисления очков).
-    - [ ] C3.8 `anti-habits.module.ts` (composition root: bind порт↔репо) + подключить в accent/app.module.
-    - [ ] C3.9 ошибка `ALREADY_RELAPSED` в `shared/errors/` + маппинг в HTTP-код (фильтр).
+    - [x] C3.2 интерфейсы ✅ — Full (C2) + views `anti-habit-view.interface.ts` (`AntiHabitView`+`toAntiHabitView`: времена как unix ms для живого счёта на фронте + снимок `currentDays` на `now`) и `anti-habit-relapse-view.interface.ts` (`AntiHabitRelapseView` + `AntiHabitRelapsePage {items, nextCursor}`).
+    - [x] C3.3 DTO ✅ — `create-anti-habit.dto.ts` `{title, description?, targetDays?}`, `update-anti-habit.dto.ts` (все опц. + `isActive`), `relapse.dto.ts` `{triggerTag?, note?}` — zod `.strict()`, лимиты дублируют домен.
+    - [x] C3.4 domain-service ✅ — `accent-anti-habit.domain-service.ts`: create/update/relapse/listRelapses. **Рецидив CAS-first (ADR-0035):** сброс попытки под `version` → только при успехе запись рецидива (конкурентный edit → retry по свежей version; конкурентный срыв/неактивна → `ALREADY_RELAPSED`; без «висячего» рецидива); `recordDays` обновляется если серия > рекорда; эмит `relapsed`. Серию считает фронт из `currentAttemptStartedAt`; сервер считает её лишь в момент срыва (для рекорда).
+    - [x] C3.5 use-cases ✅ — все 6 (create/list/get/update/relapse/list-relapses) + курсор-утилита `relapse-cursor.util.ts` (base64url keyset). `relapse` возвращает `{antiHabit, relapse}` (фронт обновит карточку+историю без перезапроса); `list-relapses` — cursor-страница `{items, nextCursor}` (тянет `limit+1` для признака следующей). tsc чист.
+    - [ ] C3.6 `controllers/anti-habits.controller.ts`: 6 маршрутов (list/create/get/patch/relapse/relapses) + auth-guard + проверка владения (ownership).
+    - [x] C3.7 события ✅ — исходящий порт `accent-anti-habit-events.port.ts` (`relapsed`/`held`) + логирующий адаптер `logging-anti-habit-events.adapter.ts` (2.6 эмитит `relapsed`, слушателей нет; 2.9 подменит реализацию). Чистая граница вместо жёсткой event-шины.
+    - [ ] C3.8 `anti-habits.module.ts` (composition root: bind портов↔репо+events+domain+use-cases+controller) + подключить в `accent.module`.
+    - [x] C3.9 ошибки ✅ — `anti-habit-not-found.error.ts` (404) + `already-relapsed.error.ts` (409) в `shared/errors/`; маппинг в HTTP — через глобальный `all-exceptions.filter` (по `DomainError.httpStatus`, регистрация не нужна).
+    - ⚠️ **Не верифицировано:** tsc/boot ещё НЕ прогонялись (модуль в DI не подключён — boot не затронут), ничего не закоммичено.
   - **2.6·C4 (фронт)** — эталон: `angular/src/app/features/accent/habits/` и таймер микро-побед:
     - [ ] C4.1 lazy-route `/accent/anti-habits` + пункт в accent-навигации.
     - [ ] C4.2 `anti-habits.service.ts` (5 вызовов, Signals).

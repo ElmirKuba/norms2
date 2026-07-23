@@ -1303,7 +1303,7 @@ _Заземлено на существующую доку: `domain-model §7`, 
     - [ ] C2.1 `schemas/anti-habits.schema.ts`: поля §7 + PK `uuidv7___unixmillis`, `version`, `created/updated_at`.
     - [ ] C2.2 `schemas/anti-habit-relapses.schema.ts`: FK `anti_habit_id` `ON DELETE CASCADE` + `relapseAt`/`attemptDurationMs`/`triggerTag?`/`note?`/`created_at`.
     - [ ] C2.3 зарегистрировать обе схемы в `schemas/index.ts` (export * ...).
-    - [ ] C2.4 `drizzle-kit generate` → просмотреть глазами `nest/drizzle/0025_*.sql` → `migrate` (без auto-push).
+    - [ ] C2.4 `drizzle-kit generate` → просмотреть глазами `nest/drizzle/00XX_*.sql` (следующий свободный — `0026`; 0025 занят prepSeconds) → `migrate` (без auto-push).
     - [ ] C2.5 `repositories/accent/accent-anti-habit.repository.ts` (+ relapse-repo): CRUD + `setAttemptCas(id, version, …)` + `listRelapses(cursor)`.
   - **2.6·C3 (домен+API)** — эталон: слайс `modules/accent/goals/` (свежий полный):
     - [ ] C3.1 порт `adapters/accent-anti-habit-repository.port.ts` (интерфейс + DI-токен; чистая граница, без drizzle-типов).

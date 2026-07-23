@@ -114,16 +114,20 @@ export interface AccentRefItem {
 // ── Привычки + задачи (2.4; зеркало бэка) ──
 
 /** Тип привычки/задачи: бинарная / счётная / по времени. */
-export type HabitKind = 'binary' | 'quantitative' | 'timed';
+export type HabitKind = 'binary' | 'quantitative' | 'timed' | 'clock';
 
 /** Политика лесенки. */
 export type LadderPolicy = 'manual' | 'adaptive';
+
+/** Полярность лесенки (ADR-0058): `raise` — выше лучше; `lower` — ниже/раньше лучше. */
+export type LadderDirection = 'raise' | 'lower';
 
 /** RU-подписи типов привычек. */
 export const HABIT_KIND_LABELS: Readonly<Record<HabitKind, string>> = {
   binary: 'Да/нет',
   quantitative: 'Счётная',
   timed: 'По времени',
+  clock: 'Время суток',
 };
 
 /** Пояснения «что это» по типам привычек (для подсказок и гида). */
@@ -131,6 +135,7 @@ export const HABIT_KIND_DESCRIPTIONS: Readonly<Record<HabitKind, string>> = {
   binary: 'Просто «сделал или нет», галочка. Напр. «сделать зарядку».',
   quantitative: 'Считаем количество — раз/штук. Напр. «10 отжиманий», «3 страницы».',
   timed: 'Считаем время — минуты/секунды. Напр. «10 минут медитации».',
+  clock: 'Целевое время суток — раньше лучше. Напр. «отбой не позже 2:30», планка сдвигает время раньше.',
 };
 
 /** RPG-атрибуты: пояснения «что качает» (для гида; ключи каталога). */
@@ -155,6 +160,10 @@ export interface LadderView {
   step: number | null;
   /** Политика. */
   policy: LadderPolicy;
+  /** Полярность (ADR-0058); `raise` по умолчанию. */
+  direction: LadderDirection;
+  /** Вечерний якорь (минуты от полуночи) для `clock` или null. */
+  anchorMinutes: number | null;
 }
 
 /** Привычка наружу (`GET /accent/habits`). */
@@ -210,6 +219,8 @@ export interface HabitPayload {
     goalTarget?: number | null;
     step?: number | null;
     policy: LadderPolicy;
+    direction?: LadderDirection;
+    anchorMinutes?: number | null;
   };
   /** Описание (опц.). */
   description?: string | null;

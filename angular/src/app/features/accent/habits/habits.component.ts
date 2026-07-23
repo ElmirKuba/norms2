@@ -17,6 +17,7 @@ import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
 import type { HabitPayload, HabitView, LadderEventView, TaskView } from '../accent.types';
+import { CLOCK_ANCHOR_MINUTES, anchorMinutesToTime, timeToAnchorMinutes } from './clock.util';
 import { recurrenceLabel } from './recurrence-label.util';
 import { HabitFormModalComponent } from './habit-form-modal.component';
 import type { HabitFormData } from './habit-form-modal.component';
@@ -120,6 +121,9 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       @if (t.status === 'pending' || t.status === 'partial') {
                         @if (t.kind === 'binary') {
                           <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t)">Сделал</app-button>
+                        } @else if (t.kind === 'clock') {
+                          <input #ctime class="hb__numin" type="time" [value]="clockDisplay(t.targetValue)" />
+                          <app-button [loading]="busyTaskId() === t.id" (click)="recordClock(t, ctime.value)">Отметить</app-button>
                         } @else {
                           <input #val class="hb__numin" type="number" min="0" [value]="t.targetValue ?? 1" />
                           <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t, val.value)">Отметить</app-button>
@@ -606,11 +610,32 @@ export class HabitsComponent {
     if (task.targetValue === null) {
       return kind; // бинарная — без чисел
     }
+    if (task.kind === 'clock') {
+      // Clock (FEAT-H2): цель/факт — время суток («минуты от якоря» → HH:MM).
+      const need = `не позже ${this.clockDisplay(task.targetValue)}`;
+      return task.doneValue === null
+        ? `${kind} · ${need}`
+        : `${kind} · ${need}, лёг в ${this.clockDisplay(task.doneValue)}`;
+    }
     const need = `надо: ${String(task.targetValue)}`;
     if (task.doneValue === null) {
       return `${kind} · ${need}`; // ещё не выполнена
     }
     return `${kind} · ${need}, сделано: ${String(task.doneValue)}`;
+  }
+
+  /** «Минуты от вечернего якоря» → «HH:MM» для clock-задач; null → пусто. */
+  protected clockDisplay(mfa: number | null): string {
+    return mfa === null ? '' : anchorMinutesToTime(mfa, CLOCK_ANCHOR_MINUTES);
+  }
+
+  /** Зачёт clock-задачи: введённое время отбоя → «минуты от якоря» → обычный complete. */
+  protected recordClock(task: TaskView, timeStr: string): void {
+    const mfa = timeToAnchorMinutes(timeStr, CLOCK_ANCHOR_MINUTES);
+    if (mfa === null) {
+      return; // некорректное время — не отправляем
+    }
+    this.completeTask(task, String(mfa));
   }
 
   /** Подпись статуса задачи. */
@@ -698,6 +723,16 @@ export class HabitsComponent {
     if (event === null) {
       return;
     }
+    if (task.kind === 'clock') {
+      // Clock (FEAT-H2, полярность lower): «raised» = ужесточение = отбой РАНЬШЕ; показываем времена.
+      const change = `${this.clockDisplay(event.prevTarget)} → ${this.clockDisplay(event.newTarget)}`;
+      const text =
+        event.direction === 'raised'
+          ? `🌙 «${task.title}»: сдвигаем отбой раньше, ${change} — режим подтягивается. Молодец!`
+          : `😌 «${task.title}»: даём чуть позже, ${change} — это нормально, серия цела.`;
+      this.ladderFlash.set({ event: event.direction, text });
+      return;
+    }
     const unit = task.kind === 'timed' ? ' сек' : '';
     const change = `${String(event.prevTarget)}${unit} → ${String(event.newTarget)}${unit}`;
     const text =
@@ -769,6 +804,13 @@ export class HabitsComponent {
   /** Сводка лесенки: текущая цель (→ потолок). */
   protected ladderText(habit: HabitView): string {
     const { currentTarget, goalTarget } = habit.ladder;
+    if (habit.kind === 'clock') {
+      const anchor = habit.ladder.anchorMinutes ?? CLOCK_ANCHOR_MINUTES;
+      const cur = anchorMinutesToTime(currentTarget, anchor);
+      return goalTarget === null
+        ? `не позже ${cur}`
+        : `${cur} → ${anchorMinutesToTime(goalTarget, anchor)}`;
+    }
     return goalTarget === null ? `цель ${String(currentTarget)}` : `${String(currentTarget)} → ${String(goalTarget)}`;
   }
 

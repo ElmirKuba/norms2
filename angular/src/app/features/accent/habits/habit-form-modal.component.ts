@@ -6,6 +6,7 @@ import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { NumberFieldComponent } from '../../../shared/ui/number-field/number-field.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
+import { CLOCK_ANCHOR_MINUTES, anchorMinutesToTime, timeToAnchorMinutes } from './clock.util';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
@@ -303,6 +304,49 @@ function todayYmd(): string {
           </div>
         }
 
+        @if (isClock()) {
+          <div class="hf__ladder">
+            <span class="hf__label">
+              Отбой раньше — лесенка сдвигает время назад
+              <button type="button" class="hf__help" (click)="openGuide('ladder')">что это?</button>
+            </span>
+            <span class="hf__hint">
+              Указывай время суток. «Не позже» — самый мягкий порог (позже — недобор); «Цель сейчас» —
+              к чему стремишься сегодня; «Идеал» — куда хочешь прийти. Когда получается — планка сама
+              сдвигает цель раньше.
+            </span>
+            <div class="hf__row">
+              <label class="hf__field">
+                <span class="hf__sub">Не позже</span>
+                <input class="hf__input" type="time" formControlName="minTime" />
+              </label>
+              <label class="hf__field">
+                <span class="hf__sub">Цель сейчас</span>
+                <input class="hf__input" type="time" formControlName="currentTime" />
+              </label>
+              <label class="hf__field">
+                <span class="hf__sub">Идеал (опц.)</span>
+                <input class="hf__input" type="time" formControlName="goalTime" />
+              </label>
+            </div>
+            <div class="hf__row">
+              <label class="hf__field">
+                <span class="hf__sub">Подстройка</span>
+                <select class="hf__input" formControlName="policy">
+                  <option [ngValue]="'manual'">Вручную</option>
+                  <option [ngValue]="'adaptive'">Адаптивно</option>
+                </select>
+              </label>
+              @if (isAdaptive()) {
+                <label class="hf__field">
+                  <span class="hf__sub">Шаг (мин)</span>
+                  <app-number-field formControlName="step" [min]="1" label="Шаг (мин)" />
+                </label>
+              }
+            </div>
+          </div>
+        }
+
         @if (isTimed()) {
           <label class="hf__field">
             <span class="hf__label">Подготовка перед таймером <span class="hf__opt">(опц., сек)</span></span>
@@ -584,6 +628,10 @@ export class HabitFormModalComponent {
     goalTarget: new FormControl<number | null>(null),
     step: new FormControl(1, { nonNullable: true }),
     policy: new FormControl<LadderPolicy>('manual', { nonNullable: true }),
+    // Clock-привычка (FEAT-H2): времена вместо чисел; на submit конвертируем в «минуты от якоря».
+    minTime: new FormControl('03:30', { nonNullable: true }),
+    currentTime: new FormControl('03:00', { nonNullable: true }),
+    goalTime: new FormControl('02:00', { nonNullable: true }),
     domainKey: new FormControl<string | null>(null),
     goalId: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
@@ -620,8 +668,9 @@ export class HabitFormModalComponent {
   }
 
   /** Показывать ли поля лесенки (не binary). */
-  protected readonly isQuantitative = computed(() => this._kind() !== 'binary');
+  protected readonly isQuantitative = computed(() => this._kind() === 'quantitative' || this._kind() === 'timed');
   protected readonly isTimed = computed(() => this._kind() === 'timed');
+  protected readonly isClock = computed(() => this._kind() === 'clock');
   /** Адаптивная ли политика (показ шага). */
   protected readonly isAdaptive = computed(() => this._policy() === 'adaptive');
   /** Показывать ли выбор дней недели. */
@@ -666,6 +715,18 @@ export class HabitFormModalComponent {
         goalTarget: habit.ladder.goalTarget,
         step: habit.ladder.step ?? 1,
         policy: habit.ladder.policy,
+        minTime:
+          habit.kind === 'clock'
+            ? anchorMinutesToTime(habit.ladder.minTarget, habit.ladder.anchorMinutes ?? CLOCK_ANCHOR_MINUTES)
+            : '03:30',
+        currentTime:
+          habit.kind === 'clock'
+            ? anchorMinutesToTime(habit.ladder.currentTarget, habit.ladder.anchorMinutes ?? CLOCK_ANCHOR_MINUTES)
+            : '03:00',
+        goalTime:
+          habit.kind === 'clock' && habit.ladder.goalTarget !== null
+            ? anchorMinutesToTime(habit.ladder.goalTarget, habit.ladder.anchorMinutes ?? CLOCK_ANCHOR_MINUTES)
+            : '02:00',
         domainKey: habit.domainKey,
         goalId: habit.goalId,
         minVersion: habit.minVersion ?? '',
@@ -728,23 +789,51 @@ export class HabitFormModalComponent {
       return;
     }
     const v = this.form.getRawValue();
-    const ladder =
-      v.kind === 'binary'
-        ? { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual' as const }
-        : {
-            minTarget: v.minTarget,
-            currentTarget: v.currentTarget,
-            goalTarget: v.goalTarget,
-            step: v.policy === 'adaptive' ? v.step : null,
-            policy: v.policy,
-          };
-    if (ladder.currentTarget < ladder.minTarget) {
-      this.formError.set('«Сейчас» не может быть меньше минимума.');
-      return;
-    }
-    if (ladder.goalTarget !== null && ladder.goalTarget < ladder.currentTarget) {
-      this.formError.set('«Цель» не может быть меньше «Сейчас».');
-      return;
+    let ladder: HabitPayload['ladder'];
+    if (v.kind === 'binary') {
+      ladder = { minTarget: 1, currentTarget: 1, goalTarget: null, step: null, policy: 'manual' };
+    } else if (v.kind === 'clock') {
+      // Clock (FEAT-H2): времена → «минуты от якоря»; полярность lower (раньше = меньше).
+      const minM = timeToAnchorMinutes(v.minTime);
+      const curM = timeToAnchorMinutes(v.currentTime);
+      const goalM = v.goalTime.trim() === '' ? null : timeToAnchorMinutes(v.goalTime);
+      if (minM === null || curM === null || (v.goalTime.trim() !== '' && goalM === null)) {
+        this.formError.set('Укажи корректное время (ЧЧ:ММ).');
+        return;
+      }
+      if (curM > minM) {
+        this.formError.set('«Цель сейчас» должна быть не позже «Не позже».');
+        return;
+      }
+      if (goalM !== null && goalM > curM) {
+        this.formError.set('«Идеал» должен быть не позже «Цели сейчас».');
+        return;
+      }
+      ladder = {
+        minTarget: minM,
+        currentTarget: curM,
+        goalTarget: goalM,
+        step: v.policy === 'adaptive' ? v.step : null,
+        policy: v.policy,
+        direction: 'lower',
+        anchorMinutes: CLOCK_ANCHOR_MINUTES,
+      };
+    } else {
+      ladder = {
+        minTarget: v.minTarget,
+        currentTarget: v.currentTarget,
+        goalTarget: v.goalTarget,
+        step: v.policy === 'adaptive' ? v.step : null,
+        policy: v.policy,
+      };
+      if (ladder.currentTarget < ladder.minTarget) {
+        this.formError.set('«Сейчас» не может быть меньше минимума.');
+        return;
+      }
+      if (ladder.goalTarget != null && ladder.goalTarget < ladder.currentTarget) {
+        this.formError.set('«Цель» не может быть меньше «Сейчас».');
+        return;
+      }
     }
     const recurrence = buildRecurrence({
       mode: v.recurrenceMode,

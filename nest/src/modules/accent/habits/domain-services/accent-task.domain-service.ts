@@ -197,8 +197,11 @@ export class AccentTaskDomainService {
       effectiveDone = doneValue;
     }
     const target = task.targetValue ?? effectiveDone;
+    // Успех зависит от полярности (FEAT-H2): `clock` = «ниже/раньше лучше» (уложился = `≤`),
+    // остальные — «выше лучше» (`≥`). (kind='clock' ⟹ лесенка lower, см. форма привычки.)
+    const met = task.kind === 'clock' ? effectiveDone <= target : effectiveDone >= target;
     const patch = {
-      status: (effectiveDone >= target ? 'done' : 'partial') as TaskFull['status'],
+      status: (met ? 'done' : 'partial') as TaskFull['status'],
       doneValue: effectiveDone,
       completedAt: new Date(),
       skipReason: null,

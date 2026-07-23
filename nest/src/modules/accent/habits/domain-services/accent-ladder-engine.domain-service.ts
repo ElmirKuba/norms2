@@ -74,6 +74,14 @@ export class AccentLadderEngine {
    * @returns Новая лесенка + событие.
    */
   private _apply(ladder: HabitLadder, performed: number): { ladder: HabitLadder; event: LadderEvent } {
+    // Полярность (ADR-0058): по умолчанию/`raise` — «выше лучше»; `lower` — зеркальная ветка.
+    return ladder.direction === 'lower'
+      ? this._applyLower(ladder, performed)
+      : this._applyRaise(ladder, performed);
+  }
+
+  /** Ветка «выше — лучше» (дефолт): успех = `performed ≥ currentTarget`, планка растёт ВВЕРХ к `goalTarget`. */
+  private _applyRaise(ladder: HabitLadder, performed: number): { ladder: HabitLadder; event: LadderEvent } {
     const step = ladder.step ?? 1;
     const prevTarget = ladder.currentTarget;
     let { currentTarget, easyStreak, missStreak } = ladder;
@@ -100,6 +108,48 @@ export class AccentLadderEngine {
       missStreak += 1;
       if (missStreak >= MISS_THRESHOLD) {
         currentTarget = Math.max(ladder.minTarget, currentTarget - step);
+        missStreak = 0;
+        event = { direction: 'lowered', prevTarget, newTarget: currentTarget };
+      }
+    }
+
+    return { ladder: { ...ladder, currentTarget, easyStreak, missStreak }, event };
+  }
+
+  /**
+   * Ветка «ниже/раньше — лучше» (ADR-0058, `direction='lower'`; кейс сна/дедлайна): успех =
+   * `performed ≤ currentTarget`; серия лёгких → **ужесточение** (`currentTarget − step` к `goalTarget`,
+   * инвариант перевёрнут: `goalTarget ≤ currentTarget ≤ minTarget`); два недобора → мягкое
+   * **ослабление** (`currentTarget + step` к `minTarget`). Событие `raised` = стало сложнее (прогресс),
+   * `lowered` = смягчение — та же семантика, что в raise (не зависит от знака числа).
+   */
+  private _applyLower(ladder: HabitLadder, performed: number): { ladder: HabitLadder; event: LadderEvent } {
+    const step = ladder.step ?? 1;
+    const prevTarget = ladder.currentTarget;
+    let { currentTarget, easyStreak, missStreak } = ladder;
+    let event: LadderEvent = null;
+
+    if (performed <= currentTarget) {
+      // Уложился в цель: копим «лёгкие», при пороге — ужесточаем (двигаем цель ВНИЗ к goalTarget).
+      missStreak = 0;
+      easyStreak += 1;
+      const underCap = ladder.goalTarget === null || currentTarget > ladder.goalTarget;
+      if (easyStreak >= EASE_THRESHOLD && underCap) {
+        const tightened = currentTarget - step;
+        currentTarget = ladder.goalTarget === null ? tightened : Math.max(tightened, ladder.goalTarget);
+        easyStreak = 0;
+        event = { direction: 'raised', prevTarget, newTarget: currentTarget };
+      }
+    } else if (performed <= ladder.minTarget) {
+      // Минимальная победа (в пределах самого мягкого порога): серия цела, не ужесточаем.
+      easyStreak = 0;
+      missStreak = 0;
+    } else {
+      // Недобор (позже мягкого порога): при двух подряд — мягкое ослабление к minTarget.
+      easyStreak = 0;
+      missStreak += 1;
+      if (missStreak >= MISS_THRESHOLD) {
+        currentTarget = Math.min(ladder.minTarget, currentTarget + step);
         missStreak = 0;
         event = { direction: 'lowered', prevTarget, newTarget: currentTarget };
       }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HABIT_KINDS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
+import { HABIT_KINDS, LADDER_DIRECTIONS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
 
 /** Схема лесенки в теле (цели + политика; счётчики ставит бэк). Кросс-поля — domain-service. */
 const ladderSchema = z
@@ -9,6 +9,10 @@ const ladderSchema = z
     goalTarget: z.number().int('goalTarget — целое.').min(1, 'goalTarget ≥ 1.').nullish(),
     step: z.number().int('step — целое.').min(1, 'step ≥ 1.').nullish(),
     policy: z.enum(LADDER_POLICIES),
+    // Полярность (ADR-0058, FEAT-H2): опц., дефолт `raise` (обратная совместимость).
+    direction: z.enum(LADDER_DIRECTIONS).nullish(),
+    // Вечерний якорь для `kind='clock'` (минуты от полуночи, 0..1439; напр. 18:00 = 1080).
+    anchorMinutes: z.number().int('anchorMinutes — целое.').min(0).max(1439).nullish(),
   })
   .strict();
 

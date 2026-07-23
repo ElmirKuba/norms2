@@ -45,6 +45,8 @@ export class UpdateHabitUseCase {
               goalTarget: dto.ladder.goalTarget ?? null,
               step: dto.ladder.step ?? null,
               policy: dto.ladder.policy,
+              direction: dto.ladder.direction ?? 'raise',
+              anchorMinutes: dto.ladder.anchorMinutes ?? null,
               easyStreak: 0,
               missStreak: 0,
             },

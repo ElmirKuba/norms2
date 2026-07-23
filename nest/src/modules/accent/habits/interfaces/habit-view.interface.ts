@@ -1,4 +1,4 @@
-import type { HabitFull, HabitKind, LadderPolicy } from './habit-full.interface';
+import type { HabitFull, HabitKind, LadderDirection, LadderPolicy } from './habit-full.interface';
 
 /** Лесенка наружу — цели + политика (без внутренних счётчиков easyStreak/missStreak). */
 export interface LadderView {
@@ -12,6 +12,10 @@ export interface LadderView {
   step: number | null;
   /** Политика. */
   policy: LadderPolicy;
+  /** Полярность (ADR-0058); `raise` по умолчанию. */
+  direction: LadderDirection;
+  /** Вечерний якорь (минуты от полуночи) для `clock` или null. */
+  anchorMinutes: number | null;
 }
 
 /** HabitView — привычка наружу (без `accountId`/таймстампов; счётчики лесенки скрыты). */
@@ -74,6 +78,8 @@ export function toHabitView(full: HabitFull): HabitView {
       minTarget: full.ladder.minTarget,
       currentTarget: full.ladder.currentTarget,
       goalTarget: full.ladder.goalTarget,
+      direction: full.ladder.direction ?? 'raise',
+      anchorMinutes: full.ladder.anchorMinutes ?? null,
       step: full.ladder.step,
       policy: full.ladder.policy,
     },

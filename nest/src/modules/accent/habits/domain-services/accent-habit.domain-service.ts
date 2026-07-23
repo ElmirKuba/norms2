@@ -7,7 +7,7 @@ import type {
   HabitCreateData,
   HabitUpdateData,
 } from '../adapters/accent-habit-repository.port';
-import { HABIT_KINDS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
+import { HABIT_KINDS, LADDER_DIRECTIONS, LADDER_POLICIES } from '../interfaces/habit-full.interface';
 import type { HabitFull, HabitKind, HabitLadder } from '../interfaces/habit-full.interface';
 import { isValidRecurrence } from '../recurrence.util';
 import { STARTER_HABITS } from '../seed/starter-habits';
@@ -299,15 +299,37 @@ export class AccentHabitDomainService {
     if (!LADDER_POLICIES.includes(ladder.policy)) {
       throw new ValidationError('Недопустимая политика лесенки.');
     }
+    const direction = ladder.direction ?? 'raise';
+    if (!LADDER_DIRECTIONS.includes(direction)) {
+      throw new ValidationError('Недопустимая полярность лесенки.');
+    }
     if (!Number.isInteger(ladder.minTarget) || ladder.minTarget < 1) {
       throw new ValidationError('minTarget — целое ≥ 1.');
     }
-    if (!Number.isInteger(ladder.currentTarget) || ladder.currentTarget < ladder.minTarget) {
-      throw new ValidationError('currentTarget — целое ≥ minTarget.');
+    if (!Number.isInteger(ladder.currentTarget) || ladder.currentTarget < 1) {
+      throw new ValidationError('currentTarget — целое ≥ 1.');
     }
-    if (ladder.goalTarget !== null) {
-      if (!Number.isInteger(ladder.goalTarget) || ladder.goalTarget < ladder.currentTarget) {
+    // Инвариант порядка зависит от полярности (ADR-0058): raise — «выше лучше»
+    // (minTarget ≤ currentTarget ≤ goalTarget); lower — «ниже/раньше лучше» (перевёрнут).
+    const goalSet = ladder.goalTarget !== null && ladder.goalTarget !== undefined;
+    if (direction === 'raise') {
+      if (ladder.currentTarget < ladder.minTarget) {
+        throw new ValidationError('currentTarget ≥ minTarget.');
+      }
+      if (goalSet && (!Number.isInteger(ladder.goalTarget as number) || (ladder.goalTarget as number) < ladder.currentTarget)) {
         throw new ValidationError('goalTarget — целое ≥ currentTarget.');
+      }
+    } else {
+      if (ladder.currentTarget > ladder.minTarget) {
+        throw new ValidationError('currentTarget ≤ minTarget (полярность «ниже лучше»).');
+      }
+      if (goalSet && (!Number.isInteger(ladder.goalTarget as number) || (ladder.goalTarget as number) > ladder.currentTarget)) {
+        throw new ValidationError('goalTarget — целое ≤ currentTarget (полярность «ниже лучше»).');
+      }
+    }
+    if (ladder.anchorMinutes !== null && ladder.anchorMinutes !== undefined) {
+      if (!Number.isInteger(ladder.anchorMinutes) || ladder.anchorMinutes < 0 || ladder.anchorMinutes > 1439) {
+        throw new ValidationError('anchorMinutes — целое 0..1439.');
       }
     }
     if (ladder.policy === 'adaptive' && (!Number.isInteger(ladder.step ?? 0) || (ladder.step ?? 0) <= 0)) {

@@ -1,9 +1,10 @@
 /**
  * Тип привычки — как измеряется выполнение (domain-model §5). Хранится строкой-ключом
  * (varchar): `binary` (сделал/нет), `quantitative` (счётное, напр. отжимания),
- * `timed` (по времени, напр. секунды медитации).
+ * `timed` (по времени, напр. секунды медитации), `clock` (целевое ВРЕМЯ суток / дедлайн —
+ * значения лесенки = «минуты от вечернего якоря», ADR-0058, FEAT-H2).
  */
-export const HABIT_KINDS = ['binary', 'quantitative', 'timed'] as const;
+export const HABIT_KINDS = ['binary', 'quantitative', 'timed', 'clock'] as const;
 
 /** Тип привычки (производно от `HABIT_KINDS`). */
 export type HabitKind = (typeof HABIT_KINDS)[number];
@@ -13,6 +14,17 @@ export const LADDER_POLICIES = ['manual', 'adaptive'] as const;
 
 /** Политика лесенки (производно от `LADDER_POLICIES`). */
 export type LadderPolicy = (typeof LADDER_POLICIES)[number];
+
+/**
+ * Полярность лесенки (ADR-0058, FEAT-H2): `raise` — «выше лучше» (успех `performed ≥ currentTarget`,
+ * планка растёт ВВЕРХ к `goalTarget`; дефолт, текущее поведение); `lower` — «ниже/раньше лучше»
+ * (успех `performed ≤ currentTarget`, планка двигается ВНИЗ к `goalTarget`, инвариант перевёрнут:
+ * `goalTarget ≤ currentTarget ≤ minTarget`). Для сна/дедлайнов (кейс `clock`).
+ */
+export const LADDER_DIRECTIONS = ['raise', 'lower'] as const;
+
+/** Полярность лесенки (производно от `LADDER_DIRECTIONS`). */
+export type LadderDirection = (typeof LADDER_DIRECTIONS)[number];
 
 /**
  * Лесенка привычки (встроенный value-object, ядро адаптивности — ADR-0027 R2,
@@ -29,6 +41,16 @@ export interface HabitLadder {
   step: number | null;
   /** Политика подстройки. */
   policy: LadderPolicy;
+  /**
+   * Полярность (ADR-0058, FEAT-H2). Отсутствует/`raise` — «выше лучше» (обратная совместимость:
+   * старые лесенки без поля трактуются как `raise`). `lower` — «ниже/раньше лучше».
+   */
+  direction?: LadderDirection;
+  /**
+   * Для `kind='clock'`: вечерний якорь в минутах от полуночи (напр. 18:00 = 1080). Значения
+   * лесенки хранятся как «минуты от якоря» (midnight-safe). У остальных типов — null/не задан.
+   */
+  anchorMinutes?: number | null;
   /** Счётчик подряд «лёгких» выполнений (для подъёма; LadderEngine §7). */
   easyStreak: number;
   /** Счётчик подряд недоборов (для мягкого отката; LadderEngine §7). */

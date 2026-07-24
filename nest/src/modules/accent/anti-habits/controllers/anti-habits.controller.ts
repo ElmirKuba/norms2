@@ -19,6 +19,8 @@ import { updateAntiHabitSchema } from '../dtos/update-anti-habit.dto';
 import type { UpdateAntiHabitDto } from '../dtos/update-anti-habit.dto';
 import { relapseSchema } from '../dtos/relapse.dto';
 import type { RelapseDto } from '../dtos/relapse.dto';
+import { rescheduleSchema } from '../dtos/reschedule.dto';
+import type { RescheduleDto } from '../dtos/reschedule.dto';
 import { reorderAntiHabitsSchema } from '../dtos/reorder-anti-habits.dto';
 import type { ReorderAntiHabitsDto } from '../dtos/reorder-anti-habits.dto';
 import { ListAntiHabitsUseCase } from '../use-cases/list-anti-habits.use-case';
@@ -27,11 +29,12 @@ import { GetAntiHabitUseCase } from '../use-cases/get-anti-habit.use-case';
 import { UpdateAntiHabitUseCase } from '../use-cases/update-anti-habit.use-case';
 import { RelapseAntiHabitUseCase } from '../use-cases/relapse-anti-habit.use-case';
 import type { RelapseResultView } from '../use-cases/relapse-anti-habit.use-case';
-import { ListAntiHabitRelapsesUseCase } from '../use-cases/list-anti-habit-relapses.use-case';
+import { RescheduleAntiHabitUseCase } from '../use-cases/reschedule-anti-habit.use-case';
+import { ListAntiHabitEventsUseCase } from '../use-cases/list-anti-habit-events.use-case';
 import { ReorderAntiHabitsUseCase } from '../use-cases/reorder-anti-habits.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { AntiHabitView } from '../interfaces/anti-habit-view.interface';
-import type { AntiHabitRelapsePage } from '../interfaces/anti-habit-relapse-view.interface';
+import type { AntiHabitEventPage } from '../interfaces/anti-habit-event-view.interface';
 
 /**
  * Контроллер анти-привычек «держусь» (`/api/v1/accent/anti-habits`) — под Guard
@@ -48,7 +51,9 @@ export class AntiHabitsController {
    * @param _get Одна анти-привычка.
    * @param _update Обновление.
    * @param _relapse Рецидив.
-   * @param _listRelapses История рецидивов.
+   * @param _reschedule Перенос старта в будущее.
+   * @param _listEvents История событий.
+   * @param _reorder Ручная сортировка.
    */
   public constructor(
     private readonly _list: ListAntiHabitsUseCase,
@@ -56,7 +61,8 @@ export class AntiHabitsController {
     private readonly _get: GetAntiHabitUseCase,
     private readonly _update: UpdateAntiHabitUseCase,
     private readonly _relapse: RelapseAntiHabitUseCase,
-    private readonly _listRelapses: ListAntiHabitRelapsesUseCase,
+    private readonly _reschedule: RescheduleAntiHabitUseCase,
+    private readonly _listEvents: ListAntiHabitEventsUseCase,
     private readonly _reorder: ReorderAntiHabitsUseCase,
   ) {}
 
@@ -147,22 +153,39 @@ export class AntiHabitsController {
   }
 
   /**
-   * История рецидивов (новые→старые, cursor-пагинация).
+   * Переносит старт попытки в будущее (ADR-0059): завершает текущую попытку, старт → `planned`,
+   * пишет событие `reschedule`. Ошибка `INVALID_START_DATE` (400), если `startAt` не в будущем.
+   * @param id Идентификатор.
+   * @param body Новый старт (unix ms).
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Обновлённая анти-привычка + событие.
+   */
+  @Post('anti-habits/:id/reschedule')
+  public reschedule(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rescheduleSchema)) body: RescheduleDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<RelapseResultView> {
+    return this._reschedule.execute(id, request.account.id, body);
+  }
+
+  /**
+   * История событий (новые→старые, cursor-пагинация): срывы/переносы/планы/достижения цели.
    * @param id Идентификатор.
    * @param request Запрос (аккаунт из Guard).
    * @param cursor Непрозрачный курсор или undefined.
    * @param limit Размер страницы (опц.).
-   * @returns Страница рецидивов + `nextCursor`.
+   * @returns Страница событий + `nextCursor`.
    */
-  @Get('anti-habits/:id/relapses')
-  public listRelapses(
+  @Get('anti-habits/:id/events')
+  public listEvents(
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
-  ): Promise<AntiHabitRelapsePage> {
+  ): Promise<AntiHabitEventPage> {
     const parsedLimit = limit !== undefined ? Number(limit) : undefined;
-    return this._listRelapses.execute(
+    return this._listEvents.execute(
       id,
       request.account.id,
       cursor,

@@ -18,7 +18,9 @@ export interface AntiHabitView {
   description: string | null;
   /** Активна ли. */
   isActive: boolean;
-  /** Старт текущей попытки (unix ms) — для живого счёта серии на фронте. */
+  /** Состояние: `active` (серия идёт) или `planned` (старт в будущем, серия ещё не началась). */
+  state: 'active' | 'planned';
+  /** Старт текущей попытки (unix ms) — для живого счёта серии на фронте; при `planned` — в будущем. */
   currentAttemptStartedAt: number;
   /** Снимок текущей серии в днях на момент ответа (фронт пересчитывает вживую). */
   currentDays: number;
@@ -42,12 +44,14 @@ export interface AntiHabitView {
  * @returns Проекция наружу.
  */
 export function toAntiHabitView(full: AntiHabitFull, now: number = Date.now()): AntiHabitView {
+  const planned = now < full.currentAttemptStartedAt;
   const elapsedMs = Math.max(0, now - full.currentAttemptStartedAt);
   return {
     id: full.id,
     title: full.title,
     description: full.description,
     isActive: full.isActive,
+    state: planned ? 'planned' : 'active',
     currentAttemptStartedAt: full.currentAttemptStartedAt,
     currentDays: Math.floor(elapsedMs / DAY_MS),
     attemptNumber: full.attemptNumber,

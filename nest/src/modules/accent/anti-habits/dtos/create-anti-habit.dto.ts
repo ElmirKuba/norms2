@@ -14,6 +14,8 @@ export const createAntiHabitSchema = z
       .positive('Цель в днях — больше нуля.')
       .max(100_000, 'Цель в днях: слишком большая.')
       .nullish(),
+    // Плановый старт в будущем (unix ms) — «Начать не сегодня»; будущее проверяет домен.
+    startAt: z.number().int('Дата старта — unix ms.').positive().nullish(),
   })
   .strict();
 

@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { AccentAntiHabitDomainService } from '../domain-services/accent-anti-habit.domain-service';
-import { toAntiHabitRelapseView } from '../interfaces/anti-habit-relapse-view.interface';
-import type { AntiHabitRelapsePage } from '../interfaces/anti-habit-relapse-view.interface';
-import { decodeRelapseCursor, encodeRelapseCursor } from './relapse-cursor.util';
+import { toAntiHabitEventView } from '../interfaces/anti-habit-event-view.interface';
+import type { AntiHabitEventPage } from '../interfaces/anti-habit-event-view.interface';
+import { decodeEventCursor, encodeEventCursor } from './event-cursor.util';
 
-/** Размер страницы истории рецидивов по умолчанию. */
+/** Размер страницы истории событий по умолчанию. */
 const DEFAULT_LIMIT = 30;
 /** Максимальный размер страницы. */
 const MAX_LIMIT = 100;
 
 /**
- * Use-case истории рецидивов (`GET /accent/anti-habits/:id/relapses?cursor&limit`). Тонкий:
- * domain проверяет владение и отдаёт страницу (новые→старые). Запрашиваем `limit+1`, чтобы
- * определить наличие следующей страницы; лишний элемент отсекаем и кодируем `nextCursor`.
+ * Use-case истории событий (`GET /accent/anti-habits/:id/events?cursor&limit`, ADR-0059).
+ * Тонкий: domain проверяет владение и отдаёт страницу (новые→старые). Тянем `limit+1` для
+ * признака следующей страницы; лишний элемент отсекаем и кодируем `nextCursor`.
  */
 @Injectable()
-export class ListAntiHabitRelapsesUseCase {
+export class ListAntiHabitEventsUseCase {
   /**
    * @param _antiHabits Domain-service анти-привычек.
    */
@@ -26,28 +26,28 @@ export class ListAntiHabitRelapsesUseCase {
    * @param accountId Идентификатор аккаунта (из Guard).
    * @param cursor Непрозрачный курсор предыдущей страницы или undefined.
    * @param limit Размер страницы (зажат в [1, 100], дефолт 30).
-   * @returns Страница рецидивов + `nextCursor`.
+   * @returns Страница событий + `nextCursor`.
    */
   public async execute(
     id: string,
     accountId: string,
     cursor: string | undefined,
     limit?: number,
-  ): Promise<AntiHabitRelapsePage> {
+  ): Promise<AntiHabitEventPage> {
     const safeLimit = Math.min(Math.max(1, limit ?? DEFAULT_LIMIT), MAX_LIMIT);
-    const rows = await this._antiHabits.listRelapses(id, accountId, {
+    const rows = await this._antiHabits.listEvents(id, accountId, {
       limit: safeLimit + 1,
-      cursor: decodeRelapseCursor(cursor),
+      cursor: decodeEventCursor(cursor),
     });
 
     const hasMore = rows.length > safeLimit;
     const page = hasMore ? rows.slice(0, safeLimit) : rows;
     const last = page[page.length - 1];
     const nextCursor =
-      hasMore && last ? encodeRelapseCursor({ relapseAt: last.relapseAt, id: last.id }) : null;
+      hasMore && last ? encodeEventCursor({ occurredAt: last.occurredAt, id: last.id }) : null;
 
     return {
-      items: page.map((row) => toAntiHabitRelapseView(row)),
+      items: page.map((row) => toAntiHabitEventView(row)),
       nextCursor,
     };
   }

@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
 import { ACCENT_ANTI_HABIT_REPOSITORY } from './adapters/accent-anti-habit-repository.port';
 import { AccentAntiHabitRepository } from '../../../database/repositories/accent/accent-anti-habit.repository';
-import { ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY } from './adapters/accent-anti-habit-relapse-repository.port';
-import { AccentAntiHabitRelapseRepository } from '../../../database/repositories/accent/accent-anti-habit-relapse.repository';
 import { ACCENT_ANTI_HABIT_EVENT_REPOSITORY } from './adapters/accent-anti-habit-event-repository.port';
 import { AccentAntiHabitEventRepository } from '../../../database/repositories/accent/accent-anti-habit-event.repository';
 import { ACCENT_ANTI_HABIT_EVENTS } from './adapters/accent-anti-habit-events.port';
@@ -15,7 +13,8 @@ import { CreateAntiHabitUseCase } from './use-cases/create-anti-habit.use-case';
 import { GetAntiHabitUseCase } from './use-cases/get-anti-habit.use-case';
 import { UpdateAntiHabitUseCase } from './use-cases/update-anti-habit.use-case';
 import { RelapseAntiHabitUseCase } from './use-cases/relapse-anti-habit.use-case';
-import { ListAntiHabitRelapsesUseCase } from './use-cases/list-anti-habit-relapses.use-case';
+import { RescheduleAntiHabitUseCase } from './use-cases/reschedule-anti-habit.use-case';
+import { ListAntiHabitEventsUseCase } from './use-cases/list-anti-habit-events.use-case';
 import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-case';
 
 /**
@@ -31,7 +30,6 @@ import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-ca
   controllers: [AntiHabitsController],
   providers: [
     { provide: ACCENT_ANTI_HABIT_REPOSITORY, useClass: AccentAntiHabitRepository },
-    { provide: ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY, useClass: AccentAntiHabitRelapseRepository },
     { provide: ACCENT_ANTI_HABIT_EVENT_REPOSITORY, useClass: AccentAntiHabitEventRepository },
     { provide: ACCENT_ANTI_HABIT_EVENTS, useClass: LoggingAntiHabitEventsAdapter },
     AccentAntiHabitDomainService,
@@ -40,7 +38,8 @@ import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-ca
     GetAntiHabitUseCase,
     UpdateAntiHabitUseCase,
     RelapseAntiHabitUseCase,
-    ListAntiHabitRelapsesUseCase,
+    RescheduleAntiHabitUseCase,
+    ListAntiHabitEventsUseCase,
     ReorderAntiHabitsUseCase,
   ],
 })

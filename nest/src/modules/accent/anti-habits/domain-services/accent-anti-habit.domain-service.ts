@@ -1,25 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  ACCENT_ANTI_HABIT_REPOSITORY,
-} from '../adapters/accent-anti-habit-repository.port';
+import { ACCENT_ANTI_HABIT_REPOSITORY } from '../adapters/accent-anti-habit-repository.port';
 import type {
   AccentAntiHabitRepositoryPort,
   AntiHabitUpdateData,
 } from '../adapters/accent-anti-habit-repository.port';
-import {
-  ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY,
-} from '../adapters/accent-anti-habit-relapse-repository.port';
+import { ACCENT_ANTI_HABIT_EVENT_REPOSITORY } from '../adapters/accent-anti-habit-event-repository.port';
 import type {
-  AccentAntiHabitRelapseRepositoryPort,
-  AntiHabitRelapseListOptions,
-} from '../adapters/accent-anti-habit-relapse-repository.port';
+  AccentAntiHabitEventRepositoryPort,
+  AntiHabitEventListOptions,
+} from '../adapters/accent-anti-habit-event-repository.port';
 import { ACCENT_ANTI_HABIT_EVENTS } from '../adapters/accent-anti-habit-events.port';
 import type { AccentAntiHabitEventsPort } from '../adapters/accent-anti-habit-events.port';
 import type { AntiHabitFull } from '../interfaces/anti-habit-full.interface';
-import type { AntiHabitRelapseFull } from '../interfaces/anti-habit-relapse-full.interface';
+import type { AntiHabitEventFull } from '../interfaces/anti-habit-event-full.interface';
 import { AntiHabitNotFoundError } from '../../../../shared/errors/anti-habit-not-found.error';
 import { AlreadyRelapsedError } from '../../../../shared/errors/already-relapsed.error';
+import { InvalidStartDateError } from '../../../../shared/errors/invalid-start-date.error';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import type { Env } from '../../../../system/config/env.schema';
 
@@ -27,6 +24,11 @@ import type { Env } from '../../../../system/config/env.schema';
 const DAY_MS = 86_400_000;
 /** Максимум длины названия. */
 const TITLE_MAX = 160;
+
+/** Полных дней между двумя моментами (не отрицательно). */
+function daysBetween(fromMs: number, toMs: number): number {
+  return Math.floor(Math.max(0, toMs - fromMs) / DAY_MS);
+}
 
 /** Данные создания анти-привычки на уровне домена (без служебных полей попытки). */
 export interface AntiHabitCreateInput {
@@ -38,6 +40,8 @@ export interface AntiHabitCreateInput {
   description?: string | null;
   /** Цель серии в днях (опц.). */
   targetDays?: number | null;
+  /** Плановый старт в БУДУЩЕМ (unix ms, опц.) — «Начать не сегодня» → состояние `planned`. */
+  startAt?: number | null;
 }
 
 /** Данные обновления анти-привычки на уровне домена. */
@@ -48,37 +52,37 @@ export interface AntiHabitUpdateInput {
   isActive?: boolean | undefined;
 }
 
-/** Результат рецидива: обновлённая анти-привычка (после сброса) + записанная попытка. */
-export interface RelapseResult {
-  /** Анти-привычка после сброса таймера/обновления рекорда. */
+/** Результат мутации попытки (рецидив/перенос): обновлённая анти-привычка + записанное событие. */
+export interface AntiHabitMutationResult {
+  /** Анти-привычка после мутации. */
   antiHabit: AntiHabitFull;
-  /** Записанный рецидив. */
-  relapse: AntiHabitRelapseFull;
+  /** Записанное событие таймлайна. */
+  event: AntiHabitEventFull;
 }
 
 /**
- * Domain-service анти-привычек «держусь» (timer-модель, domain-model §7). CRUD + рецидив.
- * Серия НЕ хранится (вычисляется из `currentAttemptStartedAt`); `recordDays` переживает
- * срыв. **Рецидив — CAS-first (ADR-0035):** сначала атомарный сброс попытки под `version`,
- * и только при успехе — запись рецидива в журнал (иначе конкурентный срыв уже сбросил
- * таймер → `ALREADY_RELAPSED`, без «висячего» рецидива). Зависит только от портов.
- * События (`relapsed`) — хук для 2.9 (очков не начисляет).
+ * Domain-service анти-привычек «держусь» (timer-модель, domain-model §7; ADR-0059). CRUD +
+ * рецидив + перенос-в-будущее (`reschedule`) + плановый старт. Серия НЕ хранится (из
+ * `currentAttemptStartedAt`); `recordDays` переживает срыв. История — единый таймлайн
+ * `anti_habit_events`. **Мутации попытки — CAS-first (ADR-0035):** сначала атомарный сброс
+ * попытки под `version`, при успехе — запись события (без «висячих» записей). Зависит только
+ * от портов. Эмит `relapsed` — хук для 2.9 (очков не начисляет).
  */
 @Injectable()
 export class AccentAntiHabitDomainService {
   /**
    * @param _repository Порт анти-привычек.
-   * @param _relapses Порт журнала рецидивов.
-   * @param _events Исходящий порт событий (хуки для 2.9).
+   * @param _events Порт таймлайна событий (append-only).
+   * @param _hooks Исходящий порт эмита событий (хуки для 2.9).
    * @param _configService Конфиг (число retry для CAS).
    */
   public constructor(
     @Inject(ACCENT_ANTI_HABIT_REPOSITORY)
     private readonly _repository: AccentAntiHabitRepositoryPort,
-    @Inject(ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY)
-    private readonly _relapses: AccentAntiHabitRelapseRepositoryPort,
+    @Inject(ACCENT_ANTI_HABIT_EVENT_REPOSITORY)
+    private readonly _events: AccentAntiHabitEventRepositoryPort,
     @Inject(ACCENT_ANTI_HABIT_EVENTS)
-    private readonly _events: AccentAntiHabitEventsPort,
+    private readonly _hooks: AccentAntiHabitEventsPort,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
 
@@ -116,25 +120,42 @@ export class AccentAntiHabitDomainService {
   }
 
   /**
-   * Создаёт анти-привычку (первая попытка стартует сейчас).
+   * Создаёт анти-привычку. Без `startAt` — первая попытка стартует сейчас; с `startAt` в
+   * будущем — плановый старт (`planned`) + событие `plan`.
    * @param data Данные создания.
    * @returns Созданная анти-привычка.
    * @throws {ValidationError} При нарушении инвариантов.
+   * @throws {InvalidStartDateError} Если `startAt` не в будущем.
    */
   public async create(data: AntiHabitCreateInput): Promise<AntiHabitFull> {
     const title = this._validateTitle(data.title);
     const targetDays = this._validateTargetDays(data.targetDays ?? null);
-    return this._repository.create({
+    const now = Date.now();
+    const startAt = data.startAt ?? null;
+    const planned = startAt !== null;
+    if (planned && startAt <= now) {
+      throw new InvalidStartDateError('Плановый старт должен быть в будущем.');
+    }
+    const created = await this._repository.create({
       accountId: data.accountId,
       title,
       description: data.description ?? null,
       targetDays,
-      currentAttemptStartedAt: Date.now(),
+      currentAttemptStartedAt: planned ? startAt : now,
     });
+    if (planned) {
+      await this._events.insert({
+        antiHabitId: created.id,
+        type: 'plan',
+        occurredAt: now,
+        toStartedAt: startAt,
+      });
+    }
+    return created;
   }
 
   /**
-   * Обновляет анти-привычку владельца (частично).
+   * Обновляет анти-привычку владельца (частично). Дату старта НЕ меняет (перенос — `reschedule`).
    * @param id Идентификатор анти-привычки.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param patch Поля для обновления.
@@ -168,15 +189,14 @@ export class AccentAntiHabitDomainService {
   }
 
   /**
-   * Фиксирует рецидив (срыв): сбрасывает таймер текущей попытки, инкрементит номер, обновляет
-   * рекорд при необходимости и пишет запись в журнал. **CAS-first (ADR-0035):** сброс попытки
-   * атомарен по `version`; конкурентный правочный `update` (сменил version, но не номер
-   * попытки) — перечитываем и повторяем; конкурентный `relapse` (сменил номер попытки) или
-   * неактивная привычка → `ALREADY_RELAPSED`.
+   * Фиксирует рецидив (срыв): сбрасывает таймер, инкрементит номер, обновляет рекорд и пишет
+   * событие `relapse`. **CAS-first (ADR-0035):** сброс попытки атомарен по `version`;
+   * конкурентный правочный `update` — перечитываем и повторяем; конкурентный `relapse` (сменил
+   * номер попытки) / неактивная привычка → `ALREADY_RELAPSED`.
    * @param id Идентификатор анти-привычки.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param input Опц. триггер/заметка.
-   * @returns Обновлённая анти-привычка + записанный рецидив.
+   * @returns Обновлённая анти-привычка + событие `relapse`.
    * @throws {AntiHabitNotFoundError} Если нет / не ваша.
    * @throws {AlreadyRelapsedError} Нет активной попытки / повторный срыв в тот же момент.
    */
@@ -184,7 +204,7 @@ export class AccentAntiHabitDomainService {
     id: string,
     accountId: string,
     input: { triggerTag?: string | null; note?: string | null },
-  ): Promise<RelapseResult> {
+  ): Promise<AntiHabitMutationResult> {
     const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
     let current = await this.getOwned(id, accountId);
     if (!current.isActive) {
@@ -208,65 +228,150 @@ export class AccentAntiHabitDomainService {
       });
 
       if (ok) {
-        const relapse = await this._relapses.insert({
+        const event = await this._events.insert({
           antiHabitId: id,
-          relapseAt: now,
+          type: 'relapse',
+          occurredAt: now,
           attemptDurationMs: durationMs,
+          endedAttemptNumber: current.attemptNumber,
           triggerTag: input.triggerTag ?? null,
           note: input.note ?? null,
         });
-        this._events.relapsed({
+        this._hooks.relapsed({
           antiHabitId: id,
           accountId,
           relapseAt: now,
           endedAttemptDurationMs: durationMs,
           endedAttemptNumber: current.attemptNumber,
         });
-        const updated: AntiHabitFull = {
-          ...current,
-          currentAttemptStartedAt: now,
-          attemptNumber: current.attemptNumber + 1,
-          recordDays: beatsRecord ? seriesDays : current.recordDays,
-          recordAttemptStartedAt: beatsRecord
-            ? current.currentAttemptStartedAt
-            : current.recordAttemptStartedAt,
-          version: current.version + 1,
-        };
-        return { antiHabit: updated, relapse };
+        return { antiHabit: this._applyAttempt(current, now, beatsRecord, seriesDays), event };
       }
 
-      // CAS не прошёл — кто-то поменял строку. Перечитываем, чтобы понять причину.
       const reread = await this._repository.findOwned(id, accountId);
       if (!reread || !reread.isActive) {
         throw new AlreadyRelapsedError('Нет активной попытки для срыва.');
       }
       if (reread.attemptNumber !== startedAttemptNumber) {
-        // Номер попытки изменился → конкурентный срыв уже сбросил таймер. Дубль не пишем.
         throw new AlreadyRelapsedError('Срыв уже зафиксирован только что.');
       }
-      // Номер тот же (был правочный update, сменивший version) — повторяем с новой version.
       current = reread;
     }
-
-    // Не разрешилось за N попыток (частые конкурентные правки) — не рискуем дублем.
     throw new AlreadyRelapsedError('Не удалось зафиксировать срыв, попробуйте ещё раз.');
   }
 
   /**
-   * История рецидивов анти-привычки (с проверкой владения через родителя).
+   * Переносит старт попытки в БУДУЩЕЕ (ADR-0059): завершает текущую попытку (учитывая рекорд),
+   * ставит `currentAttemptStartedAt=startAt` (→ `planned`), пишет событие `reschedule` с
+   * `heldDays`. CAS-first по `version` (как рецидив). Бэкфилл в прошлое запрещён.
+   * @param id Идентификатор анти-привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param startAt Новый старт (unix ms, строго в будущем).
+   * @returns Обновлённая анти-привычка + событие `reschedule`.
+   * @throws {AntiHabitNotFoundError} Если нет / не ваша.
+   * @throws {InvalidStartDateError} Если `startAt` не в будущем.
+   * @throws {ValidationError} Неактивна / конкурентная правка не разрешилась.
+   */
+  public async reschedule(
+    id: string,
+    accountId: string,
+    startAt: number,
+  ): Promise<AntiHabitMutationResult> {
+    const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
+    let current = await this.getOwned(id, accountId);
+    if (!current.isActive) {
+      throw new ValidationError('Анти-привычка неактивна.');
+    }
+    const startedAttemptNumber = current.attemptNumber;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const now = Date.now();
+      if (startAt <= now) {
+        throw new InvalidStartDateError('Новый старт должен быть в будущем.');
+      }
+      const fromStartedAt = current.currentAttemptStartedAt;
+      const heldDays = daysBetween(fromStartedAt, now); // planned (старт в будущем) → 0
+      const beatsRecord = heldDays > current.recordDays;
+
+      const ok = await this._repository.setAttemptCas(id, accountId, current.version, {
+        currentAttemptStartedAt: startAt,
+        attemptNumber: current.attemptNumber + 1,
+        recordDays: beatsRecord ? heldDays : current.recordDays,
+        recordAttemptStartedAt: beatsRecord ? fromStartedAt : current.recordAttemptStartedAt,
+      });
+
+      if (ok) {
+        const event = await this._events.insert({
+          antiHabitId: id,
+          type: 'reschedule',
+          occurredAt: now,
+          fromStartedAt,
+          toStartedAt: startAt,
+          heldDays,
+        });
+        return {
+          antiHabit: {
+            ...current,
+            currentAttemptStartedAt: startAt,
+            attemptNumber: current.attemptNumber + 1,
+            recordDays: beatsRecord ? heldDays : current.recordDays,
+            recordAttemptStartedAt: beatsRecord ? fromStartedAt : current.recordAttemptStartedAt,
+            version: current.version + 1,
+          },
+          event,
+        };
+      }
+
+      const reread = await this._repository.findOwned(id, accountId);
+      if (!reread || !reread.isActive) {
+        throw new ValidationError('Анти-привычка неактивна.');
+      }
+      if (reread.attemptNumber !== startedAttemptNumber) {
+        throw new ValidationError('Состояние изменилось только что, повторите.');
+      }
+      current = reread;
+    }
+    throw new ValidationError('Не удалось перенести, попробуйте ещё раз.');
+  }
+
+  /**
+   * История событий анти-привычки (с проверкой владения через родителя).
    * @param id Идентификатор анти-привычки.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param opts limit + опц. курсор.
-   * @returns Страница рецидивов.
+   * @returns Страница событий.
    * @throws {AntiHabitNotFoundError} Если нет / не ваша.
    */
-  public async listRelapses(
+  public async listEvents(
     id: string,
     accountId: string,
-    opts: AntiHabitRelapseListOptions,
-  ): Promise<AntiHabitRelapseFull[]> {
+    opts: AntiHabitEventListOptions,
+  ): Promise<AntiHabitEventFull[]> {
     await this.getOwned(id, accountId);
-    return this._relapses.listRelapses(id, opts);
+    return this._events.listEvents(id, opts);
+  }
+
+  /**
+   * Собирает обновлённую анти-привычку после сброса попытки (для проекции без перечитывания).
+   * @param current Прежнее состояние.
+   * @param startedAt Новый старт.
+   * @param beatsRecord Побит ли рекорд.
+   * @param seriesDays Серия завершившейся попытки.
+   * @returns Новое состояние.
+   */
+  private _applyAttempt(
+    current: AntiHabitFull,
+    startedAt: number,
+    beatsRecord: boolean,
+    seriesDays: number,
+  ): AntiHabitFull {
+    return {
+      ...current,
+      currentAttemptStartedAt: startedAt,
+      attemptNumber: current.attemptNumber + 1,
+      recordDays: beatsRecord ? seriesDays : current.recordDays,
+      recordAttemptStartedAt: beatsRecord ? current.currentAttemptStartedAt : current.recordAttemptStartedAt,
+      version: current.version + 1,
+    };
   }
 
   /**

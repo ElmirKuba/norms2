@@ -23,6 +23,7 @@ export class CreateAntiHabitUseCase {
       title: dto.title,
       description: dto.description ?? null,
       targetDays: dto.targetDays ?? null,
+      startAt: dto.startAt ?? null,
     });
     return toAntiHabitView(created);
   }

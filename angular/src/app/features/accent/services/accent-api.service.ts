@@ -6,6 +6,10 @@ import type {
   AccentRefItem,
   AccentSettingsView,
   AddGoalEntryResult,
+  AntiHabitPayload,
+  AntiHabitRelapsePage,
+  AntiHabitUpdatePayload,
+  AntiHabitView,
   CompleteTaskResult,
   GoalEntryPayload,
   GoalEntryView,
@@ -22,6 +26,8 @@ import type {
   MilestonePayload,
   MilestoneView,
   OneOffTaskPayload,
+  RelapsePayload,
+  RelapseResult,
   TaskView,
 } from '../accent.types';
 
@@ -344,6 +350,55 @@ export class AccentApiService {
   public removeMilestone(goalId: string, milestoneId: string): Observable<void> {
     return this._http.delete<void>(
       `${API_PREFIX}/accent/goals/${goalId}/milestones/${milestoneId}`,
+    );
+  }
+
+  // ─────────────────────────── Держусь / анти-привычки (2.6) ───────────────────────────
+
+  /** Список активных анти-привычек «держусь». */
+  public listAntiHabits(): Observable<AntiHabitView[]> {
+    return this._http.get<AntiHabitView[]>(`${API_PREFIX}/accent/anti-habits`);
+  }
+
+  /** Одна анти-привычка. */
+  public getAntiHabit(id: string): Observable<AntiHabitView> {
+    return this._http.get<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}`);
+  }
+
+  /** Создать анти-привычку (первая попытка стартует сейчас). */
+  public createAntiHabit(payload: AntiHabitPayload): Observable<AntiHabitView> {
+    return this._http.post<AntiHabitView>(`${API_PREFIX}/accent/anti-habits`, payload);
+  }
+
+  /** Изменить анти-привычку (частично; `isActive:false` = убрать из списка). */
+  public updateAntiHabit(id: string, payload: AntiHabitUpdatePayload): Observable<AntiHabitView> {
+    return this._http.patch<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}`, payload);
+  }
+
+  /** Зафиксировать срыв (сброс таймера, обновление рекорда, запись попытки). */
+  public relapseAntiHabit(id: string, payload: RelapsePayload): Observable<RelapseResult> {
+    return this._http.post<RelapseResult>(
+      `${API_PREFIX}/accent/anti-habits/${id}/relapse`,
+      payload,
+    );
+  }
+
+  /** История срывов (cursor-пагинация `{ items, nextCursor }`, новые→старые). */
+  public listAntiHabitRelapses(
+    id: string,
+    cursor?: string,
+    limit?: number,
+  ): Observable<AntiHabitRelapsePage> {
+    const params = new URLSearchParams();
+    if (cursor !== undefined) {
+      params.set('cursor', cursor);
+    }
+    if (limit !== undefined) {
+      params.set('limit', String(limit));
+    }
+    const query = params.toString();
+    return this._http.get<AntiHabitRelapsePage>(
+      `${API_PREFIX}/accent/anti-habits/${id}/relapses${query ? `?${query}` : ''}`,
     );
   }
 }

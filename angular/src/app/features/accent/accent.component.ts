@@ -18,6 +18,7 @@ import { HscrollHintDirective } from '../../shared/ui/hscroll-hint.directive';
         <a routerLink="dashboard" routerLinkActive="active">Дашборд</a>
         <a routerLink="goals" routerLinkActive="active">Цели</a>
         <a routerLink="habits" routerLinkActive="active">Привычки</a>
+        <a routerLink="anti-habits" routerLinkActive="active">Держусь</a>
         <a routerLink="micro-wins" routerLinkActive="active">Микро-победы</a>
       </nav>
       <router-outlet />

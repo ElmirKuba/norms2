@@ -509,3 +509,97 @@ export interface MilestonePayload {
   /** Порог достижения. */
   thresholdValue: number;
 }
+
+// ─────────────────────────── Держусь / анти-привычки (2.6) ───────────────────────────
+
+/**
+ * Анти-привычка «держусь» наружу (`GET /accent/anti-habits`). Серию считает ФРОНТ вживую из
+ * `currentAttemptStartedAt` (unix ms); `currentDays` — снимок сервера на момент ответа.
+ * `recordDays` — рекорд, переживающий срыв (domain-model §7).
+ */
+export interface AntiHabitView {
+  /** Идентификатор. */
+  id: string;
+  /** Название (что не делаю / от чего воздерживаюсь). */
+  title: string;
+  /** Описание или null. */
+  description: string | null;
+  /** Активна ли. */
+  isActive: boolean;
+  /** Старт текущей попытки (unix ms) — для живого счёта серии. */
+  currentAttemptStartedAt: number;
+  /** Снимок серии в днях на момент ответа (фронт пересчитывает вживую). */
+  currentDays: number;
+  /** Номер текущей попытки (≥1). */
+  attemptNumber: number;
+  /** Рекорд серии (дней) — переживает срыв. */
+  recordDays: number;
+  /** Старт рекордной попытки (unix ms) или null. */
+  recordAttemptStartedAt: number | null;
+  /** Цель серии в днях или null. */
+  targetDays: number | null;
+  /** Когда создано (ISO). */
+  createdAt: string;
+}
+
+/** Тело создания анти-привычки (`POST /accent/anti-habits`). */
+export interface AntiHabitPayload {
+  /** Название. */
+  title: string;
+  /** Описание (опц.). */
+  description?: string | null;
+  /** Цель серии в днях (опц.). */
+  targetDays?: number | null;
+}
+
+/** Тело обновления анти-привычки (`PATCH /accent/anti-habits/:id`; все поля опц.). */
+export interface AntiHabitUpdatePayload {
+  /** Название. */
+  title?: string;
+  /** Описание. */
+  description?: string | null;
+  /** Цель серии в днях. */
+  targetDays?: number | null;
+  /** Активность (`false` = убрать из списка). */
+  isActive?: boolean;
+}
+
+/** Запись срыва наружу (история). */
+export interface AntiHabitRelapseView {
+  /** Идентификатор. */
+  id: string;
+  /** Момент срыва (unix ms). */
+  relapseAt: number;
+  /** Длительность завершившейся попытки (мс). */
+  attemptDurationMs: number;
+  /** Триггер срыва или null. */
+  triggerTag: string | null;
+  /** Заметка или null. */
+  note: string | null;
+  /** Когда записано (ISO). */
+  createdAt: string;
+}
+
+/** Тело срыва (`POST /accent/anti-habits/:id/relapse`). Оба поля свободные (без ПДн). */
+export interface RelapsePayload {
+  /** Триггер (опц.). */
+  triggerTag?: string | null;
+  /** Заметка (опц.). */
+  note?: string | null;
+}
+
+/** Результат срыва: обновлённая анти-привычка (после сброса) + записанная попытка. */
+export interface RelapseResult {
+  /** Анти-привычка после сброса таймера/рекорда. */
+  antiHabit: AntiHabitView;
+  /** Записанный срыв. */
+  relapse: AntiHabitRelapseView;
+}
+
+/** Страница истории срывов (cursor-пагинация). */
+export interface AntiHabitRelapsePage {
+  /** Записи (новые→старые). */
+  items: AntiHabitRelapseView[];
+  /** Курсор следующей страницы или null. */
+  nextCursor: string | null;
+}

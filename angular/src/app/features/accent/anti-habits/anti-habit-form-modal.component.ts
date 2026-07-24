@@ -74,6 +74,24 @@ export interface AntiHabitFormData {
               <span class="ahf__hint">Кольцо на экране будет заполняться к этой отметке.</span>
             }
           </div>
+
+          @if (!isEdit) {
+            <div class="ahf__field">
+              <span class="ahf__check">
+                <label class="ahf__check-lbl">
+                  <input type="checkbox" [checked]="startInFuture()" (change)="toggleStart()" />
+                  Начать не сегодня
+                </label>
+              </span>
+              @if (startInFuture()) {
+                <input class="ahf__input" type="date" [min]="minStartDate" formControlName="startDate" />
+                <span class="ahf__hint">Серия начнётся с этой даты (планирование). До неё — статус «запланировано».</span>
+                @if (startError()) {
+                  <span class="ahf__error">{{ startError() }}</span>
+                }
+              }
+            </div>
+          }
         </div>
 
         @if (formError(); as fe) {
@@ -169,10 +187,15 @@ export class AntiHabitFormModalComponent {
       nonNullable: true,
       validators: [Validators.min(1), Validators.max(100000)],
     }),
+    startDate: new FormControl('', { nonNullable: true }),
   });
 
   /** Задана ли цель серии (UI-галочка) — выкл → `targetDays = null`. */
   protected readonly hasTarget = signal(false);
+  /** Плановый старт в будущем (UI-галочка, только при создании). */
+  protected readonly startInFuture = signal(false);
+  /** Минимум даты старта — завтра (YYYY-MM-DD). */
+  protected readonly minStartDate = this._toYmd(new Date(Date.now() + 86_400_000));
   /** Триггер показа ошибок после submit. */
   protected readonly submitted = signal(false);
   /** Текст ошибки сохранения (сервер/сеть) — ввод не теряется (H#B2-9). */
@@ -188,6 +211,7 @@ export class AntiHabitFormModalComponent {
         title: ah.title,
         description: ah.description ?? '',
         targetDays: ah.targetDays ?? 30,
+        startDate: '',
       });
     }
   }
@@ -195,6 +219,37 @@ export class AntiHabitFormModalComponent {
   /** Переключает «задать цель». */
   protected toggleTarget(): void {
     this.hasTarget.update((v) => !v);
+  }
+
+  /** Переключает «Начать не сегодня». */
+  protected toggleStart(): void {
+    this.startInFuture.update((v) => !v);
+  }
+
+  /** Текст ошибки даты старта (после submit). */
+  protected startError(): string | null {
+    if (!this.submitted() || !this.startInFuture()) {
+      return null;
+    }
+    const v = this.form.controls.startDate.value;
+    if (v === '') {
+      return 'Выберите дату старта.';
+    }
+    return this._toMs(v) <= Date.now() ? 'Дата старта должна быть в будущем.' : null;
+  }
+
+  /** `YYYY-MM-DD` → unix ms локальной полуночи. */
+  private _toMs(ymd: string): number {
+    const p = ymd.split('-').map(Number);
+    return new Date(p[0] ?? 0, (p[1] ?? 1) - 1, p[2] ?? 1).getTime();
+  }
+
+  /** `Date` → `YYYY-MM-DD` (локально). */
+  private _toYmd(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   /** Текст ошибки названия (после касания/submit). */
@@ -218,12 +273,24 @@ export class AntiHabitFormModalComponent {
       return;
     }
     const v = this.form.getRawValue();
+    // Плановый старт (только при создании): дата обязана быть в будущем.
+    let startAt: number | null = null;
+    if (!this.isEdit && this.startInFuture()) {
+      if (v.startDate === '' || this._toMs(v.startDate) <= Date.now()) {
+        return;
+      }
+      startAt = this._toMs(v.startDate);
+    }
     const description = v.description.trim();
     const payload: AntiHabitPayload = {
       title: v.title.trim(),
       description: description.length > 0 ? description : null,
       targetDays: this.hasTarget() ? v.targetDays : null,
     };
+    // startAt кладём только для планового создания — в edit-режиме strict-DTO апдейта его отвергнет.
+    if (startAt !== null) {
+      payload.startAt = startAt;
+    }
     this._submit(payload);
   }
 

@@ -6,8 +6,8 @@ import type {
   AccentRefItem,
   AccentSettingsView,
   AddGoalEntryResult,
+  AntiHabitEventPage,
   AntiHabitPayload,
-  AntiHabitRelapsePage,
   AntiHabitUpdatePayload,
   AntiHabitView,
   CompleteTaskResult,
@@ -28,6 +28,7 @@ import type {
   OneOffTaskPayload,
   RelapsePayload,
   RelapseResult,
+  ReschedulePayload,
   TaskView,
 } from '../accent.types';
 
@@ -375,10 +376,18 @@ export class AccentApiService {
     return this._http.patch<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}`, payload);
   }
 
-  /** Зафиксировать срыв (сброс таймера, обновление рекорда, запись попытки). */
+  /** Зафиксировать срыв (сброс таймера, обновление рекорда, запись события `relapse`). */
   public relapseAntiHabit(id: string, payload: RelapsePayload): Observable<RelapseResult> {
     return this._http.post<RelapseResult>(
       `${API_PREFIX}/accent/anti-habits/${id}/relapse`,
+      payload,
+    );
+  }
+
+  /** Перенести старт в будущее (ADR-0059): завершает текущую попытку, старт → planned. */
+  public rescheduleAntiHabit(id: string, payload: ReschedulePayload): Observable<RelapseResult> {
+    return this._http.post<RelapseResult>(
+      `${API_PREFIX}/accent/anti-habits/${id}/reschedule`,
       payload,
     );
   }
@@ -388,12 +397,12 @@ export class AccentApiService {
     return this._http.put<void>(`${API_PREFIX}/accent/anti-habits/reorder`, { ids });
   }
 
-  /** История срывов (cursor-пагинация `{ items, nextCursor }`, новые→старые). */
-  public listAntiHabitRelapses(
+  /** История событий (cursor-пагинация `{ items, nextCursor }`, новые→старые). */
+  public listAntiHabitEvents(
     id: string,
     cursor?: string,
     limit?: number,
-  ): Observable<AntiHabitRelapsePage> {
+  ): Observable<AntiHabitEventPage> {
     const params = new URLSearchParams();
     if (cursor !== undefined) {
       params.set('cursor', cursor);
@@ -402,8 +411,8 @@ export class AccentApiService {
       params.set('limit', String(limit));
     }
     const query = params.toString();
-    return this._http.get<AntiHabitRelapsePage>(
-      `${API_PREFIX}/accent/anti-habits/${id}/relapses${query ? `?${query}` : ''}`,
+    return this._http.get<AntiHabitEventPage>(
+      `${API_PREFIX}/accent/anti-habits/${id}/events${query ? `?${query}` : ''}`,
     );
   }
 }

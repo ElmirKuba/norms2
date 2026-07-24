@@ -23,9 +23,10 @@ import {
 import { AntiHabitFormModalComponent } from './anti-habit-form-modal.component';
 import type { AntiHabitFormData } from './anti-habit-form-modal.component';
 import { AntiHabitRelapseModalComponent } from './anti-habit-relapse-modal.component';
+import { AntiHabitRescheduleModalComponent } from './anti-habit-reschedule-modal.component';
 import type {
+  AntiHabitEventView,
   AntiHabitPayload,
-  AntiHabitRelapseView,
   AntiHabitView,
   RelapsePayload,
 } from '../accent.types';
@@ -98,7 +99,11 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
           </div>
         </div>
 
-        <p class="ahd__clock">{{ clock() }}</p>
+        @if (ah.state === 'planned') {
+          <p class="ahd__planned">🗓 Старт запланирован: {{ dateLabel(ah.currentAttemptStartedAt) }} · через {{ untilStart(ah) }}</p>
+        } @else {
+          <p class="ahd__clock">{{ clock() }}</p>
+        }
         <p class="ahd__meta">
           @if (ah.targetDays !== null) {
             <span>🎯 цель: {{ ah.targetDays }} {{ dayWord(ah.targetDays) }}</span>
@@ -112,25 +117,29 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
             <span aria-hidden="true">🔄</span>
             Рецидив
           </app-button>
+          <app-button variant="ghost" (click)="openReschedule(ah)">
+            <span aria-hidden="true">🗓</span>
+            Перенести в будущее
+          </app-button>
         </div>
 
         <section class="ahd__history">
-          <h3 class="ahd__h3">История попыток</h3>
-          @if (relapses().length === 0) {
-            <p class="ahd__muted">Срывов пока нет — так держать 💪</p>
+          <h3 class="ahd__h3">История</h3>
+          @if (events().length === 0) {
+            <p class="ahd__muted">Событий пока нет — так держать 💪</p>
           } @else {
             <ul class="ahd__hist-list">
-              @for (r of relapses(); track r.id) {
+              @for (e of events(); track e.id) {
                 <li>
                   <app-card>
                     <div class="ahd__hist">
-                      <span class="ahd__hist-dur">продержался {{ durationLabel(r.attemptDurationMs) }}</span>
-                      <span class="ahd__hist-date">{{ dateLabel(r.relapseAt) }}</span>
-                      @if (r.triggerTag) {
-                        <span class="ahd__hist-tag">триггер: {{ r.triggerTag }}</span>
+                      <span class="ahd__hist-dur">{{ eventTitle(e) }}</span>
+                      <span class="ahd__hist-date">{{ dateLabel(e.occurredAt) }}</span>
+                      @if (e.triggerTag) {
+                        <span class="ahd__hist-tag">триггер: {{ e.triggerTag }}</span>
                       }
-                      @if (r.note) {
-                        <span class="ahd__hist-note">{{ r.note }}</span>
+                      @if (e.note) {
+                        <span class="ahd__hist-note">{{ e.note }}</span>
                       }
                     </div>
                   </app-card>
@@ -229,6 +238,13 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
         font-variant-numeric: tabular-nums;
         color: var(--color-text);
       }
+      .ahd__planned {
+        align-self: center;
+        margin: 0;
+        font-size: var(--fs-md);
+        color: var(--color-accent);
+        text-align: center;
+      }
       .ahd__meta {
         display: flex;
         flex-wrap: wrap;
@@ -318,8 +334,8 @@ export class AntiHabitDetailComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
   /** Идёт фиксация срыва. */
   protected readonly relapseBusy = signal(false);
-  /** История срывов (новые→старые). */
-  protected readonly relapses = signal<AntiHabitRelapseView[]>([]);
+  /** История событий (новые→старые). */
+  protected readonly events = signal<AntiHabitEventView[]>([]);
   /** Курсор следующей страницы истории или null. */
   private readonly _historyCursor = signal<string | null>(null);
   /** Больше страниц истории нет. */
@@ -380,7 +396,7 @@ export class AntiHabitDetailComponent implements OnDestroy {
     return formatDurationCompact(ms);
   }
 
-  /** Дата срыва человекочитаемо. */
+  /** Дата человекочитаемо. */
   protected dateLabel(ms: number): string {
     return new Intl.DateTimeFormat('ru-RU', {
       day: 'numeric',
@@ -388,6 +404,28 @@ export class AntiHabitDetailComponent implements OnDestroy {
       hour: '2-digit',
       minute: '2-digit',
     }).format(new Date(ms));
+  }
+
+  /** Заголовок события истории по типу. */
+  protected eventTitle(e: AntiHabitEventView): string {
+    switch (e.type) {
+      case 'relapse':
+        return `🔄 Рецидив · продержался ${formatDurationCompact(e.attemptDurationMs ?? 0)}`;
+      case 'reschedule':
+        return `🗓 Перенос старта · продержался ${formatDurationCompact(e.attemptDurationMs ?? 0)}`;
+      case 'plan':
+        return `🗓 Запланирован старт${e.toStartedAt !== null ? ': ' + this.dateLabel(e.toStartedAt) : ''}`;
+      case 'goal_reached':
+        return `🏆 Цель достигнута${e.thresholdLabel !== null ? ': ' + e.thresholdLabel : ''}`;
+      default:
+        return 'Событие';
+    }
+  }
+
+  /** Сколько осталось до планового старта (для `planned`). */
+  protected untilStart(ah: AntiHabitView): string {
+    const days = Math.max(0, Math.ceil((ah.currentAttemptStartedAt - this._now()) / 86_400_000));
+    return `${days} ${pluralDays(days)}`;
   }
 
   private _load(): void {
@@ -411,9 +449,9 @@ export class AntiHabitDetailComponent implements OnDestroy {
       return;
     }
     this.historyLoading.set(true);
-    this._api.listAntiHabitRelapses(this._id, this._historyCursor() ?? undefined).subscribe({
+    this._api.listAntiHabitEvents(this._id, this._historyCursor() ?? undefined).subscribe({
       next: (page) => {
-        this.relapses.update((list) => [...list, ...page.items]);
+        this.events.update((list) => [...list, ...page.items]);
         this._historyCursor.set(page.nextCursor);
         if (page.nextCursor === null) {
           this.historyEnd.set(true);
@@ -438,13 +476,33 @@ export class AntiHabitDetailComponent implements OnDestroy {
       this._api.relapseAntiHabit(ah.id, payload).subscribe({
         next: (res) => {
           this.item.set(res.antiHabit);
-          this.relapses.update((list) => [res.relapse, ...list]);
+          this.events.update((list) => [res.event, ...list]);
           this.relapseBusy.set(false);
         },
         error: (err: unknown) => {
           this.relapseBusy.set(false);
           this._modal.error('Не удалось отметить срыв', errorMessage(err));
         },
+      });
+    });
+  }
+
+  /** Открывает модалку переноса → при выборе даты переносит старт в будущее (planned). */
+  protected openReschedule(ah: AntiHabitView): void {
+    const ref = this._dialog.open<AntiHabitRescheduleModalComponent, undefined, number | null>(
+      AntiHabitRescheduleModalComponent,
+      { width: MODAL_SMALL_WIDTH, panelClass: 'modal-flush' },
+    );
+    ref.afterClosed().subscribe((startAt) => {
+      if (startAt === null || startAt === undefined) {
+        return;
+      }
+      this._api.rescheduleAntiHabit(ah.id, { startAt }).subscribe({
+        next: (res) => {
+          this.item.set(res.antiHabit);
+          this.events.update((list) => [res.event, ...list]);
+        },
+        error: (err: unknown) => this._modal.error('Не удалось перенести', errorMessage(err)),
       });
     });
   }

@@ -526,7 +526,9 @@ export interface AntiHabitView {
   description: string | null;
   /** Активна ли. */
   isActive: boolean;
-  /** Старт текущей попытки (unix ms) — для живого счёта серии. */
+  /** Состояние: `active` (серия идёт) или `planned` (старт в будущем, серия ещё не началась). */
+  state: 'active' | 'planned';
+  /** Старт текущей попытки (unix ms) — для живого счёта серии; при `planned` — в будущем. */
   currentAttemptStartedAt: number;
   /** Снимок серии в днях на момент ответа (фронт пересчитывает вживую). */
   currentDays: number;
@@ -550,6 +552,14 @@ export interface AntiHabitPayload {
   description?: string | null;
   /** Цель серии в днях (опц.). */
   targetDays?: number | null;
+  /** Плановый старт в будущем (unix ms, опц.) — «Начать не сегодня». */
+  startAt?: number | null;
+}
+
+/** Тело переноса старта в будущее (`POST /accent/anti-habits/:id/reschedule`). */
+export interface ReschedulePayload {
+  /** Новый старт (unix ms, в будущем). */
+  startAt: number;
 }
 
 /** Тело обновления анти-привычки (`PATCH /accent/anti-habits/:id`; все поля опц.). */
@@ -564,20 +574,35 @@ export interface AntiHabitUpdatePayload {
   isActive?: boolean;
 }
 
-/** Запись срыва наружу (история). */
-export interface AntiHabitRelapseView {
+/** Тип события таймлайна «держусь» (ADR-0059; зеркало бэка). */
+export type AntiHabitEventType = 'relapse' | 'reschedule' | 'plan' | 'goal_reached';
+
+/** Событие таймлайна «держусь» наружу (`GET …/events`). Типо-специфичные поля = null вне типа. */
+export interface AntiHabitEventView {
   /** Идентификатор. */
   id: string;
-  /** Момент срыва (unix ms). */
-  relapseAt: number;
-  /** Длительность завершившейся попытки (мс). */
-  attemptDurationMs: number;
-  /** Триггер срыва или null. */
+  /** Тип события. */
+  type: AntiHabitEventType;
+  /** Когда произошло (unix ms). */
+  occurredAt: number;
+  /** relapse/reschedule: длительность завершившейся попытки (мс) или null. */
+  attemptDurationMs: number | null;
+  /** relapse: номер завершившейся попытки или null. */
+  endedAttemptNumber: number | null;
+  /** relapse: триггер или null. */
   triggerTag: string | null;
-  /** Заметка или null. */
+  /** relapse: заметка или null. */
   note: string | null;
-  /** Когда записано (ISO). */
-  createdAt: string;
+  /** reschedule: прежний старт (unix ms) или null. */
+  fromStartedAt: number | null;
+  /** reschedule/plan: новый (будущий) старт (unix ms) или null. */
+  toStartedAt: number | null;
+  /** reschedule: сколько продержался (дней) или null. */
+  heldDays: number | null;
+  /** goal_reached: ярлык порога или null. */
+  thresholdLabel: string | null;
+  /** goal_reached: номинал порога (дней) или null. */
+  thresholdDays: number | null;
 }
 
 /** Тело срыва (`POST /accent/anti-habits/:id/relapse`). Оба поля свободные (без ПДн). */
@@ -588,18 +613,18 @@ export interface RelapsePayload {
   note?: string | null;
 }
 
-/** Результат срыва: обновлённая анти-привычка (после сброса) + записанная попытка. */
+/** Результат срыва/переноса: обновлённая анти-привычка + записанное событие. */
 export interface RelapseResult {
-  /** Анти-привычка после сброса таймера/рекорда. */
+  /** Анти-привычка после сброса/переноса. */
   antiHabit: AntiHabitView;
-  /** Записанный срыв. */
-  relapse: AntiHabitRelapseView;
+  /** Записанное событие таймлайна. */
+  event: AntiHabitEventView;
 }
 
-/** Страница истории срывов (cursor-пагинация). */
-export interface AntiHabitRelapsePage {
-  /** Записи (новые→старые). */
-  items: AntiHabitRelapseView[];
+/** Страница истории событий (cursor-пагинация). */
+export interface AntiHabitEventPage {
+  /** События (новые→старые). */
+  items: AntiHabitEventView[];
   /** Курсор следующей страницы или null. */
   nextCursor: string | null;
 }

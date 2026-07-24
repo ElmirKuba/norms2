@@ -86,7 +86,11 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                   <button type="button" class="ah__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                   <a class="ah__link" [routerLink]="[ah.id]">
                     <strong class="ah__name">{{ ah.title }}</strong>
-                    <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
+                    @if (ah.state === 'planned') {
+                      <span class="ah__streak">🗓 старт {{ startShort(ah) }}</span>
+                    } @else {
+                      <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
+                    }
                     <span class="ah__sub">
                       <span class="ah__stat">🏆 рекорд: <strong class="ah__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
                       @if (ah.targetDays !== null) {
@@ -332,6 +336,13 @@ export class AntiHabitsComponent implements OnDestroy {
   /** Живая подпись серии карточки (дн чч:мм:сс). */
   protected streakLabel(ah: AntiHabitView): string {
     return formatStreakLong(streakParts(ah.currentAttemptStartedAt, this._now()));
+  }
+
+  /** Короткая дата планового старта (для `planned`-карточки). */
+  protected startShort(ah: AntiHabitView): string {
+    return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(
+      new Date(ah.currentAttemptStartedAt),
+    );
   }
 
   /** RU-склонение «день». */

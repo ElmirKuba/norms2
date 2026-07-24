@@ -7,6 +7,13 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -29,7 +36,15 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
  */
 @Component({
   selector: 'app-anti-habits',
-  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [
+    RouterLink,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    ButtonComponent,
+    CardComponent,
+    EmptyStateComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ah">
@@ -63,11 +78,12 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
           </app-button>
         </app-empty-state>
       } @else {
-        <ul class="ah__list">
+        <ul class="ah__list" cdkDropList (cdkDropListDropped)="dropAntiHabit($event)">
           @for (ah of items(); track ah.id) {
-            <li>
+            <li cdkDrag>
               <app-card>
                 <div class="ah__item">
+                  <button type="button" class="ah__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                   <a class="ah__link" [routerLink]="[ah.id]">
                     <strong class="ah__name">{{ ah.title }}</strong>
                     <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
@@ -165,6 +181,26 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .ah__grip {
+        border: none;
+        background: transparent;
+        cursor: grab;
+        color: var(--color-text-muted);
+        font-size: var(--fs-md);
+        line-height: 1;
+        padding: 0 var(--space-1);
+        touch-action: none;
+        flex-shrink: 0;
+      }
+      .ah__grip:active {
+        cursor: grabbing;
+      }
+      .cdk-drag-preview {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      }
+      .cdk-drag-placeholder {
+        opacity: 0.4;
       }
       .ah__link {
         display: flex;
@@ -326,6 +362,22 @@ export class AntiHabitsComponent implements OnDestroy {
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
     this.openMenuId.set(null);
+  }
+
+  /** Drag-reorder (ADR-0054): оптимистично + `reorderAntiHabits`; откат при ошибке. */
+  protected dropAntiHabit(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.items()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.set(next);
+    this._api.reorderAntiHabits(next.map((ah) => ah.id)).subscribe({
+      error: (err: unknown) => {
+        this._load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
+      },
+    });
   }
 
   private _load(): void {

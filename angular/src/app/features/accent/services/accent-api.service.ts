@@ -383,6 +383,11 @@ export class AccentApiService {
     );
   }
 
+  /** Переставить анти-привычки в заданный порядок (drag-reorder → position, ADR-0054). */
+  public reorderAntiHabits(ids: readonly string[]): Observable<void> {
+    return this._http.put<void>(`${API_PREFIX}/accent/anti-habits/reorder`, { ids });
+  }
+
   /** История срывов (cursor-пагинация `{ items, nextCursor }`, новые→старые). */
   public listAntiHabitRelapses(
     id: string,

@@ -101,7 +101,8 @@ account (фаза 1)
 > [ADR-0060](../../decisions/0060-anti-habit-calendar-goal-ladder.md) лестница). Т.к. фича НЕ в проде —
 > схема пересобирается до первого деплоя (relapse-only → события); прод relapse-only не увидит.
 
-- **AntiHabit:** `id`, `account_id`, `title`, `description?`, `isActive`, `currentAttemptStartedAt` (unix ms), `attemptNumber` (≥1), `recordDays`, `recordAttemptStartedAt?`, `targetDays?`, `version` (CAS). Серия = `floor((now − startedAt)/86_400_000)` (фронт считает в реальном времени).
+- **AntiHabit:** `id`, `account_id`, `title`, `description?`, `isActive`, `currentAttemptStartedAt` (unix ms), `attemptNumber` (≥1), `recordDays`, `recordAttemptStartedAt?`, `targetDays?`, `is_starter` (пример-витрина, ADR-0051), `position` (drag-reorder, ADR-0054), `version` (CAS). Серия = `floor((now − startedAt)/86_400_000)` (фронт считает в реальном времени).
+  - **`is_starter` — инертная витрина (ADR-0051):** пример-«держусь» из стартового пака виден с бейджем, но **не считает серию/авто-цель и не принимает рецидив/перенос** до присвоения. Adoption («Добавить себе» или правка) снимает флаг и стартует серию с этого момента. Seed идемпотентен (дедуп по названию); очистка удаляет только непринятые.
   - **Состояние `planned` (план, ADR-0059):** `currentAttemptStartedAt` может быть в БУДУЩЕМ → `now < startedAt` = серия ещё не идёт (счётчик показывает «старт через X», не тикает). Отдельной колонки нет — состояние вычисляемо. Реальный старт = когда наступит время.
   - **`targetDays` — семантика меняется (план, ADR-0060):** это не фикс-потолок, а **стартовая ступень** авто-лестницы. Цель = ближайший непройденный порог, вычисляемый как **ДАТА** (см. ниже).
 - **AntiHabitEvent (таймлайн, ADR-0059):** единая лента событий вместо relapse-only. `id`, `anti_habit_id` (FK cascade), `type` (`relapse | reschedule | plan | goal_reached`), `occurredAt` (unix ms), `created_at` + типизированные nullable-поля:

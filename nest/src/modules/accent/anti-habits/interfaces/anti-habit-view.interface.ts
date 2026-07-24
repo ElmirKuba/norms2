@@ -34,6 +34,8 @@ export interface AntiHabitView {
   recordAttemptStartedAt: number | null;
   /** Цель серии в днях или null. */
   targetDays: number | null;
+  /** Стартовый пример (`is_starter`, ADR-0051): бейдж «пример», инертен до присвоения. */
+  isStarter: boolean;
   /** Следующий порог авто-цели (ADR-0060): `{ label, thresholdDays, targetDate }`. */
   nextGoal: GoalRung;
   /** Когда создано (ISO). */
@@ -62,6 +64,7 @@ export function toAntiHabitView(full: AntiHabitFull, now: number = Date.now()): 
     recordDays: full.recordDays,
     recordAttemptStartedAt: full.recordAttemptStartedAt,
     targetDays: full.targetDays,
+    isStarter: full.isStarter,
     nextGoal: nextGoal(full.currentAttemptStartedAt, now, full.targetDays),
     createdAt: full.createdAt.toISOString(),
   };

@@ -29,6 +29,9 @@ export const antiHabits = defineTableWithSchema<AntiHabitFull>()(
     recordDays: integer('record_days').notNull().default(0),
     recordAttemptStartedAt: bigint('record_attempt_started_at', { mode: 'number' }),
     targetDays: integer('target_days'),
+    // Стартовый пример (ADR-0051 «инертная витрина»): виден с бейджем «пример», но НЕ считает
+    // серию/цели и не принимает рецидив/перенос до присвоения («Добавить себе»/«Изм.»).
+    isStarter: boolean('is_starter').notNull().default(false),
     // Ручной порядок (ADR-0054, drag-to-reorder): per-account; новый — в конец (max+1).
     position: integer('position').notNull().default(0),
     // Оптимистичный лок (ADR-0035): рецидив пишет через CAS по version; любой update bump'ает.

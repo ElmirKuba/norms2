@@ -1,0 +1,1 @@
+ALTER TABLE "anti_habits" ADD COLUMN "is_starter" boolean DEFAULT false NOT NULL;

@@ -47,4 +47,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.5 — «Акцент»: Цели, графики и фокус',
     contentFile: 'notifications/release-2.5.0.md',
   },
+  {
+    key: 'release-2.6.0',
+    title: 'Нормисы 2.6 — «Акцент»: раздел «Держусь»',
+    contentFile: 'notifications/release-2.6.0.md',
+  },
 ];

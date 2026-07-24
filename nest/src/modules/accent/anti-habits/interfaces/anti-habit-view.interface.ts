@@ -1,4 +1,6 @@
 import type { AntiHabitFull } from './anti-habit-full.interface';
+import { nextGoal } from '../domain-services/anti-habit-goal-ladder.util';
+import type { GoalRung } from '../domain-services/anti-habit-goal-ladder.util';
 
 /** Число миллисекунд в сутках — для вычисления серии «сколько держусь». */
 const DAY_MS = 86_400_000;
@@ -32,6 +34,8 @@ export interface AntiHabitView {
   recordAttemptStartedAt: number | null;
   /** Цель серии в днях или null. */
   targetDays: number | null;
+  /** Следующий порог авто-цели (ADR-0060): `{ label, thresholdDays, targetDate }`. */
+  nextGoal: GoalRung;
   /** Когда создано (ISO). */
   createdAt: string;
 }
@@ -58,6 +62,7 @@ export function toAntiHabitView(full: AntiHabitFull, now: number = Date.now()): 
     recordDays: full.recordDays,
     recordAttemptStartedAt: full.recordAttemptStartedAt,
     targetDays: full.targetDays,
+    nextGoal: nextGoal(full.currentAttemptStartedAt, now, full.targetDays),
     createdAt: full.createdAt.toISOString(),
   };
 }

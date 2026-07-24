@@ -67,9 +67,14 @@
 - `POST /accent/micro-wins/:id/complete` Body `{ occurredOn? }` → 201 (дневной лимит на 1 MicroWin; даёт очки).
 
 ## 7. AntiHabits
-- `GET /accent/anti-habits` (с вычисл. `currentDays` на фронте) · `POST` Body `{ title, description?, targetDays? }`.
-- `GET/PATCH /accent/anti-habits/:id` · `POST .../relapse` Body `{ triggerTag?, note? }` → сброс таймера, обновление рекорда, запись попытки. Ошибка **`ALREADY_RELAPSED` (409)** — срыв без активной попытки / повторный в тот же момент. Рецидив идёт под optimistic `version` (CAS, domain-model §7). Эмитит `anti_habit.relapsed` (хук для 2.9).
-- `GET /accent/anti-habits/:id/relapses?cursor` — история попыток (cursor-пагинация `{ items, nextCursor }`, см. §0).
+> Статус: **реализовано (2.6, Трек C)** — под AuthGuard, per-account. View: `AntiHabitView`
+> отдаёт `currentAttemptStartedAt` (unix ms — фронт считает серию вживую) + снимок `currentDays`,
+> `attemptNumber`, `recordDays` (переживает срыв), `recordAttemptStartedAt`, `targetDays`, `isActive`.
+- `GET /accent/anti-habits` → `AntiHabitView[]` (активные) · `POST` Body `{ title, description?, targetDays? }` → `AntiHabitView` (201; первая попытка стартует сейчас).
+- `GET /accent/anti-habits/:id` → `AntiHabitView` · `PATCH /accent/anti-habits/:id` Body `{ title?, description?, targetDays?, isActive? }` (`isActive:false` = убрать из списка) → `AntiHabitView`.
+- `POST /accent/anti-habits/:id/relapse` Body `{ triggerTag?, note? }` → `{ antiHabit: AntiHabitView, relapse: AntiHabitRelapseView }` (сброс таймера, обновление рекорда, запись попытки; фронт обновляет карточку+историю без перезапроса). Ошибка **`ALREADY_RELAPSED` (409)** — срыв неактивной привычки / повторный в тот же момент (конкурентный `relapse` уже сбросил таймер). Рецидив — CAS-first по optimistic `version` (ADR-0035, domain-model §7): при успехе пишется запись, при конкурентном срыве — 409 без «висячего» рецидива. Эмитит `anti_habit.relapsed` (хук для 2.9; слушателей/очков нет).
+- `GET /accent/anti-habits/:id/relapses?cursor=&limit=` → `{ items: AntiHabitRelapseView[], nextCursor }` (новые→старые; keyset-курсор по `(relapseAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30, см. §0).
+- **Ошибки:** `ANTI_HABIT_NOT_FOUND` (404, нет/не ваша), `ALREADY_RELAPSED` (409), `VALIDATION_ERROR` (400).
 
 ## 8. Obstacles + Counterplays
 - `GET/POST /accent/obstacles` Body `{ name, type?, trigger?, symptoms?, intensity? }`.

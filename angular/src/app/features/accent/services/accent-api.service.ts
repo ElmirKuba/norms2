@@ -415,4 +415,19 @@ export class AccentApiService {
       `${API_PREFIX}/accent/anti-habits/${id}/events${query ? `?${query}` : ''}`,
     );
   }
+
+  /** Получить стартовый пак «держусь» (идемпотентно докидывает примеры, ADR-0051). */
+  public seedAntiHabitStarterPack(): Observable<AntiHabitView[]> {
+    return this._http.post<AntiHabitView[]>(`${API_PREFIX}/accent/anti-habits/starter-pack`, {});
+  }
+
+  /** Очистить примеры «держусь» (удаляет только непринятые, ADR-0051). */
+  public clearAntiHabitStarters(): Observable<AntiHabitView[]> {
+    return this._http.delete<AntiHabitView[]>(`${API_PREFIX}/accent/anti-habits/starter-pack`);
+  }
+
+  /** Присвоить пример себе («Добавить себе», ADR-0051): снимает флаг, стартует серию. */
+  public adoptAntiHabit(id: string): Observable<AntiHabitView> {
+    return this._http.post<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}/adopt`, {});
+  }
 }

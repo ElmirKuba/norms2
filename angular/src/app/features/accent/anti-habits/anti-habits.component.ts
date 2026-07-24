@@ -3,6 +3,7 @@ import {
   Component,
   HostListener,
   OnDestroy,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -50,9 +51,22 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
     <section class="ah">
       <header class="ah__head">
         <h2>Держусь</h2>
-        <span class="tooltip-host" [attr.data-tooltip]="'Добавить «держусь»'">
-          <app-button ariaLabel="Добавить «держусь»" (click)="openCreate()">+</app-button>
-        </span>
+        <div class="ah__head-actions">
+          @if (!loading() && items().length > 0) {
+            @if (hasStarters()) {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                <span aria-hidden="true">🧹</span> Очистить примеры
+              </app-button>
+            } @else {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                <span aria-hidden="true">🎁</span> Получить пак
+              </app-button>
+            }
+          }
+          <span class="tooltip-host" [attr.data-tooltip]="'Добавить «держусь»'">
+            <app-button ariaLabel="Добавить «держусь»" (click)="openCreate()">+</app-button>
+          </span>
+        </div>
       </header>
 
       <aside class="ah__why">
@@ -70,14 +84,21 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
       } @else if (items().length === 0) {
         <app-empty-state
           title="Пока нет ни одного «держусь»"
-          text="Добавь то, от чего хочешь воздержаться — и запусти счётчик серии. Даже один день на счётчике — уже победа."
+          text="Добавь то, от чего хочешь воздержаться — и запусти счётчик серии. Даже один день на счётчике — уже победа. Или посмотри готовые примеры."
         >
-          <app-button (click)="openCreate()">
+          <app-button [loading]="packBusy()" (click)="seedPack()">
+            <span aria-hidden="true">🎁</span>
+            Получить примеры
+          </app-button>
+          <app-button variant="ghost" (click)="openCreate()">
             <span aria-hidden="true">➕</span>
-            Добавить «держусь»
+            Добавить своё
           </app-button>
         </app-empty-state>
       } @else {
+        @if (hasStarters()) {
+          <p class="ah__hint">Примеры помечены бейджем и пока не считаются. «Добавить себе» или «Изм.» — и это станет твоим «держусь».</p>
+        }
         <ul class="ah__list" cdkDropList (cdkDropListDropped)="dropAntiHabit($event)">
           @for (ah of items(); track ah.id) {
             <li cdkDrag>
@@ -85,20 +106,32 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                 <div class="ah__item">
                   <button type="button" class="ah__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                   <a class="ah__link" [routerLink]="[ah.id]">
-                    <strong class="ah__name">{{ ah.title }}</strong>
-                    @if (ah.state === 'planned') {
-                      <span class="ah__streak">🗓 старт {{ startShort(ah) }}</span>
-                    } @else {
-                      <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
-                    }
-                    <span class="ah__sub">
-                      <span class="ah__stat">🏆 рекорд: <strong class="ah__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
-                      @if (ah.state !== 'planned') {
-                        <span class="ah__target">{{ isCarrot(ah) ? '🥕' : '🎯' }} цель: {{ ah.nextGoal.label }}</span>
-                      }
-                      <span class="ah__stat">попытка <strong class="ah__num">№{{ ah.attemptNumber }}</strong></span>
+                    <span class="ah__name-row">
+                      <strong class="ah__name">{{ ah.title }}</strong>
+                      @if (ah.isStarter) { <span class="ah__badge">пример</span> }
                     </span>
+                    @if (ah.isStarter) {
+                      <span class="ah__example-note">{{ ah.description }}</span>
+                    } @else {
+                      @if (ah.state === 'planned') {
+                        <span class="ah__streak">🗓 старт {{ startShort(ah) }}</span>
+                      } @else {
+                        <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
+                      }
+                      <span class="ah__sub">
+                        <span class="ah__stat">🏆 рекорд: <strong class="ah__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
+                        @if (ah.state !== 'planned') {
+                          <span class="ah__target">{{ isCarrot(ah) ? '🥕' : '🎯' }} цель: {{ ah.nextGoal.label }}</span>
+                        }
+                        <span class="ah__stat">попытка <strong class="ah__num">№{{ ah.attemptNumber }}</strong></span>
+                      </span>
+                    }
                   </a>
+                  @if (ah.isStarter) {
+                    <app-button variant="ghost" [loading]="adoptBusyId() === ah.id" (click)="adopt(ah)">
+                      <span aria-hidden="true">➕</span> Добавить себе
+                    </app-button>
+                  }
                   <div class="ah__menu-wrap">
                     <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
                       <button
@@ -126,7 +159,7 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                     }
                   </div>
                 </div>
-                @if (ah.state !== 'planned') {
+                @if (!ah.isStarter && ah.state !== 'planned') {
                   <p
                     class="ah__timewarp tooltip-host tooltip-host--wrap"
                     [attr.data-tooltip]="timeWarpHint"
@@ -153,6 +186,34 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .ah__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .ah__hint {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-3);
+      }
+      .ah__name-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .ah__badge {
+        font-size: var(--fs-xs);
+        color: var(--color-warning, #b8860b);
+        border: 1px solid var(--color-warning, #b8860b);
+        border-radius: var(--radius-sm);
+        padding: 0 var(--space-1);
+      }
+      .ah__example-note {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        font-style: italic;
       }
       .ah__why {
         display: flex;
@@ -350,6 +411,12 @@ export class AntiHabitsComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
   /** Id карточки с открытым меню «⋯» или null. */
   protected readonly openMenuId = signal<string | null>(null);
+  /** Идёт сев/очистка стартового пака (ADR-0051). */
+  protected readonly packBusy = signal(false);
+  /** Id примера, который присваивается сейчас, или null. */
+  protected readonly adoptBusyId = signal<string | null>(null);
+  /** Есть ли ещё непринятые примеры (для CTA/хинта, ADR-0051). */
+  protected readonly hasStarters = computed(() => this.items().some((ah) => ah.isStarter));
   /** Тикающий «сейчас» (unix ms) — двигает живые счётчики серий. */
   private readonly _now = signal(Date.now());
   /** Хендл интервала тика (очистка в ngOnDestroy). */
@@ -387,6 +454,51 @@ export class AntiHabitsComponent implements OnDestroy {
   /** Цель в фазе «морковки» (после «года»): иконка 🥕 вместо 🎯 (ADR-0060). */
   protected isCarrot(ah: AntiHabitView): boolean {
     return ah.nextGoal.label.startsWith('год +');
+  }
+
+  /** Получить стартовый пак «держусь» (докидывает примеры) — список приходит свежим (ADR-0051). */
+  protected seedPack(): void {
+    this.packBusy.set(true);
+    this._api.seedAntiHabitStarterPack().subscribe({
+      next: (list) => {
+        this.items.set(list);
+        this.packBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.packBusy.set(false);
+        this._modal.error('Не удалось получить пак', errorMessage(err));
+      },
+    });
+  }
+
+  /** Очистить примеры (только непринятые) — список приходит свежим (ADR-0051). */
+  protected clearExamples(): void {
+    this.packBusy.set(true);
+    this._api.clearAntiHabitStarters().subscribe({
+      next: (list) => {
+        this.items.set(list);
+        this.packBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.packBusy.set(false);
+        this._modal.error('Не удалось очистить примеры', errorMessage(err));
+      },
+    });
+  }
+
+  /** Присвоить пример себе («Добавить себе», ADR-0051): снимает флаг, серия стартует. */
+  protected adopt(ah: AntiHabitView): void {
+    this.adoptBusyId.set(ah.id);
+    this._api.adoptAntiHabit(ah.id).subscribe({
+      next: (updated) => {
+        this.items.update((list) => list.map((item) => (item.id === updated.id ? updated : item)));
+        this.adoptBusyId.set(null);
+      },
+      error: (err: unknown) => {
+        this.adoptBusyId.set(null);
+        this._modal.error('Не удалось добавить себе', errorMessage(err));
+      },
+    });
   }
 
   /** Переключает меню «⋯». */

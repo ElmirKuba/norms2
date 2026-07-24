@@ -540,6 +540,8 @@ export interface AntiHabitView {
   recordAttemptStartedAt: number | null;
   /** Цель серии в днях или null. */
   targetDays: number | null;
+  /** Стартовый пример (`is_starter`, ADR-0051): бейдж «пример», инертен до «Добавить себе». */
+  isStarter: boolean;
   /** Следующий порог авто-цели (ADR-0060): ярлык + номинал дней + целевая ДАТА (unix ms). */
   nextGoal: { label: string; thresholdDays: number; targetDate: number };
   /** Когда создано (ISO). */

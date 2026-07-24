@@ -54,7 +54,10 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
         <p class="ahd__error">{{ error() }}</p>
       } @else if (item(); as ah) {
         <header class="ahd__head">
-          <h2 class="ahd__title">{{ ah.title }}</h2>
+          <h2 class="ahd__title">
+            {{ ah.title }}
+            @if (ah.isStarter) { <span class="ahd__badge">пример</span> }
+          </h2>
           <span class="tooltip-host" [attr.data-tooltip]="'Изменить'">
             <app-button variant="ghost" ariaLabel="Изменить" (click)="openEdit(ah)">✏️</app-button>
           </span>
@@ -100,27 +103,39 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
           <p class="ahd__planned">🗓 Старт запланирован: {{ dateLabel(ah.currentAttemptStartedAt) }} · через {{ untilStart(ah) }}</p>
         } @else {
           <p class="ahd__clock">{{ clock() }}</p>
-          <p class="ahd__goal" [class.ahd__goal--carrot]="isCarrot(ah)">
-            <span aria-hidden="true">{{ isCarrot(ah) ? '🥕' : '🎯' }}</span>
-            цель: <strong>{{ ah.nextGoal.label }}</strong>
-            <span class="ahd__goal-date">· до {{ goalDateShort(ah) }}</span>
-          </p>
+          @if (!ah.isStarter) {
+            <p class="ahd__goal" [class.ahd__goal--carrot]="isCarrot(ah)">
+              <span aria-hidden="true">{{ isCarrot(ah) ? '🥕' : '🎯' }}</span>
+              цель: <strong>{{ ah.nextGoal.label }}</strong>
+              <span class="ahd__goal-date">· до {{ goalDateShort(ah) }}</span>
+            </p>
+          }
         }
         <p class="ahd__meta">
           <span class="ahd__stat">🏆 рекорд: <strong class="ahd__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
           <span class="ahd__stat">попытка <strong class="ahd__num">№{{ ah.attemptNumber }}</strong></span>
         </p>
 
-        <div class="ahd__actions">
-          <app-button variant="ghost" [loading]="relapseBusy()" (click)="openRelapse(ah)">
-            <span aria-hidden="true">🔄</span>
-            Рецидив
-          </app-button>
-          <app-button variant="ghost" (click)="openReschedule(ah)">
-            <span aria-hidden="true">🗓</span>
-            Перенести в будущее
-          </app-button>
-        </div>
+        @if (ah.isStarter) {
+          <p class="ahd__example-note">Это пример — «Добавить себе», и счётчик серии пойдёт с этого момента.</p>
+          <div class="ahd__actions">
+            <app-button [loading]="adoptBusy()" (click)="adopt(ah)">
+              <span aria-hidden="true">➕</span>
+              Добавить себе
+            </app-button>
+          </div>
+        } @else {
+          <div class="ahd__actions">
+            <app-button variant="ghost" [loading]="relapseBusy()" (click)="openRelapse(ah)">
+              <span aria-hidden="true">🔄</span>
+              Рецидив
+            </app-button>
+            <app-button variant="ghost" (click)="openReschedule(ah)">
+              <span aria-hidden="true">🗓</span>
+              Перенести в будущее
+            </app-button>
+          </div>
+        }
 
         <section class="ahd__history">
           <h3 class="ahd__h3">История</h3>
@@ -187,6 +202,26 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
       }
       .ahd__title {
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .ahd__badge {
+        font-size: var(--fs-xs);
+        color: var(--color-warning, #b8860b);
+        border: 1px solid var(--color-warning, #b8860b);
+        border-radius: var(--radius-sm);
+        padding: 0 var(--space-1);
+        font-weight: 400;
+      }
+      .ahd__example-note {
+        align-self: center;
+        margin: 0 0 var(--space-3);
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        font-style: italic;
+        text-align: center;
       }
       .ahd__desc {
         margin: var(--space-2) 0 0;
@@ -346,6 +381,8 @@ export class AntiHabitDetailComponent implements OnDestroy {
   protected readonly error = signal<string | null>(null);
   /** Идёт фиксация срыва. */
   protected readonly relapseBusy = signal(false);
+  /** Идёт присвоение примера («Добавить себе», ADR-0051). */
+  protected readonly adoptBusy = signal(false);
   /** История событий (новые→старые). */
   protected readonly events = signal<AntiHabitEventView[]>([]);
   /** Курсор следующей страницы истории или null. */
@@ -538,6 +575,21 @@ export class AntiHabitDetailComponent implements OnDestroy {
         },
         error: (err: unknown) => this._modal.error('Не удалось перенести', errorMessage(err)),
       });
+    });
+  }
+
+  /** Присваивает пример себе («Добавить себе», ADR-0051): серия стартует, экран перезагружается. */
+  protected adopt(ah: AntiHabitView): void {
+    this.adoptBusy.set(true);
+    this._api.adoptAntiHabit(ah.id).subscribe({
+      next: (updated) => {
+        this.item.set(updated);
+        this.adoptBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.adoptBusy.set(false);
+        this._modal.error('Не удалось добавить себе', errorMessage(err));
+      },
     });
   }
 

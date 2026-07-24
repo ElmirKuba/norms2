@@ -72,13 +72,11 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                     <strong class="ah__name">{{ ah.title }}</strong>
                     <span class="ah__streak">⏱ {{ streakLabel(ah) }}</span>
                     <span class="ah__sub">
-                      @if (ah.recordDays > 0) {
-                        <span class="ah__record">🏆 рекорд: {{ ah.recordDays }} {{ dayWord(ah.recordDays) }}</span>
-                      }
+                      <span class="ah__stat">🏆 рекорд: <strong class="ah__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
                       @if (ah.targetDays !== null) {
                         <span class="ah__target">🎯 цель: {{ ah.targetDays }} {{ dayWord(ah.targetDays) }}</span>
                       }
-                      <span class="ah__attempt">попытка №{{ ah.attemptNumber }}</span>
+                      <span class="ah__stat">попытка <strong class="ah__num">№{{ ah.attemptNumber }}</strong></span>
                     </span>
                   </a>
                   <div class="ah__menu-wrap">
@@ -195,6 +193,14 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         gap: var(--space-1) var(--space-3);
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
+      }
+      .ah__stat {
+        color: var(--color-text);
+        font-weight: 600;
+      }
+      .ah__num {
+        color: var(--color-accent);
+        font-weight: 700;
       }
       .ah__menu-wrap {
         position: relative;

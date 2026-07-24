@@ -103,14 +103,14 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
           @if (ah.targetDays !== null) {
             <span>🎯 цель: {{ ah.targetDays }} {{ dayWord(ah.targetDays) }}</span>
           }
-          <span>🏆 рекорд: {{ ah.recordDays }} {{ dayWord(ah.recordDays) }}</span>
-          <span>попытка №{{ ah.attemptNumber }}</span>
+          <span class="ahd__stat">🏆 рекорд: <strong class="ahd__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
+          <span class="ahd__stat">попытка <strong class="ahd__num">№{{ ah.attemptNumber }}</strong></span>
         </p>
 
         <div class="ahd__actions">
           <app-button variant="ghost" [loading]="relapseBusy()" (click)="openRelapse(ah)">
             <span aria-hidden="true">🔄</span>
-            Сорвался — начать заново
+            Рецидив
           </app-button>
         </div>
 
@@ -237,6 +237,14 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
         margin: var(--space-2) 0 var(--space-4);
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
+      }
+      .ahd__stat {
+        color: var(--color-text);
+        font-weight: 600;
+      }
+      .ahd__num {
+        color: var(--color-accent);
+        font-weight: 700;
       }
       .ahd__actions {
         display: flex;

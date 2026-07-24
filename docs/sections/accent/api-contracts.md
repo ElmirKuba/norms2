@@ -66,15 +66,18 @@
 - `PATCH/DELETE /accent/micro-wins/:id`.
 - `POST /accent/micro-wins/:id/complete` Body `{ occurredOn? }` → 201 (дневной лимит на 1 MicroWin; даёт очки).
 
-## 7. AntiHabits
-> Статус: **реализовано (2.6, Трек C)** — под AuthGuard, per-account. View: `AntiHabitView`
-> отдаёт `currentAttemptStartedAt` (unix ms — фронт считает серию вживую) + снимок `currentDays`,
-> `attemptNumber`, `recordDays` (переживает срыв), `recordAttemptStartedAt`, `targetDays`, `isActive`.
-- `GET /accent/anti-habits` → `AntiHabitView[]` (активные) · `POST` Body `{ title, description?, targetDays? }` → `AntiHabitView` (201; первая попытка стартует сейчас).
-- `GET /accent/anti-habits/:id` → `AntiHabitView` · `PATCH /accent/anti-habits/:id` Body `{ title?, description?, targetDays?, isActive? }` (`isActive:false` = убрать из списка) → `AntiHabitView`.
-- `POST /accent/anti-habits/:id/relapse` Body `{ triggerTag?, note? }` → `{ antiHabit: AntiHabitView, relapse: AntiHabitRelapseView }` (сброс таймера, обновление рекорда, запись попытки; фронт обновляет карточку+историю без перезапроса). Ошибка **`ALREADY_RELAPSED` (409)** — срыв неактивной привычки / повторный в тот же момент (конкурентный `relapse` уже сбросил таймер). Рецидив — CAS-first по optimistic `version` (ADR-0035, domain-model §7): при успехе пишется запись, при конкурентном срыве — 409 без «висячего» рецидива. Эмитит `anti_habit.relapsed` (хук для 2.9; слушателей/очков нет).
-- `GET /accent/anti-habits/:id/relapses?cursor=&limit=` → `{ items: AntiHabitRelapseView[], nextCursor }` (новые→старые; keyset-курсор по `(relapseAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30, см. §0).
-- **Ошибки:** `ANTI_HABIT_NOT_FOUND` (404, нет/не ваша), `ALREADY_RELAPSED` (409), `VALIDATION_ERROR` (400).
+## 7. AntiHabits («держусь»)
+> Статус: **база реализована (Трек C 2.6.0)** — под AuthGuard, per-account. **План 2.6.1/2.6.2**
+> (ADR-0059 события/planned/перенос, ADR-0060 авто-цель) размечен ниже как 📋. `AntiHabitView`
+> отдаёт `currentAttemptStartedAt` (unix ms — фронт считает серию вживую), снимок `currentDays`,
+> `attemptNumber`, `recordDays` (переживает срыв), `recordAttemptStartedAt`, `targetDays`, `isActive`;
+> 📋 добавятся `state` (`active|planned`) и `nextGoal` (следующий порог: `{ label, targetDate, thresholdDays }`).
+- `GET /accent/anti-habits` → `AntiHabitView[]` (активные) · `POST` Body `{ title, description?, targetDays?, `📋`startAt? }` → `AntiHabitView` (201; без `startAt` — старт сейчас; 📋 `startAt` в БУДУЩЕМ → `planned`).
+- `GET /accent/anti-habits/:id` → `AntiHabitView` · `PATCH /accent/anti-habits/:id` Body `{ title?, description?, targetDays?, isActive? }` (`isActive:false` = убрать из списка) → `AntiHabitView`. **Дату старта PATCH НЕ меняет** (в прошлое нельзя, D7-пасхалка; в будущее — через `/reschedule`).
+- `POST /accent/anti-habits/:id/relapse` Body `{ triggerTag?, note? }` → `{ antiHabit: AntiHabitView, event: AntiHabitEventView }` (сброс таймера, обновление рекорда, запись события `relapse`; фронт обновляет карточку+историю без перезапроса). Ошибка **`ALREADY_RELAPSED` (409)** — срыв неактивной / повторный в тот же момент. CAS-first по `version` (ADR-0035): при успехе пишется событие, при конкурентном срыве — 409 без «висячего». Эмитит `anti_habit.relapsed` (хук 2.9).
+- 📋 `POST /accent/anti-habits/:id/reschedule` Body `{ startAt }` (только будущее) → `{ antiHabit, event: AntiHabitEventView }` (завершает текущую попытку под CAS, событие `reschedule` c `heldDays`, старт → `planned`). Ошибка `INVALID_START_DATE` (400) если `startAt` не в будущем.
+- `GET /accent/anti-habits/:id/`📋`events?cursor=&limit=` → `{ items: AntiHabitEventView[], nextCursor }` (новые→старые; keyset по `(occurredAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30). `AntiHabitEventView`: `{ id, type, occurredAt, ...типо-специфичные поля }` (`relapse`: `attemptDurationMs`/`endedAttemptNumber`/`triggerTag?`/`note?`; `reschedule|plan`: `fromStartedAt?`/`toStartedAt?`/`heldDays?`; `goal_reached`: `thresholdLabel`/`thresholdDays`). _(В базе 2.6.0 путь `/relapses` c `AntiHabitRelapseView` — переименуется в `/events` при рефакторе ADR-0059 до деплоя.)_
+- **Ошибки:** `ANTI_HABIT_NOT_FOUND` (404), `ALREADY_RELAPSED` (409), `VALIDATION_ERROR` (400), 📋 `INVALID_START_DATE` (400).
 
 ## 8. Obstacles + Counterplays
 - `GET/POST /accent/obstacles` Body `{ name, type?, trigger?, symptoms?, intensity? }`.

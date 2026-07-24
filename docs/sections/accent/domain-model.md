@@ -93,14 +93,27 @@ account (фаза 1)
 - **MicroWinLog:** `id`, `account_id`, `microWinId`, `occurred_on`, `created_at` — факт выполнения (даёт очки, идемпотентно по `(microWinId, occurred_on)` для дневного лимита).
 - Стартовый набор создаётся при онбординге; в survival/recovery система рекомендует именно MicroWin.
 
-## 7. AntiHabit + Relapse (timer-модель)
+## 7. AntiHabit + таймлайн событий (timer-модель)
 
-- **AntiHabit:** `id`, `account_id`, `title`, `description?`, `isActive`, `currentAttemptStartedAt` (unix ms), `attemptNumber` (≥1), `recordDays`, `recordAttemptStartedAt?`, `targetDays?` (цель, напр. 365). Серия = `floor((now − startedAt)/86_400_000)` (фронт считает в реальном времени).
-- **AntiHabitRelapse:** `id`, `anti_habit_id`, `relapseAt` (unix ms), `attemptDurationMs`, `triggerTag?` (анализ триггеров срывов), `note?`, `created_at`.
-- **Рецидив:** `startedAt=now`, `attemptNumber++`, рекорд обновляется если текущая серия > recordDays; milestone-очки на 3/7/14/30… планируются (отложенные задачи `@nestjs/schedule`), при рецидиве отменяются.
-- **Инвариант (важно):** серия НЕ хранится — вычисляется из `currentAttemptStartedAt`. `recordDays` хранится **отдельно и переживает срыв** (это «лучшая попытка за всё время», рецидивом не обнуляется; `recordAttemptStartedAt?` — когда рекорд поставлен). Anti-burnout: одна осечка не стирает историю.
-- **Конкурентность:** рецидив идёт под optimistic `version` на `anti_habits` (CAS, [ADR-0035](../../decisions/0035-concurrency-control.md)) — гонка двух `relapse` разрешается (одна применяется, вторая перечитывает). Доменный гард `ALREADY_RELAPSED`: нельзя срыв без активной попытки / повторный срыв в тот же момент.
-- **События (хуки для 2.9):** `relapse` эмитит `anti_habit.relapsed`, «держится/веха» — `anti_habit.held` ([gamification §7](./gamification.md)). Слушателей/очков нет до 2.9 — 2.6 только эмитит.
+> **Статус:** база (серия/рекорд/рецидив, CAS) — **реализована** (Трек C, 2.6.0, не задеплоена).
+> Таймлайн событий, состояние `planned`, перенос/план и авто-эскалация цели — **план 2.6.1/2.6.2**
+> ([ADR-0059](../../decisions/0059-anti-habit-timeline-events.md) события,
+> [ADR-0060](../../decisions/0060-anti-habit-calendar-goal-ladder.md) лестница). Т.к. фича НЕ в проде —
+> схема пересобирается до первого деплоя (relapse-only → события); прод relapse-only не увидит.
+
+- **AntiHabit:** `id`, `account_id`, `title`, `description?`, `isActive`, `currentAttemptStartedAt` (unix ms), `attemptNumber` (≥1), `recordDays`, `recordAttemptStartedAt?`, `targetDays?`, `version` (CAS). Серия = `floor((now − startedAt)/86_400_000)` (фронт считает в реальном времени).
+  - **Состояние `planned` (план, ADR-0059):** `currentAttemptStartedAt` может быть в БУДУЩЕМ → `now < startedAt` = серия ещё не идёт (счётчик показывает «старт через X», не тикает). Отдельной колонки нет — состояние вычисляемо. Реальный старт = когда наступит время.
+  - **`targetDays` — семантика меняется (план, ADR-0060):** это не фикс-потолок, а **стартовая ступень** авто-лестницы. Цель = ближайший непройденный порог, вычисляемый как **ДАТА** (см. ниже).
+- **AntiHabitEvent (таймлайн, ADR-0059):** единая лента событий вместо relapse-only. `id`, `anti_habit_id` (FK cascade), `type` (`relapse | reschedule | plan | goal_reached`), `occurredAt` (unix ms), `created_at` + типизированные nullable-поля:
+  - `relapse`: `attemptDurationMs`, `endedAttemptNumber`, `triggerTag?`, `note?`;
+  - `reschedule` / `plan`: `fromStartedAt?`, `toStartedAt?`, `heldDays?` (сколько продержался до переноса);
+  - `goal_reached`: `thresholdLabel` (`неделя`/`месяц`/`год`/`+7д`…), `thresholdDays` (номинал в днях на момент достижения).
+- **Рецидив (`type='relapse'`):** `startedAt=now`, `attemptNumber++`, `recordDays` обновляется если текущая серия > `recordDays`; пишется событие `relapse`. (Очки за вехи серий — 2.9, событийные хуки.)
+- **Перенос/план (D2, план, ADR-0059):** старт двигается только **в будущее**. При создании — чекбокс «Начать не сегодня» → `plan` (старт в будущем, `planned`). Из идущей серии — «Перенести на будущее»: под CAS завершаем текущую попытку (событие `reschedule` c `heldDays`), ставим `currentAttemptStartedAt` в будущее. **Бэкфилл в прошлое НЕ поддерживается** (правка идущей в прошлое запрещена — «создай новую, старую удали»; UI-пасхалка «машина времени», D7).
+- **Авто-эскалация цели (D3, план, ADR-0060):** лестница порогов от старта серии — `1·3·5·7(неделя)·14·21·+месяц·40д·50д·+2мес·+3мес·+полгода·+3квартала·+год → +7д «морковка» ∞`. Календарные пороги (месяц/год) — **зеркальное число** с клампом к концу месяца (старт 31.03 → «месяц» = 30.04). Цель = ближайшая пороговая ДАТА > now (в TZ аккаунта). Достиг → событие `goal_reached` + сдвиг на следующую ступень. Ручная `targetDays` = точка входа на лестницу, не потолок.
+- **Инвариант (важно):** серия НЕ хранится — вычисляется из `currentAttemptStartedAt`. `recordDays` хранится **отдельно и переживает срыв** (лучшая попытка за всё время, рецидивом не обнуляется; `recordAttemptStartedAt?` — когда рекорд поставлен). Anti-burnout: одна осечка не стирает историю; авто-цель всегда даёт следующий маленький порог (без «финиша»).
+- **Конкурентность:** рецидив/перенос идут под optimistic `version` на `anti_habits` (CAS, [ADR-0035](../../decisions/0035-concurrency-control.md)) — гонка разрешается (одна применяется, вторая перечитывает). Доменный гард `ALREADY_RELAPSED`: нельзя срыв неактивной/повторный в тот же момент.
+- **События (хуки для 2.9):** `relapse` эмитит `anti_habit.relapsed`, «держится/веха» — `anti_habit.held` ([gamification §7](./gamification.md)). `anti_habit_events` = история для UI; порт эмита = хуки для очков (концерны разные, выровнены по типам). Слушателей/очков нет до 2.9.
 - **ПДн:** `triggerTag`/`note`/`description` — свободные поля → подсказка «без реальных имён/телефонов/адресов» ([ADR-0001](../../decisions/0001-data-minimization-no-pii.md), ui-ux §9).
 
 ## 8. Obstacle + Counterplay (препятствие)

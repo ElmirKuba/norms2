@@ -18,6 +18,7 @@ import { AntiHabitNotFoundError } from '../../../../shared/errors/anti-habit-not
 import { AlreadyRelapsedError } from '../../../../shared/errors/already-relapsed.error';
 import { InvalidStartDateError } from '../../../../shared/errors/invalid-start-date.error';
 import { ValidationError } from '../../../../shared/errors/validation.error';
+import { reachedGoals } from './anti-habit-goal-ladder.util';
 import type { Env } from '../../../../system/config/env.schema';
 
 /** Число миллисекунд в сутках — для вычисления серии «сколько держусь». */
@@ -346,8 +347,36 @@ export class AccentAntiHabitDomainService {
     accountId: string,
     opts: AntiHabitEventListOptions,
   ): Promise<AntiHabitEventFull[]> {
-    await this.getOwned(id, accountId);
+    const owned = await this.getOwned(id, accountId);
+    // На первой странице (курсор пуст) — материализуем достигнутые пороги авто-цели, чтобы
+    // «цель N достигнута» появилась в ленте (ADR-0060). На последующих страницах не трогаем.
+    if (!opts.cursor) {
+      await this._materializeReachedGoals(owned);
+    }
     return this._events.listEvents(id, opts);
+  }
+
+  /**
+   * Идемпотентно дописывает события `goal_reached` для порогов авто-цели, достигнутых к `now` в
+   * рамках ТЕКУЩЕЙ попытки (ADR-0060). `since` = максимальный уже отмеченный порог этой попытки
+   * (события прошлых попыток произошли до её старта → не учитываются); `reachedGoals` возвращает
+   * только ступени `thresholdDays > since`, поэтому повторный вызов ничего не дублирует.
+   * @param antiHabit Анти-привычка владельца (уже проверена).
+   */
+  private async _materializeReachedGoals(antiHabit: AntiHabitFull): Promise<void> {
+    const now = Date.now();
+    const startedAt = antiHabit.currentAttemptStartedAt;
+    const since = await this._events.latestGoalReachedThreshold(antiHabit.id, startedAt);
+    const goals = reachedGoals(startedAt, now, antiHabit.targetDays, since);
+    for (const goal of goals) {
+      await this._events.insert({
+        antiHabitId: antiHabit.id,
+        type: 'goal_reached',
+        occurredAt: goal.targetDate,
+        thresholdLabel: goal.label,
+        thresholdDays: goal.thresholdDays,
+      });
+    }
   }
 
   /**

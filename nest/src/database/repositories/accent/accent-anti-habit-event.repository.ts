@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, max, or } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { antiHabitEvents } from '../../schemas/anti-habit-events.schema';
@@ -84,5 +84,29 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
       .where(where)
       .orderBy(desc(antiHabitEvents.occurredAt), desc(antiHabitEvents.id))
       .limit(opts.limit);
+  }
+
+  /**
+   * Максимальный `thresholdDays` среди `goal_reached`-событий с `occurredAt >= sinceOccurredAt`
+   * (ADR-0060; для идемпотентной материализации авто-цели в рамках текущей попытки).
+   * @param antiHabitId Идентификатор анти-привычки.
+   * @param sinceOccurredAt Нижняя граница `occurredAt` (unix ms).
+   * @returns Наибольший отмеченный порог (дней) или 0, если отметок нет.
+   */
+  public async latestGoalReachedThreshold(
+    antiHabitId: string,
+    sinceOccurredAt: number,
+  ): Promise<number> {
+    const rows = await this._db
+      .select({ maxThreshold: max(antiHabitEvents.thresholdDays) })
+      .from(antiHabitEvents)
+      .where(
+        and(
+          eq(antiHabitEvents.antiHabitId, antiHabitId),
+          eq(antiHabitEvents.type, 'goal_reached'),
+          gte(antiHabitEvents.occurredAt, sinceOccurredAt),
+        ),
+      );
+    return rows[0]?.maxThreshold ?? 0;
   }
 }

@@ -72,4 +72,15 @@ export interface AccentAntiHabitEventRepositoryPort {
     antiHabitId: string,
     opts: AntiHabitEventListOptions,
   ): Promise<AntiHabitEventFull[]>;
+
+  /**
+   * Максимальный `thresholdDays` среди событий `goal_reached` с `occurredAt >= sinceOccurredAt`
+   * (ADR-0060). `sinceOccurredAt` = старт текущей попытки → учитываются только пороги ЭТОЙ серии
+   * (события прошлых попыток произошли раньше старта). Нужен для идемпотентной материализации
+   * авто-цели: `reachedGoals(...)` возвращает только ступени с `thresholdDays > since`.
+   * @param antiHabitId Идентификатор анти-привычки.
+   * @param sinceOccurredAt Нижняя граница `occurredAt` (unix ms; обычно старт текущей попытки).
+   * @returns Наибольший уже отмеченный порог (дней) или 0, если отметок нет.
+   */
+  latestGoalReachedThreshold(antiHabitId: string, sinceOccurredAt: number): Promise<number>;
 }

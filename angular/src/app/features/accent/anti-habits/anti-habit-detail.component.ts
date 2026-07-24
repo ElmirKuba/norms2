@@ -17,7 +17,6 @@ import { AccentApiService } from '../services/accent-api.service';
 import {
   formatDurationCompact,
   pluralDays,
-  streakDays,
   streakParts,
 } from './anti-habit-format.util';
 import { AntiHabitFormModalComponent } from './anti-habit-form-modal.component';
@@ -80,18 +79,16 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
               [attr.r]="ringRadius"
               fill="none"
             />
-            @if (ah.targetDays !== null) {
-              <circle
-                class="ahd__ring-arc"
-                [attr.cx]="ringSize / 2"
-                [attr.cy]="ringSize / 2"
-                [attr.r]="ringRadius"
-                fill="none"
-                [attr.stroke-dasharray]="ringCirc"
-                [attr.stroke-dashoffset]="ringOffset()"
-                [attr.transform]="'rotate(-90 ' + ringSize / 2 + ' ' + ringSize / 2 + ')'"
-              />
-            }
+            <circle
+              class="ahd__ring-arc"
+              [attr.cx]="ringSize / 2"
+              [attr.cy]="ringSize / 2"
+              [attr.r]="ringRadius"
+              fill="none"
+              [attr.stroke-dasharray]="ringCirc"
+              [attr.stroke-dashoffset]="ringOffset()"
+              [attr.transform]="'rotate(-90 ' + ringSize / 2 + ' ' + ringSize / 2 + ')'"
+            />
           </svg>
           <div class="ahd__ring-center">
             <span class="ahd__days">{{ parts().days }}</span>
@@ -103,11 +100,13 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
           <p class="ahd__planned">🗓 Старт запланирован: {{ dateLabel(ah.currentAttemptStartedAt) }} · через {{ untilStart(ah) }}</p>
         } @else {
           <p class="ahd__clock">{{ clock() }}</p>
+          <p class="ahd__goal" [class.ahd__goal--carrot]="isCarrot(ah)">
+            <span aria-hidden="true">{{ isCarrot(ah) ? '🥕' : '🎯' }}</span>
+            цель: <strong>{{ ah.nextGoal.label }}</strong>
+            <span class="ahd__goal-date">· до {{ goalDateShort(ah) }}</span>
+          </p>
         }
         <p class="ahd__meta">
-          @if (ah.targetDays !== null) {
-            <span>🎯 цель: {{ ah.targetDays }} {{ dayWord(ah.targetDays) }}</span>
-          }
           <span class="ahd__stat">🏆 рекорд: <strong class="ahd__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
           <span class="ahd__stat">попытка <strong class="ahd__num">№{{ ah.attemptNumber }}</strong></span>
         </p>
@@ -245,6 +244,19 @@ const RING_CIRC = 2 * Math.PI * RING_RADIUS;
         color: var(--color-accent);
         text-align: center;
       }
+      .ahd__goal {
+        align-self: center;
+        margin: var(--space-1) 0 0;
+        font-size: var(--fs-sm);
+        color: var(--color-text);
+        text-align: center;
+      }
+      .ahd__goal--carrot {
+        color: var(--color-accent);
+      }
+      .ahd__goal-date {
+        color: var(--color-text-muted);
+      }
       .ahd__meta {
         display: flex;
         flex-wrap: wrap;
@@ -362,14 +374,21 @@ export class AntiHabitDetailComponent implements OnDestroy {
     return `${pad(p.hours)}:${pad(p.minutes)}:${pad(p.seconds)}`;
   });
 
-  /** Смещение дуги кольца по прогрессу серии к цели (0 полн. — full). */
+  /**
+   * Смещение дуги кольца по прогрессу серии к ДАТЕ ближайшей авто-цели (ADR-0060): доля времени
+   * от старта попытки до `nextGoal.targetDate`. `planned` (старт в будущем) → доля 0 (пусто).
+   */
   protected readonly ringOffset = computed(() => {
     const ah = this.item();
-    if (ah === null || ah.targetDays === null || ah.targetDays <= 0) {
+    if (ah === null) {
       return RING_CIRC;
     }
-    const days = streakDays(ah.currentAttemptStartedAt, this._now());
-    const frac = Math.min(1, Math.max(0, days / ah.targetDays));
+    const start = ah.currentAttemptStartedAt;
+    const span = ah.nextGoal.targetDate - start;
+    if (span <= 0) {
+      return RING_CIRC;
+    }
+    const frac = Math.min(1, Math.max(0, (this._now() - start) / span));
     return RING_CIRC * (1 - frac);
   });
 
@@ -420,6 +439,21 @@ export class AntiHabitDetailComponent implements OnDestroy {
       default:
         return 'Событие';
     }
+  }
+
+  /** Дата ближайшей авто-цели кратко (день + месяц) для подписи под кольцом. */
+  protected goalDateShort(ah: AntiHabitView): string {
+    return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(
+      new Date(ah.nextGoal.targetDate),
+    );
+  }
+
+  /**
+   * Цель уже в фазе «морковки» (после «года»): бесконечные шаги «год + N дн» (ADR-0060). Меняет
+   * иконку на 🥕 — маленький, но всегда следующий шаг (anti-burnout, ADR-0049).
+   */
+  protected isCarrot(ah: AntiHabitView): boolean {
+    return ah.nextGoal.label.startsWith('год +');
   }
 
   /** Сколько осталось до планового старта (для `planned`). */

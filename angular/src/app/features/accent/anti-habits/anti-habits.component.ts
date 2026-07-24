@@ -93,8 +93,8 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                     }
                     <span class="ah__sub">
                       <span class="ah__stat">🏆 рекорд: <strong class="ah__num">{{ ah.recordDays }}</strong> {{ dayWord(ah.recordDays) }}</span>
-                      @if (ah.targetDays !== null) {
-                        <span class="ah__target">🎯 цель: {{ ah.targetDays }} {{ dayWord(ah.targetDays) }}</span>
+                      @if (ah.state !== 'planned') {
+                        <span class="ah__target">{{ isCarrot(ah) ? '🥕' : '🎯' }} цель: {{ ah.nextGoal.label }}</span>
                       }
                       <span class="ah__stat">попытка <strong class="ah__num">№{{ ah.attemptNumber }}</strong></span>
                     </span>
@@ -348,6 +348,11 @@ export class AntiHabitsComponent implements OnDestroy {
   /** RU-склонение «день». */
   protected dayWord(n: number): string {
     return pluralDays(n);
+  }
+
+  /** Цель в фазе «морковки» (после «года»): иконка 🥕 вместо 🎯 (ADR-0060). */
+  protected isCarrot(ah: AntiHabitView): boolean {
+    return ah.nextGoal.label.startsWith('год +');
   }
 
   /** Переключает меню «⋯». */

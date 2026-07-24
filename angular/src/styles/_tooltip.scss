@@ -27,6 +27,15 @@
   box-shadow: var(--shadow-1);
 }
 
+// Вариант для длинного текста: перенос строк + ограничение ширины (иначе nowrap уедет за экран).
+.tooltip-host--wrap[data-tooltip]:hover::after,
+.tooltip-host--wrap[data-tooltip]:focus-within::after {
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  text-align: center;
+}
+
 // Хвостик-стрелка вниз к элементу.
 .tooltip-host[data-tooltip]:hover::before,
 .tooltip-host[data-tooltip]:focus-within::before {

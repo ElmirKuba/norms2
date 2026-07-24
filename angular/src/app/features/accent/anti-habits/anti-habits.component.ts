@@ -126,6 +126,16 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                     }
                   </div>
                 </div>
+                @if (ah.state !== 'planned') {
+                  <p
+                    class="ah__timewarp tooltip-host tooltip-host--wrap"
+                    [attr.data-tooltip]="timeWarpHint"
+                    tabindex="0"
+                  >
+                    <span class="ah__timewarp-face" aria-hidden="true">🕰️❓</span>
+                    Хочешь перенестись в прошлое?
+                  </p>
+                }
               </app-card>
             </li>
           }
@@ -242,6 +252,26 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         color: var(--color-accent);
         font-weight: 700;
       }
+      /* Пасхалка «машина времени» (D7): почему нельзя отсчитать серию задним числом. */
+      .ah__timewarp {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        margin: var(--space-2) 0 0;
+        padding-left: calc(var(--touch-min) + var(--space-2));
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+        cursor: help;
+        opacity: 0.7;
+      }
+      .ah__timewarp:hover,
+      .ah__timewarp:focus-visible {
+        opacity: 1;
+        outline: none;
+      }
+      .ah__timewarp-face {
+        font-size: var(--fs-sm);
+      }
       .ah__menu-wrap {
         position: relative;
         display: inline-flex;
@@ -309,6 +339,10 @@ export class AntiHabitsComponent implements OnDestroy {
   private readonly _modal = inject(ModalService);
 
   /** Список анти-привычек. */
+  /** Текст-«панчлайн» пасхалки «машина времени» (D7): тёплое объяснение, почему нельзя в прошлое. */
+  protected readonly timeWarpHint =
+    'Машины времени, чтобы перенестись в прошлое, не существует — если серия началась раньше, создай новую «держусь», а эту удали 🙂';
+
   protected readonly items = signal<AntiHabitView[]>([]);
   /** Идёт первичная загрузка. */
   protected readonly loading = signal(true);

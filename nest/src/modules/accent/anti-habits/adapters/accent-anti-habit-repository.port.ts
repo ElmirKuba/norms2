@@ -92,4 +92,11 @@ export interface AccentAntiHabitRepositoryPort {
     expectedVersion: number,
     patch: AntiHabitAttemptCas,
   ): Promise<boolean>;
+
+  /**
+   * Ручная сортировка (ADR-0054): пишет `position = индекс` для своих id (верх → меньший).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (сверху вниз).
+   */
+  reorder(accountId: string, ids: readonly string[]): Promise<void>;
 }

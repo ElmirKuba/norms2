@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createAntiHabitSchema } from '../dtos/create-anti-habit.dto';
@@ -7,6 +19,8 @@ import { updateAntiHabitSchema } from '../dtos/update-anti-habit.dto';
 import type { UpdateAntiHabitDto } from '../dtos/update-anti-habit.dto';
 import { relapseSchema } from '../dtos/relapse.dto';
 import type { RelapseDto } from '../dtos/relapse.dto';
+import { reorderAntiHabitsSchema } from '../dtos/reorder-anti-habits.dto';
+import type { ReorderAntiHabitsDto } from '../dtos/reorder-anti-habits.dto';
 import { ListAntiHabitsUseCase } from '../use-cases/list-anti-habits.use-case';
 import { CreateAntiHabitUseCase } from '../use-cases/create-anti-habit.use-case';
 import { GetAntiHabitUseCase } from '../use-cases/get-anti-habit.use-case';
@@ -14,6 +28,7 @@ import { UpdateAntiHabitUseCase } from '../use-cases/update-anti-habit.use-case'
 import { RelapseAntiHabitUseCase } from '../use-cases/relapse-anti-habit.use-case';
 import type { RelapseResultView } from '../use-cases/relapse-anti-habit.use-case';
 import { ListAntiHabitRelapsesUseCase } from '../use-cases/list-anti-habit-relapses.use-case';
+import { ReorderAntiHabitsUseCase } from '../use-cases/reorder-anti-habits.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { AntiHabitView } from '../interfaces/anti-habit-view.interface';
 import type { AntiHabitRelapsePage } from '../interfaces/anti-habit-relapse-view.interface';
@@ -42,7 +57,23 @@ export class AntiHabitsController {
     private readonly _update: UpdateAntiHabitUseCase,
     private readonly _relapse: RelapseAntiHabitUseCase,
     private readonly _listRelapses: ListAntiHabitRelapsesUseCase,
+    private readonly _reorder: ReorderAntiHabitsUseCase,
   ) {}
+
+  /**
+   * Ручная сортировка перетаскиванием (ADR-0054): тело `{ ids }` — желаемый порядок. Объявлен
+   * ДО `:id`. 204 без тела.
+   * @param body Желаемый порядок id.
+   * @param request Запрос (аккаунт из Guard).
+   */
+  @Put('anti-habits/reorder')
+  @HttpCode(204)
+  public async reorder(
+    @Body(new ZodValidationPipe(reorderAntiHabitsSchema)) body: ReorderAntiHabitsDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._reorder.execute(request.account.id, body.ids);
+  }
 
   /**
    * Список анти-привычек аккаунта (активные).

@@ -27,6 +27,8 @@ export interface AntiHabitFull {
   recordAttemptStartedAt: number | null;
   /** Цель серии в днях (опц., напр. 365) — для кольца прогресса. */
   targetDays: number | null;
+  /** Ручной порядок (ADR-0054): drag-to-reorder, per-account; новый — в конец (max+1). */
+  position: number;
   /** Версия строки для оптимистичного лока (ADR-0035; рецидив пишется через CAS). */
   version: number;
   /** Когда создано. */

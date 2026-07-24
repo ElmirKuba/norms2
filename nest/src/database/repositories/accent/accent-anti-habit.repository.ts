@@ -34,7 +34,8 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
       .select()
       .from(antiHabits)
       .where(and(eq(antiHabits.accountId, accountId), eq(antiHabits.isActive, true)))
-      .orderBy(asc(antiHabits.createdAt), asc(antiHabits.id));
+      // Ручной порядок (ADR-0054), затем created_at, тай-брейкер id (детерминизм при равных position).
+      .orderBy(asc(antiHabits.position), asc(antiHabits.createdAt), asc(antiHabits.id));
   }
 
   /**
@@ -72,6 +73,8 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
         recordDays: 0,
         recordAttemptStartedAt: null,
         targetDays: data.targetDays ?? null,
+        // Новая анти-привычка — в конец списка (ADR-0054): position = max+1 для аккаунта.
+        position: sql<number>`(select coalesce(max(${antiHabits.position}), -1) + 1 from ${antiHabits} where ${antiHabits.accountId} = ${data.accountId})`,
       })
       .returning();
     const row = rows[0];
@@ -79,6 +82,24 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
       throw new Error('anti_habits: create не вернул строку.');
     }
     return row;
+  }
+
+  /**
+   * Переставляет анти-привычки аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих
+   * id атомарным UPDATE FROM (VALUES …); чужие id игнорируются (скоуп по account_id).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param ids Желаемый порядок (сверху вниз).
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    const tuples = ids.map((id, i) => sql`(${id}, ${i})`);
+    await this._db.execute(sql`
+      UPDATE ${antiHabits} AS a SET position = v.pos::int
+      FROM (VALUES ${sql.join(tuples, sql`, `)}) AS v(id, pos)
+      WHERE a.id = v.id AND a.account_id = ${accountId}
+    `);
   }
 
   /**

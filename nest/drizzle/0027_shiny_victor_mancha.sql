@@ -1,0 +1,1 @@
+ALTER TABLE "anti_habits" ADD COLUMN "position" integer DEFAULT 0 NOT NULL;

@@ -29,6 +29,8 @@ export const antiHabits = defineTableWithSchema<AntiHabitFull>()(
     recordDays: integer('record_days').notNull().default(0),
     recordAttemptStartedAt: bigint('record_attempt_started_at', { mode: 'number' }),
     targetDays: integer('target_days'),
+    // Ручной порядок (ADR-0054, drag-to-reorder): per-account; новый — в конец (max+1).
+    position: integer('position').notNull().default(0),
     // Оптимистичный лок (ADR-0035): рецидив пишет через CAS по version; любой update bump'ает.
     version: integer('version').notNull().default(0),
     ...timestamps(),

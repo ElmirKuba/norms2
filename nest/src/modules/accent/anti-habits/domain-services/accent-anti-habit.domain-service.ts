@@ -92,6 +92,15 @@ export class AccentAntiHabitDomainService {
   }
 
   /**
+   * Ручная сортировка анти-привычек (ADR-0054).
+   * @param accountId Идентификатор аккаунта.
+   * @param ids Желаемый порядок (сверху вниз).
+   */
+  public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
+    return this._repository.reorder(accountId, ids);
+  }
+
+  /**
    * Анти-привычка владельца или ошибка.
    * @param id Идентификатор анти-привычки.
    * @param accountId Идентификатор аккаунта-владельца.

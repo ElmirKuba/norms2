@@ -4,6 +4,8 @@ import { ACCENT_ANTI_HABIT_REPOSITORY } from './adapters/accent-anti-habit-repos
 import { AccentAntiHabitRepository } from '../../../database/repositories/accent/accent-anti-habit.repository';
 import { ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY } from './adapters/accent-anti-habit-relapse-repository.port';
 import { AccentAntiHabitRelapseRepository } from '../../../database/repositories/accent/accent-anti-habit-relapse.repository';
+import { ACCENT_ANTI_HABIT_EVENT_REPOSITORY } from './adapters/accent-anti-habit-event-repository.port';
+import { AccentAntiHabitEventRepository } from '../../../database/repositories/accent/accent-anti-habit-event.repository';
 import { ACCENT_ANTI_HABIT_EVENTS } from './adapters/accent-anti-habit-events.port';
 import { LoggingAntiHabitEventsAdapter } from './adapters/logging-anti-habit-events.adapter';
 import { AccentAntiHabitDomainService } from './domain-services/accent-anti-habit.domain-service';
@@ -30,6 +32,7 @@ import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-ca
   providers: [
     { provide: ACCENT_ANTI_HABIT_REPOSITORY, useClass: AccentAntiHabitRepository },
     { provide: ACCENT_ANTI_HABIT_RELAPSE_REPOSITORY, useClass: AccentAntiHabitRelapseRepository },
+    { provide: ACCENT_ANTI_HABIT_EVENT_REPOSITORY, useClass: AccentAntiHabitEventRepository },
     { provide: ACCENT_ANTI_HABIT_EVENTS, useClass: LoggingAntiHabitEventsAdapter },
     AccentAntiHabitDomainService,
     ListAntiHabitsUseCase,

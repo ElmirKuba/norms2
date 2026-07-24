@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -32,6 +33,9 @@ import type { RelapseResultView } from '../use-cases/relapse-anti-habit.use-case
 import { RescheduleAntiHabitUseCase } from '../use-cases/reschedule-anti-habit.use-case';
 import { ListAntiHabitEventsUseCase } from '../use-cases/list-anti-habit-events.use-case';
 import { ReorderAntiHabitsUseCase } from '../use-cases/reorder-anti-habits.use-case';
+import { SeedAntiHabitStarterPackUseCase } from '../use-cases/seed-anti-habit-starter-pack.use-case';
+import { ClearAntiHabitStartersUseCase } from '../use-cases/clear-anti-habit-starters.use-case';
+import { AdoptAntiHabitUseCase } from '../use-cases/adopt-anti-habit.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { AntiHabitView } from '../interfaces/anti-habit-view.interface';
 import type { AntiHabitEventPage } from '../interfaces/anti-habit-event-view.interface';
@@ -64,6 +68,9 @@ export class AntiHabitsController {
     private readonly _reschedule: RescheduleAntiHabitUseCase,
     private readonly _listEvents: ListAntiHabitEventsUseCase,
     private readonly _reorder: ReorderAntiHabitsUseCase,
+    private readonly _seedPack: SeedAntiHabitStarterPackUseCase,
+    private readonly _clearStarters: ClearAntiHabitStartersUseCase,
+    private readonly _adopt: AdoptAntiHabitUseCase,
   ) {}
 
   /**
@@ -82,7 +89,30 @@ export class AntiHabitsController {
   }
 
   /**
-   * Список анти-привычек аккаунта (активные).
+   * Получить стартовый пак «держусь» (идемпотентно докидывает примеры, ADR-0051). Объявлен ДО
+   * `:id`. Возвращает обновлённый список.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список анти-привычек после сева.
+   */
+  @Post('anti-habits/starter-pack')
+  public async getStarterPack(@Req() request: AuthenticatedRequest): Promise<AntiHabitView[]> {
+    await this._seedPack.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * Очистить примеры «держусь» (удаляет только непринятые, ADR-0051). Объявлен ДО `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Список анти-привычек после очистки.
+   */
+  @Delete('anti-habits/starter-pack')
+  public async clearStarters(@Req() request: AuthenticatedRequest): Promise<AntiHabitView[]> {
+    await this._clearStarters.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * Список анти-привычек аккаунта (активные, включая примеры).
    * @param request Запрос (аккаунт из Guard).
    * @returns Проекции анти-привычек.
    */
@@ -167,6 +197,21 @@ export class AntiHabitsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<RelapseResultView> {
     return this._reschedule.execute(id, request.account.id, body);
+  }
+
+  /**
+   * Присвоить пример себе («Добавить себе», ADR-0051): снимает флаг «пример» и стартует серию с
+   * этого момента — «держусь» становится своим и начинает считаться.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция присвоенной анти-привычки.
+   */
+  @Post('anti-habits/:id/adopt')
+  public adopt(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<AntiHabitView> {
+    return this._adopt.execute(id, request.account.id);
   }
 
   /**

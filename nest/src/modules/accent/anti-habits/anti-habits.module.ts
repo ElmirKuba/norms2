@@ -16,6 +16,9 @@ import { RelapseAntiHabitUseCase } from './use-cases/relapse-anti-habit.use-case
 import { RescheduleAntiHabitUseCase } from './use-cases/reschedule-anti-habit.use-case';
 import { ListAntiHabitEventsUseCase } from './use-cases/list-anti-habit-events.use-case';
 import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-case';
+import { SeedAntiHabitStarterPackUseCase } from './use-cases/seed-anti-habit-starter-pack.use-case';
+import { ClearAntiHabitStartersUseCase } from './use-cases/clear-anti-habit-starters.use-case';
+import { AdoptAntiHabitUseCase } from './use-cases/adopt-anti-habit.use-case';
 
 /**
  * Область анти-привычек «держусь» раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.6).
@@ -41,6 +44,9 @@ import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-ca
     RescheduleAntiHabitUseCase,
     ListAntiHabitEventsUseCase,
     ReorderAntiHabitsUseCase,
+    SeedAntiHabitStarterPackUseCase,
+    ClearAntiHabitStartersUseCase,
+    AdoptAntiHabitUseCase,
   ],
 })
 export class AntiHabitsModule {}

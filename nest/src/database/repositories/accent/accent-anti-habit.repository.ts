@@ -73,6 +73,7 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
         recordDays: 0,
         recordAttemptStartedAt: null,
         targetDays: data.targetDays ?? null,
+        isStarter: data.isStarter ?? false,
         // Новая анти-привычка — в конец списка (ADR-0054): position = max+1 для аккаунта.
         position: sql<number>`(select coalesce(max(${antiHabits.position}), -1) + 1 from ${antiHabits} where ${antiHabits.accountId} = ${data.accountId})`,
       })
@@ -82,6 +83,47 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
       throw new Error('anti_habits: create не вернул строку.');
     }
     return row;
+  }
+
+  /**
+   * Массовое создание примеров стартового пака (ADR-0051): каждая строка как `create`
+   * (id/счётчики/позиция репозиторием). Пустой список → 0 без запроса.
+   * @param items Данные создания.
+   * @returns Число созданных строк.
+   */
+  public async createMany(items: readonly AntiHabitCreateData[]): Promise<number> {
+    if (items.length === 0) {
+      return 0;
+    }
+    const values = items.map((data) => ({
+      id: generateId(),
+      accountId: data.accountId,
+      title: data.title,
+      description: data.description ?? null,
+      isActive: true,
+      currentAttemptStartedAt: data.currentAttemptStartedAt,
+      attemptNumber: 1,
+      recordDays: 0,
+      recordAttemptStartedAt: null,
+      targetDays: data.targetDays ?? null,
+      isStarter: data.isStarter ?? false,
+      position: sql<number>`(select coalesce(max(${antiHabits.position}), -1) + 1 from ${antiHabits} where ${antiHabits.accountId} = ${data.accountId})`,
+    }));
+    const rows = await this._db.insert(antiHabits).values(values).returning({ id: antiHabits.id });
+    return rows.length;
+  }
+
+  /**
+   * Удаляет непринятые примеры (`is_starter=true`) аккаунта; присвоенные не трогает (ADR-0051).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  public async deleteStarters(accountId: string): Promise<number> {
+    const rows = await this._db
+      .delete(antiHabits)
+      .where(and(eq(antiHabits.accountId, accountId), eq(antiHabits.isStarter, true)))
+      .returning({ id: antiHabits.id });
+    return rows.length;
   }
 
   /**

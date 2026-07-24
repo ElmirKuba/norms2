@@ -15,6 +15,8 @@ export interface AntiHabitCreateData {
   targetDays?: number | null;
   /** Старт первой попытки (unix ms) — ставит домен (now); attemptNumber=1, recordDays=0. */
   currentAttemptStartedAt: number;
+  /** Стартовый пример (ADR-0051): `true` при севе пака; обычное создание — не задаёт (false). */
+  isStarter?: boolean;
 }
 
 /** Частичный патч анти-привычки (только переданные поля; поля `| undefined` под zod `.partial()`). */
@@ -23,6 +25,17 @@ export interface AntiHabitUpdateData {
   description?: string | null | undefined;
   targetDays?: number | null | undefined;
   isActive?: boolean | undefined;
+  // Внутренние поля (adoption/сброс попытки при присвоении примера, ADR-0051) — НЕ из API-DTO.
+  /** Снятие флага «пример» (adoption). */
+  isStarter?: boolean | undefined;
+  /** Сброс старта попытки при присвоении (unix ms = now). */
+  currentAttemptStartedAt?: number | undefined;
+  /** Сброс номера попытки при присвоении (→ 1). */
+  attemptNumber?: number | undefined;
+  /** Сброс рекорда при присвоении (→ 0). */
+  recordDays?: number | undefined;
+  /** Сброс старта рекордной попытки при присвоении (→ null). */
+  recordAttemptStartedAt?: number | null | undefined;
 }
 
 /**
@@ -66,6 +79,21 @@ export interface AccentAntiHabitRepositoryPort {
    * @returns Созданная анти-привычка.
    */
   create(data: AntiHabitCreateData): Promise<AntiHabitFull>;
+
+  /**
+   * Массовое создание (для сева стартового пака, ADR-0051): каждая строка — как `create`
+   * (id/позиция/счётчики — репозиторием). Пустой список → 0.
+   * @param items Данные создания.
+   * @returns Число созданных строк.
+   */
+  createMany(items: readonly AntiHabitCreateData[]): Promise<number>;
+
+  /**
+   * Удаляет непринятые примеры (`is_starter=true`) аккаунта; присвоенные не трогает (ADR-0051).
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Число удалённых.
+   */
+  deleteStarters(accountId: string): Promise<number>;
 
   /**
    * Обновляет анти-привычку владельца (частично; deactivate = `{ isActive: false }`).

@@ -19,6 +19,8 @@ import { AlreadyRelapsedError } from '../../../../shared/errors/already-relapsed
 import { InvalidStartDateError } from '../../../../shared/errors/invalid-start-date.error';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import { reachedGoals } from './anti-habit-goal-ladder.util';
+import { STARTER_ANTI_HABITS } from '../seed/starter-anti-habits';
+import type { AntiHabitCreateData } from '../adapters/accent-anti-habit-repository.port';
 import type { Env } from '../../../../system/config/env.schema';
 
 /** Число миллисекунд в сутках — для вычисления серии «сколько держусь». */
@@ -169,6 +171,7 @@ export class AccentAntiHabitDomainService {
     accountId: string,
     patch: AntiHabitUpdateInput,
   ): Promise<AntiHabitFull> {
+    const current = await this.getOwned(id, accountId);
     const data: AntiHabitUpdateData = {};
     if (patch.title !== undefined) {
       data.title = this._validateTitle(patch.title);
@@ -181,6 +184,11 @@ export class AccentAntiHabitDomainService {
     }
     if (patch.isActive !== undefined) {
       data.isActive = patch.isActive;
+    }
+    // Adoption правкой (ADR-0051): «Изм.» примера присваивает его — снимаем флаг и стартуем
+    // серию заново с момента присвоения (пример был инертен, реальный отсчёт — с «его беру»).
+    if (current.isStarter) {
+      Object.assign(data, this._adoptionReset());
     }
     const updated = await this._repository.update(id, accountId, data);
     if (!updated) {
@@ -208,6 +216,7 @@ export class AccentAntiHabitDomainService {
   ): Promise<AntiHabitMutationResult> {
     const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
     let current = await this.getOwned(id, accountId);
+    this._assertNotStarter(current);
     if (!current.isActive) {
       throw new AlreadyRelapsedError('Нет активной попытки для срыва.');
     }
@@ -279,6 +288,7 @@ export class AccentAntiHabitDomainService {
   ): Promise<AntiHabitMutationResult> {
     const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
     let current = await this.getOwned(id, accountId);
+    this._assertNotStarter(current);
     if (!current.isActive) {
       throw new ValidationError('Анти-привычка неактивна.');
     }
@@ -364,6 +374,10 @@ export class AccentAntiHabitDomainService {
    * @param antiHabit Анти-привычка владельца (уже проверена).
    */
   private async _materializeReachedGoals(antiHabit: AntiHabitFull): Promise<void> {
+    // Пример инертен (ADR-0051): авто-цель не считается, событий `goal_reached` не пишем.
+    if (antiHabit.isStarter) {
+      return;
+    }
     const now = Date.now();
     const startedAt = antiHabit.currentAttemptStartedAt;
     const since = await this._events.latestGoalReachedThreshold(antiHabit.id, startedAt);
@@ -376,6 +390,80 @@ export class AccentAntiHabitDomainService {
         thresholdLabel: goal.label,
         thresholdDays: goal.thresholdDays,
       });
+    }
+  }
+
+  /**
+   * Засевает стартовый пак «держусь» (кнопка «Получить пак», ADR-0051): создаёт примеры из
+   * `STARTER_ANTI_HABITS` с `is_starter=true`. Только докидывает недостающие (дедуп по названию).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число созданных примеров.
+   */
+  public async seedStarterPack(accountId: string): Promise<number> {
+    const now = Date.now();
+    const existing = await this._repository.listByAccount(accountId);
+    const titles = new Set(existing.map((ah) => ah.title));
+    const toSeed: AntiHabitCreateData[] = STARTER_ANTI_HABITS.filter(
+      (item) => !titles.has(item.title),
+    ).map((item) => ({
+      accountId,
+      title: item.title,
+      description: item.description,
+      targetDays: item.targetDays,
+      currentAttemptStartedAt: now,
+      isStarter: true,
+    }));
+    return this._repository.createMany(toSeed);
+  }
+
+  /**
+   * Очищает примеры: удаляет непринятые «держусь» (`is_starter=true`). Свои не трогает (ADR-0051).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Число удалённых.
+   */
+  public async clearStarters(accountId: string): Promise<number> {
+    return this._repository.deleteStarters(accountId);
+  }
+
+  /**
+   * Присваивает пример («Добавить себе», ADR-0051): снимает `is_starter` и стартует серию заново
+   * с текущего момента — реальный отсчёт начинается, когда человек «берёт это себе».
+   * @param id Идентификатор анти-привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Обновлённая (присвоенная) анти-привычка.
+   * @throws {AntiHabitNotFoundError} Если нет / не ваша.
+   */
+  public async adopt(id: string, accountId: string): Promise<AntiHabitFull> {
+    const updated = await this._repository.update(id, accountId, this._adoptionReset());
+    if (!updated) {
+      throw new AntiHabitNotFoundError('Анти-привычка не найдена.');
+    }
+    return updated;
+  }
+
+  /**
+   * Патч присвоения примера (ADR-0051): снимает флаг «пример» и сбрасывает попытку/рекорд, чтобы
+   * серия «держусь» пошла с момента присвоения (пример был инертен).
+   * @returns Поля обновления для adoption.
+   */
+  private _adoptionReset(): AntiHabitUpdateData {
+    return {
+      isStarter: false,
+      currentAttemptStartedAt: Date.now(),
+      attemptNumber: 1,
+      recordDays: 0,
+      recordAttemptStartedAt: null,
+    };
+  }
+
+  /**
+   * Гард инертности примера (ADR-0051): пример не принимает рецидив/перенос до присвоения.
+   * @param antiHabit Анти-привычка.
+   * @throws {ValidationError} Если это ещё пример (`is_starter`).
+   */
+  private _assertNotStarter(antiHabit: AntiHabitFull): void {
+    if (antiHabit.isStarter) {
+      throw new ValidationError('Это пример — сначала «Добавить себе».');
     }
   }
 

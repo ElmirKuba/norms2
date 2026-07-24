@@ -1,0 +1,1 @@
+DROP TABLE "anti_habit_relapses" CASCADE;

@@ -124,27 +124,26 @@ export class AccentAntiHabitDomainService {
 
   /**
    * Создаёт анти-привычку. Без `startAt` — первая попытка стартует сейчас; с `startAt` в
+   * прошлом/сейчас — серия уже идёт (перенос с другого приложения, `active`); с `startAt` в
    * будущем — плановый старт (`planned`) + событие `plan`.
    * @param data Данные создания.
    * @returns Созданная анти-привычка.
    * @throws {ValidationError} При нарушении инвариантов.
-   * @throws {InvalidStartDateError} Если `startAt` не в будущем.
    */
   public async create(data: AntiHabitCreateInput): Promise<AntiHabitFull> {
     const title = this._validateTitle(data.title);
     const targetDays = this._validateTargetDays(data.targetDays ?? null);
     const now = Date.now();
     const startAt = data.startAt ?? null;
-    const planned = startAt !== null;
-    if (planned && startAt <= now) {
-      throw new InvalidStartDateError('Плановый старт должен быть в будущем.');
-    }
+    // `startAt` может быть в ПРОШЛОМ (уже держусь — перенос из другого приложения) или в БУДУЩЕМ
+    // (план). Прошлое/сейчас → серия уже идёт (active); будущее → `planned` + событие `plan`.
+    const planned = startAt !== null && startAt > now;
     const created = await this._repository.create({
       accountId: data.accountId,
       title,
       description: data.description ?? null,
       targetDays,
-      currentAttemptStartedAt: planned ? startAt : now,
+      currentAttemptStartedAt: startAt ?? now,
     });
     if (planned) {
       await this._events.insert({

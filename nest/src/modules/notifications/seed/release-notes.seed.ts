@@ -52,4 +52,14 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.6 — «Акцент»: раздел «Держусь»',
     contentFile: 'notifications/release-2.6.0.md',
   },
+  {
+    key: 'release-2.6.1',
+    title: 'Нормисы 2.6.1 — «Держусь»: свой момент старта (до секунды)',
+    contentFile: 'notifications/release-2.6.1.md',
+  },
+  {
+    key: 'release-2.6.2',
+    title: 'Нормисы 2.6.2 — «Держусь»: держаться можно и ради хорошего',
+    contentFile: 'notifications/release-2.6.2.md',
+  },
 ];

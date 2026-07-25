@@ -43,8 +43,9 @@ export interface AntiHabitFormData {
               type="text"
               maxlength="160"
               formControlName="title"
-              placeholder="Напр. Не курю"
+              placeholder="Напр. без сигарет / на нормальной еде"
             />
+            <span class="ahf__hint">Держаться можно и от соблазна, и ради хорошего — назови как удобнее.</span>
             @if (titleError()) {
               <span class="ahf__error">{{ titleError() }}</span>
             }
@@ -79,13 +80,16 @@ export interface AntiHabitFormData {
             <div class="ahf__field">
               <span class="ahf__check">
                 <label class="ahf__check-lbl">
-                  <input type="checkbox" [checked]="startInFuture()" (change)="toggleStart()" />
-                  Начать не сегодня
+                  <input type="checkbox" [checked]="customStart()" (change)="toggleStart()" />
+                  Указать своё время старта
                 </label>
               </span>
-              @if (startInFuture()) {
-                <input class="ahf__input" type="date" [min]="minStartDate" formControlName="startDate" />
-                <span class="ahf__hint">Серия начнётся с этой даты (планирование). До неё — статус «запланировано».</span>
+              @if (customStart()) {
+                <input class="ahf__input" type="datetime-local" step="1" formControlName="startAt" />
+                <span class="ahf__hint">
+                  Уже держишься? Поставь прошлый момент — счётчик продолжит с него. Начнёшь позже? Поставь
+                  будущий — до него статус «запланировано». Можно с точностью до секунды.
+                </span>
                 @if (startError()) {
                   <span class="ahf__error">{{ startError() }}</span>
                 }
@@ -187,15 +191,16 @@ export class AntiHabitFormModalComponent {
       nonNullable: true,
       validators: [Validators.min(1), Validators.max(100000)],
     }),
-    startDate: new FormControl('', { nonNullable: true }),
+    startAt: new FormControl('', { nonNullable: true }),
   });
 
   /** Задана ли цель серии (UI-галочка) — выкл → `targetDays = null`. */
   protected readonly hasTarget = signal(false);
-  /** Плановый старт в будущем (UI-галочка, только при создании). */
-  protected readonly startInFuture = signal(false);
-  /** Минимум даты старта — завтра (YYYY-MM-DD). */
-  protected readonly minStartDate = this._toYmd(new Date(Date.now() + 86_400_000));
+  /**
+   * Указать своё время старта (UI-галочка, только при создании). Момент может быть в ПРОШЛОМ
+   * (уже держусь — перенос с другого приложения, счётчик продолжается) или в БУДУЩЕМ (план).
+   */
+  protected readonly customStart = signal(false);
   /** Триггер показа ошибок после submit. */
   protected readonly submitted = signal(false);
   /** Текст ошибки сохранения (сервер/сеть) — ввод не теряется (H#B2-9). */
@@ -211,7 +216,7 @@ export class AntiHabitFormModalComponent {
         title: ah.title,
         description: ah.description ?? '',
         targetDays: ah.targetDays ?? 30,
-        startDate: '',
+        startAt: '',
       });
     }
   }
@@ -221,35 +226,32 @@ export class AntiHabitFormModalComponent {
     this.hasTarget.update((v) => !v);
   }
 
-  /** Переключает «Начать не сегодня». */
+  /** Переключает «Указать своё время старта»; при включении префилл — «сейчас» (правит человек). */
   protected toggleStart(): void {
-    this.startInFuture.update((v) => !v);
+    this.customStart.update((v) => !v);
+    if (this.customStart() && this.form.controls.startAt.value === '') {
+      this.form.controls.startAt.setValue(this._toLocalInput(new Date()));
+    }
   }
 
-  /** Текст ошибки даты старта (после submit). */
+  /** Текст ошибки времени старта (после submit): пусто — единственный невалидный случай. */
   protected startError(): string | null {
-    if (!this.submitted() || !this.startInFuture()) {
+    if (!this.submitted() || !this.customStart()) {
       return null;
     }
-    const v = this.form.controls.startDate.value;
-    if (v === '') {
-      return 'Выберите дату старта.';
-    }
-    return this._toMs(v) <= Date.now() ? 'Дата старта должна быть в будущем.' : null;
+    return this.form.controls.startAt.value === '' ? 'Выбери дату и время старта.' : null;
   }
 
-  /** `YYYY-MM-DD` → unix ms локальной полуночи. */
-  private _toMs(ymd: string): number {
-    const p = ymd.split('-').map(Number);
-    return new Date(p[0] ?? 0, (p[1] ?? 1) - 1, p[2] ?? 1).getTime();
+  /** `datetime-local` (`YYYY-MM-DDTHH:mm[:ss]`, локальное время) → unix ms. */
+  private _toMs(local: string): number {
+    return new Date(local).getTime();
   }
 
-  /** `Date` → `YYYY-MM-DD` (локально). */
-  private _toYmd(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  /** `Date` → строка для `datetime-local` (`YYYY-MM-DDTHH:mm:ss`, локально). */
+  private _toLocalInput(date: Date): string {
+    const p = (n: number): string => String(n).padStart(2, '0');
+    const ymd = `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+    return `${ymd}T${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
   }
 
   /** Текст ошибки названия (после касания/submit). */
@@ -273,13 +275,15 @@ export class AntiHabitFormModalComponent {
       return;
     }
     const v = this.form.getRawValue();
-    // Плановый старт (только при создании): дата обязана быть в будущем.
+    // Своё время старта (только при создании): любой момент — прошлое (уже держусь, счётчик
+    // продолжается) или будущее (план). Единственный невалид — пустое/некорректное значение.
     let startAt: number | null = null;
-    if (!this.isEdit && this.startInFuture()) {
-      if (v.startDate === '' || this._toMs(v.startDate) <= Date.now()) {
+    if (!this.isEdit && this.customStart()) {
+      const ms = this._toMs(v.startAt);
+      if (v.startAt === '' || Number.isNaN(ms)) {
         return;
       }
-      startAt = this._toMs(v.startDate);
+      startAt = ms;
     }
     const description = v.description.trim();
     const payload: AntiHabitPayload = {
@@ -287,7 +291,7 @@ export class AntiHabitFormModalComponent {
       description: description.length > 0 ? description : null,
       targetDays: this.hasTarget() ? v.targetDays : null,
     };
-    // startAt кладём только для планового создания — в edit-режиме strict-DTO апдейта его отвергнет.
+    // startAt кладём только при своём времени старта — в edit-режиме strict-DTO апдейта его отвергнет.
     if (startAt !== null) {
       payload.startAt = startAt;
     }

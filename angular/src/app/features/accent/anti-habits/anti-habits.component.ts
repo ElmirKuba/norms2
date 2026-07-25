@@ -72,8 +72,9 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
       <aside class="ah__why">
         <span class="ah__why-icon" aria-hidden="true">🛡️</span>
         <p class="ah__why-text">
-          <strong>От чего держишься.</strong> Здесь считается не «сколько сделал», а «сколько
-          держусь без срыва». Сорвался — это новая попытка, а не провал: рекорд остаётся с тобой.
+          <strong>От чего держишься.</strong> Держаться можно и от соблазна («без сигарет»), и ради
+          хорошего («без трешака — на нормальной еде»). Считается не «сколько сделал», а «сколько
+          держишь линию без срыва». Сорвался — это новая попытка, а не провал: рекорд остаётся с тобой.
         </p>
       </aside>
 
@@ -127,11 +128,6 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                       </span>
                     }
                   </a>
-                  @if (ah.isStarter) {
-                    <app-button variant="ghost" [loading]="adoptBusyId() === ah.id" (click)="adopt(ah)">
-                      <span aria-hidden="true">➕</span> Добавить себе
-                    </app-button>
-                  }
                   <div class="ah__menu-wrap">
                     <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
                       <button
@@ -159,6 +155,13 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                     }
                   </div>
                 </div>
+                @if (ah.isStarter) {
+                  <div class="ah__adopt-row">
+                    <app-button variant="ghost" [loading]="adoptBusyId() === ah.id" (click)="adopt(ah)">
+                      <span aria-hidden="true">➕</span> Добавить себе
+                    </app-button>
+                  </div>
+                }
                 @if (!ah.isStarter && ah.state !== 'planned') {
                   <p
                     class="ah__timewarp tooltip-host tooltip-host--wrap"
@@ -214,6 +217,18 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
         font-style: italic;
+        /* Описание примера — максимум 2 строки с многоточием (карточки одной высоты, не тянутся). */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      /* Кнопка «Добавить себе» — своей строкой под текстом (не сжимает заголовок в столбик). */
+      .ah__adopt-row {
+        display: flex;
+        margin-top: var(--space-2);
+        padding-left: calc(var(--touch-min) + var(--space-2));
       }
       .ah__why {
         display: flex;
@@ -402,7 +417,7 @@ export class AntiHabitsComponent implements OnDestroy {
   /** Список анти-привычек. */
   /** Текст-«панчлайн» пасхалки «машина времени» (D7): тёплое объяснение, почему нельзя в прошлое. */
   protected readonly timeWarpHint =
-    'Машины времени, чтобы перенестись в прошлое, не существует — если серия началась раньше, создай новую «держусь», а эту удали 🙂';
+    'Машины времени не существует — идущую серию задним числом не сдвинуть. Но если она реально началась раньше, создай новую «держусь» и укажи ей прошлый момент старта, а эту удали 🙂';
 
   protected readonly items = signal<AntiHabitView[]>([]);
   /** Идёт первичная загрузка. */

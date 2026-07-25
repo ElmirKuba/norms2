@@ -4,9 +4,9 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 
 /**
- * Модалка переноса старта «держусь» в будущее (ADR-0059). Дата (не раньше завтра) → возвращает
- * `startAt` (unix ms, локальная полночь выбранного дня) или `null` (отмена). Текущая попытка
- * завершится, серия начнётся с новой даты (планирование). Бэкфилл в прошлое невозможен.
+ * Модалка переноса старта «держусь» в будущее (ADR-0059). Дата+время (с точностью до секунды,
+ * строго в будущем) → возвращает `startAt` (unix ms) или `null` (отмена). Текущая попытка
+ * завершится, серия начнётся с нового момента (планирование). Бэкфилл в прошлое невозможен.
  */
 @Component({
   selector: 'app-anti-habit-reschedule-modal',
@@ -20,12 +20,19 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
       <form class="dlg__form" [formGroup]="form" (ngSubmit)="confirm()">
         <div class="dlg__body arsm__form">
           <p class="arsm__lead">
-            Текущая попытка завершится, а серия начнётся заново с выбранной даты. Это планирование
-            «начну с…», а не отметка о срыве.
+            Текущая попытка завершится, а серия начнётся заново с выбранного момента. Это
+            планирование «начну с…», а не отметка о срыве. По умолчанию — начало новых суток
+            (00:00:00), но час/минуты/секунды можно поправить.
           </p>
           <label class="arsm__field">
-            <span class="arsm__label">Дата старта <span class="arsm__req">*</span></span>
-            <input class="arsm__input" type="date" [min]="minDate" formControlName="date" />
+            <span class="arsm__label">Дата и время старта <span class="arsm__req">*</span></span>
+            <input
+              class="arsm__input"
+              type="datetime-local"
+              step="1"
+              [min]="minDateTime"
+              formControlName="startAt"
+            />
             @if (dateError()) {
               <span class="arsm__error">{{ dateError() }}</span>
             }
@@ -86,36 +93,40 @@ export class AntiHabitRescheduleModalComponent {
   private readonly _ref =
     inject<MatDialogRef<AntiHabitRescheduleModalComponent, number | null>>(MatDialogRef);
 
-  /** Минимум — завтра (YYYY-MM-DD). */
-  protected readonly minDate = this._toYmd(new Date(Date.now() + 86_400_000));
+  /** Минимум выбора — «сейчас» (перенос строго в будущее; локальный `datetime-local`). */
+  protected readonly minDateTime = this._toLocalInput(new Date());
   /** Показать ошибку после submit. */
   protected readonly submitted = signal(false);
 
-  /** Форма: одна дата. */
+  /** Форма: дата+время старта. Дефолт — начало завтрашних суток (00:00:00), час/мин/сек правятся. */
   protected readonly form = new FormGroup({
-    date: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    startAt: new FormControl(this._tomorrowMidnight(), {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
   });
 
-  /** Текст ошибки даты. */
+  /** Текст ошибки момента старта. */
   protected dateError(): string | null {
     if (!this.submitted()) {
       return null;
     }
-    const v = this.form.controls.date.value;
+    const v = this.form.controls.startAt.value;
     if (v === '') {
-      return 'Выберите дату.';
+      return 'Выберите дату и время.';
     }
-    return this._toMs(v) <= Date.now() ? 'Дата должна быть в будущем.' : null;
+    return this._toMs(v) <= Date.now() ? 'Момент старта должен быть в будущем.' : null;
   }
 
-  /** Подтвердить — вернуть startAt (ms) локальной полуночи выбранного дня. */
+  /** Подтвердить — вернуть startAt (ms) выбранного момента. */
   protected confirm(): void {
     this.submitted.set(true);
-    const v = this.form.controls.date.value;
-    if (v === '' || this._toMs(v) <= Date.now()) {
+    const v = this.form.controls.startAt.value;
+    const ms = this._toMs(v);
+    if (v === '' || Number.isNaN(ms) || ms <= Date.now()) {
       return;
     }
-    this._ref.close(this._toMs(v));
+    this._ref.close(ms);
   }
 
   /** Отмена. */
@@ -123,17 +134,21 @@ export class AntiHabitRescheduleModalComponent {
     this._ref.close(null);
   }
 
-  /** `YYYY-MM-DD` → unix ms локальной полуночи. */
-  private _toMs(ymd: string): number {
-    const p = ymd.split('-').map(Number);
-    return new Date(p[0] ?? 0, (p[1] ?? 1) - 1, p[2] ?? 1).getTime();
+  /** `datetime-local` (`YYYY-MM-DDTHH:mm[:ss]`, локальное время) → unix ms. */
+  private _toMs(local: string): number {
+    return new Date(local).getTime();
   }
 
-  /** `Date` → `YYYY-MM-DD` (локально). */
-  private _toYmd(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  /** Начало завтрашних суток (00:00:00) как строка для `datetime-local` (локально). */
+  private _tomorrowMidnight(): string {
+    const t = new Date();
+    return this._toLocalInput(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 0, 0, 0));
+  }
+
+  /** `Date` → строка для `datetime-local` (`YYYY-MM-DDTHH:mm:ss`, локально). */
+  private _toLocalInput(date: Date): string {
+    const p = (n: number): string => String(n).padStart(2, '0');
+    const ymd = `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+    return `${ymd}T${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
   }
 }

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DatePipe } from '@angular/common';
 import { FormControl, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { AuthApiService } from '../auth/services/auth-api.service';
 import { InvitesApiService } from './services/invites-api.service';
@@ -15,6 +16,9 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
 import { SpinnerComponent } from '../../shared/ui/spinner/spinner.component';
 import { BansComponent } from '../bans/bans.component';
 import { InviteTreeComponent } from './invite-tree/invite-tree.component';
+import { InviteShareModalComponent } from './invite-share-modal.component';
+import type { InviteShareData } from './invite-share-modal.component';
+import { MODAL_SMALL_WIDTH } from '../../shared/modals/modals.constants';
 import type { InviteeRead, InviteCodeRead } from './invites.types';
 
 /** Активная вкладка раздела. */
@@ -52,6 +56,7 @@ export class InvitesComponent {
   private readonly _authApi = inject(AuthApiService);
   private readonly _authStore = inject(AuthStore);
   private readonly _modal = inject(ModalService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Остаток квоты приглашений. */
   protected readonly invitesRemaining = computed(() => this._authStore.account()?.invitesRemaining ?? 0);
@@ -120,6 +125,20 @@ export class InvitesComponent {
     } catch {
       this._modal.error('Не удалось скопировать', 'Скопируйте код вручную.');
     }
+  }
+
+  /**
+   * Делится приглашением: собирает публичную ссылку `<origin>/invite?code=CODE` (страница-
+   * поздравление в гостевой зоне) и открывает модалку шэринга — там ссылку видно и есть явные
+   * действия «Скопировать» / «Открыть» (+ системный «Поделиться», где доступен).
+   */
+  protected shareCode(code: InviteCodeRead): void {
+    const url = `${location.origin}/invite?code=${encodeURIComponent(code.code)}`;
+    this._dialog.open<InviteShareModalComponent, InviteShareData>(InviteShareModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      data: { url },
+    });
   }
 
   /** Отзывает код (с подтверждением). */

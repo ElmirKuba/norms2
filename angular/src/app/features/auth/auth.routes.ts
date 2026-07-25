@@ -17,6 +17,11 @@ export const authRoutes: Routes = [
       { path: 'terms', loadComponent: () => import('../legal/terms.component').then((m) => m.TermsComponent) },
       { path: 'about', loadComponent: () => import('../legal/about.component').then((m) => m.AboutComponent) },
       {
+        path: 'invite',
+        canActivate: [guestGuard],
+        loadComponent: () => import('./invite/invite.component').then((m) => m.InviteComponent),
+      },
+      {
         path: 'register',
         canActivate: [guestGuard],
         loadComponent: () => import('./register/register.component').then((m) => m.RegisterComponent),

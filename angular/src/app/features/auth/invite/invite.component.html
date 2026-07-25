@@ -1,0 +1,37 @@
+<section class="invite">
+  @switch (state()) {
+    @case ('checking') {
+      <app-spinner />
+      <p class="invite__muted">Проверяем приглашение…</p>
+    }
+    @case ('valid') {
+      <div class="invite__badge" aria-hidden="true">🎉</div>
+      <h1 class="invite__title">Тебя пригласили!</h1>
+      <p class="invite__lead">
+        И это, между прочим, редкость. «Нормисы» — территория по приглашениям: без рекламы, без
+        слежки, только свои. Кто-то решил, что тебе здесь место. 🙌
+      </p>
+      <ul class="invite__perks">
+        <li><span aria-hidden="true">🛡️</span> Приватность по умолчанию — минимум данных, никакого трекинга</li>
+        <li><span aria-hidden="true">🎯</span> «Акцент» — цели, привычки и «Держусь» без токсичного прессинга</li>
+        <li><span aria-hidden="true">🤝</span> Свой круг — сюда попадают только по приглашению</li>
+      </ul>
+      <div class="invite__cta">
+        <app-button (click)="goToRegister()">Перейти к регистрации →</app-button>
+      </div>
+      <p class="invite__fine">Код приглашения подставится сам — останется придумать логин и пароль.</p>
+    }
+    @case ('invalid') {
+      <div class="invite__badge invite__badge--sad" aria-hidden="true">🕳️</div>
+      <h1 class="invite__title">Приглашение не найдено</h1>
+      <p class="invite__lead">
+        Похоже, ссылка неполная, код уже использован или его срок истёк. Так бывает — попроси
+        того, кто тебя зовёт, прислать свежую ссылку-приглашение.
+      </p>
+      <div class="invite__cta invite__cta--row">
+        <a class="btn btn-ghost" routerLink="/">На главную</a>
+        <a class="btn" routerLink="/register">У меня есть код</a>
+      </div>
+    }
+  }
+</section>

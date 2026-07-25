@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { AuthApiService } from '../services/auth-api.service';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
@@ -42,6 +42,7 @@ export class RegisterComponent {
   private readonly _flags = inject(FeatureFlagsStore);
   private readonly _modal = inject(ModalService);
   private readonly _router = inject(Router);
+  private readonly _route = inject(ActivatedRoute);
 
   /** Текущий шаг. */
   protected readonly step = signal<'code' | 'form'>(this._flags.flags().freeRegistration ? 'form' : 'code');
@@ -78,6 +79,12 @@ export class RegisterComponent {
     this.codeControl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe((raw) => {
       this._onCodeChange(raw);
     });
+    // Приход со страницы-поздравления `/invite?code=…`: подставляем код → авто-проверка сама
+    // пустит к форме (в invite-режиме шаг «код» пропускается, если код валиден).
+    const code = this._route.snapshot.queryParamMap.get('code');
+    if (code !== null && code !== '') {
+      this.codeControl.setValue(code);
+    }
   }
 
   /** Текст ошибки поля (только после касания и при невалидности). */

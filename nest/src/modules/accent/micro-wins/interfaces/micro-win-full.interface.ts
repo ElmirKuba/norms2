@@ -24,7 +24,8 @@ export type MicroWinCategory = (typeof MICRO_WIN_CATEGORIES)[number];
  * UserState — состояния пользователя (выводятся `StateResolver` из CheckIn + активности,
  * НЕ хранятся как «правда»; domain-model §2). Здесь нужны только как значения
  * `disabledForStates` (в каких состояниях скрывать микро-победу).
- * TODO: Claude Code: 2026-06-16: при появлении StateResolver (подфаза 2.7) перенести
+ * TODO: Claude Code: 2026-06-16: при появлении StateResolver (подфаза 2.8 — после
+ * ренумерации; раньше значилась как 2.7) перенести
  * канонический `UserState` в общий accent-модуль и импортировать его здесь.
  */
 export const USER_STATES = [

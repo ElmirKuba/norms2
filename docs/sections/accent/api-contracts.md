@@ -82,10 +82,29 @@
 - `GET /accent/anti-habits/:id/events?cursor=&limit=` → `{ items: AntiHabitEventView[], nextCursor }` (новые→старые; keyset по `(occurredAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30). **На первой странице лениво материализует достигнутые пороги авто-цели** (события `goal_reached`, ADR-0060; для примера — нет). `AntiHabitEventView`: `{ id, type, occurredAt, ...типо-специфичные поля }` (`relapse`: `attemptDurationMs`/`endedAttemptNumber`/`triggerTag?`/`note?`; `reschedule|plan`: `fromStartedAt?`/`toStartedAt?`/`heldDays?`; `goal_reached`: `thresholdLabel`/`thresholdDays`).
 - **Ошибки:** `ANTI_HABIT_NOT_FOUND` (404), `ALREADY_RELAPSED` (409), `VALIDATION_ERROR` (400), `INVALID_START_DATE` (400).
 
-## 8. Obstacles + Counterplays
-- `GET/POST /accent/obstacles` Body `{ name, type?, trigger?, symptoms?, intensity? }`.
-- `PATCH/DELETE /accent/obstacles/:id`.
-- `POST /accent/obstacles/:id/counterplays` Body `{ text, linkedMicroWinId? }` · `GET/DELETE`.
+## 8. Obstacles + Counterplays + Encounters
+> Статус: **📋 план (подфаза 2.7)** — контракт спроектирован ([ADR-0062](../../decisions/0062-accent-obstacles-model.md)), кода нет. Всё под `AuthGuard`, скоуп по аккаунту из Guard. `ObstacleView` отдаёт `{ id, name, type, domainKey?, trigger?, symptoms?, intensity, isActive, position, isStarter, version, encountersLast30, counterplaysCount, softLimitExceeded }` — последние три **вычисляются на чтение** (хранимых счётчиков нет, ADR-0052).
+
+**Препятствия**
+- `GET /accent/obstacles` → `ObstacleView[]` (по `position`; активные + примеры) · `POST` Body `{ name, type, domainKey?, trigger?, symptoms?, intensity? }` → `ObstacleView` (201). `type` — обязателен, из словаря (`inner_critic|avoidance|distraction|body|emotion|people|environment|perfectionism`); `intensity` 1..5 (дефолт 3).
+- `GET /accent/obstacles/:id` → `ObstacleView` (+ контрмеры с действенностью) · `PATCH` Body `{ name?, type?, domainKey?, trigger?, symptoms?, intensity?, isActive?, version }` (`isActive:false` = убрать из списка; правка примера присваивает его — adoption) · `DELETE` (каскад контрмер и журнала; ссылки из `anti_habit_events` → NULL).
+- `PUT /accent/obstacles/reorder` Body `{ ids }` → 204 ([ADR-0054](../../decisions/0054-tracker-manual-reorder-dragdrop.md); маршрут объявляется **до** `:id`).
+- **Мягкий фокус-лимит:** при активных > `ACCENT_OBSTACLE_SOFT_LIMIT` (env, дефолт 7) ответ несёт `softLimitExceeded: true` → фронт показывает подсказку. **Создание не блокируется** (как фокус-лимит целей).
+
+**Контрмеры**
+- `GET /accent/obstacles/:id/counterplays` → `CounterplayView[]` (по `position`; каждая с `{ helpedCount, ratedCount }` — «помогало N из M», вычисляется на чтение; записи без `outcome` в знаменатель не идут) · `POST` Body `{ text, linkedMicroWinId? }` → `CounterplayView` (201; `linkedMicroWinId` валидируется через domain-service микро-побед — существует и принадлежит аккаунту, иначе `VALIDATION_ERROR`).
+- `PATCH/DELETE /accent/obstacles/:id/counterplays/:cid` · `PUT /accent/obstacles/:id/counterplays/reorder` Body `{ ids }` → 204.
+
+**Журнал столкновений**
+- `POST /accent/obstacles/:id/encounters` Body `{ counterplayId?, outcome?, note? }` → `{ encounter: ObstacleEncounterView, obstacle: ObstacleView }` (201; фронт обновляет счётчик и ленту без перезапроса). Без `counterplayId` — «просто отметить». Для примера (`isStarter`) → `VALIDATION_ERROR` (400, «сначала Добавить себе» — инертная витрина, [ADR-0051](../../decisions/0051-starter-habits-inert-showcase.md)).
+- `GET /accent/obstacles/:id/encounters?cursor=&limit=` → `{ items: ObstacleEncounterView[], nextCursor }` (новые→старые, keyset по `(occurredAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30).
+- `PATCH /accent/obstacles/:id/encounters/:eid` Body `{ outcome }` → `ObstacleEncounterView` — проставить исход **позже** (единственный modify в append-only журнале; `outcome ∈ helped|partly|no`).
+
+**Стартовый пак** (инертная витрина, ADR-0051)
+- `POST /accent/obstacles/starter-pack` → засевает примеры с готовыми контрмерами (`is_starter=true`, дедуп по названию) → свежий `ObstacleView[]` · `DELETE` → удаляет непринятые примеры.
+- `POST /accent/obstacles/:id/adopt` → «Добавить себе»: снимает `is_starter` (маршрут — до `:id`-паттернов).
+
+- **Ошибки:** `OBSTACLE_NOT_FOUND` (404), `COUNTERPLAY_NOT_FOUND` (404), `ENCOUNTER_NOT_FOUND` (404), `VALIDATION_ERROR` (400), `CONCURRENT_MODIFICATION` (409 — правка по устаревшему `version`, [ADR-0035](../../decisions/0035-concurrency-control.md)).
 
 ## 9. Supporters (MVP — реестр)
 - `GET/POST /accent/supporters` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.

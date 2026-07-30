@@ -47,6 +47,14 @@ export interface AntiHabitEventFull {
   /** Номинал порога в днях на момент достижения — для `goal_reached`. */
   thresholdDays: number | null;
 
+  /**
+   * Препятствие, из-за которого сорвался (опц.) — FK на `obstacles.id` (ON DELETE SET NULL),
+   * для `relapse` (ADR-0062 п.9, подфаза 2.7). Дополняет свободный `triggerTag`: список — для
+   * того, что уже названо, текст — для остального. Зависимость строго вниз: use-case «Держусь»
+   * зовёт domain-service препятствий, обратной ссылки нет.
+   */
+  obstacleId: string | null;
+
   /** Когда записано (иммутабельно). */
   createdAt: Date;
 }

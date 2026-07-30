@@ -1,5 +1,6 @@
 import { bigint, index, integer, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { antiHabits } from './anti-habits.schema';
+import { obstacles } from './obstacles.schema';
 import { fkColumn, idColumn } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type {
@@ -35,6 +36,9 @@ export const antiHabitEvents = defineTableWithSchema<AntiHabitEventFull>()(
     // goal_reached
     thresholdLabel: varchar('threshold_label', { length: 32 }),
     thresholdDays: integer('threshold_days'),
+    // Связь с препятствием (ADR-0062, 2.7): из-за чего сорвался — опц. выбор из своего списка,
+    // рядом со свободным `trigger_tag`. SET NULL: удалили препятствие — история срывов цела.
+    obstacleId: fkColumn('obstacle_id').references(() => obstacles.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

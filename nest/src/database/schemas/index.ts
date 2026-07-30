@@ -20,3 +20,6 @@ export * from './goal-entries.schema';
 export * from './milestones.schema';
 export * from './anti-habits.schema';
 export * from './anti-habit-events.schema';
+export * from './obstacles.schema';
+export * from './counterplays.schema';
+export * from './obstacle-encounters.schema';

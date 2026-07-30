@@ -61,7 +61,7 @@ import type {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="obd">
-      <a class="obd__back" routerLink="/accent/obstacles">← К препятствиям</a>
+      <a class="obd__back" routerLink="..">← К препятствиям</a>
 
       @if (loading()) {
         <p class="obd__muted">Загрузка…</p>

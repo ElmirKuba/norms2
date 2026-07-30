@@ -14,6 +14,7 @@ import { TRANSACTION_RUNNER } from '../../../../shared/transactions/transaction-
 import type { TransactionRunnerPort } from '../../../../shared/transactions/transaction-runner.port';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
 import { AccentLadderEngine } from './accent-ladder-engine.domain-service';
+import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/accent-micro-win.domain-service';
 import type { LadderEvent } from './accent-ladder-engine.domain-service';
 
 /**
@@ -35,6 +36,7 @@ export class AccentTaskDomainService {
     @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
     private readonly _habits: AccentHabitDomainService,
     private readonly _ladder: AccentLadderEngine,
+    private readonly _microWins: AccentMicroWinDomainService,
   ) {}
 
   /**
@@ -301,6 +303,56 @@ export class AccentTaskDomainService {
   private _nextDay(ymd: string): string {
     const day = new Date(`${ymd}T00:00:00.000Z`);
     return new Date(day.getTime() + 86_400_000).toISOString().slice(0, 10);
+  }
+
+  /**
+   * **«Минимум на плохой день»** (2.7·H): человек не тянет полную программу, но делает
+   * привязанную к привычке микро-победу. Одним действием: пишем лог микро-победы **и** закрываем
+   * задачу как `partial` со значением `ladder.minTarget`.
+   *
+   * Почему именно так:
+   * - **`partial`, а не `done`** — честно: полная планка не взята. Но `≥ minTarget` держит серию,
+   *   ради чего всё и затевается: плохой день не рвёт цепочку.
+   * - **лесенку не двигаем** — ни вверх, ни вниз. Минимум это не успех и не провал, а «удержался»;
+   *   двигать планку по нему значило бы наказывать за честность или награждать за поблажку.
+   * - **идемпотентно** — закрываем только открытую задачу (`updateIfOpen`); повторный вызов
+   *   вернёт текущее состояние и не запишет второй лог.
+   *
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param occurredOn Локальная дата `YYYY-MM-DD` (для лога микро-победы).
+   * @returns Обновлённая задача + была ли микро-победа отмечена впервые за день.
+   * @throws {TaskNotFoundError} Если задачи нет / не ваша.
+   * @throws {ValidationError} Если у привычки нет привязанного минимума.
+   */
+  public async completeMinimum(
+    id: string,
+    accountId: string,
+    occurredOn: string,
+  ): Promise<{ task: TaskFull; microWinNewlyCompleted: boolean }> {
+    const task = await this.getOwned(id, accountId);
+    if (task.templateId === null) {
+      throw new ValidationError('У разовой задачи нет минимума — он берётся из привычки.');
+    }
+    const habit = await this._habits.getOwned(task.templateId, accountId);
+    const microWinId = habit.minVersionMicroWinId;
+    if (microWinId === null) {
+      throw new ValidationError('У привычки не задан минимум на плохой день.');
+    }
+    const minTarget = habit.ladder.minTarget;
+
+    return this._transactionRunner.run(async () => {
+      const { newlyCompleted } = await this._microWins.complete(microWinId, accountId, occurredOn);
+      const patch = {
+        status: 'partial' as TaskFull['status'],
+        doneValue: minTarget,
+        completedAt: new Date(),
+        skipReason: null,
+      };
+      // Только открытую: повтор не перезапишет уже зачтённый результат (в т.ч. полный `done`).
+      const updated = await this._repository.updateIfOpen(id, accountId, patch);
+      return { task: updated ?? task, microWinNewlyCompleted: newlyCompleted };
+    });
   }
 
   /**

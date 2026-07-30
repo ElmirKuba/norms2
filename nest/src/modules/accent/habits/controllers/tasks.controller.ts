@@ -10,6 +10,8 @@ import { ListOverdueTasksUseCase } from '../use-cases/list-overdue-tasks.use-cas
 import { ListDueTodayTasksUseCase } from '../use-cases/list-due-today-tasks.use-case';
 import { CreateOneOffTaskUseCase } from '../use-cases/create-one-off-task.use-case';
 import { CompleteTaskUseCase } from '../use-cases/complete-task.use-case';
+import { CompleteMinimumTaskUseCase } from '../use-cases/complete-minimum-task.use-case';
+import type { CompleteMinimumResult } from '../use-cases/complete-minimum-task.use-case';
 import { UncompleteTaskUseCase } from '../use-cases/uncomplete-task.use-case';
 import { PostponeTaskUseCase } from '../use-cases/postpone-task.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
@@ -38,6 +40,7 @@ export class TasksController {
     private readonly _dueToday: ListDueTodayTasksUseCase,
     private readonly _create: CreateOneOffTaskUseCase,
     private readonly _complete: CompleteTaskUseCase,
+    private readonly _completeMinimum: CompleteMinimumTaskUseCase,
     private readonly _uncomplete: UncompleteTaskUseCase,
     private readonly _postpone: PostponeTaskUseCase,
   ) {}
@@ -109,6 +112,22 @@ export class TasksController {
       request.account.timezone,
       body.doneValue,
     );
+  }
+
+  /**
+   * **«Сделал минимум»** (2.7·H): засчитывает привязанную к привычке микро-победу и закрывает
+   * задачу частично (`ladder.minTarget`) — одной операцией, в транзакции. Серия держится,
+   * лесенка не двигается. Идемпотентно: повтор не пишет второй лог.
+   * @param id Идентификатор задачи.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Задача после зачёта + признак первого лога микро-победы за день.
+   */
+  @Post('tasks/:id/complete-minimum')
+  public completeMinimum(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<CompleteMinimumResult> {
+    return this._completeMinimum.execute(id, request.account.id, request.account.timezone);
   }
 
   /**

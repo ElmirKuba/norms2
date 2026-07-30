@@ -25,6 +25,7 @@ import { ListOverdueTasksUseCase } from './use-cases/list-overdue-tasks.use-case
 import { ListDueTodayTasksUseCase } from './use-cases/list-due-today-tasks.use-case';
 import { CreateOneOffTaskUseCase } from './use-cases/create-one-off-task.use-case';
 import { CompleteTaskUseCase } from './use-cases/complete-task.use-case';
+import { CompleteMinimumTaskUseCase } from './use-cases/complete-minimum-task.use-case';
 import { UncompleteTaskUseCase } from './use-cases/uncomplete-task.use-case';
 import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
 
@@ -58,6 +59,7 @@ import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
     ListDueTodayTasksUseCase,
     CreateOneOffTaskUseCase,
     CompleteTaskUseCase,
+    CompleteMinimumTaskUseCase,
     UncompleteTaskUseCase,
     PostponeTaskUseCase,
   ],

@@ -83,9 +83,9 @@
 - **Ошибки:** `ANTI_HABIT_NOT_FOUND` (404), `ALREADY_RELAPSED` (409), `VALIDATION_ERROR` (400), `INVALID_START_DATE` (400).
 
 ## 8. Obstacles + Counterplays + Encounters
-> Статус: **CRUD препятствий реализован** (блок B, 2.7·6–·12); контрмеры (блок C), журнал столкновений (блок D) и стартовый пак (блок F) — **📋 план**. Всё под `AuthGuard`, скоуп по аккаунту из Guard ([ADR-0062](../../decisions/0062-accent-obstacles-model.md)).
+> Статус: **реализованы препятствия, контрмеры и журнал столкновений** (блоки B/C/D, 2.7·6–·19); стартовый пак (блок F) — **📋 план**. Всё под `AuthGuard`, скоуп по аккаунту из Guard ([ADR-0062](../../decisions/0062-accent-obstacles-model.md)).
 > `ObstacleView` = `{ id, name, type, domainKey, trigger, symptoms, intensity, isActive, isStarter, position, createdAt }`. `accountId`/`version` наружу не отдаются: колонка `version` ведётся и bump'ается при каждом update, но строгий CAS для препятствий не включён (ADR-0035, уточнение — включаем там, где гонка реальна).
-> **Вычисляемые на чтение** (хранимых счётчиков нет, ADR-0052) `counterplaysCount` и `encountersLast30` появятся во view **вместе со своими таблицами** (блоки C/D) — сейчас их в ответе нет, вместо нулей, которые притворяются данными.
+> **Вычисляемые на чтение** (хранимых счётчиков нет, ADR-0052): `counterplaysCount` и `encountersLast30` («мешал N раз за 30 дней») — во view препятствия; `helpedCount`/`ratedCount` («помогало N из M») — во view контрмеры. Записи без `outcome` в знаменатель **не идут**; `partly` попадает в знаменатель, но не в числитель — чтобы не преувеличивать.
 > **`softLimitExceeded` — свойство списка, а не карточки**, поэтому `GET /accent/obstacles` отдаёт объект `{ items, softLimitExceeded }`, а не голый массив (прецедент обёртки — `{ items, nextCursor }` в §7).
 
 **Препятствия**
@@ -95,19 +95,19 @@
 - **Мягкий фокус-лимит:** при активных > `ACCENT_OBSTACLE_SOFT_LIMIT` (env, дефолт 7) список несёт `softLimitExceeded: true` → фронт показывает подсказку. **Создание не блокируется** (как фокус-лимит целей); считаются только свои активные — примеры-витрины в порог не входят. Отказ возможен лишь по жёсткому пределу 200 препятствий (`VALIDATION_ERROR`).
 
 **Контрмеры**
-- `GET /accent/obstacles/:id/counterplays` → `CounterplayView[]` (по `position`; каждая с `{ helpedCount, ratedCount }` — «помогало N из M», вычисляется на чтение; записи без `outcome` в знаменатель не идут) · `POST` Body `{ text, linkedMicroWinId? }` → `CounterplayView` (201; `linkedMicroWinId` валидируется через domain-service микро-побед — существует и принадлежит аккаунту, иначе `VALIDATION_ERROR`).
+- `GET /accent/obstacles/:id/counterplays` → `CounterplayView[]` = `{ id, obstacleId, text, linkedMicroWinId, position, helpedCount, ratedCount, createdAt }` (по `position` — **порядок ручной, по действенности не пересортировывается**) · `POST` Body `{ text, linkedMicroWinId? }` → `CounterplayView` (201; `linkedMicroWinId` валидируется через domain-service микро-побед — существует и принадлежит аккаунту, иначе `VALIDATION_ERROR`).
 - `PATCH/DELETE /accent/obstacles/:id/counterplays/:cid` · `PUT /accent/obstacles/:id/counterplays/reorder` Body `{ ids }` → 204.
 
 **Журнал столкновений**
-- `POST /accent/obstacles/:id/encounters` Body `{ counterplayId?, outcome?, note? }` → `{ encounter: ObstacleEncounterView, obstacle: ObstacleView }` (201; фронт обновляет счётчик и ленту без перезапроса). Без `counterplayId` — «просто отметить». Для примера (`isStarter`) → `VALIDATION_ERROR` (400, «сначала Добавить себе» — инертная витрина, [ADR-0051](../../decisions/0051-starter-habits-inert-showcase.md)).
-- `GET /accent/obstacles/:id/encounters?cursor=&limit=` → `{ items: ObstacleEncounterView[], nextCursor }` (новые→старые, keyset по `(occurredAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30).
-- `PATCH /accent/obstacles/:id/encounters/:eid` Body `{ outcome }` → `ObstacleEncounterView` — проставить исход **позже** (единственный modify в append-only журнале; `outcome ∈ helped|partly|no`).
+- `POST /accent/obstacles/:id/encounters` Body `{ counterplayId?, outcome?, note?, occurredAt? }` → `{ encounter, obstacle }` (201; карточка приходит с пересчитанными агрегатами — фронту не нужен второй запрос ради цифры). **Все поля опциональны:** без `counterplayId` — «просто отметить», `outcome` можно проставить позже, `occurredAt` (unix ms) допускает отметку задним числом. Чужая/несуществующая контрмера → `VALIDATION_ERROR` (400). Для примера (`isStarter`) → `VALIDATION_ERROR` (400, инертная витрина, [ADR-0051](../../decisions/0051-starter-habits-inert-showcase.md)).
+- `GET /accent/obstacles/:id/encounters?cursor=&limit=` → `{ items: ObstacleEncounterView[], nextCursor }` (новые→старые, keyset по `(occurredAt, id)`, непрозрачный base64url; `limit` 1..100, дефолт 30). `ObstacleEncounterView` = `{ id, obstacleId, occurredAt, counterplayId, outcome, note }`. **Битый/протухший курсор → первая страница, а не ошибка** (курсор не должен ломать экран).
+- `PATCH /accent/obstacles/:id/encounters/:eid` Body `{ outcome }` → `ObstacleEncounterView` — проставить исход **позже** (единственный modify в append-only журнале; `outcome ∈ helped|partly|no`). Снятие оценки не предусмотрено: «не отмечено» и так не считается негативом.
 
 **Стартовый пак** (инертная витрина, ADR-0051)
 - `POST /accent/obstacles/starter-pack` → засевает примеры с готовыми контрмерами (`is_starter=true`, дедуп по названию) → свежий `ObstacleView[]` · `DELETE` → удаляет непринятые примеры.
 - `POST /accent/obstacles/:id/adopt` → «Добавить себе»: снимает `is_starter` (маршрут — до `:id`-паттернов).
 
-- **Ошибки:** `OBSTACLE_NOT_FOUND` (404), `COUNTERPLAY_NOT_FOUND` (404), `ENCOUNTER_NOT_FOUND` (404), `VALIDATION_ERROR` (400), `CONCURRENT_MODIFICATION` (409 — правка по устаревшему `version`, [ADR-0035](../../decisions/0035-concurrency-control.md)).
+- **Ошибки:** `OBSTACLE_NOT_FOUND` (404), `COUNTERPLAY_NOT_FOUND` (404), `ENCOUNTER_NOT_FOUND` (404), `VALIDATION_ERROR` (400). `CONCURRENT_MODIFICATION` (409) появится, если для препятствий включат строгий CAS — сейчас `version` только ведётся ([ADR-0035](../../decisions/0035-concurrency-control.md)).
 
 ## 9. Supporters (MVP — реестр)
 - `GET/POST /accent/supporters` Body `{ linkedAccountId?, role, consentScope, note? }` · `PATCH/DELETE`.

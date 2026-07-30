@@ -42,6 +42,7 @@ export class RelapseAntiHabitUseCase {
     const result = await this._antiHabits.relapse(id, accountId, {
       triggerTag: dto.triggerTag ?? null,
       note: dto.note ?? null,
+      obstacleId: dto.obstacleId ?? null,
     });
     return {
       antiHabit: toAntiHabitView(result.antiHabit),

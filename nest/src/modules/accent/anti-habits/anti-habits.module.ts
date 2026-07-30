@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
+import { ObstaclesModule } from '../obstacles/obstacles.module';
 import { ACCENT_ANTI_HABIT_REPOSITORY } from './adapters/accent-anti-habit-repository.port';
 import { AccentAntiHabitRepository } from '../../../database/repositories/accent/accent-anti-habit.repository';
 import { ACCENT_ANTI_HABIT_EVENT_REPOSITORY } from './adapters/accent-anti-habit-event-repository.port';
@@ -29,7 +30,7 @@ import { AdoptAntiHabitUseCase } from './use-cases/adopt-anti-habit.use-case';
  * use-cases. Геймификация (очки/вехи серий) — 2.9 через события-хуки.
  */
 @Module({
-  imports: [AccessControlModule],
+  imports: [AccessControlModule, ObstaclesModule],
   controllers: [AntiHabitsController],
   providers: [
     { provide: ACCENT_ANTI_HABIT_REPOSITORY, useClass: AccentAntiHabitRepository },

@@ -189,6 +189,10 @@ import type {
             <dd>{{ pressure(o.intensity) }} <span class="obd__muted">({{ o.intensity }} из 5, самооценка на сегодня)</span></dd>
             <dt>Ответов заготовлено</dt>
             <dd>{{ counterplaysText() }}</dd>
+            @if (relapseCount() > 0) {
+              <dt>Срывы в «Держусь»</dt>
+              <dd>{{ relapseText() }}</dd>
+            }
           </dl>
         </app-card>
 
@@ -250,6 +254,7 @@ import type {
   styles: [
     `
       .obd {
+        padding: var(--space-4) 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
@@ -488,6 +493,8 @@ export class ObstacleDetailComponent {
   protected readonly nextCursor = signal<string | null>(null);
   /** Идёт подгрузка следующей страницы ленты. */
   protected readonly feedBusy = signal(false);
+  /** Сколько срывов в «Держусь» указали это препятствие (ADR-0062 п.9). */
+  protected readonly relapseCount = signal(0);
 
   /** Текст новой контрмеры. */
   protected newText = '';
@@ -531,6 +538,61 @@ export class ObstacleDetailComponent {
       },
       error: () => this.encounters.set([]),
     });
+    this._countRelapses();
+  }
+
+  /**
+   * Считает срывы «Держусь», указавшие это препятствие. Данные берём из уже существующего
+   * API историй: отдельного эндпоинта ради одной цифры заводить не стали — счётчик
+   * информационный, а не критичный (при ошибке просто не показывается).
+   */
+  private _countRelapses(): void {
+    this._api.listAntiHabits().subscribe({
+      next: (antiHabits) => {
+        let total = 0;
+        let pending = antiHabits.length;
+        if (pending === 0) {
+          return;
+        }
+        for (const ah of antiHabits) {
+          this._api.listAntiHabitEvents(ah.id, undefined, 100).subscribe({
+            next: (page) => {
+              total += page.items.filter(
+                (e) => e.type === 'relapse' && e.obstacleId === this._id,
+              ).length;
+              pending -= 1;
+              if (pending === 0) {
+                this.relapseCount.set(total);
+              }
+            },
+            error: () => {
+              pending -= 1;
+              if (pending === 0) {
+                this.relapseCount.set(total);
+              }
+            },
+          });
+        }
+      },
+      error: () => undefined,
+    });
+  }
+
+  /**
+   * Подпись счётчика срывов.
+   * @returns Текст вида «сорвался из-за этого 3 раза».
+   */
+  protected relapseText(): string {
+    const count = this.relapseCount();
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    const word =
+      mod10 === 1 && mod100 !== 11
+        ? 'раз'
+        : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+          ? 'раза'
+          : 'раз';
+    return `сорвался из-за этого ${String(count)} ${word}`;
   }
 
   /**

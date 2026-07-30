@@ -18,6 +18,7 @@ import { AntiHabitNotFoundError } from '../../../../shared/errors/anti-habit-not
 import { AlreadyRelapsedError } from '../../../../shared/errors/already-relapsed.error';
 import { InvalidStartDateError } from '../../../../shared/errors/invalid-start-date.error';
 import { ValidationError } from '../../../../shared/errors/validation.error';
+import { AccentObstacleDomainService } from '../../obstacles/domain-services/accent-obstacle.domain-service';
 import { reachedGoals } from './anti-habit-goal-ladder.util';
 import { STARTER_ANTI_HABITS } from '../seed/starter-anti-habits';
 import type { AntiHabitCreateData } from '../adapters/accent-anti-habit-repository.port';
@@ -87,6 +88,7 @@ export class AccentAntiHabitDomainService {
     @Inject(ACCENT_ANTI_HABIT_EVENTS)
     private readonly _hooks: AccentAntiHabitEventsPort,
     private readonly _configService: ConfigService<Env, true>,
+    private readonly _obstacles: AccentObstacleDomainService,
   ) {}
 
   /**
@@ -211,7 +213,7 @@ export class AccentAntiHabitDomainService {
   public async relapse(
     id: string,
     accountId: string,
-    input: { triggerTag?: string | null; note?: string | null },
+    input: { triggerTag?: string | null; note?: string | null; obstacleId?: string | null },
   ): Promise<AntiHabitMutationResult> {
     const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
     let current = await this.getOwned(id, accountId);
@@ -220,6 +222,11 @@ export class AccentAntiHabitDomainService {
       throw new AlreadyRelapsedError('Нет активной попытки для срыва.');
     }
     const startedAttemptNumber = current.attemptNumber;
+    // Кросс-домен строго ВНИЗ (ADR-0062 п.9): «Держусь» спрашивает у препятствий, наше ли оно.
+    // Обратной ссылки нет — препятствия про «Держусь» не знают.
+    if (input.obstacleId !== null && input.obstacleId !== undefined) {
+      await this._obstacles.getOwned(input.obstacleId, accountId);
+    }
 
     for (let attempt = 0; attempt < attempts; attempt++) {
       const now = Date.now();
@@ -245,6 +252,7 @@ export class AccentAntiHabitDomainService {
           endedAttemptNumber: current.attemptNumber,
           triggerTag: input.triggerTag ?? null,
           note: input.note ?? null,
+          obstacleId: input.obstacleId ?? null,
         });
         this._hooks.relapsed({
           antiHabitId: id,

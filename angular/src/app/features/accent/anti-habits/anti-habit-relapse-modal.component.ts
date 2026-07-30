@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
+import { AccentApiService } from '../services/accent-api.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import type { RelapsePayload } from '../accent.types';
 
@@ -27,6 +28,19 @@ import type { RelapsePayload } from '../accent.types';
             останется с тобой</strong>. Если хочешь — отметь, что стало триггером: это поможет
             в следующий раз.
           </p>
+
+          @if (obstacles().length > 0) {
+            <label class="arm__field">
+              <span class="arm__label">Из-за чего <span class="arm__opt">(необязательно)</span></span>
+              <select class="arm__input" formControlName="obstacleId">
+                <option value="">Не указывать</option>
+                @for (o of obstacles(); track o.id) {
+                  <option [value]="o.id">{{ o.name }}</option>
+                }
+              </select>
+              <span class="arm__hint">Выбор из твоих препятствий — потом будет видно, что срывает чаще.</span>
+            </label>
+          }
 
           <label class="arm__field">
             <span class="arm__label">Триггер <span class="arm__opt">(необязательно)</span></span>
@@ -113,10 +127,27 @@ import type { RelapsePayload } from '../accent.types';
 export class AntiHabitRelapseModalComponent {
   private readonly _ref =
     inject<MatDialogRef<AntiHabitRelapseModalComponent, RelapsePayload | null>>(MatDialogRef);
+  private readonly _api = inject(AccentApiService);
+
+  /**
+   * Свои препятствия для выбора «из-за чего» (2.7, ADR-0062 п.9). Список опционален: если их нет,
+   * блок не показывается и модалка выглядит как раньше — свободный триггер остаётся на месте.
+   */
+  protected readonly obstacles = signal<{ id: string; name: string }[]>([]);
+
+  public constructor() {
+    // Молча: отсутствие препятствий не должно мешать отметить срыв.
+    this._api.listObstacles().subscribe({
+      next: (list) =>
+        this.obstacles.set(list.items.filter((o) => !o.isStarter).map((o) => ({ id: o.id, name: o.name }))),
+      error: () => this.obstacles.set([]),
+    });
+  }
 
   /** Форма триггера/заметки (оба опциональны). */
   protected readonly form = new FormGroup({
     triggerTag: new FormControl('', { nonNullable: true }),
+    obstacleId: new FormControl('', { nonNullable: true }),
     note: new FormControl('', { nonNullable: true }),
   });
 
@@ -127,6 +158,7 @@ export class AntiHabitRelapseModalComponent {
     const note = v.note.trim();
     this._ref.close({
       triggerTag: triggerTag.length > 0 ? triggerTag : null,
+      obstacleId: v.obstacleId === '' ? null : v.obstacleId,
       note: note.length > 0 ? note : null,
     });
   }

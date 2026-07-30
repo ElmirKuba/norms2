@@ -22,6 +22,8 @@ export interface AntiHabitEventCreateData {
   triggerTag?: string | null;
   /** relapse: заметка. */
   note?: string | null;
+  /** relapse: препятствие, из-за которого сорвался (опц., ADR-0062 п.9). */
+  obstacleId?: string | null;
   /** reschedule: прежний старт (unix ms). */
   fromStartedAt?: number | null;
   /** reschedule/plan: новый (будущий) старт (unix ms). */

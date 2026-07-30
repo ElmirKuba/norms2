@@ -173,6 +173,7 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
   styles: [
     `
       .ob {
+        padding: var(--space-4) 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-4);

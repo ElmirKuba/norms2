@@ -41,6 +41,7 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
         endedAttemptNumber: data.endedAttemptNumber ?? null,
         triggerTag: data.triggerTag ?? null,
         note: data.note ?? null,
+        obstacleId: data.obstacleId ?? null,
         fromStartedAt: data.fromStartedAt ?? null,
         toStartedAt: data.toStartedAt ?? null,
         heldDays: data.heldDays ?? null,

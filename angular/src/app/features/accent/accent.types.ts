@@ -600,6 +600,8 @@ export interface AntiHabitEventView {
   triggerTag: string | null;
   /** relapse: заметка или null. */
   note: string | null;
+  /** relapse: препятствие, из-за которого сорвался, или null (2.7). */
+  obstacleId: string | null;
   /** reschedule: прежний старт (unix ms) или null. */
   fromStartedAt: number | null;
   /** reschedule/plan: новый (будущий) старт (unix ms) или null. */
@@ -614,6 +616,8 @@ export interface AntiHabitEventView {
 
 /** Тело срыва (`POST /accent/anti-habits/:id/relapse`). Оба поля свободные (без ПДн). */
 export interface RelapsePayload {
+  /** Препятствие, из-за которого сорвался (опц., 2.7): выбор из своего списка. */
+  obstacleId?: string | null;
   /** Триггер (опц.). */
   triggerTag?: string | null;
   /** Заметка (опц.). */

@@ -20,6 +20,8 @@ export interface AntiHabitEventView {
   endedAttemptNumber: number | null;
   /** relapse: триггер или null. */
   triggerTag: string | null;
+  /** relapse: препятствие, из-за которого сорвался, или null (ADR-0062 п.9). */
+  obstacleId: string | null;
   /** relapse: заметка или null. */
   note: string | null;
   /** reschedule: прежний старт (unix ms) или null. */
@@ -55,6 +57,7 @@ export function toAntiHabitEventView(full: AntiHabitEventFull): AntiHabitEventVi
     attemptDurationMs: full.attemptDurationMs,
     endedAttemptNumber: full.endedAttemptNumber,
     triggerTag: full.triggerTag,
+    obstacleId: full.obstacleId,
     note: full.note,
     fromStartedAt: full.fromStartedAt,
     toStartedAt: full.toStartedAt,

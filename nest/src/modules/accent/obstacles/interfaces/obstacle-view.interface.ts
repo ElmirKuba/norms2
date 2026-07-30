@@ -5,9 +5,9 @@ import type { ObstacleFull, ObstacleType } from './obstacle-full.interface';
  * пока не включён — колонка есть и bump'ается, строгая проверка включается там, где гонка
  * реальна, [ADR-0035](../../../../../docs/decisions/0035-concurrency-control.md), уточнение).
  *
- * **Вычисляемые на чтение агрегаты появятся вместе со своими таблицами** (ADR-0052, счётчиков не
- * храним): `counterplaysCount` — в блоке C (контрмеры), `encountersLast30` («мешал N раз за 30
- * дней») — в блоке D (журнал столкновений). Пока их нет, view не притворяется, что они есть.
+ * **Вычисляемые на чтение агрегаты** (ADR-0052, счётчиков не храним): `counterplaysCount` —
+ * есть (блок C); `encountersLast30` («мешал N раз за 30 дней») появится в блоке D вместе с
+ * журналом столкновений. Пока поля нет, view не притворяется, что оно есть.
  */
 export interface ObstacleView {
   /** Идентификатор. */
@@ -30,6 +30,8 @@ export interface ObstacleView {
   isStarter: boolean;
   /** Ручной порядок (ADR-0054). */
   position: number;
+  /** Сколько заготовлено ответов — вычисляется на чтение (ADR-0052), не хранится. */
+  counterplaysCount: number;
   /** Когда создано (ISO). */
   createdAt: string;
 }
@@ -37,9 +39,10 @@ export interface ObstacleView {
 /**
  * Проецирует доменное препятствие наружу (скрывает `accountId`/`version`).
  * @param full Доменная сущность.
+ * @param counterplaysCount Число контрмер (посчитано на чтение; 0 если не передано).
  * @returns Проекция наружу.
  */
-export function toObstacleView(full: ObstacleFull): ObstacleView {
+export function toObstacleView(full: ObstacleFull, counterplaysCount = 0): ObstacleView {
   return {
     id: full.id,
     name: full.name,
@@ -51,6 +54,7 @@ export function toObstacleView(full: ObstacleFull): ObstacleView {
     isActive: full.isActive,
     isStarter: full.isStarter,
     position: full.position,
+    counterplaysCount,
     createdAt: full.createdAt.toISOString(),
   };
 }

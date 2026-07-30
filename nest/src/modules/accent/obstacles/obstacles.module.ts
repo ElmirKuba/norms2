@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
+import { MicroWinsModule } from '../micro-wins/micro-wins.module';
 import { ACCENT_OBSTACLE_REPOSITORY } from './adapters/accent-obstacle-repository.port';
 import { AccentObstacleRepository } from '../../../database/repositories/accent/accent-obstacle.repository';
+import { ACCENT_COUNTERPLAY_REPOSITORY } from './adapters/accent-counterplay-repository.port';
+import { AccentCounterplayRepository } from '../../../database/repositories/accent/accent-counterplay.repository';
 import { AccentObstacleDomainService } from './domain-services/accent-obstacle.domain-service';
+import { AccentCounterplayDomainService } from './domain-services/accent-counterplay.domain-service';
 import { ObstaclesController } from './controllers/obstacles.controller';
 import { ListObstaclesUseCase } from './use-cases/list-obstacles.use-case';
 import { GetObstacleUseCase } from './use-cases/get-obstacle.use-case';
@@ -21,15 +25,20 @@ import { ReorderObstaclesUseCase } from './use-cases/reorder-obstacles.use-case'
  * при рецидиве проверит выбранное препятствие (ADR-0062 п.9), а позже `Recommender` (2.8) и
  * дашборд (2.11) прочитают список. Обратной зависимости нет: препятствия ни о ком не знают.
  *
- * Контрмеры (блок C) и журнал столкновений (блок D) добавят сюда свои порты и use-cases.
+ * Импортит `MicroWinsModule` — контрмера может ссылаться на микро-победу, и эту привязку
+ * проверяет `AccentCounterplayDomainService` через её domain-service (кросс-домен строго вниз;
+ * обратной зависимости нет, поэтому круга не возникает). Журнал столкновений (блок D) добавит
+ * сюда свой порт и use-cases.
  * События геймификации в 2.7 не эмитим (ADR-0062 п.13) — порта событий здесь намеренно нет.
  */
 @Module({
-  imports: [AccessControlModule],
+  imports: [AccessControlModule, MicroWinsModule],
   controllers: [ObstaclesController],
   providers: [
     { provide: ACCENT_OBSTACLE_REPOSITORY, useClass: AccentObstacleRepository },
+    { provide: ACCENT_COUNTERPLAY_REPOSITORY, useClass: AccentCounterplayRepository },
     AccentObstacleDomainService,
+    AccentCounterplayDomainService,
     ListObstaclesUseCase,
     GetObstacleUseCase,
     CreateObstacleUseCase,
@@ -37,6 +46,6 @@ import { ReorderObstaclesUseCase } from './use-cases/reorder-obstacles.use-case'
     DeleteObstacleUseCase,
     ReorderObstaclesUseCase,
   ],
-  exports: [AccentObstacleDomainService],
+  exports: [AccentObstacleDomainService, AccentCounterplayDomainService],
 })
 export class ObstaclesModule {}

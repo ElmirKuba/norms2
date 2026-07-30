@@ -5,9 +5,9 @@ import type { ObstacleFull, ObstacleType } from './obstacle-full.interface';
  * пока не включён — колонка есть и bump'ается, строгая проверка включается там, где гонка
  * реальна, [ADR-0035](../../../../../docs/decisions/0035-concurrency-control.md), уточнение).
  *
- * **Вычисляемые на чтение агрегаты** (ADR-0052, счётчиков не храним): `counterplaysCount` —
- * есть (блок C); `encountersLast30` («мешал N раз за 30 дней») появится в блоке D вместе с
- * журналом столкновений. Пока поля нет, view не притворяется, что оно есть.
+ * **Вычисляемые на чтение агрегаты** (ADR-0052, счётчиков не храним): `counterplaysCount`
+ * (блок C) и `encountersLast30` — «мешал N раз за 30 дней» (блок D). Частота подаётся как
+ * информация для приоритета, а не счётчик позора (ADR-0062, человеческая шляпа).
  */
 export interface ObstacleView {
   /** Идентификатор. */
@@ -32,6 +32,8 @@ export interface ObstacleView {
   position: number;
   /** Сколько заготовлено ответов — вычисляется на чтение (ADR-0052), не хранится. */
   counterplaysCount: number;
+  /** Сколько раз мешал за последние 30 дней — вычисляется на чтение, не хранится. */
+  encountersLast30: number;
   /** Когда создано (ISO). */
   createdAt: string;
 }
@@ -40,9 +42,14 @@ export interface ObstacleView {
  * Проецирует доменное препятствие наружу (скрывает `accountId`/`version`).
  * @param full Доменная сущность.
  * @param counterplaysCount Число контрмер (посчитано на чтение; 0 если не передано).
+ * @param encountersLast30 Столкновений за 30 дней (посчитано на чтение; 0 если не передано).
  * @returns Проекция наружу.
  */
-export function toObstacleView(full: ObstacleFull, counterplaysCount = 0): ObstacleView {
+export function toObstacleView(
+  full: ObstacleFull,
+  counterplaysCount = 0,
+  encountersLast30 = 0,
+): ObstacleView {
   return {
     id: full.id,
     name: full.name,
@@ -55,6 +62,7 @@ export function toObstacleView(full: ObstacleFull, counterplaysCount = 0): Obsta
     isStarter: full.isStarter,
     position: full.position,
     counterplaysCount,
+    encountersLast30,
     createdAt: full.createdAt.toISOString(),
   };
 }

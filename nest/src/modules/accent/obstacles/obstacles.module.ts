@@ -4,9 +4,12 @@ import { MicroWinsModule } from '../micro-wins/micro-wins.module';
 import { ACCENT_OBSTACLE_REPOSITORY } from './adapters/accent-obstacle-repository.port';
 import { AccentObstacleRepository } from '../../../database/repositories/accent/accent-obstacle.repository';
 import { ACCENT_COUNTERPLAY_REPOSITORY } from './adapters/accent-counterplay-repository.port';
+import { ACCENT_OBSTACLE_ENCOUNTER_REPOSITORY } from './adapters/accent-obstacle-encounter-repository.port';
+import { AccentObstacleEncounterRepository } from '../../../database/repositories/accent/accent-obstacle-encounter.repository';
 import { AccentCounterplayRepository } from '../../../database/repositories/accent/accent-counterplay.repository';
 import { AccentObstacleDomainService } from './domain-services/accent-obstacle.domain-service';
 import { AccentCounterplayDomainService } from './domain-services/accent-counterplay.domain-service';
+import { AccentObstacleEncounterDomainService } from './domain-services/accent-obstacle-encounter.domain-service';
 import { ObstaclesController } from './controllers/obstacles.controller';
 import { ListObstaclesUseCase } from './use-cases/list-obstacles.use-case';
 import { GetObstacleUseCase } from './use-cases/get-obstacle.use-case';
@@ -19,6 +22,9 @@ import { CreateCounterplayUseCase } from './use-cases/create-counterplay.use-cas
 import { UpdateCounterplayUseCase } from './use-cases/update-counterplay.use-case';
 import { DeleteCounterplayUseCase } from './use-cases/delete-counterplay.use-case';
 import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use-case';
+import { RecordEncounterUseCase } from './use-cases/record-encounter.use-case';
+import { ListEncountersUseCase } from './use-cases/list-encounters.use-case';
+import { SetEncounterOutcomeUseCase } from './use-cases/set-encounter-outcome.use-case';
 
 /**
  * Область препятствий раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.7, ADR-0062).
@@ -32,8 +38,8 @@ import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use
  *
  * Импортит `MicroWinsModule` — контрмера может ссылаться на микро-победу, и эту привязку
  * проверяет `AccentCounterplayDomainService` через её domain-service (кросс-домен строго вниз;
- * обратной зависимости нет, поэтому круга не возникает). Журнал столкновений (блок D) добавит
- * сюда свой порт и use-cases.
+ * обратной зависимости нет, поэтому круга не возникает). Журнал столкновений (блок D) даёт обе
+ * вычисляемые на чтение величины раздела: «мешал N раз за 30 дней» и «помогало N из M».
  * События геймификации в 2.7 не эмитим (ADR-0062 п.13) — порта событий здесь намеренно нет.
  */
 @Module({
@@ -42,8 +48,13 @@ import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use
   providers: [
     { provide: ACCENT_OBSTACLE_REPOSITORY, useClass: AccentObstacleRepository },
     { provide: ACCENT_COUNTERPLAY_REPOSITORY, useClass: AccentCounterplayRepository },
+    {
+      provide: ACCENT_OBSTACLE_ENCOUNTER_REPOSITORY,
+      useClass: AccentObstacleEncounterRepository,
+    },
     AccentObstacleDomainService,
     AccentCounterplayDomainService,
+    AccentObstacleEncounterDomainService,
     ListObstaclesUseCase,
     GetObstacleUseCase,
     CreateObstacleUseCase,
@@ -55,7 +66,14 @@ import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use
     UpdateCounterplayUseCase,
     DeleteCounterplayUseCase,
     ReorderCounterplaysUseCase,
+    RecordEncounterUseCase,
+    ListEncountersUseCase,
+    SetEncounterOutcomeUseCase,
   ],
-  exports: [AccentObstacleDomainService, AccentCounterplayDomainService],
+  exports: [
+    AccentObstacleDomainService,
+    AccentCounterplayDomainService,
+    AccentObstacleEncounterDomainService,
+  ],
 })
 export class ObstaclesModule {}

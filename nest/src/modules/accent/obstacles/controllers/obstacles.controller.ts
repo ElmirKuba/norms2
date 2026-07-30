@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,10 @@ import { updateCounterplaySchema } from '../dtos/update-counterplay.dto';
 import type { UpdateCounterplayDto } from '../dtos/update-counterplay.dto';
 import { reorderCounterplaysSchema } from '../dtos/reorder-counterplays.dto';
 import type { ReorderCounterplaysDto } from '../dtos/reorder-counterplays.dto';
+import { createEncounterSchema } from '../dtos/create-encounter.dto';
+import type { CreateEncounterDto } from '../dtos/create-encounter.dto';
+import { setEncounterOutcomeSchema } from '../dtos/set-encounter-outcome.dto';
+import type { SetEncounterOutcomeDto } from '../dtos/set-encounter-outcome.dto';
 import { ListObstaclesUseCase } from '../use-cases/list-obstacles.use-case';
 import { GetObstacleUseCase } from '../use-cases/get-obstacle.use-case';
 import { CreateObstacleUseCase } from '../use-cases/create-obstacle.use-case';
@@ -36,9 +41,17 @@ import { CreateCounterplayUseCase } from '../use-cases/create-counterplay.use-ca
 import { UpdateCounterplayUseCase } from '../use-cases/update-counterplay.use-case';
 import { DeleteCounterplayUseCase } from '../use-cases/delete-counterplay.use-case';
 import { ReorderCounterplaysUseCase } from '../use-cases/reorder-counterplays.use-case';
+import { RecordEncounterUseCase } from '../use-cases/record-encounter.use-case';
+import type { EncounterRecordResult } from '../use-cases/record-encounter.use-case';
+import { ListEncountersUseCase } from '../use-cases/list-encounters.use-case';
+import { SetEncounterOutcomeUseCase } from '../use-cases/set-encounter-outcome.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { ObstacleListView, ObstacleView } from '../interfaces/obstacle-view.interface';
 import type { CounterplayView } from '../interfaces/counterplay-view.interface';
+import type {
+  ObstacleEncounterPage,
+  ObstacleEncounterView,
+} from '../interfaces/obstacle-encounter-view.interface';
 
 /**
  * Контроллер препятствий (`/api/v1/accent/obstacles`) — под Guard (members-only, per-account).
@@ -61,6 +74,9 @@ export class ObstaclesController {
    * @param _updateCounterplay Правка контрмеры.
    * @param _deleteCounterplay Удаление контрмеры.
    * @param _reorderCounterplays Сортировка контрмер.
+   * @param _recordEncounter Запись столкновения («Столкнулся»).
+   * @param _listEncounters Лента столкновений.
+   * @param _setOutcome Проставление исхода задним числом.
    */
   public constructor(
     private readonly _list: ListObstaclesUseCase,
@@ -74,6 +90,9 @@ export class ObstaclesController {
     private readonly _updateCounterplay: UpdateCounterplayUseCase,
     private readonly _deleteCounterplay: DeleteCounterplayUseCase,
     private readonly _reorderCounterplays: ReorderCounterplaysUseCase,
+    private readonly _recordEncounter: RecordEncounterUseCase,
+    private readonly _listEncounters: ListEncountersUseCase,
+    private readonly _setOutcome: SetEncounterOutcomeUseCase,
   ) {}
 
   /**
@@ -241,5 +260,62 @@ export class ObstaclesController {
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     await this._deleteCounterplay.execute(counterplayId, obstacleId, request.account.id);
+  }
+
+  // ─── Журнал столкновений («Столкнулся») ───────────────────────────────────────────────
+
+  /**
+   * Записывает столкновение — главный поток раздела. Ничего обязательного: без `counterplayId`
+   * это «просто отметить», `outcome` можно проставить позже. Возвращает и запись, и свежую
+   * карточку — счётчики вычисляются на чтение, иначе фронту пришлось бы делать второй запрос.
+   * @param obstacleId Идентификатор препятствия.
+   * @param body Тело записи.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Запись + обновлённое препятствие.
+   */
+  @Post('obstacles/:id/encounters')
+  public recordEncounter(
+    @Param('id') obstacleId: string,
+    @Body(new ZodValidationPipe(createEncounterSchema)) body: CreateEncounterDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<EncounterRecordResult> {
+    return this._recordEncounter.execute(obstacleId, request.account.id, body);
+  }
+
+  /**
+   * Лента столкновений (новые→старые, keyset-пагинация).
+   * @param obstacleId Идентификатор препятствия.
+   * @param limit Размер страницы (1..100, дефолт 30).
+   * @param cursor Непрозрачный курсор следующей страницы.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Страница ленты.
+   */
+  @Get('obstacles/:id/encounters')
+  public listEncounters(
+    @Param('id') obstacleId: string,
+    @Query('limit') limit: string | undefined,
+    @Query('cursor') cursor: string | undefined,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ObstacleEncounterPage> {
+    return this._listEncounters.execute(obstacleId, request.account.id, limit, cursor);
+  }
+
+  /**
+   * Проставляет исход задним числом («Помогло?» в ленте) — единственный modify в append-only
+   * журнале. Отвечать необязательно, пустой исход нигде не считается негативом.
+   * @param obstacleId Идентификатор препятствия.
+   * @param encounterId Идентификатор записи.
+   * @param body Исход.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Обновлённая запись.
+   */
+  @Patch('obstacles/:id/encounters/:eid')
+  public setEncounterOutcome(
+    @Param('id') obstacleId: string,
+    @Param('eid') encounterId: string,
+    @Body(new ZodValidationPipe(setEncounterOutcomeSchema)) body: SetEncounterOutcomeDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ObstacleEncounterView> {
+    return this._setOutcome.execute(encounterId, obstacleId, request.account.id, body);
   }
 }

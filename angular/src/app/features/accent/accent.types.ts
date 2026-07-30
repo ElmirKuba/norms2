@@ -635,3 +635,166 @@ export interface AntiHabitEventPage {
   /** Курсор следующей страницы или null. */
   nextCursor: string | null;
 }
+
+// ─────────────────────────── Препятствия (2.7, ADR-0062) ───────────────────────────
+
+/** Виды препятствий — ось «природа проблемы» (обязательна; по ней подбирает Recommender 2.8). */
+export const OBSTACLE_TYPES = [
+  'inner_critic',
+  'avoidance',
+  'distraction',
+  'body',
+  'emotion',
+  'people',
+  'environment',
+  'perfectionism',
+] as const;
+
+/** Вид препятствия. */
+export type ObstacleType = (typeof OBSTACLE_TYPES)[number];
+
+/** Исход столкновения. `null` = «не отмечено», а НЕ «не помогло». */
+export type EncounterOutcome = 'helped' | 'partly' | 'no';
+
+/** Препятствие (ответ `GET /accent/obstacles`). */
+export interface ObstacleView {
+  /** Идентификатор. */
+  id: string;
+  /** Название («Думскролл»). */
+  name: string;
+  /** Вид препятствия. */
+  type: ObstacleType;
+  /** Сфера жизни (мягкий ключ) или null. */
+  domainKey: string | null;
+  /** Повод, по которому приходит, или null. */
+  trigger: string | null;
+  /** Признаки, по которым узнаёшь, или null. */
+  symptoms: string | null;
+  /** Насколько давит 1..5 — самооценка на сегодня. */
+  intensity: number;
+  /** Активно ли (`false` = в архиве). */
+  isActive: boolean;
+  /** Пример-витрина (ADR-0051): бейдж «пример», инертен до «Добавить себе». */
+  isStarter: boolean;
+  /** Ручной порядок (drag). */
+  position: number;
+  /** Сколько заготовлено ответов (вычисляется на сервере при чтении). */
+  counterplaysCount: number;
+  /** Сколько раз мешал за 30 дней — информация для приоритета, не счётчик позора. */
+  encountersLast30: number;
+  /** Когда создано (ISO). */
+  createdAt: string;
+}
+
+/** Список препятствий: обёртка нужна из-за флага порога — он про весь список, не про карточку. */
+export interface ObstacleListView {
+  /** Препятствия в ручном порядке. */
+  items: ObstacleView[];
+  /** Активных больше мягкого порога → показать подсказку «может, часть в архив?». Не запрет. */
+  softLimitExceeded: boolean;
+}
+
+/** Тело создания препятствия (`POST /accent/obstacles`). */
+export interface ObstaclePayload {
+  /** Название. */
+  name: string;
+  /** Вид (обязателен). */
+  type: ObstacleType;
+  /** Сфера жизни (опц.). */
+  domainKey?: string | null;
+  /** Повод (опц.). */
+  trigger?: string | null;
+  /** Признаки (опц.). */
+  symptoms?: string | null;
+  /** Насколько давит 1..5 (опц., дефолт 3). */
+  intensity?: number;
+}
+
+/** Тело правки препятствия (все поля опц.; `isActive:false` = в архив). */
+export interface ObstacleUpdatePayload {
+  name?: string;
+  type?: ObstacleType;
+  domainKey?: string | null;
+  trigger?: string | null;
+  symptoms?: string | null;
+  intensity?: number;
+  isActive?: boolean;
+}
+
+/** Контрмера — свой готовый ответ на препятствие. */
+export interface CounterplayView {
+  /** Идентификатор. */
+  id: string;
+  /** Препятствие-родитель. */
+  obstacleId: string;
+  /** Что делаю. */
+  text: string;
+  /** Привязанная микро-победа (в момент столкновения запускает её таймер) или null. */
+  linkedMicroWinId: string | null;
+  /** Ручной порядок. */
+  position: number;
+  /** Сколько раз отмечено «помогло». */
+  helpedCount: number;
+  /** Сколько применений получили оценку («помогало helpedCount из ratedCount»). */
+  ratedCount: number;
+  /** Когда создано (ISO). */
+  createdAt: string;
+}
+
+/** Тело создания контрмеры. */
+export interface CounterplayPayload {
+  /** Что делаю. */
+  text: string;
+  /** Привязка к микро-победе (опц.). */
+  linkedMicroWinId?: string | null;
+}
+
+/** Тело правки контрмеры (`linkedMicroWinId: null` — снять привязку). */
+export interface CounterplayUpdatePayload {
+  text?: string;
+  linkedMicroWinId?: string | null;
+}
+
+/** Запись столкновения. */
+export interface ObstacleEncounterView {
+  /** Идентификатор. */
+  id: string;
+  /** Препятствие. */
+  obstacleId: string;
+  /** Когда произошло (unix ms). */
+  occurredAt: number;
+  /** Чем ответил или null («просто отметил»). */
+  counterplayId: string | null;
+  /** Исход или null («не отмечено» — не считается негативом). */
+  outcome: EncounterOutcome | null;
+  /** Заметка или null. */
+  note: string | null;
+}
+
+/** Тело записи столкновения — всё опционально (помощь за один тап, а не анкета). */
+export interface EncounterPayload {
+  /** Чем ответил (опц.). */
+  counterplayId?: string | null;
+  /** Исход (опц., можно позже). */
+  outcome?: EncounterOutcome | null;
+  /** Заметка (опц.). */
+  note?: string | null;
+  /** Момент (unix ms, опц.) — допускается отметка задним числом. */
+  occurredAt?: number | null;
+}
+
+/** Ответ «Столкнулся»: запись + карточка со свежими счётчиками (без второго запроса). */
+export interface EncounterRecordResult {
+  /** Записанное столкновение. */
+  encounter: ObstacleEncounterView;
+  /** Препятствие с пересчитанными агрегатами. */
+  obstacle: ObstacleView;
+}
+
+/** Страница ленты столкновений (keyset-пагинация). */
+export interface ObstacleEncounterPage {
+  /** Записи страницы (новые→старые). */
+  items: ObstacleEncounterView[];
+  /** Курсор следующей страницы или null. */
+  nextCursor: string | null;
+}

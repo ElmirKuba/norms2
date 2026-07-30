@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
@@ -7,6 +7,17 @@ import type {
   AccentSettingsView,
   AddGoalEntryResult,
   AntiHabitEventPage,
+  CounterplayPayload,
+  CounterplayUpdatePayload,
+  CounterplayView,
+  EncounterPayload,
+  EncounterRecordResult,
+  ObstacleEncounterPage,
+  ObstacleEncounterView,
+  ObstacleListView,
+  ObstaclePayload,
+  ObstacleUpdatePayload,
+  ObstacleView,
   AntiHabitPayload,
   AntiHabitUpdatePayload,
   AntiHabitView,
@@ -429,5 +440,123 @@ export class AccentApiService {
   /** Присвоить пример себе («Добавить себе», ADR-0051): снимает флаг, стартует серию. */
   public adoptAntiHabit(id: string): Observable<AntiHabitView> {
     return this._http.post<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}/adopt`, {});
+  }
+
+  // ─────────────────────────── Препятствия (2.7, ADR-0062) ───────────────────────────
+
+  /** Список препятствий + флаг мягкого порога (подсказка «может, часть в архив?»). */
+  public listObstacles(): Observable<ObstacleListView> {
+    return this._http.get<ObstacleListView>(`${API_PREFIX}/accent/obstacles`);
+  }
+
+  /** Одно препятствие. */
+  public getObstacle(id: string): Observable<ObstacleView> {
+    return this._http.get<ObstacleView>(`${API_PREFIX}/accent/obstacles/${id}`);
+  }
+
+  /** Создать препятствие. */
+  public createObstacle(payload: ObstaclePayload): Observable<ObstacleView> {
+    return this._http.post<ObstacleView>(`${API_PREFIX}/accent/obstacles`, payload);
+  }
+
+  /** Изменить препятствие (`isActive:false` — убрать из списка; правка примера присваивает его). */
+  public updateObstacle(id: string, payload: ObstacleUpdatePayload): Observable<ObstacleView> {
+    return this._http.patch<ObstacleView>(`${API_PREFIX}/accent/obstacles/${id}`, payload);
+  }
+
+  /** Удалить препятствие (контрмеры и журнал уходят каскадом). */
+  public deleteObstacle(id: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/accent/obstacles/${id}`);
+  }
+
+  /** Ручной порядок препятствий (drag). */
+  public reorderObstacles(ids: readonly string[]): Observable<void> {
+    return this._http.put<void>(`${API_PREFIX}/accent/obstacles/reorder`, { ids });
+  }
+
+  /** Контрмеры препятствия (в ручном порядке, с «помогало N из M»). */
+  public listCounterplays(obstacleId: string): Observable<CounterplayView[]> {
+    return this._http.get<CounterplayView[]>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/counterplays`,
+    );
+  }
+
+  /** Добавить контрмеру. */
+  public createCounterplay(
+    obstacleId: string,
+    payload: CounterplayPayload,
+  ): Observable<CounterplayView> {
+    return this._http.post<CounterplayView>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/counterplays`,
+      payload,
+    );
+  }
+
+  /** Изменить контрмеру (`linkedMicroWinId: null` — снять привязку). */
+  public updateCounterplay(
+    obstacleId: string,
+    counterplayId: string,
+    payload: CounterplayUpdatePayload,
+  ): Observable<CounterplayView> {
+    return this._http.patch<CounterplayView>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/counterplays/${counterplayId}`,
+      payload,
+    );
+  }
+
+  /** Удалить контрмеру (записи журнала остаются, теряется лишь «чем ответил»). */
+  public deleteCounterplay(obstacleId: string, counterplayId: string): Observable<void> {
+    return this._http.delete<void>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/counterplays/${counterplayId}`,
+    );
+  }
+
+  /** Ручной порядок контрмер внутри препятствия. */
+  public reorderCounterplays(obstacleId: string, ids: readonly string[]): Observable<void> {
+    return this._http.put<void>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/counterplays/reorder`,
+      { ids },
+    );
+  }
+
+  /** «Столкнулся» — записать столкновение; ответ несёт свежую карточку со счётчиками. */
+  public recordEncounter(
+    obstacleId: string,
+    payload: EncounterPayload,
+  ): Observable<EncounterRecordResult> {
+    return this._http.post<EncounterRecordResult>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/encounters`,
+      payload,
+    );
+  }
+
+  /** Лента столкновений (keyset-пагинация, новые→старые). */
+  public listEncounters(
+    obstacleId: string,
+    opts: { limit?: number; cursor?: string } = {},
+  ): Observable<ObstacleEncounterPage> {
+    let params = new HttpParams();
+    if (opts.limit !== undefined) {
+      params = params.set('limit', String(opts.limit));
+    }
+    if (opts.cursor !== undefined && opts.cursor !== '') {
+      params = params.set('cursor', opts.cursor);
+    }
+    return this._http.get<ObstacleEncounterPage>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/encounters`,
+      { params },
+    );
+  }
+
+  /** Проставить исход столкновения позже («Помогло?» в ленте). Отвечать необязательно. */
+  public setEncounterOutcome(
+    obstacleId: string,
+    encounterId: string,
+    outcome: 'helped' | 'partly' | 'no',
+  ): Observable<ObstacleEncounterView> {
+    return this._http.patch<ObstacleEncounterView>(
+      `${API_PREFIX}/accent/obstacles/${obstacleId}/encounters/${encounterId}`,
+      { outcome },
+    );
   }
 }

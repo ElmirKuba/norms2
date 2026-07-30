@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import { HabitNotFoundError } from '../../../../shared/errors/habit-not-found.error';
+import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/accent-micro-win.domain-service';
 import { ACCENT_HABIT_REPOSITORY } from '../adapters/accent-habit-repository.port';
 import type {
   AccentHabitRepositoryPort,
@@ -30,7 +31,31 @@ export class AccentHabitDomainService {
    */
   public constructor(
     @Inject(ACCENT_HABIT_REPOSITORY) private readonly _repository: AccentHabitRepositoryPort,
+    private readonly _microWins: AccentMicroWinDomainService,
   ) {}
+
+  /**
+   * Проверяет привязку «минимума на плохой день» через domain-service микро-побед (кросс-домен
+   * строго ВНИЗ, 2.7·H): она должна существовать и принадлежать тому же аккаунту. `null` —
+   * снятие привязки, проверять нечего.
+   * @param microWinId Идентификатор микро-победы, null или undefined.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @throws {ValidationError} Если микро-победа не найдена / чужая.
+   */
+  private async _validateMinVersionLink(
+    microWinId: string | null | undefined,
+    accountId: string,
+  ): Promise<void> {
+    if (microWinId === null || microWinId === undefined) {
+      return;
+    }
+    try {
+      await this._microWins.getOwned(microWinId, accountId);
+    } catch {
+      // Чужая и несуществующая неотличимы для клиента — чужие сущности не раскрываем.
+      throw new ValidationError('Микро-победа не найдена.');
+    }
+  }
 
   /**
    * Активные привычки аккаунта.
@@ -105,6 +130,7 @@ export class AccentHabitDomainService {
     this._validateKind(data.kind);
     this._validateRecurrence(data.recurrence);
     this._validateLadder(data.ladder);
+    await this._validateMinVersionLink(data.minVersionMicroWinId, data.accountId);
     const ladder: HabitLadder = { ...data.ladder, easyStreak: 0, missStreak: 0 };
     return this._repository.create({ ...data, title, ladder });
   }
@@ -155,6 +181,10 @@ export class AccentHabitDomainService {
     }
     if (patch.priority !== undefined) {
       clean.priority = patch.priority;
+    }
+    if (patch.minVersionMicroWinId !== undefined) {
+      await this._validateMinVersionLink(patch.minVersionMicroWinId, accountId);
+      clean.minVersionMicroWinId = patch.minVersionMicroWinId;
     }
     if (patch.minVersion !== undefined) {
       clean.minVersion = patch.minVersion;

@@ -50,6 +50,8 @@ export interface HabitView {
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */
   minVersion: string | null;
+  /** Микро-победа как минимум на плохой день (опц.) — делает подсказку нажимаемой (2.7·H). */
+  minVersionMicroWinId: string | null;
   /** Время подготовки (сек) перед timed-таймером или null (FEAT-H1). */
   prepSeconds: number | null;
 }
@@ -84,6 +86,7 @@ export function toHabitView(full: HabitFull): HabitView {
       policy: full.ladder.policy,
     },
     minVersion: full.minVersion,
+    minVersionMicroWinId: full.minVersionMicroWinId,
     prepSeconds: full.prepSeconds,
   };
 }

@@ -81,6 +81,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
         startDate: data.startDate ?? null,
         ladder: data.ladder,
         minVersion: data.minVersion ?? null,
+        minVersionMicroWinId: data.minVersionMicroWinId ?? null,
         prepSeconds: data.prepSeconds ?? null,
         isStarter: data.isStarter ?? false,
       })
@@ -119,6 +120,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
           startDate: data.startDate ?? null,
           ladder: data.ladder,
           minVersion: data.minVersion ?? null,
+          minVersionMicroWinId: data.minVersionMicroWinId ?? null,
           prepSeconds: data.prepSeconds ?? null,
           isStarter: data.isStarter ?? false,
         })),

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
+import { MicroWinsModule } from '../micro-wins/micro-wins.module';
 import { GoalsModule } from '../goals/goals.module';
 import { ACCENT_HABIT_REPOSITORY } from './adapters/accent-habit-repository.port';
 import { AccentHabitRepository } from '../../../database/repositories/accent/accent-habit.repository';
@@ -35,7 +36,7 @@ import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
  * Экспортит domain-service для кросс-домена вниз (материализация задач, цели 2.5).
  */
 @Module({
-  imports: [AccessControlModule, GoalsModule],
+  imports: [AccessControlModule, MicroWinsModule, GoalsModule],
   controllers: [HabitsController, TasksController],
   providers: [
     { provide: ACCENT_HABIT_REPOSITORY, useClass: AccentHabitRepository },

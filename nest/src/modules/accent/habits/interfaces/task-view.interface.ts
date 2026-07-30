@@ -2,6 +2,22 @@ import type { HabitKind } from './habit-full.interface';
 import type { TaskFull, TaskSkipReason, TaskStatus } from './task-full.interface';
 
 /** TaskView — задача наружу (без `accountId`; даты-моменты как ISO-строки). */
+/**
+ * Минимум на плохой день, прицепленный к задаче (2.7·H): всё нужное для кнопки и таймера сразу
+ * в ответе. Кладём объект, а не голый id: иначе карточка «Сегодня» ради одной подписи тянула бы
+ * весь каталог микро-побед вторым запросом.
+ */
+export interface TaskMinAction {
+  /** Идентификатор микро-победы. */
+  microWinId: string;
+  /** Название («1 отжимание») — идёт прямо в подпись кнопки. */
+  title: string;
+  /** Длительность действия (сек) — для таймера. */
+  durationSeconds: number;
+  /** Подготовка перед действием (сек) или null. */
+  prepSeconds: number | null;
+}
+
 export interface TaskView {
   /** Идентификатор. */
   id: string;
@@ -9,6 +25,11 @@ export interface TaskView {
   templateId: string | null;
   /** Привязка к цели или null. */
   goalId: string | null;
+  /**
+   * Минимум на плохой день или null. Заполняется, только если привычка-шаблон привязана к
+   * микро-победе (2.7·H) — тогда на карточке появляется кнопка «Минимум сегодня: …».
+   */
+  minAction: TaskMinAction | null;
   /** Название. */
   title: string;
   /** Локальная дата дня `YYYY-MM-DD`. */
@@ -59,13 +80,15 @@ export interface CompleteTaskResult {
 /**
  * Проецирует доменную задачу в наружную view (моменты → ISO).
  * @param full Доменная сущность.
+ * @param minAction Минимум на плохой день (из привычки-шаблона) или null.
  * @returns Проекция наружу.
  */
-export function toTaskView(full: TaskFull): TaskView {
+export function toTaskView(full: TaskFull, minAction: TaskMinAction | null = null): TaskView {
   return {
     id: full.id,
     templateId: full.templateId,
     goalId: full.goalId,
+    minAction,
     title: full.title,
     occurredOn: full.occurredOn,
     kind: full.kind,

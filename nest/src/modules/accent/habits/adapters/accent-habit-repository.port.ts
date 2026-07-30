@@ -35,6 +35,8 @@ export interface HabitCreateData {
   priority?: number;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion?: string | null;
+  /** Микро-победа как минимум на плохой день (опц., 2.7·H). */
+  minVersionMicroWinId?: string | null;
   /** Время подготовки (сек) перед timed-таймером (опц.). */
   prepSeconds?: number | null;
   /** Стартовый пример (опц., дефолт false) — для сева стартового пака. */
@@ -56,6 +58,7 @@ export interface HabitUpdateData {
   ladder?: HabitLadder | undefined;
   isActive?: boolean | undefined;
   minVersion?: string | null | undefined;
+  minVersionMicroWinId?: string | null | undefined;
   prepSeconds?: number | null | undefined;
   /** Снятие флага «пример» (adoption) — внутреннее, не из API-DTO. */
   isStarter?: boolean | undefined;

@@ -144,9 +144,15 @@ import type {
           }
 
           @if (o.isStarter) {
-            <p class="obd__muted obd__starter-note">
-              Это пример — «Добавить себе» на экране списка, и можно будет дополнять своими ответами.
-            </p>
+            <div class="obd__adopt">
+              <p class="obd__muted obd__starter-note">
+                Это пример: столкновения на нём не пишутся. Добавь себе — ответы останутся, и
+                карточка начнёт считать.
+              </p>
+              <app-button [loading]="adoptBusy()" (click)="adopt()">
+                <span aria-hidden="true">➕</span> Добавить себе
+              </app-button>
+            </div>
           } @else {
             <div class="obd__add">
               <input
@@ -389,6 +395,12 @@ import type {
       .obd__facts dd {
         margin: 0;
       }
+      .obd__adopt {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        align-items: flex-start;
+      }
       .obd__hint,
       .obd__starter-note {
         margin: var(--space-2) 0 0;
@@ -495,6 +507,8 @@ export class ObstacleDetailComponent {
   protected readonly feedBusy = signal(false);
   /** Сколько срывов в «Держусь» указали это препятствие (ADR-0062 п.9). */
   protected readonly relapseCount = signal(0);
+  /** Идёт присвоение примера. */
+  protected readonly adoptBusy = signal(false);
 
   /** Текст новой контрмеры. */
   protected newText = '';
@@ -593,6 +607,21 @@ export class ObstacleDetailComponent {
           ? 'раза'
           : 'раз';
     return `сорвался из-за этого ${String(count)} ${word}`;
+  }
+
+  /** «Добавить себе»: снимает бейдж примера, ответы остаются, карточка начинает считать. */
+  protected adopt(): void {
+    this.adoptBusy.set(true);
+    this._api.adoptObstacle(this._id).subscribe({
+      next: (adopted) => {
+        this.item.set(adopted);
+        this.adoptBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.actionError.set(errorMessage(err));
+        this.adoptBusy.set(false);
+      },
+    });
   }
 
   /**

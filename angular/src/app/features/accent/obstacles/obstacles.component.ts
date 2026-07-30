@@ -61,9 +61,22 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
     <section class="ob">
       <header class="ob__head">
         <h2>Препятствия</h2>
+        <div class="ob__head-actions">
+          @if (!loading() && items().length > 0) {
+            @if (hasStarters()) {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="clearExamples()">
+                <span aria-hidden="true">🧹</span> Очистить примеры
+              </app-button>
+            } @else {
+              <app-button variant="ghost" [loading]="packBusy()" (click)="seedPack()">
+                <span aria-hidden="true">🎁</span> Получить примеры
+              </app-button>
+            }
+          }
         <span class="tooltip-host" [attr.data-tooltip]="'Добавить препятствие'">
           <app-button ariaLabel="Добавить препятствие" (click)="openCreate()">+</app-button>
         </span>
+        </div>
       </header>
 
       <aside class="ob__why">
@@ -84,9 +97,13 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
           title="Пока пусто"
           text="Назови то, что чаще всего сбивает тебя с пути, — и заготовь пару ответов на него заранее."
         >
-          <app-button (click)="openCreate()">
+          <app-button [loading]="packBusy()" (click)="seedPack()">
+            <span aria-hidden="true">🎁</span>
+            Посмотреть примеры
+          </app-button>
+          <app-button variant="ghost" (click)="openCreate()">
             <span aria-hidden="true">➕</span>
-            Добавить препятствие
+            Добавить своё
           </app-button>
         </app-empty-state>
       } @else {
@@ -94,6 +111,12 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
           <p class="ob__hint">
             Много фронтов сразу — может, часть убрать в архив? Это не запрет, просто наблюдение:
             силы конечны.
+          </p>
+        }
+        @if (hasStarters()) {
+          <p class="ob__hint">
+            Примеры помечены бейджем и пока не считаются: столкновения на них не пишутся.
+            «Добавить себе» — и препятствие станет твоим вместе с готовыми ответами.
           </p>
         }
         <ul class="ob__list" cdkDropList (cdkDropListDropped)="dropObstacle($event)">
@@ -113,9 +136,11 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
                     <span class="ob__sub">
                       <span class="ob__type">{{ typeLabel(o.type) }}</span>
                       <span class="ob__dot" aria-hidden="true">·</span>
-                      <span class="ob__stat">{{ encounters(o) }}</span>
-                      <span class="ob__dot" aria-hidden="true">·</span>
                       <span class="ob__stat">{{ counterplays(o) }}</span>
+                      @if (!o.isStarter) {
+                        <span class="ob__dot" aria-hidden="true">·</span>
+                        <span class="ob__stat">{{ encounters(o) }}</span>
+                      }
                     </span>
                     @if (o.trigger) {
                       <span class="ob__trigger">когда: {{ o.trigger }}</span>
@@ -163,6 +188,13 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
                     </div>
                   </div>
                 </div>
+                @if (o.isStarter) {
+                  <div class="ob__adopt-row">
+                    <app-button variant="ghost" [loading]="adoptBusyId() === o.id" (click)="adopt(o)">
+                      <span aria-hidden="true">➕</span> Добавить себе
+                    </app-button>
+                  </div>
+                }
               </app-card>
             </li>
           }
@@ -221,6 +253,17 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
         align-items: flex-start;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .ob__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .ob__adopt-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: var(--space-2);
       }
       .ob__grip {
         min-width: var(--touch-min);
@@ -359,6 +402,10 @@ export class ObstaclesComponent {
   protected readonly openMenuId = signal<string | null>(null);
   /** Id препятствия, по которому идёт запись столкновения. */
   protected readonly encounterBusyId = signal<string | null>(null);
+  /** Идёт работа со стартовым паком (сев/очистка). */
+  protected readonly packBusy = signal(false);
+  /** Id препятствия, которое сейчас присваивается. */
+  protected readonly adoptBusyId = signal<string | null>(null);
   /** Кеш микро-побед (грузится лениво — нужен только для запуска таймера). */
   private readonly _microWins = signal<MicroWinView[] | null>(null);
 
@@ -447,6 +494,64 @@ export class ObstaclesComponent {
     this._api.updateObstacle(obstacle.id, { isActive: false }).subscribe({
       next: () => this.items.update((list) => list.filter((o) => o.id !== obstacle.id)),
       error: (err: unknown) => this.error.set(errorMessage(err)),
+    });
+  }
+
+  /**
+   * Есть ли непринятые примеры (от этого зависит, какую кнопку показывать в шапке).
+   * @returns true, если в списке есть витрины.
+   */
+  protected hasStarters(): boolean {
+    return this.items().some((o) => o.isStarter);
+  }
+
+  /** Получить примеры (идемпотентно: повторное нажатие дублей не создаёт). */
+  protected seedPack(): void {
+    this.packBusy.set(true);
+    this._api.seedObstacleStarterPack().subscribe({
+      next: (list) => {
+        this.items.set(list.items);
+        this.softLimitExceeded.set(list.softLimitExceeded);
+        this.packBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err));
+        this.packBusy.set(false);
+      },
+    });
+  }
+
+  /** Убрать примеры — только непринятые; своё и присвоенное остаётся. */
+  protected clearExamples(): void {
+    this.packBusy.set(true);
+    this._api.clearObstacleStarters().subscribe({
+      next: (list) => {
+        this.items.set(list.items);
+        this.softLimitExceeded.set(list.softLimitExceeded);
+        this.packBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err));
+        this.packBusy.set(false);
+      },
+    });
+  }
+
+  /**
+   * «Добавить себе»: пример становится своим вместе с готовыми ответами.
+   * @param obstacle Препятствие-пример.
+   */
+  protected adopt(obstacle: ObstacleView): void {
+    this.adoptBusyId.set(obstacle.id);
+    this._api.adoptObstacle(obstacle.id).subscribe({
+      next: (adopted) => {
+        this.items.update((list) => list.map((o) => (o.id === adopted.id ? adopted : o)));
+        this.adoptBusyId.set(null);
+      },
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err));
+        this.adoptBusyId.set(null);
+      },
     });
   }
 

@@ -469,6 +469,21 @@ export class AccentApiService {
     return this._http.delete<void>(`${API_PREFIX}/accent/obstacles/${id}`);
   }
 
+  /** Получить примеры препятствий (идемпотентно докидывает недостающие). */
+  public seedObstacleStarterPack(): Observable<ObstacleListView> {
+    return this._http.post<ObstacleListView>(`${API_PREFIX}/accent/obstacles/starter-pack`, {});
+  }
+
+  /** Очистить непринятые примеры (присвоенные остаются). */
+  public clearObstacleStarters(): Observable<ObstacleListView> {
+    return this._http.delete<ObstacleListView>(`${API_PREFIX}/accent/obstacles/starter-pack`);
+  }
+
+  /** «Добавить себе»: пример становится обычным препятствием со своими ответами. */
+  public adoptObstacle(id: string): Observable<ObstacleView> {
+    return this._http.post<ObstacleView>(`${API_PREFIX}/accent/obstacles/${id}/adopt`, {});
+  }
+
   /** Ручной порядок препятствий (drag). */
   public reorderObstacles(ids: readonly string[]): Observable<void> {
     return this._http.put<void>(`${API_PREFIX}/accent/obstacles/reorder`, { ids });

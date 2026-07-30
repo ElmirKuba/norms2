@@ -25,6 +25,9 @@ import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use
 import { RecordEncounterUseCase } from './use-cases/record-encounter.use-case';
 import { ListEncountersUseCase } from './use-cases/list-encounters.use-case';
 import { SetEncounterOutcomeUseCase } from './use-cases/set-encounter-outcome.use-case';
+import { SeedObstacleStarterPackUseCase } from './use-cases/seed-obstacle-starter-pack.use-case';
+import { ClearObstacleStartersUseCase } from './use-cases/clear-obstacle-starters.use-case';
+import { AdoptObstacleUseCase } from './use-cases/adopt-obstacle.use-case';
 
 /**
  * Область препятствий раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.7, ADR-0062).
@@ -69,6 +72,9 @@ import { SetEncounterOutcomeUseCase } from './use-cases/set-encounter-outcome.us
     RecordEncounterUseCase,
     ListEncountersUseCase,
     SetEncounterOutcomeUseCase,
+    SeedObstacleStarterPackUseCase,
+    ClearObstacleStartersUseCase,
+    AdoptObstacleUseCase,
   ],
   exports: [
     AccentObstacleDomainService,

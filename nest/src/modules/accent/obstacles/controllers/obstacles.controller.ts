@@ -36,6 +36,9 @@ import { CreateObstacleUseCase } from '../use-cases/create-obstacle.use-case';
 import { UpdateObstacleUseCase } from '../use-cases/update-obstacle.use-case';
 import { DeleteObstacleUseCase } from '../use-cases/delete-obstacle.use-case';
 import { ReorderObstaclesUseCase } from '../use-cases/reorder-obstacles.use-case';
+import { SeedObstacleStarterPackUseCase } from '../use-cases/seed-obstacle-starter-pack.use-case';
+import { ClearObstacleStartersUseCase } from '../use-cases/clear-obstacle-starters.use-case';
+import { AdoptObstacleUseCase } from '../use-cases/adopt-obstacle.use-case';
 import { ListCounterplaysUseCase } from '../use-cases/list-counterplays.use-case';
 import { CreateCounterplayUseCase } from '../use-cases/create-counterplay.use-case';
 import { UpdateCounterplayUseCase } from '../use-cases/update-counterplay.use-case';
@@ -77,6 +80,9 @@ export class ObstaclesController {
    * @param _recordEncounter Запись столкновения («Столкнулся»).
    * @param _listEncounters Лента столкновений.
    * @param _setOutcome Проставление исхода задним числом.
+   * @param _seedPack Сев примеров.
+   * @param _clearStarters Очистка примеров.
+   * @param _adopt «Добавить себе».
    */
   public constructor(
     private readonly _list: ListObstaclesUseCase,
@@ -93,6 +99,9 @@ export class ObstaclesController {
     private readonly _recordEncounter: RecordEncounterUseCase,
     private readonly _listEncounters: ListEncountersUseCase,
     private readonly _setOutcome: SetEncounterOutcomeUseCase,
+    private readonly _seedPack: SeedObstacleStarterPackUseCase,
+    private readonly _clearStarters: ClearObstacleStartersUseCase,
+    private readonly _adopt: AdoptObstacleUseCase,
   ) {}
 
   /**
@@ -108,6 +117,42 @@ export class ObstaclesController {
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     await this._reorder.execute(request.account.id, body);
+  }
+
+  /**
+   * Получить примеры (идемпотентно докидывает недостающие, ADR-0051). Объявлен **ДО** `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Свежий список с примерами.
+   */
+  @Post('obstacles/starter-pack')
+  public async getStarterPack(@Req() request: AuthenticatedRequest): Promise<ObstacleListView> {
+    await this._seedPack.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * Очистить непринятые примеры (присвоенные остаются). Объявлен **ДО** `:id`.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Свежий список.
+   */
+  @Delete('obstacles/starter-pack')
+  public async clearStarters(@Req() request: AuthenticatedRequest): Promise<ObstacleListView> {
+    await this._clearStarters.execute(request.account.id);
+    return this._list.execute(request.account.id);
+  }
+
+  /**
+   * «Добавить себе»: пример становится обычным препятствием со своими ответами.
+   * @param id Идентификатор препятствия.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Присвоенное препятствие.
+   */
+  @Post('obstacles/:id/adopt')
+  public adopt(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ObstacleView> {
+    return this._adopt.execute(id, request.account.id);
   }
 
   /**

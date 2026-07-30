@@ -6,6 +6,9 @@ import type {
   ObstacleUpdateData,
 } from '../adapters/accent-obstacle-repository.port';
 import type { ObstacleFull, ObstacleType } from '../interfaces/obstacle-full.interface';
+import { ACCENT_COUNTERPLAY_REPOSITORY } from '../adapters/accent-counterplay-repository.port';
+import type { AccentCounterplayRepositoryPort } from '../adapters/accent-counterplay-repository.port';
+import { STARTER_OBSTACLES } from '../seed/starter-obstacles';
 import { ObstacleNotFoundError } from '../../../../shared/errors/obstacle-not-found.error';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import type { Env } from '../../../../system/config/env.schema';
@@ -75,10 +78,13 @@ export interface ObstacleListResult {
 export class AccentObstacleDomainService {
   /**
    * @param _repository Порт репозитория препятствий.
+   * @param _counterplays Порт контрмер (примеры сеются сразу с готовыми ответами).
    * @param _config Конфиг (мягкий порог активных).
    */
   public constructor(
     @Inject(ACCENT_OBSTACLE_REPOSITORY) private readonly _repository: AccentObstacleRepositoryPort,
+    @Inject(ACCENT_COUNTERPLAY_REPOSITORY)
+    private readonly _counterplays: AccentCounterplayRepositoryPort,
     private readonly _config: ConfigService<Env, true>,
   ) {}
 
@@ -190,6 +196,63 @@ export class AccentObstacleDomainService {
    */
   public async reorder(accountId: string, ids: readonly string[]): Promise<void> {
     await this._repository.reorder(accountId, ids);
+  }
+
+  /**
+   * Сеет стартовые примеры (ADR-0051). Идемпотентно: дедуп по названию, только докидывает
+   * недостающие. Каждый пример приходит **с готовыми ответами** — иначе витрина показывала бы
+   * пустую карточку и не объясняла, зачем раздел нужен.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Сколько препятствий засеяно.
+   */
+  public async seedStarterPack(accountId: string): Promise<number> {
+    const existing = await this._repository.listByAccount(accountId, true);
+    const names = new Set(existing.map((o) => o.name));
+    const missing = STARTER_OBSTACLES.filter((item) => !names.has(item.name));
+    let seeded = 0;
+    for (const item of missing) {
+      const created = await this._repository.create({
+        accountId,
+        name: item.name,
+        type: item.type,
+        trigger: item.trigger,
+        symptoms: item.symptoms,
+        isStarter: true,
+      });
+      await this._counterplays.createMany(
+        item.counterplays.map((text) => ({ obstacleId: created.id, text })),
+      );
+      seeded += 1;
+    }
+    return seeded;
+  }
+
+  /**
+   * Очищает непринятые примеры; присвоенные не трогает (ADR-0051). Контрмеры примеров уходят
+   * каскадом вместе с ними.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Сколько удалено.
+   */
+  public async clearStarters(accountId: string): Promise<number> {
+    return this._repository.deleteStarters(accountId);
+  }
+
+  /**
+   * «Добавить себе» — снимает флаг витрины, и пример становится обычным препятствием со всеми
+   * своими ответами. Счётчик столкновений при этом начинается с нуля: до присвоения на примере
+   * ничего не писалось.
+   * @param id Идентификатор препятствия.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Присвоенное препятствие.
+   * @throws {ObstacleNotFoundError} Если нет / не ваше.
+   */
+  public async adopt(id: string, accountId: string): Promise<ObstacleFull> {
+    await this.getOwned(id, accountId);
+    const updated = await this._repository.update(id, accountId, { isStarter: false });
+    if (!updated) {
+      throw new ObstacleNotFoundError('Препятствие не найдено.');
+    }
+    return updated;
   }
 
   /**

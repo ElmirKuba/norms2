@@ -5,6 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -32,7 +33,7 @@ import type { ObstaclePayload, ObstacleView } from '../accent.types';
  */
 @Component({
   selector: 'app-obstacles',
-  imports: [ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ob">
@@ -78,7 +79,7 @@ import type { ObstaclePayload, ObstacleView } from '../accent.types';
             <li>
               <app-card>
                 <div class="ob__item">
-                  <div class="ob__main">
+                  <a class="ob__main ob__link" [routerLink]="[o.id]">
                     <span class="ob__name-row">
                       <span class="ob__type-ico" aria-hidden="true">{{ typeIcon(o.type) }}</span>
                       <strong class="ob__name">{{ o.name }}</strong>
@@ -96,7 +97,7 @@ import type { ObstaclePayload, ObstacleView } from '../accent.types';
                     @if (o.trigger) {
                       <span class="ob__trigger">когда: {{ o.trigger }}</span>
                     }
-                  </div>
+                  </a>
                   <div class="ob__right">
                     <span class="ob__intensity" [attr.title]="'Насколько давит: ' + o.intensity + ' из 5'">
                       {{ pressure(o.intensity) }}
@@ -186,6 +187,14 @@ import type { ObstaclePayload, ObstacleView } from '../accent.types';
         align-items: flex-start;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .ob__link {
+        text-decoration: none;
+        color: inherit;
+        flex: 1 1 auto;
+      }
+      .ob__link:hover .ob__name {
+        color: var(--color-accent);
       }
       .ob__main {
         display: flex;

@@ -1,0 +1,517 @@
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { CardComponent } from '../../../shared/ui/card/card.component';
+import { errorMessage } from '../../../core/http/error-message.util';
+import { AccentApiService } from '../services/accent-api.service';
+import {
+  counterplaysLabel,
+  effectivenessLabel,
+  encountersLabel,
+  obstacleTypeIcon,
+  obstacleTypeLabel,
+} from './obstacle-format.util';
+import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.types';
+
+/**
+ * Экран препятствия (`/accent/obstacles/:id`). **Контрмеры стоят выше описания** — это не
+ * паспорт проблемы, а ответ на вопрос «что делать сейчас» (ADR-0062, ui-ux §6). Ниже —
+ * повод, признаки и «насколько давит».
+ *
+ * Контрмеру можно привязать к микро-победе: тогда в момент столкновения (·24) она запускается
+ * таймером. Действенность («помогало N из M») показывается подсказкой, но **порядок остаётся
+ * ручным** — список не должен прыгать под руками.
+ */
+@Component({
+  selector: 'app-obstacle-detail',
+  imports: [RouterLink, FormsModule, ButtonComponent, CardComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="obd">
+      <a class="obd__back" routerLink="/accent/obstacles">← К препятствиям</a>
+
+      @if (loading()) {
+        <p class="obd__muted">Загрузка…</p>
+      } @else if (error()) {
+        <p class="obd__error">{{ error() }}</p>
+      } @else if (item(); as o) {
+        <header class="obd__head">
+          <span class="obd__type-ico" aria-hidden="true">{{ typeIcon(o.type) }}</span>
+          <div class="obd__title-wrap">
+            <h2 class="obd__title">{{ o.name }}</h2>
+            <span class="obd__sub">
+              {{ typeLabel(o.type) }}
+              <span class="obd__dot" aria-hidden="true">·</span>
+              {{ encountersText(o) }}
+            </span>
+          </div>
+          @if (o.isStarter) {
+            <span class="obd__badge">пример</span>
+          }
+        </header>
+
+        <app-card>
+          <h3 class="obd__section">Что я делаю, когда накрывает</h3>
+          @if (counterplays().length === 0) {
+            <p class="obd__muted">
+              Ответов пока нет. Заготовь один-два сейчас, на холодную голову, — в нужную минуту
+              придумывать будет нечем.
+            </p>
+          } @else {
+            <ul class="obd__cps">
+              @for (c of counterplays(); track c.id) {
+                <li class="obd__cp">
+                  @if (editingId() === c.id) {
+                    <div class="obd__cp-edit">
+                      <input
+                        class="obd__input"
+                        type="text"
+                        maxlength="500"
+                        [(ngModel)]="editText"
+                        (keydown.enter)="saveEdit(c)"
+                      />
+                      <select class="obd__input obd__select" [(ngModel)]="editLink">
+                        <option value="">Без таймера</option>
+                        @for (mw of microWins(); track mw.id) {
+                          <option [value]="mw.id">⏱ {{ mw.title }}</option>
+                        }
+                      </select>
+                      <div class="obd__cp-actions">
+                        <app-button [loading]="busy()" (click)="saveEdit(c)">Сохранить</app-button>
+                        <app-button variant="ghost" (click)="cancelEdit()">Отмена</app-button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="obd__cp-row">
+                      <div class="obd__cp-main">
+                        <span class="obd__cp-text">{{ c.text }}</span>
+                        <span class="obd__cp-meta">
+                          @if (c.linkedMicroWinId) {
+                            <span class="obd__cp-timer">⏱ {{ microWinTitle(c.linkedMicroWinId) }}</span>
+                          }
+                          @if (effectiveness(c); as eff) {
+                            <span class="obd__cp-eff">{{ eff }}</span>
+                          }
+                        </span>
+                      </div>
+                      <div class="obd__cp-actions">
+                        <button type="button" class="obd__icon-btn" aria-label="Изменить" (click)="startEdit(c)">✏️</button>
+                        <button type="button" class="obd__icon-btn" aria-label="Удалить" (click)="removeCounterplay(c)">🗑</button>
+                      </div>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (o.isStarter) {
+            <p class="obd__muted obd__starter-note">
+              Это пример — «Добавить себе» на экране списка, и можно будет дополнять своими ответами.
+            </p>
+          } @else {
+            <div class="obd__add">
+              <input
+                class="obd__input"
+                type="text"
+                maxlength="500"
+                placeholder="Например: убрать телефон в другую комнату"
+                [(ngModel)]="newText"
+                (keydown.enter)="addCounterplay()"
+              />
+              <select class="obd__input obd__select" [(ngModel)]="newLink">
+                <option value="">Без таймера</option>
+                @for (mw of microWins(); track mw.id) {
+                  <option [value]="mw.id">⏱ {{ mw.title }}</option>
+                }
+              </select>
+              <app-button [loading]="busy()" [disabled]="newText.trim() === ''" (click)="addCounterplay()">
+                <span aria-hidden="true">➕</span> Добавить ответ
+              </app-button>
+            </div>
+            <p class="obd__hint">
+              Привяжешь микро-победу — в момент столкновения она запустится таймером, без похода в
+              другой раздел.
+            </p>
+          }
+        </app-card>
+
+        <app-card>
+          <h3 class="obd__section">О препятствии</h3>
+          <dl class="obd__facts">
+            @if (o.trigger) {
+              <dt>Когда приходит</dt>
+              <dd>{{ o.trigger }}</dd>
+            }
+            @if (o.symptoms) {
+              <dt>Как узнаю</dt>
+              <dd>{{ o.symptoms }}</dd>
+            }
+            <dt>Насколько давит</dt>
+            <dd>{{ pressure(o.intensity) }} <span class="obd__muted">({{ o.intensity }} из 5, самооценка на сегодня)</span></dd>
+            <dt>Ответов заготовлено</dt>
+            <dd>{{ counterplaysText() }}</dd>
+          </dl>
+        </app-card>
+
+        @if (actionError(); as ae) {
+          <p class="obd__error">{{ ae }}</p>
+        }
+      }
+    </section>
+  `,
+  styles: [
+    `
+      .obd {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+      .obd__back {
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-size: var(--fs-sm);
+      }
+      .obd__back:hover {
+        color: var(--color-text);
+      }
+      .obd__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
+      .obd__type-ico {
+        font-size: var(--fs-xl, 1.5rem);
+      }
+      .obd__title {
+        margin: 0;
+      }
+      .obd__sub {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+      }
+      .obd__dot {
+        opacity: 0.5;
+      }
+      .obd__badge {
+        padding: 0 var(--space-2);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--color-border);
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .obd__section {
+        margin: 0 0 var(--space-3);
+        font-size: var(--fs-md);
+      }
+      .obd__cps {
+        list-style: none;
+        margin: 0 0 var(--space-3);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .obd__cp-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+      }
+      .obd__cp-main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        min-width: 0;
+      }
+      .obd__cp-meta {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .obd__cp-edit,
+      .obd__add {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+      }
+      .obd__cp-actions {
+        display: flex;
+        gap: var(--space-1);
+        flex-shrink: 0;
+      }
+      .obd__input {
+        flex: 1 1 12rem;
+        min-height: var(--touch-min);
+        padding: var(--space-2) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        color: var(--color-text);
+        font: inherit;
+      }
+      .obd__select {
+        flex: 0 1 12rem;
+      }
+      .obd__icon-btn {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+      }
+      .obd__icon-btn:hover {
+        background: var(--color-surface-3, var(--color-surface));
+      }
+      .obd__facts {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: var(--space-1) var(--space-3);
+        margin: 0;
+        font-size: var(--fs-sm);
+      }
+      .obd__facts dt {
+        color: var(--color-text-muted);
+      }
+      .obd__facts dd {
+        margin: 0;
+      }
+      .obd__hint,
+      .obd__starter-note {
+        margin: var(--space-2) 0 0;
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .obd__muted {
+        color: var(--color-text-muted);
+      }
+      .obd__error {
+        color: var(--color-danger);
+      }
+    `,
+  ],
+})
+export class ObstacleDetailComponent {
+  private readonly _api = inject(AccentApiService);
+  private readonly _route = inject(ActivatedRoute);
+
+  /** Идентификатор препятствия из маршрута. */
+  private readonly _id = this._route.snapshot.paramMap.get('id') ?? '';
+
+  /** Препятствие. */
+  protected readonly item = signal<ObstacleView | null>(null);
+  /** Контрмеры в ручном порядке. */
+  protected readonly counterplays = signal<CounterplayView[]>([]);
+  /** Микро-победы аккаунта (для привязки ответа к таймеру). */
+  protected readonly microWins = signal<MicroWinView[]>([]);
+  /** Идёт загрузка экрана. */
+  protected readonly loading = signal(true);
+  /** Ошибка загрузки. */
+  protected readonly error = signal<string | null>(null);
+  /** Ошибка действия (добавление/правка/удаление) — экран остаётся рабочим. */
+  protected readonly actionError = signal<string | null>(null);
+  /** Идёт запись. */
+  protected readonly busy = signal(false);
+  /** Id редактируемой контрмеры или null. */
+  protected readonly editingId = signal<string | null>(null);
+
+  /** Текст новой контрмеры. */
+  protected newText = '';
+  /** Привязка новой контрмеры к микро-победе (пустая строка = без таймера). */
+  protected newLink = '';
+  /** Текст редактируемой контрмеры. */
+  protected editText = '';
+  /** Привязка редактируемой контрмеры. */
+  protected editLink = '';
+
+  public constructor() {
+    this._load();
+  }
+
+  /** Загружает препятствие, его ответы и каталог микро-побед. */
+  private _load(): void {
+    this.loading.set(true);
+    this._api.getObstacle(this._id).subscribe({
+      next: (obstacle) => {
+        this.item.set(obstacle);
+        this.error.set(null);
+        this.loading.set(false);
+      },
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err));
+        this.loading.set(false);
+      },
+    });
+    this._api.listCounterplays(this._id).subscribe({
+      next: (list) => this.counterplays.set(list),
+      error: (err: unknown) => this.actionError.set(errorMessage(err)),
+    });
+    this._api.listMicroWins().subscribe({
+      next: (list) => this.microWins.set(list),
+      error: () => this.microWins.set([]),
+    });
+  }
+
+  /** Добавляет контрмеру; список обновляется точечно, без перезагрузки экрана. */
+  protected addCounterplay(): void {
+    const text = this.newText.trim();
+    if (text === '' || this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    this.actionError.set(null);
+    this._api
+      .createCounterplay(this._id, {
+        text,
+        linkedMicroWinId: this.newLink === '' ? null : this.newLink,
+      })
+      .subscribe({
+        next: (created) => {
+          this.counterplays.update((list) => [...list, created]);
+          this.item.update((o) =>
+            o ? { ...o, counterplaysCount: o.counterplaysCount + 1 } : o,
+          );
+          this.newText = '';
+          this.newLink = '';
+          this.busy.set(false);
+        },
+        error: (err: unknown) => {
+          this.actionError.set(errorMessage(err));
+          this.busy.set(false);
+        },
+      });
+  }
+
+  /**
+   * Включает inline-правку ответа.
+   * @param counterplay Контрмера.
+   */
+  protected startEdit(counterplay: CounterplayView): void {
+    this.editingId.set(counterplay.id);
+    this.editText = counterplay.text;
+    this.editLink = counterplay.linkedMicroWinId ?? '';
+  }
+
+  /** Выходит из режима правки без сохранения. */
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+  }
+
+  /**
+   * Сохраняет правку ответа.
+   * @param counterplay Контрмера.
+   */
+  protected saveEdit(counterplay: CounterplayView): void {
+    const text = this.editText.trim();
+    if (text === '' || this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    this._api
+      .updateCounterplay(this._id, counterplay.id, {
+        text,
+        linkedMicroWinId: this.editLink === '' ? null : this.editLink,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.counterplays.update((list) =>
+            list.map((c) => (c.id === updated.id ? updated : c)),
+          );
+          this.editingId.set(null);
+          this.busy.set(false);
+        },
+        error: (err: unknown) => {
+          this.actionError.set(errorMessage(err));
+          this.busy.set(false);
+        },
+      });
+  }
+
+  /**
+   * Удаляет ответ. Записи журнала, где он применялся, остаются — теряется лишь «чем ответил».
+   * @param counterplay Контрмера.
+   */
+  protected removeCounterplay(counterplay: CounterplayView): void {
+    this._api.deleteCounterplay(this._id, counterplay.id).subscribe({
+      next: () => {
+        this.counterplays.update((list) => list.filter((c) => c.id !== counterplay.id));
+        this.item.update((o) =>
+          o ? { ...o, counterplaysCount: Math.max(0, o.counterplaysCount - 1) } : o,
+        );
+      },
+      error: (err: unknown) => this.actionError.set(errorMessage(err)),
+    });
+  }
+
+  /**
+   * Название привязанной микро-победы.
+   * @param id Идентификатор микро-победы.
+   * @returns Название или «микро-победа» (если её удалили — привязка уже обнулена сервером).
+   */
+  protected microWinTitle(id: string): string {
+    return this.microWins().find((mw) => mw.id === id)?.title ?? 'микро-победа';
+  }
+
+  /**
+   * Подпись действенности ответа или null (оценок нет).
+   * @param counterplay Контрмера.
+   * @returns Подпись или null.
+   */
+  protected effectiveness(counterplay: CounterplayView): string | null {
+    return effectivenessLabel(counterplay.helpedCount, counterplay.ratedCount);
+  }
+
+  /**
+   * Иконка вида.
+   * @param type Вид препятствия.
+   * @returns Эмодзи.
+   */
+  protected typeIcon(type: ObstacleView['type']): string {
+    return obstacleTypeIcon(type);
+  }
+
+  /**
+   * Ярлык вида.
+   * @param type Вид препятствия.
+   * @returns Название.
+   */
+  protected typeLabel(type: ObstacleView['type']): string {
+    return obstacleTypeLabel(type);
+  }
+
+  /**
+   * Подпись частоты.
+   * @param obstacle Препятствие.
+   * @returns Подпись.
+   */
+  protected encountersText(obstacle: ObstacleView): string {
+    return encountersLabel(obstacle.encountersLast30);
+  }
+
+  /**
+   * Подпись числа ответов (берётся из локального счётчика — он обновляется при добавлении).
+   * @returns Подпись.
+   */
+  protected counterplaysText(): string {
+    return counterplaysLabel(this.counterplays().length);
+  }
+
+  /**
+   * Шкала давления точками.
+   * @param intensity Значение 1..5.
+   * @returns Строка вида «●●●○○».
+   */
+  protected pressure(intensity: number): string {
+    const filled = Math.max(0, Math.min(5, intensity));
+    return '●'.repeat(filled) + '○'.repeat(5 - filled);
+  }
+}

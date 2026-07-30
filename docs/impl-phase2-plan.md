@@ -1546,15 +1546,10 @@ _Заземлено на существующую доку: `domain-model §7`, 
   скоуп по аккаунту (чужой id → 404), `tsc` + boot чистые.)_
 
 **Блок C — контрмеры**
-- [ ] **2.7·13** Интерфейсы/порт/репозиторий контрмер (list по препятствию, create/update/delete,
-  reorder).
-- [ ] **2.7·14** Domain-service контрмер + **кросс-домен вниз**: валидация `linkedMicroWinId` через
-  `MicroWinDomainService` (существует и принадлежит аккаунту) — use-case препятствий зовёт
-  domain-service микро-побед, не наоборот.
-- [ ] **2.7·15** Use-cases + маршруты контрмер (`GET/POST /obstacles/:id/counterplays`,
-  `PATCH/DELETE /counterplays/:cid`, `PUT /obstacles/:id/counterplays/reorder`) + DTO.
-- [ ] **2.7·16** API-смоук блока C: CRUD контрмер, каскад при удалении препятствия (0 осиротевших),
-  битый `linkedMicroWinId` → 400, чужая контрмера → 404.
+- [x] **2.7·13** ✅ 2026-07-30 — `CounterplayView`, порт `ACCENT_COUNTERPLAY_REPOSITORY` + Drizzle-репо: list/find/create/createMany/update/delete/reorder внутри препятствия, `countInObstacle` (жёсткий предел) и `countByObstacles` (карта одним `GROUP BY`, без N+1). Скоуп — по `obstacle_id`: контрмера аккаунта не знает, её владелец — родитель.
+- [x] **2.7·14** ✅ 2026-07-30 — `AccentCounterplayDomainService`: CRUD + сортировка, жёсткий предел 20 ответов, ошибка `COUNTERPLAY_NOT_FOUND`, **кросс-домен вниз** (привязка проверяется через `AccentMicroWinDomainService`; чужая и несуществующая → одинаковый ответ), двухступенчатое владение (препятствие → контрмера в его пределах), запрет наполнять пример-витрину до adoption (ADR-0051). Плюс `counterplaysCount` в `ObstacleView` — агрегат появился вместе со своей таблицей.
+- [x] **2.7·15** ✅ 2026-07-30 — три zod-DTO (create/update/reorder), пять тонких use-case, пять маршрутов (`GET/POST /obstacles/:id/counterplays`, `PATCH/DELETE …/:cid`, `PUT …/reorder` — объявлен до `:cid`). Boot: маршруты смапились, 401 под guard.
+- [x] **2.7·16** ✅ 2026-07-30 — **API-смоук 14/14 на dev** (`cpverify`, затем подчищен): пустой список; создание с привязкой к микро-победе; битый `linkedMicroWinId` → 400 «Микро-победа не найдена»; позиции 0/1/2; `counterplaysCount=3` в списке препятствий; reorder → 204 и порядок сменился; `PATCH` снял привязку (`null`); пустой текст → 400, лишнее поле → 400; чужое препятствие и несуществующая контрмера → 404; **инертность примера** → 400 «сначала Добавить себе»; **жёсткий предел**: 20 ответов, 21-й → 400; **SET NULL** — удалили микро-победу, контрмера жива с `linkedMicroWinId=NULL`; DELETE → 204, повторный → 404; **CASCADE** — удалили препятствие, 0 осиротевших контрмер. tsc 0, boot чистый. **Блок C закрыт.**
 
 **Блок D — журнал столкновений**
 - [ ] **2.7·17** Порт+репозиторий `obstacle_encounters` (insert + keyset-список `(occurred_at, id)` desc,

@@ -1,18 +1,35 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { errorMessage } from '../../../core/http/error-message.util';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { AccentApiService } from '../services/accent-api.service';
+import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
+import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
+import { ObstacleEncounterModalComponent } from './obstacle-encounter-modal.component';
+import type {
+  EncounterModalData,
+  EncounterModalResult,
+} from './obstacle-encounter-modal.component';
 import {
   counterplaysLabel,
   effectivenessLabel,
+  encounterWhen,
   encountersLabel,
   obstacleTypeIcon,
   obstacleTypeLabel,
+  outcomeLabel,
 } from './obstacle-format.util';
-import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.types';
+import type {
+  CounterplayView,
+  EncounterOutcome,
+  MicroWinView,
+  ObstacleEncounterView,
+  ObstacleView,
+} from '../accent.types';
 
 /**
  * Экран препятствия (`/accent/obstacles/:id`). **Контрмеры стоят выше описания** — это не
@@ -48,6 +65,10 @@ import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.type
           </div>
           @if (o.isStarter) {
             <span class="obd__badge">пример</span>
+          } @else {
+            <app-button [loading]="encounterBusy()" (click)="openEncounter()">
+              <span aria-hidden="true">⚡</span> Столкнулся
+            </app-button>
           }
         </header>
 
@@ -154,6 +175,50 @@ import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.type
             <dd>{{ counterplaysText() }}</dd>
           </dl>
         </app-card>
+
+        @if (!o.isStarter) {
+          <app-card>
+            <h3 class="obd__section">Когда сталкивался</h3>
+            @if (encounters().length === 0) {
+              <p class="obd__muted">
+                Пока ничего не отмечено. Нажми «Столкнулся» в момент, когда оно придёт, — и здесь
+                появится история.
+              </p>
+            } @else {
+              <ul class="obd__feed">
+                @for (e of encounters(); track e.id) {
+                  <li class="obd__ev">
+                    <div class="obd__ev-main">
+                      <span class="obd__ev-when">{{ when(e) }}</span>
+                      <span class="obd__ev-what">
+                        @if (e.counterplayId) {
+                          {{ counterplayText(e.counterplayId) }}
+                        } @else {
+                          <span class="obd__muted">просто отметил</span>
+                        }
+                      </span>
+                      @if (e.note) {
+                        <span class="obd__ev-note">{{ e.note }}</span>
+                      }
+                    </div>
+                    <div class="obd__ev-outcome">
+                      @if (outcome(e); as label) {
+                        <span class="obd__ev-badge">{{ label }}</span>
+                      } @else if (e.counterplayId) {
+                        <span class="obd__ask">
+                          Помогло?
+                          <button type="button" class="obd__ask-btn" (click)="rate(e, 'helped')">да</button>
+                          <button type="button" class="obd__ask-btn" (click)="rate(e, 'partly')">частично</button>
+                          <button type="button" class="obd__ask-btn" (click)="rate(e, 'no')">не очень</button>
+                        </span>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </app-card>
+        }
 
         @if (actionError(); as ae) {
           <p class="obd__error">{{ ae }}</p>
@@ -291,6 +356,63 @@ import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.type
         font-size: var(--fs-xs);
         color: var(--color-text-muted);
       }
+      .obd__feed {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .obd__ev {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2);
+        border-bottom: 1px solid var(--color-border);
+      }
+      .obd__ev-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .obd__ev-when {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .obd__ev-note {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+      }
+      .obd__ev-badge {
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+        white-space: nowrap;
+      }
+      .obd__ask {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        font-size: var(--fs-xs);
+        color: var(--color-text-muted);
+        flex-wrap: wrap;
+      }
+      .obd__ask-btn {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--color-text-muted);
+        font: inherit;
+        font-size: var(--fs-xs);
+        padding: 2px var(--space-2);
+        cursor: pointer;
+      }
+      .obd__ask-btn:hover {
+        color: var(--color-text);
+        border-color: var(--color-accent);
+      }
       .obd__muted {
         color: var(--color-text-muted);
       }
@@ -303,6 +425,7 @@ import type { CounterplayView, MicroWinView, ObstacleView } from '../accent.type
 export class ObstacleDetailComponent {
   private readonly _api = inject(AccentApiService);
   private readonly _route = inject(ActivatedRoute);
+  private readonly _dialog = inject(MatDialog);
 
   /** Идентификатор препятствия из маршрута. */
   private readonly _id = this._route.snapshot.paramMap.get('id') ?? '';
@@ -323,6 +446,10 @@ export class ObstacleDetailComponent {
   protected readonly busy = signal(false);
   /** Id редактируемой контрмеры или null. */
   protected readonly editingId = signal<string | null>(null);
+  /** Лента столкновений (новые→старые). */
+  protected readonly encounters = signal<ObstacleEncounterView[]>([]);
+  /** Идёт запись столкновения. */
+  protected readonly encounterBusy = signal(false);
 
   /** Текст новой контрмеры. */
   protected newText = '';
@@ -359,6 +486,151 @@ export class ObstacleDetailComponent {
       next: (list) => this.microWins.set(list),
       error: () => this.microWins.set([]),
     });
+    this._api.listEncounters(this._id).subscribe({
+      next: (page) => this.encounters.set(page.items),
+      error: () => this.encounters.set([]),
+    });
+  }
+
+  /**
+   * «Столкнулся» — главный поток: показываем свои ответы, выбор пишет столкновение. Если у
+   * выбранного ответа есть привязанная микро-победа, сразу открываем её таймер: от «что делать»
+   * до «делаю» один тап, без похода в другой раздел (ADR-0057).
+   */
+  protected openEncounter(): void {
+    const obstacle = this.item();
+    if (!obstacle || this.encounterBusy()) {
+      return;
+    }
+    const data: EncounterModalData = {
+      obstacleName: obstacle.name,
+      counterplays: this.counterplays(),
+    };
+    this._dialog
+      .open<ObstacleEncounterModalComponent, EncounterModalData, EncounterModalResult | null>(
+        ObstacleEncounterModalComponent,
+        { width: MODAL_SMALL_WIDTH, data },
+      )
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+        this._record(result);
+      });
+  }
+
+  /**
+   * Пишет столкновение и обновляет экран точечно (карточка приходит в ответе со свежими
+   * счётчиками — второй запрос не нужен).
+   * @param result Что выбрал человек.
+   */
+  private _record(result: EncounterModalResult): void {
+    this.encounterBusy.set(true);
+    this.actionError.set(null);
+    this._api
+      .recordEncounter(this._id, { counterplayId: result.counterplayId, note: result.note })
+      .subscribe({
+        next: (recorded) => {
+          this.item.set(recorded.obstacle);
+          this.encounters.update((list) => [recorded.encounter, ...list]);
+          this.encounterBusy.set(false);
+          if (result.counterplayId !== null) {
+            this._maybeStartTimer(result.counterplayId);
+          }
+        },
+        error: (err: unknown) => {
+          this.actionError.set(errorMessage(err));
+          this.encounterBusy.set(false);
+        },
+      });
+  }
+
+  /**
+   * Запускает таймер микро-победы, если выбранный ответ к ней привязан. Само столкновение уже
+   * записано — таймер это помощь в действии, а не условие зачёта.
+   * @param counterplayId Идентификатор выбранного ответа.
+   */
+  private _maybeStartTimer(counterplayId: string): void {
+    const counterplay = this.counterplays().find((c) => c.id === counterplayId);
+    const linkedId = counterplay?.linkedMicroWinId ?? null;
+    if (linkedId === null) {
+      return;
+    }
+    const microWin = this.microWins().find((mw) => mw.id === linkedId);
+    if (!microWin) {
+      return;
+    }
+    const ref = this._dialog.open<
+      AccentTimerModalComponent,
+      AccentTimerData,
+      AccentTimerResult | null
+    >(AccentTimerModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      disableClose: true,
+      data: {
+        title: microWin.title,
+        durationSeconds: microWin.durationSeconds,
+        prepSeconds: microWin.prepSeconds,
+        mode: 'binary',
+      },
+    });
+    ref.afterClosed().subscribe((timer) => {
+      if (timer?.status === 'done') {
+        // Доводим до конца и микро-победу: человек её реально сделал.
+        this._api.completeMicroWin(microWin.id).subscribe({
+          error: (err: unknown) => this.actionError.set(errorMessage(err)),
+        });
+      }
+    });
+  }
+
+  /**
+   * Проставляет исход столкновения («Помогло?»). Отвечать необязательно — но ответ уточняет
+   * «помогало N из M» у контрмеры.
+   * @param encounter Запись.
+   * @param outcome Исход.
+   */
+  protected rate(encounter: ObstacleEncounterView, outcome: EncounterOutcome): void {
+    this._api.setEncounterOutcome(this._id, encounter.id, outcome).subscribe({
+      next: (updated) => {
+        this.encounters.update((list) => list.map((e) => (e.id === updated.id ? updated : e)));
+        // Действенность пересчитывается на сервере — перечитываем ответы.
+        this._api.listCounterplays(this._id).subscribe({
+          next: (list) => this.counterplays.set(list),
+          error: () => undefined,
+        });
+      },
+      error: (err: unknown) => this.actionError.set(errorMessage(err)),
+    });
+  }
+
+  /**
+   * Текст ответа, применённого в записи журнала.
+   * @param counterplayId Идентификатор ответа.
+   * @returns Текст или «ответ удалён» (ссылка обнулилась при удалении).
+   */
+  protected counterplayText(counterplayId: string): string {
+    return this.counterplays().find((c) => c.id === counterplayId)?.text ?? 'ответ удалён';
+  }
+
+  /**
+   * Человеческая дата записи.
+   * @param encounter Запись.
+   * @returns Подпись вида «сегодня, 21:40».
+   */
+  protected when(encounter: ObstacleEncounterView): string {
+    return encounterWhen(encounter.occurredAt);
+  }
+
+  /**
+   * Ярлык исхода.
+   * @param encounter Запись.
+   * @returns Подпись или null (не отмечено).
+   */
+  protected outcome(encounter: ObstacleEncounterView): string | null {
+    return outcomeLabel(encounter.outcome);
   }
 
   /** Добавляет контрмеру; список обновляется точечно, без перезагрузки экрана. */

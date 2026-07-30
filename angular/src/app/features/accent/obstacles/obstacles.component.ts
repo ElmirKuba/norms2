@@ -13,15 +13,22 @@ import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
+import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
+import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
 import { ObstacleFormModalComponent } from './obstacle-form-modal.component';
 import type { ObstacleFormData } from './obstacle-form-modal.component';
+import { ObstacleEncounterModalComponent } from './obstacle-encounter-modal.component';
+import type {
+  EncounterModalData,
+  EncounterModalResult,
+} from './obstacle-encounter-modal.component';
 import {
   counterplaysLabel,
   encountersLabel,
   obstacleTypeIcon,
   obstacleTypeLabel,
 } from './obstacle-format.util';
-import type { ObstaclePayload, ObstacleView } from '../accent.types';
+import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } from '../accent.types';
 
 /**
  * Экран «Препятствия» (`/accent/obstacles`): карта того, что мешает, — с заранее
@@ -99,6 +106,16 @@ import type { ObstaclePayload, ObstacleView } from '../accent.types';
                     }
                   </a>
                   <div class="ob__right">
+                    @if (!o.isStarter) {
+                      <span class="tooltip-host" [attr.data-tooltip]="'Отметить столкновение и выбрать ответ'">
+                        <app-button
+                          variant="ghost"
+                          ariaLabel="Столкнулся"
+                          [loading]="encounterBusyId() === o.id"
+                          (click)="openEncounter(o)"
+                        >⚡</app-button>
+                      </span>
+                    }
                     <span class="ob__intensity" [attr.title]="'Насколько давит: ' + o.intensity + ' из 5'">
                       {{ pressure(o.intensity) }}
                     </span>
@@ -310,6 +327,10 @@ export class ObstaclesComponent {
   protected readonly error = signal<string | null>(null);
   /** Id карточки с открытым меню «⋯» или null. */
   protected readonly openMenuId = signal<string | null>(null);
+  /** Id препятствия, по которому идёт запись столкновения. */
+  protected readonly encounterBusyId = signal<string | null>(null);
+  /** Кеш микро-побед (грузится лениво — нужен только для запуска таймера). */
+  private readonly _microWins = signal<MicroWinView[] | null>(null);
 
   public constructor() {
     this.reload();
@@ -397,6 +418,128 @@ export class ObstaclesComponent {
       next: () => this.items.update((list) => list.filter((o) => o.id !== obstacle.id)),
       error: (err: unknown) => this.error.set(errorMessage(err)),
     });
+  }
+
+  /**
+   * «Столкнулся» прямо из списка: подтягиваем ответы этого препятствия и открываем тот же
+   * поток, что и на детали. Один тап от карточки до действия — ради этого раздел и нужен.
+   * @param obstacle Препятствие.
+   */
+  protected openEncounter(obstacle: ObstacleView): void {
+    if (this.encounterBusyId() !== null) {
+      return;
+    }
+    this.encounterBusyId.set(obstacle.id);
+    this._api.listCounterplays(obstacle.id).subscribe({
+      next: (counterplays) => {
+        this.encounterBusyId.set(null);
+        this._openEncounterDialog(obstacle, counterplays);
+      },
+      error: (err: unknown) => {
+        this.encounterBusyId.set(null);
+        this.error.set(errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Показывает выбор ответа и записывает столкновение.
+   * @param obstacle Препятствие.
+   * @param counterplays Заготовленные ответы.
+   */
+  private _openEncounterDialog(
+    obstacle: ObstacleView,
+    counterplays: readonly CounterplayView[],
+  ): void {
+    const data: EncounterModalData = { obstacleName: obstacle.name, counterplays };
+    this._dialog
+      .open<ObstacleEncounterModalComponent, EncounterModalData, EncounterModalResult | null>(
+        ObstacleEncounterModalComponent,
+        { width: MODAL_SMALL_WIDTH, data },
+      )
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+        this.encounterBusyId.set(obstacle.id);
+        this._api
+          .recordEncounter(obstacle.id, {
+            counterplayId: result.counterplayId,
+            note: result.note,
+          })
+          .subscribe({
+            next: (recorded) => {
+              // Карточка приходит со свежими счётчиками — обновляем точечно, без перезагрузки.
+              this.items.update((list) =>
+                list.map((o) => (o.id === recorded.obstacle.id ? recorded.obstacle : o)),
+              );
+              this.encounterBusyId.set(null);
+              const chosen = counterplays.find((c) => c.id === result.counterplayId);
+              if (chosen?.linkedMicroWinId) {
+                this._startTimer(chosen.linkedMicroWinId);
+              }
+            },
+            error: (err: unknown) => {
+              this.error.set(errorMessage(err));
+              this.encounterBusyId.set(null);
+            },
+          });
+      });
+  }
+
+  /**
+   * Открывает таймер привязанной микро-победы (каталог грузим лениво — он нужен только здесь).
+   * @param microWinId Идентификатор микро-победы.
+   */
+  private _startTimer(microWinId: string): void {
+    const cached = this._microWins();
+    if (cached === null) {
+      this._api.listMicroWins().subscribe({
+        next: (list) => {
+          this._microWins.set(list);
+          this._openTimer(list, microWinId);
+        },
+        error: () => this._microWins.set([]),
+      });
+      return;
+    }
+    this._openTimer(cached, microWinId);
+  }
+
+  /**
+   * Показывает таймер и по завершении засчитывает микро-победу.
+   * @param microWins Каталог микро-побед.
+   * @param microWinId Идентификатор нужной.
+   */
+  private _openTimer(microWins: readonly MicroWinView[], microWinId: string): void {
+    const microWin = microWins.find((mw) => mw.id === microWinId);
+    if (!microWin) {
+      return;
+    }
+    this._dialog
+      .open<AccentTimerModalComponent, AccentTimerData, AccentTimerResult | null>(
+        AccentTimerModalComponent,
+        {
+          width: MODAL_SMALL_WIDTH,
+          panelClass: 'modal-flush',
+          disableClose: true,
+          data: {
+            title: microWin.title,
+            durationSeconds: microWin.durationSeconds,
+            prepSeconds: microWin.prepSeconds,
+            mode: 'binary',
+          },
+        },
+      )
+      .afterClosed()
+      .subscribe((timer) => {
+        if (timer?.status === 'done') {
+          this._api.completeMicroWin(microWin.id).subscribe({
+            error: (err: unknown) => this.error.set(errorMessage(err)),
+          });
+        }
+      });
   }
 
   /**

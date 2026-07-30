@@ -23,6 +23,9 @@ export const goalBodyShape = {
   startValue: z.number().finite('Базовый замер — число.').nullish(),
   deadline: ymd.nullish(),
   fallbackVersion: z.string().max(280).nullish(),
+  // «Версия цели на плохой день» как действие (2.7·H): ссылка на свою микро-победу. Существование
+  // и принадлежность проверяет domain-service микро-побед (кросс-домен вниз). null — снять привязку.
+  fallbackMicroWinId: z.string().max(52, 'Некорректная микро-победа.').nullish(),
   tradeoff: z.string().max(280).nullish(),
 };
 

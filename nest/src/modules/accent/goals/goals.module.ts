@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessControlModule } from '../../auth/access-control.module';
+import { MicroWinsModule } from '../micro-wins/micro-wins.module';
 import { ACCENT_GOAL_REPOSITORY } from './adapters/accent-goal-repository.port';
 import { AccentGoalRepository } from '../../../database/repositories/accent/accent-goal.repository';
 import { ACCENT_GOAL_ENTRY_REPOSITORY } from './adapters/accent-goal-entry-repository.port';
@@ -41,7 +42,7 @@ import { ReorderGoalFocusUseCase } from './use-cases/reorder-goal-focus.use-case
  * Domain-service экспортится для кросс-домена вниз (привычка→прогресс цели, 2.5·13).
  */
 @Module({
-  imports: [AccessControlModule],
+  imports: [AccessControlModule, MicroWinsModule],
   controllers: [GoalsController],
   providers: [
     { provide: ACCENT_GOAL_REPOSITORY, useClass: AccentGoalRepository },

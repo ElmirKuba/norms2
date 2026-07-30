@@ -35,6 +35,8 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /** Микро-победа как версия цели на плохой день (опц.) — делает подсказку нажимаемой (2.7·H). */
+  fallbackMicroWinId: string | null;
   /** «Ради чего откажусь» (mission-filter, ADR-0053) или null. */
   tradeoff: string | null;
   /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
@@ -67,6 +69,7 @@ export function toGoalView(full: GoalFull): GoalView {
     status: full.status,
     completedAt: full.completedAt ? full.completedAt.toISOString() : null,
     fallbackVersion: full.fallbackVersion,
+    fallbackMicroWinId: full.fallbackMicroWinId,
     tradeoff: full.tradeoff,
     isStarter: full.isStarter,
     focusOrder: full.focusOrder,

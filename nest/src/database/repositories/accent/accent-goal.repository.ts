@@ -108,6 +108,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
         startValue: data.startValue ?? null,
         deadline: data.deadline ?? null,
         fallbackVersion: data.fallbackVersion ?? null,
+        fallbackMicroWinId: data.fallbackMicroWinId ?? null,
         tradeoff: data.tradeoff ?? null,
         isStarter: data.isStarter ?? false,
         // Новая цель — в конец списка (ADR-0054): position = max(текущих)+1 для аккаунта.
@@ -147,6 +148,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
           startValue: data.startValue ?? null,
           deadline: data.deadline ?? null,
           fallbackVersion: data.fallbackVersion ?? null,
+          fallbackMicroWinId: data.fallbackMicroWinId ?? null,
           tradeoff: data.tradeoff ?? null,
           isStarter: data.isStarter ?? false,
           // Сев — в конец списка по порядку (ADR-0054, ·28.A1): position = max+1+index.

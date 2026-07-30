@@ -41,6 +41,8 @@ export interface GoalCreateData {
   deadline?: string | null;
   /** Текст «версия на плохой день» (опц.). */
   fallbackVersion?: string | null;
+  /** Микро-победа как версия цели на плохой день (опц., 2.7·H). */
+  fallbackMicroWinId?: string | null;
   /** «Ради чего откажусь» (mission-filter, опц.). */
   tradeoff?: string | null;
   /** Стартовый пример (опц., дефолт false) — для сева пака. */
@@ -57,6 +59,7 @@ export interface GoalUpdateData {
   targetValue?: number | undefined;
   deadline?: string | null | undefined;
   fallbackVersion?: string | null | undefined;
+  fallbackMicroWinId?: string | null | undefined;
   tradeoff?: string | null | undefined;
   /** Снятие флага «пример» (adoption) — внутреннее, не из API-DTO. */
   isStarter?: boolean | undefined;

@@ -6,6 +6,7 @@ import { GoalMaxDepthReachedError } from '../../../../shared/errors/goal-max-dep
 import { GoalPausedError } from '../../../../shared/errors/goal-paused.error';
 import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
 import type { Env } from '../../../../system/config/env.schema';
+import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/accent-micro-win.domain-service';
 import { ACCENT_GOAL_REPOSITORY } from '../adapters/accent-goal-repository.port';
 import type {
   AccentGoalRepositoryPort,
@@ -82,7 +83,31 @@ export class AccentGoalDomainService {
     @Inject(ACCENT_MILESTONE_REPOSITORY)
     private readonly _milestoneRepository: AccentMilestoneRepositoryPort,
     private readonly _config: ConfigService<Env, true>,
+    private readonly _microWins: AccentMicroWinDomainService,
   ) {}
+
+  /**
+   * Проверяет привязку «версии цели на плохой день» через domain-service микро-побед (кросс-домен
+   * строго ВНИЗ, 2.7·H): она должна существовать и принадлежать тому же аккаунту. `null` — снятие
+   * привязки, проверять нечего.
+   * @param microWinId Идентификатор микро-победы, null или undefined.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @throws {ValidationError} Если микро-победа не найдена / чужая.
+   */
+  private async _validateFallbackLink(
+    microWinId: string | null | undefined,
+    accountId: string,
+  ): Promise<void> {
+    if (microWinId === null || microWinId === undefined) {
+      return;
+    }
+    try {
+      await this._microWins.getOwned(microWinId, accountId);
+    } catch {
+      // Чужая и несуществующая неотличимы для клиента — чужие сущности не раскрываем.
+      throw new ValidationError('Микро-победа не найдена.');
+    }
+  }
 
   /**
    * Цели аккаунта (опц. фильтр статус/сфера).
@@ -194,6 +219,7 @@ export class AccentGoalDomainService {
    * @throws {GoalMaxDepthReachedError} При превышении глубины.
    */
   public async create(data: GoalCreateData): Promise<GoalFull> {
+    await this._validateFallbackLink(data.fallbackMicroWinId, data.accountId);
     const title = this._normalizeTitle(data.title);
     const unit = this._normalizeUnit(data.unit);
     this._assertDirection(data.direction);
@@ -226,6 +252,9 @@ export class AccentGoalDomainService {
     patch: GoalUpdateData,
   ): Promise<GoalFull> {
     const current = await this.getOwned(id, accountId);
+    if (patch.fallbackMicroWinId !== undefined) {
+      await this._validateFallbackLink(patch.fallbackMicroWinId, accountId);
+    }
     const next: GoalUpdateData = { ...patch };
     if (patch.title !== undefined) {
       next.title = this._normalizeTitle(patch.title);

@@ -20,6 +20,8 @@ export const updateGoalSchema = z
     targetValue: z.number().finite('Целевое значение — число.').optional(),
     deadline: ymd.nullish(),
     fallbackVersion: z.string().max(280).nullish(),
+    // «Версия цели на плохой день» как действие (2.7·H); null — снять привязку.
+    fallbackMicroWinId: z.string().max(52, 'Некорректная микро-победа.').nullish(),
     tradeoff: z.string().max(280).nullish(),
   })
   .strict();

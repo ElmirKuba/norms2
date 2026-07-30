@@ -41,6 +41,11 @@ export const accentRoutes: Routes = [
           import('./anti-habits/anti-habit-detail.component').then((m) => m.AntiHabitDetailComponent),
       },
       {
+        path: 'obstacles',
+        loadComponent: () =>
+          import('./obstacles/obstacles.component').then((m) => m.ObstaclesComponent),
+      },
+      {
         path: 'micro-wins',
         loadComponent: () =>
           import('./micro-wins/micro-wins.component').then((m) => m.MicroWinsComponent),

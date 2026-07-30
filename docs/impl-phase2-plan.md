@@ -1315,12 +1315,12 @@ _Заземлено на существующую доку: `domain-model §7`, 
   - **2.6·C3 (домен+API) ✅ ЗАКРЫТ** (live-verified 31/31 на dev) — эталон: слайс `modules/accent/goals/` (свежий полный):
     - [x] C3.1 порты ✅ (сделаны в C2) — `adapters/accent-anti-habit-repository.port.ts` + `accent-anti-habit-relapse-repository.port.ts` (интерфейсы + DI-токены `ACCENT_ANTI_HABIT_REPOSITORY`/`…_RELAPSE_REPOSITORY`; чистая граница, без drizzle-типов).
     - [x] C3.2 интерфейсы ✅ — Full (C2) + views `anti-habit-view.interface.ts` (`AntiHabitView`+`toAntiHabitView`: времена как unix ms для живого счёта на фронте + снимок `currentDays` на `now`) и `anti-habit-relapse-view.interface.ts` (`AntiHabitRelapseView` + `AntiHabitRelapsePage {items, nextCursor}`).
-    - [x] C3.3 DTO ✅ — `create-anti-habit.dto.ts` `{title, description?, targetDays?}`, `update-anti-habit.dto.ts` (все опц. + `isActive`), `relapse.dto.ts` `{triggerTag?, note?}` — zod `.strict()`, лимиты дублируют домен.
+    - [x] C3.3 DTO ✅ — `create-anti-habit.dto.ts` `{title, description?, targetDays?}`, `update-anti-habit.dto.ts` (все опц. + `isActive`), `relapse.dto.ts` `{triggerTag?, note?}` — zod `.strict()`, лимиты дублируют домен.)_
     - [x] C3.4 domain-service ✅ — `accent-anti-habit.domain-service.ts`: create/update/relapse/listRelapses. **Рецидив CAS-first (ADR-0035):** сброс попытки под `version` → только при успехе запись рецидива (конкурентный edit → retry по свежей version; конкурентный срыв/неактивна → `ALREADY_RELAPSED`; без «висячего» рецидива); `recordDays` обновляется если серия > рекорда; эмит `relapsed`. Серию считает фронт из `currentAttemptStartedAt`; сервер считает её лишь в момент срыва (для рекорда).
     - [x] C3.5 use-cases ✅ — все 6 (create/list/get/update/relapse/list-relapses) + курсор-утилита `relapse-cursor.util.ts` (base64url keyset). `relapse` возвращает `{antiHabit, relapse}` (фронт обновит карточку+историю без перезапроса); `list-relapses` — cursor-страница `{items, nextCursor}` (тянет `limit+1` для признака следующей). tsc чист.
     - [x] C3.6 контроллер ✅ — `controllers/anti-habits.controller.ts`: 6 маршрутов (list/create/get/patch/relapse/relapses) под `AuthGuard`, скоуп по аккаунту из Guard; ownership проверяет domain-service.
     - [x] C3.7 события ✅ — исходящий порт `accent-anti-habit-events.port.ts` (`relapsed`/`held`) + логирующий адаптер `logging-anti-habit-events.adapter.ts` (2.6 эмитит `relapsed`, слушателей нет; 2.9 подменит реализацию). Чистая граница вместо жёсткой event-шины.
-    - [x] C3.8 модуль ✅ — `anti-habits.module.ts` (composition root: bind обоих портов↔Drizzle-репо + `ACCENT_ANTI_HABIT_EVENTS`↔логирующий адаптер + domain-service + 6 use-cases + controller; import `AccessControlModule`) + подключён в зонтик `accent.module`.
+    - [x] C3.8 модуль ✅ — `anti-habits.module.ts` (composition root: bind обоих портов↔Drizzle-репо + `ACCENT_ANTI_HABIT_EVENTS`↔логирующий адаптер + domain-service + 6 use-cases + controller; import `AccessControlModule`) + подключён в зонтик `accent.module`.)_
     - [x] C3.9 ошибки ✅ — `anti-habit-not-found.error.ts` (404) + `already-relapsed.error.ts` (409) в `shared/errors/`; маппинг в HTTP — через глобальный `all-exceptions.filter` (по `DomainError.httpStatus`, регистрация не нужна).
     - **✅ C3 ЗАКРЫТ И LIVE-VERIFIED (смоук 31/31, dev):** tsc 0 · boot: 6 маршрутов смапились + `Nest application successfully started` + DI ок · API-смоук на dev (h1verify): CRUD, 401/404/400 (strict+инварианты), рекорд **пережил срыв** (состарил старт на 3 дня → `recordDays=3` после рецидива, сброс попытки→attempt#2/currentDays=0), `ALREADY_RELAPSED` (неактивная + **гонка CAS**: burst 5 → 3×201+2×409, без 5xx), cursor-пагинация (desc, nextCursor, keyset), FK **CASCADE** (0 осиротевших рецидивов), dev подчищен. `api-contracts §7` синхронизирован под факт (response-формы).
   - **2.6·C4 (фронт)** — эталон: `angular/src/app/features/accent/habits/` и таймер микро-побед:
@@ -1528,22 +1528,22 @@ _Заземлено на существующую доку: `domain-model §7`, 
   миграция `00XX` (одна на блок) → просмотр SQL глазами → `db:migrate` на dev → сверка `\d`.
 
 **Блок B — домен + API препятствий**
-- [ ] **2.7·6** Интерфейсы + порты: `ObstacleFull`/`ObstacleView`, `adapters/accent-obstacle-repository.port.ts`
-  (интерфейс + DI-токен, без drizzle-типов).
-- [ ] **2.7·7** Репозиторий `database/repositories/accent/accent-obstacle.repository.ts` —
-  list/find/create/update/delete + `reorder` (UPDATE FROM VALUES) + `position = max+1` при создании.
-- [ ] **2.7·8** DTO: `create-obstacle.dto.ts` / `update-obstacle.dto.ts` / `reorder.dto.ts` — zod
+- [x] **2.7·6** ✅ 2026-07-30 — `ObstacleView`+`toObstacleView`, `ObstacleListView {items, softLimitExceeded}` (обёртка вместо массива: порог — свойство списка, не карточки), порт `ACCENT_OBSTACLE_REPOSITORY`. Агрегаты (`counterplaysCount`/`encountersLast30`) во view **не заведены до своих таблиц** — вместо нулей, притворяющихся данными. _(исходно: Интерфейсы + порты: `ObstacleFull`/`ObstacleView`, `adapters/accent-obstacle-repository.port.ts`
+  (интерфейс + DI-токен, без drizzle-типов).)_
+- [x] **2.7·7** ✅ 2026-07-30 — `accent-obstacle.repository.ts`: порядок position→created_at→id, `position=max+1`, `countActive` без примеров, `update` bump'ает `version`, `reorder` одним `UPDATE FROM VALUES`, `delete`. _(исходно: Репозиторий `database/repositories/accent/accent-obstacle.repository.ts` —
+  list/find/create/update/delete + `reorder` (UPDATE FROM VALUES) + `position = max+1` при создании.)_
+- [x] **2.7·8** ✅ 2026-07-30 — `create`/`update`/`reorder` zod `.strict()`; `type` обязателен из словаря, `intensity` 1..5. _(исходно: DTO: `create-obstacle.dto.ts` / `update-obstacle.dto.ts` / `reorder.dto.ts` — zod
   `.strict()`, лимиты дублируют домен.
-- [ ] **2.7·9** `domain-services/accent-obstacle.domain-service.ts` — ownership, инварианты
+- [x] **2.7·9** ✅ 2026-07-30 — domain-service: владение (чужое=404), инварианты, **мягкий порог только помечает список** (`ACCENT_OBSTACLE_SOFT_LIMIT`, env добавлен; отказ — лишь жёсткие 200), архив вместо удаления, adoption примера при правке (ADR-0051), ошибка `OBSTACLE_NOT_FOUND`. _(исходно: `domain-services/accent-obstacle.domain-service.ts` — ownership, инварианты
   (`type` из словаря, `intensity` 1..5, длины, жёсткие лимиты 200/20), **мягкий** фокус-лимит из
   `ACCENT_OBSTACLE_SOFT_LIMIT` (флаг в ответе → подсказка на фронте, НЕ отказ), архивирование
-  (`isActive:false`) вместо удаления по умолчанию, правки под optimistic `version`.
-- [ ] **2.7·10** Use-cases CRUD (`create`/`list`/`get`/`update`/`delete`/`reorder`) — по одному файлу.
-- [ ] **2.7·11** Контроллер `controllers/obstacles.controller.ts` (`PUT /reorder` **до** `:id`),
+  (`isActive:false`) вместо удаления по умолчанию, правки под optimistic `version`.)_
+- [x] **2.7·10** ✅ 2026-07-30 — шесть тонких use-case (list/get/create/update/delete/reorder).)_ _(исходно: Use-cases CRUD (`create`/`list`/`get`/`update`/`delete`/`reorder`) — по одному файлу.)_
+- [x] **2.7·11** ✅ 2026-07-30 — `ObstaclesController` (6 маршрутов, `reorder` до `:id`, DELETE/reorder → 204) + `ObstaclesModule` (порт↔репо, **экспортирует domain-service** для соседей сверху вниз: рецидив «Держусь», позже Recommender 2.8 и дашборд) + подключён в зонтик; `api-contracts §8` синхронизирован с фактом. _(исходно: Контроллер `controllers/obstacles.controller.ts` (`PUT /reorder` **до** `:id`),
   ошибки `obstacle-not-found.error.ts` (404), модуль `obstacles.module.ts` (composition root:
   порт↔репо, domain-service, use-cases, контроллер) + подключение в зонтик `accent.module`.
-- [ ] **2.7·12** API-смоук блока B: CRUD, 401/404/400 (`.strict()` + инварианты), reorder → порядок,
-  скоуп по аккаунту (чужой id → 404), `tsc` + boot чистые.
+- [x] **2.7·12** ✅ 2026-07-30 — **API-смоук 18/18 на dev** (аккаунт `obsverify`, затем подчищен; `FREE_REGISTRATION` возвращён в `false`): пустой список → `{items:[],softLimitExceeded:false}`; create минимальный (дефолт `intensity=3`, `position=0`) и полный; валидация — чужой `type` → 400 со списком допустимых, `intensity:9` → 400, лишнее поле → 400 `Unrecognized key`; 401 без токена; чужой id → 404; PATCH (`intensity`+архив) → пропало из списка; reorder → 204 и порядок сменился; **мягкий порог**: 8 активных → `softLimitExceeded:true`, создание 9-го всё равно 201; DELETE → 204, повторный → 404; **adoption**: правка примера сняла `is_starter`; **примеры в порог не идут** (8 в списке, 2 своих → `false`); `version` дошёл до 3 (bump на каждом update); **каскад SET NULL**: удалили препятствие → `anti_habit_events.obstacle_id=NULL`, само событие живо. tsc 0, boot чистый. **Блок B закрыт.** _(исходно: API-смоук блока B: CRUD, 401/404/400 (`.strict()` + инварианты), reorder → порядок,
+  скоуп по аккаунту (чужой id → 404), `tsc` + boot чистые.)_
 
 **Блок C — контрмеры**
 - [ ] **2.7·13** Интерфейсы/порт/репозиторий контрмер (list по препятствию, create/update/delete,

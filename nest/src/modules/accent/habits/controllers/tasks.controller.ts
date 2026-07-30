@@ -111,6 +111,7 @@ export class TasksController {
       request.account.id,
       request.account.timezone,
       body.doneValue,
+      body.replace,
     );
   }
 

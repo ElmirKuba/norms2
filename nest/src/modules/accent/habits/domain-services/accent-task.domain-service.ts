@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ValidationError } from '../../../../shared/errors/validation.error';
 import { TaskNotFoundError } from '../../../../shared/errors/task-not-found.error';
+import { TaskValueDowngradeError } from '../../../../shared/errors/task-value-downgrade.error';
 import { localYmd } from '../../../../shared/utility-level/today-in-timezone.util';
 import { isHabitDueOn } from '../recurrence.util';
 import { HABIT_KINDS } from '../interfaces/habit-full.interface';
@@ -177,14 +178,17 @@ export class AccentTaskDomainService {
    * @param id Идентификатор задачи.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param doneValue Сколько сделано (для quantitative/timed; опц.).
+   * @param replace Явное намерение перезаписать результат меньшим значением («Начать сначала»).
    * @returns Обновлённая задача + событие лесенки (для фидбэка «планка выросла / мягче»).
    * @throws {TaskNotFoundError} Если нет / не ваша.
    * @throws {ValidationError} Если `doneValue` некорректен.
+   * @throws {TaskValueDowngradeError} Понижение уже записанного результата без `replace` (2.7.1).
    */
   public async complete(
     id: string,
     accountId: string,
     doneValue?: number,
+    replace = false,
   ): Promise<{ task: TaskFull; ladderEvent: LadderEvent; transitioned: boolean }> {
     const task = await this.getOwned(id, accountId);
     let effectiveDone: number;
@@ -202,6 +206,19 @@ export class AccentTaskDomainService {
     // Успех зависит от полярности (FEAT-H2): `clock` = «ниже/раньше лучше» (уложился = `≤`),
     // остальные — «выше лучше» (`≥`). (kind='clock' ⟹ лесенка lower, см. форма привычки.)
     const met = task.kind === 'clock' ? effectiveDone <= target : effectiveDone >= target;
+    // Защита от тихого понижения (2.7.1): вкладка с устаревшими данными присылала меньшее
+    // значение и молча затирала результат («100 приседаний» → «60»). Легальное понижение ровно
+    // одно — «Начать сначала» в таймере, и оно приходит с `replace`. Для `clock` направление
+    // обратное (раньше = лучше), поэтому там «понижением» считается рост значения.
+    if (!replace && task.doneValue !== null) {
+      const worse =
+        task.kind === 'clock' ? effectiveDone > task.doneValue : effectiveDone < task.doneValue;
+      if (worse) {
+        // Текст без «обновите страницу»: экран обновит себя сам (2.7.1·F5), человеку остаётся
+        // только понять, что произошло.
+        throw new TaskValueDowngradeError('Эта задача уже отмечена с лучшим результатом.');
+      }
+    }
     const patch = {
       status: (met ? 'done' : 'partial') as TaskFull['status'],
       doneValue: effectiveDone,

@@ -7,6 +7,11 @@ import { z } from 'zod';
 export const completeTaskSchema = z
   .object({
     doneValue: z.number().int('Сделано — целое.').min(0, 'Сделано ≥ 0.').optional(),
+    /**
+     * Явное намерение перезаписать уже записанный результат **меньшим** значением (2.7.1).
+     * Шлёт только «Начать сначала» в таймере; без него понижение → `409 TASK_VALUE_DOWNGRADE`.
+     */
+    replace: z.boolean().optional(),
   })
   .strict();
 

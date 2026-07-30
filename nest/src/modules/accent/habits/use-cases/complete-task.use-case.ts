@@ -26,6 +26,7 @@ export class CompleteTaskUseCase {
    * @param accountId Идентификатор аккаунта (из Guard).
    * @param timezone TZ пользователя (дата записи прогресса цели).
    * @param doneValue Сколько сделано (опц.).
+   * @param replace Явное намерение понизить уже записанный результат (опц., 2.7.1).
    * @returns Проекция обновлённой задачи + событие лесенки.
    */
   public async execute(
@@ -33,11 +34,13 @@ export class CompleteTaskUseCase {
     accountId: string,
     timezone: string,
     doneValue?: number,
+    replace?: boolean,
   ): Promise<CompleteTaskResult> {
     const { task, ladderEvent, transitioned } = await this._tasks.complete(
       id,
       accountId,
       doneValue,
+      replace,
     );
     // Кросс-домен вниз: прогресс цели только на реальном переходе и при привязке к цели.
     if (transitioned && task.goalId !== null && task.doneValue !== null) {

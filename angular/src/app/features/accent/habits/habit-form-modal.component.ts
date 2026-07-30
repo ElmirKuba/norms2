@@ -11,7 +11,14 @@ import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_DESCRIPTIONS, HABIT_KIND_LABELS } from '../accent.types';
-import type { AccentRefItem, HabitKind, HabitPayload, HabitView, LadderPolicy } from '../accent.types';
+import type {
+  AccentRefItem,
+  HabitKind,
+  HabitPayload,
+  HabitView,
+  LadderPolicy,
+  MicroWinView,
+} from '../accent.types';
 import {
   RECURRENCE_MODE_DESCRIPTIONS,
   WEEKDAY_CODES,
@@ -412,6 +419,18 @@ function todayYmd(): string {
             <button type="button" class="hf__help" (click)="openGuide('minVersion')">что это?</button>
           </span>
           <input class="hf__input" type="text" formControlName="minVersion" />
+          @if (microWins().length > 0) {
+            <select class="hf__input" formControlName="minVersionMicroWinId">
+              <option value="">Без быстрой кнопки</option>
+              @for (mw of microWins(); track mw.id) {
+                <option [value]="mw.id">⏱ {{ mw.title }}</option>
+              }
+            </select>
+            <span class="hf__hint">
+              Выберешь микро-победу — на карточке дня появится кнопка «Минимум сегодня»: тап,
+              таймер, и день засчитан частично. Серия не рвётся.
+            </span>
+          }
         </label>
 
         @if (formError()) {
@@ -584,6 +603,9 @@ export class HabitFormModalComponent {
     inject<MatDialogRef<HabitFormModalComponent, HabitPayload | null>>(MatDialogRef);
   private readonly _data = inject<HabitFormData>(MAT_DIALOG_DATA);
   private readonly _api = inject(AccentApiService);
+
+  /** Свои микро-победы — для выбора «минимума на плохой день» (2.7·H). */
+  protected readonly microWins = signal<MicroWinView[]>([]);
   private readonly _dialog = inject(MatDialog);
 
   /** Каталог сфер (для select). */
@@ -635,6 +657,7 @@ export class HabitFormModalComponent {
     domainKey: new FormControl<string | null>(null),
     goalId: new FormControl<string | null>(null),
     minVersion: new FormControl('', { nonNullable: true }),
+    minVersionMicroWinId: new FormControl('', { nonNullable: true }),
     // Время подготовки перед таймером (сек), только для timed (опц., FEAT-H1).
     prepSeconds: new FormControl<number | null>(null),
     // «Начать не сегодня»: якорь расписания (BUG-2). Выкл → старт с даты создания;
@@ -685,6 +708,11 @@ export class HabitFormModalComponent {
   protected readonly modeHint = computed(() => RECURRENCE_MODE_DESCRIPTIONS[this._mode()]);
 
   public constructor() {
+    // Каталог для «минимума на плохой день» (2.7·H); ошибка не критична — селект просто не покажем.
+    this._api.listMicroWins().subscribe({
+      next: (list) => this.microWins.set(list),
+      error: () => this.microWins.set([]),
+    });
     this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     this._api.listAttributes().subscribe({
       next: (a) => this.attributesCatalog.set(a),
@@ -730,6 +758,7 @@ export class HabitFormModalComponent {
         domainKey: habit.domainKey,
         goalId: habit.goalId,
         minVersion: habit.minVersion ?? '',
+        minVersionMicroWinId: habit.minVersionMicroWinId ?? '',
         prepSeconds: habit.prepSeconds ?? null,
         startNotToday: habit.startDate !== null,
         startDate: habit.startDate ?? todayYmd(),
@@ -853,6 +882,7 @@ export class HabitFormModalComponent {
       goalId: v.goalId,
       attributes: [...this.attrs()],
       minVersion: v.minVersion.trim() === '' ? null : v.minVersion.trim(),
+      minVersionMicroWinId: v.minVersionMicroWinId === '' ? null : v.minVersionMicroWinId,
       // Подготовка — только для timed и только положительная; иначе null.
       prepSeconds: v.kind === 'timed' && v.prepSeconds !== null && v.prepSeconds > 0 ? v.prepSeconds : null,
     };

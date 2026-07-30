@@ -30,6 +30,26 @@ export type AccentUserState =
   | 'maintenance';
 
 /** Микро-победа наружу (`GET /accent/micro-wins`). `completedToday` — выполнена ли сегодня. */
+/** Ответ «сделал минимум»: задача после зачёта + был ли лог микро-победы первым за день. */
+export interface CompleteMinimumResult {
+  /** Задача после зачёта (статус `partial`, значение = `minTarget`). */
+  task: TaskView;
+  /** `true`, если микро-победа отмечена впервые сегодня. */
+  microWinNewlyCompleted: boolean;
+}
+
+/** Минимум на плохой день, прицепленный к задаче (2.7·H). */
+export interface TaskMinAction {
+  /** Идентификатор микро-победы. */
+  microWinId: string;
+  /** Название — идёт прямо в подпись кнопки. */
+  title: string;
+  /** Длительность действия (сек) — для таймера. */
+  durationSeconds: number;
+  /** Подготовка перед действием (сек) или null. */
+  prepSeconds: number | null;
+}
+
 export interface MicroWinView {
   /** Идентификатор. */
   id: string;
@@ -198,6 +218,8 @@ export interface HabitView {
   ladder: LadderView;
   /** Текст «минимум плохого дня» или null. */
   minVersion: string | null;
+  /** Микро-победа как минимум на плохой день (2.7·H) или null. */
+  minVersionMicroWinId: string | null;
   /** Время подготовки (сек) перед timed-таймером или null (FEAT-H1). */
   prepSeconds: number | null;
 }
@@ -236,6 +258,8 @@ export interface HabitPayload {
   priority?: number;
   /** Текст «минимум плохого дня» (опц.). */
   minVersion?: string | null;
+  /** Микро-победа как минимум на плохой день (2.7·H); null — снять привязку. */
+  minVersionMicroWinId?: string | null;
   /** Время подготовки (сек) перед timed-таймером (опц., FEAT-H1). */
   prepSeconds?: number | null;
 }
@@ -254,6 +278,11 @@ export interface TaskView {
   templateId: string | null;
   /** Привязка к цели или null. */
   goalId: string | null;
+  /**
+   * Минимум на плохой день (2.7·H) или null. Приходит объектом, а не id: карточке сразу нужны и
+   * подпись кнопки, и параметры таймера — без второго запроса за каталогом микро-побед.
+   */
+  minAction: TaskMinAction | null;
   /** Название. */
   title: string;
   /** Локальная дата дня `YYYY-MM-DD`. */
@@ -373,6 +402,8 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /** Микро-победа как версия цели на плохой день (2.7·H) или null. */
+  fallbackMicroWinId: string | null;
   /** «Ради чего откажусь» (mission-filter, ADR-0053) или null. */
   tradeoff: string | null;
   /** Стартовый пример (бейдж «пример»; не в работе/не принимает записи до присвоения, ADR-0051). */
@@ -441,6 +472,8 @@ export interface GoalPayload {
   deadline?: string | null;
   /** Текст «версия на плохой день» (опц.). */
   fallbackVersion?: string | null;
+  /** Микро-победа как версия цели на плохой день (2.7·H); null — снять привязку. */
+  fallbackMicroWinId?: string | null;
   /** «Ради чего откажусь» (mission-filter, для accumulate; опц.). */
   tradeoff?: string | null;
 }
@@ -455,6 +488,7 @@ export interface GoalUpdatePayload {
   targetValue?: number;
   deadline?: string | null;
   fallbackVersion?: string | null;
+  fallbackMicroWinId?: string | null;
   tradeoff?: string | null;
 }
 

@@ -145,6 +145,16 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       }
                     </div>
                   </div>
+                  @if (t.status === 'pending' && t.minAction; as min) {
+                    <div class="hb__min-row">
+                      <app-button
+                        variant="ghost"
+                        [loading]="busyTaskId() === t.id"
+                        title="Плохой день? Сделай минимум — серия не порвётся"
+                        (click)="doMinimum(t)"
+                      >🌙 Минимум сегодня: {{ min.title }}</app-button>
+                    </div>
+                  }
                 </app-card>
               </li>
             }
@@ -241,6 +251,11 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         justify-content: space-between;
         gap: var(--space-3);
         flex-wrap: wrap;
+      }
+      .hb__min-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: var(--space-2);
       }
       .hb__actions {
         display: flex;
@@ -650,6 +665,50 @@ export class HabitsComponent {
       case 'pending':
         return 'Ожидает';
     }
+  }
+
+  /**
+   * **«Минимум сегодня»** (2.7·H): открывает таймер привязанной микро-победы, а по завершении
+   * одним запросом засчитывает и её, и задачу частично (`minTarget`). Серия держится, лесенка не
+   * двигается. Отмена таймера — ничего не пишем: человек передумал, а не «провалил».
+   * @param task Задача дня с привязанным минимумом.
+   */
+  protected doMinimum(task: TaskView): void {
+    const min = task.minAction;
+    if (!min || this.busyTaskId() !== null) {
+      return;
+    }
+    const ref = this._dialog.open<
+      AccentTimerModalComponent,
+      AccentTimerData,
+      AccentTimerResult | null
+    >(AccentTimerModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      disableClose: true,
+      data: {
+        title: min.title,
+        durationSeconds: min.durationSeconds,
+        prepSeconds: min.prepSeconds,
+        mode: 'binary',
+      },
+    });
+    ref.afterClosed().subscribe((result) => {
+      if (result?.status !== 'done') {
+        return;
+      }
+      this.busyTaskId.set(task.id);
+      this._api.completeMinimumTask(task.id).subscribe({
+        next: (res) => {
+          this._patchTask(res.task);
+          this.busyTaskId.set(null);
+        },
+        error: (err: unknown) => {
+          this.busyTaskId.set(null);
+          this._modal.error('Не удалось засчитать минимум', errorMessage(err));
+        },
+      });
+    });
   }
 
   /** Отмечает выполнение задачи (binary — без значения; иначе — введённое). Двигает лесенку на бэке. */

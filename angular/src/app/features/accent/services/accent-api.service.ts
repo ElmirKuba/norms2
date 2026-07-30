@@ -7,6 +7,7 @@ import type {
   AccentSettingsView,
   AddGoalEntryResult,
   AntiHabitEventPage,
+  CompleteMinimumResult,
   CounterplayPayload,
   CounterplayUpdatePayload,
   CounterplayView,
@@ -182,6 +183,14 @@ export class AccentApiService {
   public completeTask(id: string, doneValue?: number): Observable<CompleteTaskResult> {
     const body = doneValue === undefined ? {} : { doneValue };
     return this._http.post<CompleteTaskResult>(`${API_PREFIX}/accent/tasks/${id}/complete`, body);
+  }
+
+  /** «Сделал минимум» (2.7·H): лог микро-победы + частичный зачёт задачи одной операцией. */
+  public completeMinimumTask(id: string): Observable<CompleteMinimumResult> {
+    return this._http.post<CompleteMinimumResult>(
+      `${API_PREFIX}/accent/tasks/${id}/complete-minimum`,
+      {},
+    );
   }
 
   /** Снять отметку выполнения. */

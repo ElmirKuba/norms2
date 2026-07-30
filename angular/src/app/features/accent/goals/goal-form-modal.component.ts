@@ -18,6 +18,7 @@ import type {
   GoalProgressView,
   GoalUpdatePayload,
   GoalView,
+  MicroWinView,
 } from '../accent.types';
 
 /** Данные в модалку: если `goal` задан — режим редактирования. */
@@ -304,6 +305,17 @@ const GOAL_FIELD_GUIDES: Record<string, FieldGuideData> = {
         </span>
         <input class="gf__input" type="text" maxlength="280" formControlName="fallbackVersion"
           placeholder="Минимум, который держит цель живой" />
+        @if (microWins().length > 0) {
+          <select class="gf__input" formControlName="fallbackMicroWinId">
+            <option value="">Без быстрой кнопки</option>
+            @for (mw of microWins(); track mw.id) {
+              <option [value]="mw.id">⏱ {{ mw.title }}</option>
+            }
+          </select>
+          <span class="gf__hint">
+            Микро-победа сделает эту версию нажимаемой: тап — таймер — и день в счёт цели.
+          </span>
+        }
       </label>
 
       @if (formError(); as fe) {
@@ -413,6 +425,9 @@ export class GoalFormModalComponent {
     MatDialogRef,
   );
   private readonly _api = inject(AccentApiService);
+
+  /** Свои микро-победы — для выбора «версии цели на плохой день» (2.7·H). */
+  protected readonly microWins = signal<MicroWinView[]>([]);
   private readonly _dialog = inject(MatDialog);
 
   /** Режим редактирования. */
@@ -456,6 +471,7 @@ export class GoalFormModalComponent {
     domainKey: new FormControl<string | null>(null),
     parentGoalId: new FormControl<string | null>(null),
     fallbackVersion: new FormControl('', { nonNullable: true }),
+    fallbackMicroWinId: new FormControl('', { nonNullable: true }),
     tradeoff: new FormControl('', { nonNullable: true }),
   });
 
@@ -473,6 +489,11 @@ export class GoalFormModalComponent {
     !this.isEdit && this._data.presetParentId === undefined;
 
   public constructor() {
+    // Каталог для «версии на плохой день» (2.7·H); ошибка не критична — селект просто не покажем.
+    this._api.listMicroWins().subscribe({
+      next: (list) => this.microWins.set(list),
+      error: () => this.microWins.set([]),
+    });
     const goal = this._data.goal;
     if (goal) {
       this.form.patchValue({
@@ -485,6 +506,7 @@ export class GoalFormModalComponent {
         deadline: goal.deadline,
         domainKey: goal.domainKey,
         fallbackVersion: goal.fallbackVersion ?? '',
+        fallbackMicroWinId: goal.fallbackMicroWinId ?? '',
         tradeoff: goal.tradeoff ?? '',
       });
       this.form.controls.direction.disable();
@@ -615,6 +637,7 @@ export class GoalFormModalComponent {
         targetValue: target,
         deadline: v.deadline === '' ? null : v.deadline,
         fallbackVersion: trimmedFallback === '' ? null : trimmedFallback,
+        fallbackMicroWinId: v.fallbackMicroWinId === '' ? null : v.fallbackMicroWinId,
         tradeoff: trimmedTradeoff === '' ? null : trimmedTradeoff,
       };
       this._submit({ mode: 'update', payload });

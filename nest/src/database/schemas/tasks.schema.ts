@@ -39,6 +39,12 @@ export const tasks = defineTableWithSchema<TaskFull>()(
     deadline: timestamp('deadline', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // Появилась в 2.7.1: у задач был только created_at, а знать «когда последний раз менялось»
+    // нужно для диагностики кросс-девайсных расхождений. Автообновление — как у остальных таблиц.
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
     uniqueIndex('tasks_template_day_unique').on(table.templateId, table.occurredOn),

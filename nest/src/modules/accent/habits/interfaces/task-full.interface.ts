@@ -54,4 +54,6 @@ export interface TaskFull {
   completedAt: Date | null;
   /** Когда создано/материализовано. */
   createdAt: Date;
+  /** Когда последний раз менялось (2.7.1) — для диагностики расхождений между устройствами. */
+  updatedAt: Date;
 }

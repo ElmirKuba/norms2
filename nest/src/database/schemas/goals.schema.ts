@@ -10,6 +10,7 @@ import {
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
+import { microWins } from './micro-wins.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type {
@@ -57,6 +58,11 @@ export const goals = defineTableWithSchema<GoalFull>()(
       .default('active'),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     fallbackVersion: text('fallback_version'),
+    // «Версия цели на плохой день» как действие (2.7·H): SET NULL — цель переживает удаление
+    // микро-победы, теряется только кнопка минимума.
+    fallbackMicroWinId: fkColumn('fallback_micro_win_id').references(() => microWins.id, {
+      onDelete: 'set null',
+    }),
     // Mission-filter (ADR-0053): «ради чего откажусь» — условно-обязательно при заводе
     // накопительной (accumulate) цели в фокус (цена слота фокуса).
     tradeoff: text('tradeoff'),

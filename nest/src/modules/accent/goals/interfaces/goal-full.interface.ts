@@ -77,6 +77,11 @@ export interface GoalFull {
   completedAt: Date | null;
   /** Текст «версия цели на плохой день» (anti-burnout, опц.). */
   fallbackVersion: string | null;
+  /**
+   * Микро-победа как **версия цели на плохой день** (опц., FK на `micro_wins`, ON DELETE SET NULL).
+   * Делает `fallbackVersion` не только фразой, но и запускаемым действием (блок H подфазы 2.7).
+   */
+  fallbackMicroWinId: string | null;
   /** «Ради чего откажусь» (mission-filter, ADR-0053): условно-обязателен при заводе accumulate в фокус. */
   tradeoff: string | null;
   /** Стартовый пример (`is_starter`, ADR-0051): виден в списке с бейджем «пример», но НЕ

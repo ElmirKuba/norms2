@@ -1,5 +1,6 @@
 import { boolean, date, integer, jsonb, text, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
+import { microWins } from './micro-wins.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type {
@@ -39,6 +40,11 @@ export const habits = defineTableWithSchema<HabitFull>()(
     isStarter: boolean('is_starter').notNull().default(false),
     ladder: jsonb('ladder').$type<HabitLadder>().notNull(),
     minVersion: text('min_version'),
+    // «Минимум на плохой день» как действие (2.7·H): SET NULL — удалённая микро-победа не должна
+    // уносить с собой привычку, просто кнопка минимума исчезает.
+    minVersionMicroWinId: fkColumn('min_version_micro_win_id').references(() => microWins.id, {
+      onDelete: 'set null',
+    }),
     // Время подготовки (сек) перед timed-таймером (опц., FEAT-H1); как у микро-побед.
     prepSeconds: integer('prep_seconds'),
     // Оптимистичный лок (ADR-0035): движок лесенки пишет через CAS по version,

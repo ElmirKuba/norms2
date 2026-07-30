@@ -1,0 +1,4 @@
+ALTER TABLE "habits" ADD COLUMN "min_version_micro_win_id" varchar(52);--> statement-breakpoint
+ALTER TABLE "goals" ADD COLUMN "fallback_micro_win_id" varchar(52);--> statement-breakpoint
+ALTER TABLE "habits" ADD CONSTRAINT "habits_min_version_micro_win_id_micro_wins_id_fk" FOREIGN KEY ("min_version_micro_win_id") REFERENCES "public"."micro_wins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "goals" ADD CONSTRAINT "goals_fallback_micro_win_id_micro_wins_id_fk" FOREIGN KEY ("fallback_micro_win_id") REFERENCES "public"."micro_wins"("id") ON DELETE set null ON UPDATE no action;

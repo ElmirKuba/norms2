@@ -56,4 +56,10 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.6 — «Держусь» + приглашения по ссылке',
     contentFile: 'notifications/release-2.6.3.md',
   },
+  // Линия 2.7.x — своя накопительная нота (раздел «Препятствия» + «минимум на плохой день»).
+  {
+    key: 'release-2.7.0',
+    title: 'Нормисы 2.7 — «Препятствия» и минимум на плохой день',
+    contentFile: 'notifications/release-2.7.0.md',
+  },
 ];

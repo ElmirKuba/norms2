@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   CdkDrag,
   CdkDragHandle,
@@ -12,6 +20,7 @@ import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { ModalService } from '../../../shared/modals/modal.service';
+import { DataFreshnessService } from '../../../core/freshness/data-freshness.service';
 import { MODAL_MEDIUM_WIDTH, MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
@@ -79,6 +88,12 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       </nav>
 
       @if (tab() === 'today') {
+        @if (syncNotice(); as notice) {
+          <div class="hb__flash" data-event="sync" role="status">
+            <span>{{ notice }}</span>
+            <button type="button" class="hb__flash-x" (click)="syncNotice.set(null)" aria-label="Закрыть">×</button>
+          </div>
+        }
         @if (ladderFlash(); as flash) {
           <div class="hb__flash" [attr.data-event]="flash.event" role="status">
             <span>{{ flash.text }}</span>
@@ -431,6 +446,12 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       .hb__flash[data-event='raised'] {
         border-color: var(--color-accent);
       }
+      /* Нейтральная плашка синхронизации (2.7.1): это не успех и не ошибка — просто «показываю
+         актуальное», поэтому без акцентного цвета. */
+      .hb__flash[data-event='sync'] {
+        border-color: var(--color-border);
+        color: var(--color-text-muted);
+      }
       .hb__flash-x {
         flex-shrink: 0;
         width: var(--touch-min);
@@ -537,6 +558,8 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
 export class HabitsComponent {
   private readonly _api = inject(AccentApiService);
   private readonly _modal = inject(ModalService);
+  private readonly _freshness = inject(DataFreshnessService);
+  private readonly _destroyRef = inject(DestroyRef);
   private readonly _dialog = inject(MatDialog);
 
   /** Активная вкладка. */
@@ -590,6 +613,11 @@ export class HabitsComponent {
   protected readonly busyTaskId = signal<string | null>(null);
   /** Фидбэк движения лесенки (баннер «планка выросла / мягче») или null. */
   protected readonly ladderFlash = signal<{ event: 'raised' | 'lowered'; text: string } | null>(null);
+  /**
+   * Мягкое уведомление о том, что данные разъехались с другим устройством (2.7.1). Не ошибка:
+   * человек ничего не сделал не так, просто экран показывал вчерашнюю правду.
+   */
+  protected readonly syncNotice = signal<string | null>(null);
 
   /** % дня: задачи с прогрессом (done/partial) от всех непропущенных. */
   protected readonly donePercent = computed(() => {
@@ -609,6 +637,13 @@ export class HabitsComponent {
     if (this.tab() === 'today') {
       this._loadTasks();
     }
+    // Свежесть (2.7.1): вернулся к вкладке после телефона — задачи дня перечитываются тихо.
+    // Только «Сегодня»: устаревший список шаблонов ничему не вредит, а вот отметки — вредят.
+    this._freshness.registerFor(this._destroyRef, () => {
+      if (this.tab() === 'today') {
+        this._loadTasks();
+      }
+    });
   }
 
   /** Переключает вкладку; при «Сегодня» — (пере)загружает задачи (материализация на бэке). */
@@ -721,14 +756,41 @@ export class HabitsComponent {
       return;
     }
     this.busyTaskId.set(task.id);
+    // Пока летит мутация, обновление по фокусу откладывается — иначе список моргнёт под руками.
+    const release = this._freshness.hold();
     this._api.completeTask(task.id, doneValue).subscribe({
       next: (result) => {
         this._patchTask(result.task);
         this._flashLadder(result.ladderEvent, task);
         this.busyTaskId.set(null);
+        this._freshness.markFresh();
+        release();
       },
-      error: () => this.busyTaskId.set(null),
+      error: (err: unknown) => {
+        this.busyTaskId.set(null);
+        release();
+        this._handleCompleteError(err);
+      },
     });
+  }
+
+  /**
+   * Разбирает ошибку отметки. `409 TASK_VALUE_DOWNGRADE` (2.7.1) означает, что экран показывал
+   * устаревшее: задачу уже отметили с лучшим результатом с другого устройства. Не ругаемся и **не
+   * просим перезагрузить** — молча перечитываем день и говорим, что произошло.
+   * @param err Ошибка запроса.
+   */
+  private _handleCompleteError(err: unknown): void {
+    const code =
+      typeof err === 'object' && err !== null && 'error' in err
+        ? ((err as { error?: { error?: { code?: string } } }).error?.error?.code ?? null)
+        : null;
+    if (code === 'TASK_VALUE_DOWNGRADE') {
+      this._loadTasks();
+      this.syncNotice.set('Эта задача уже отмечена с другого устройства — показываю актуальное.');
+      return;
+    }
+    this._modal.error('Не удалось отметить', errorMessage(err));
   }
 
   /**

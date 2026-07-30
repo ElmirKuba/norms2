@@ -14,6 +14,11 @@ import { CreateObstacleUseCase } from './use-cases/create-obstacle.use-case';
 import { UpdateObstacleUseCase } from './use-cases/update-obstacle.use-case';
 import { DeleteObstacleUseCase } from './use-cases/delete-obstacle.use-case';
 import { ReorderObstaclesUseCase } from './use-cases/reorder-obstacles.use-case';
+import { ListCounterplaysUseCase } from './use-cases/list-counterplays.use-case';
+import { CreateCounterplayUseCase } from './use-cases/create-counterplay.use-case';
+import { UpdateCounterplayUseCase } from './use-cases/update-counterplay.use-case';
+import { DeleteCounterplayUseCase } from './use-cases/delete-counterplay.use-case';
+import { ReorderCounterplaysUseCase } from './use-cases/reorder-counterplays.use-case';
 
 /**
  * Область препятствий раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.7, ADR-0062).
@@ -45,6 +50,11 @@ import { ReorderObstaclesUseCase } from './use-cases/reorder-obstacles.use-case'
     UpdateObstacleUseCase,
     DeleteObstacleUseCase,
     ReorderObstaclesUseCase,
+    ListCounterplaysUseCase,
+    CreateCounterplayUseCase,
+    UpdateCounterplayUseCase,
+    DeleteCounterplayUseCase,
+    ReorderCounterplaysUseCase,
   ],
   exports: [AccentObstacleDomainService, AccentCounterplayDomainService],
 })

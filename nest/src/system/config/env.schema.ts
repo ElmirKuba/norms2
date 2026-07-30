@@ -51,6 +51,10 @@ export const envSchema = z.object({
   // Прогресс = доля замеров в коридоре за последние N дней (фолбэк — все замеры).
   ACCENT_GOAL_MAINTAIN_WINDOW_DAYS: z.coerce.number().int().positive().default(30),
 
+  // Мягкий порог активных препятствий (ADR-0062 п.8; дефолт 7). Сверх порога — подсказка
+  // «много фронтов сразу — может, часть в архив?», НЕ блок. Менять → рестарт, без правок кода.
+  ACCENT_OBSTACLE_SOFT_LIMIT: z.coerce.number().int().positive().default(7),
+
   // git-SHA билда (деплой); версия продукта — в файле VERSION (ADR-0044, пересмотр).
   GIT_COMMIT: z.string().default(''),
 });

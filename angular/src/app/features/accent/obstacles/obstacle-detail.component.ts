@@ -1,6 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -42,7 +49,15 @@ import type {
  */
 @Component({
   selector: 'app-obstacle-detail',
-  imports: [RouterLink, FormsModule, ButtonComponent, CardComponent],
+  imports: [
+    RouterLink,
+    FormsModule,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    ButtonComponent,
+    CardComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="obd">
@@ -80,9 +95,9 @@ import type {
               придумывать будет нечем.
             </p>
           } @else {
-            <ul class="obd__cps">
+            <ul class="obd__cps" cdkDropList (cdkDropListDropped)="dropCounterplay($event)">
               @for (c of counterplays(); track c.id) {
-                <li class="obd__cp">
+                <li class="obd__cp" cdkDrag>
                   @if (editingId() === c.id) {
                     <div class="obd__cp-edit">
                       <input
@@ -105,6 +120,7 @@ import type {
                     </div>
                   } @else {
                     <div class="obd__cp-row">
+                      <button type="button" class="obd__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                       <div class="obd__cp-main">
                         <span class="obd__cp-text">{{ c.text }}</span>
                         <span class="obd__cp-meta">
@@ -216,6 +232,11 @@ import type {
                   </li>
                 }
               </ul>
+              @if (nextCursor() !== null) {
+                <app-button variant="ghost" [loading]="feedBusy()" (click)="loadMore()">
+                  Показать ещё
+                </app-button>
+              }
             }
           </app-card>
         }
@@ -325,6 +346,19 @@ import type {
       }
       .obd__select {
         flex: 0 1 12rem;
+      }
+      .obd__grip {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: grab;
+        border-radius: var(--radius-sm);
+        flex-shrink: 0;
+      }
+      .obd__grip:active {
+        cursor: grabbing;
       }
       .obd__icon-btn {
         min-width: var(--touch-min);
@@ -450,6 +484,10 @@ export class ObstacleDetailComponent {
   protected readonly encounters = signal<ObstacleEncounterView[]>([]);
   /** Идёт запись столкновения. */
   protected readonly encounterBusy = signal(false);
+  /** Курсор следующей страницы ленты или null (дальше пусто). */
+  protected readonly nextCursor = signal<string | null>(null);
+  /** Идёт подгрузка следующей страницы ленты. */
+  protected readonly feedBusy = signal(false);
 
   /** Текст новой контрмеры. */
   protected newText = '';
@@ -487,8 +525,54 @@ export class ObstacleDetailComponent {
       error: () => this.microWins.set([]),
     });
     this._api.listEncounters(this._id).subscribe({
-      next: (page) => this.encounters.set(page.items),
+      next: (page) => {
+        this.encounters.set(page.items);
+        this.nextCursor.set(page.nextCursor);
+      },
       error: () => this.encounters.set([]),
+    });
+  }
+
+  /**
+   * Перетаскивание ответов (ADR-0054). Порядок ручной и авто-сортировки по действенности нет:
+   * список не должен прыгать под руками (ADR-0062 п.7).
+   * @param event Событие CDK.
+   */
+  protected dropCounterplay(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.counterplays()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.counterplays.set(next);
+    this._api.reorderCounterplays(this._id, next.map((c) => c.id)).subscribe({
+      error: (err: unknown) => {
+        this.actionError.set(errorMessage(err));
+        this._api.listCounterplays(this._id).subscribe({
+          next: (list) => this.counterplays.set(list),
+          error: () => undefined,
+        });
+      },
+    });
+  }
+
+  /** Подгружает следующую страницу ленты (keyset — «Показать ещё», не номера страниц). */
+  protected loadMore(): void {
+    const cursor = this.nextCursor();
+    if (cursor === null || this.feedBusy()) {
+      return;
+    }
+    this.feedBusy.set(true);
+    this._api.listEncounters(this._id, { cursor }).subscribe({
+      next: (page) => {
+        this.encounters.update((list) => [...list, ...page.items]);
+        this.nextCursor.set(page.nextCursor);
+        this.feedBusy.set(false);
+      },
+      error: (err: unknown) => {
+        this.actionError.set(errorMessage(err));
+        this.feedBusy.set(false);
+      },
     });
   }
 

@@ -6,6 +6,13 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -40,7 +47,15 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
  */
 @Component({
   selector: 'app-obstacles',
-  imports: [RouterLink, ButtonComponent, CardComponent, EmptyStateComponent],
+  imports: [
+    RouterLink,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    ButtonComponent,
+    CardComponent,
+    EmptyStateComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="ob">
@@ -81,11 +96,12 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
             силы конечны.
           </p>
         }
-        <ul class="ob__list">
+        <ul class="ob__list" cdkDropList (cdkDropListDropped)="dropObstacle($event)">
           @for (o of items(); track o.id) {
-            <li>
+            <li cdkDrag>
               <app-card>
                 <div class="ob__item">
+                  <button type="button" class="ob__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                   <a class="ob__main ob__link" [routerLink]="[o.id]">
                     <span class="ob__name-row">
                       <span class="ob__type-ico" aria-hidden="true">{{ typeIcon(o.type) }}</span>
@@ -204,6 +220,19 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
         align-items: flex-start;
         justify-content: space-between;
         gap: var(--space-3);
+      }
+      .ob__grip {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: grab;
+        border-radius: var(--radius-sm);
+        flex-shrink: 0;
+      }
+      .ob__grip:active {
+        cursor: grabbing;
       }
       .ob__link {
         text-decoration: none;
@@ -417,6 +446,26 @@ export class ObstaclesComponent {
     this._api.updateObstacle(obstacle.id, { isActive: false }).subscribe({
       next: () => this.items.update((list) => list.filter((o) => o.id !== obstacle.id)),
       error: (err: unknown) => this.error.set(errorMessage(err)),
+    });
+  }
+
+  /**
+   * Перетаскивание карточек (ADR-0054): порядок применяем оптимистично, при ошибке
+   * перечитываем список — врать о сохранённом порядке нельзя.
+   * @param event Событие CDK.
+   */
+  protected dropObstacle(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.items()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.set(next);
+    this._api.reorderObstacles(next.map((o) => o.id)).subscribe({
+      error: (err: unknown) => {
+        this.error.set(errorMessage(err));
+        this.reload();
+      },
     });
   }
 

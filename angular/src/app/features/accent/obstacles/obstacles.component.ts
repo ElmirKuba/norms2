@@ -35,7 +35,13 @@ import {
   obstacleTypeIcon,
   obstacleTypeLabel,
 } from './obstacle-format.util';
-import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } from '../accent.types';
+import type {
+  AccentRefItem,
+  CounterplayView,
+  MicroWinView,
+  ObstaclePayload,
+  ObstacleView,
+} from '../accent.types';
 
 /**
  * Экран «Препятствия» (`/accent/obstacles`): карта того, что мешает, — с заранее
@@ -135,6 +141,10 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
                     </span>
                     <span class="ob__sub">
                       <span class="ob__type">{{ typeLabel(o.type) }}</span>
+                      @if (domainTitle(o.domainKey); as domain) {
+                        <span class="ob__dot" aria-hidden="true">·</span>
+                        <span class="ob__stat">{{ domain }}</span>
+                      }
                       <span class="ob__dot" aria-hidden="true">·</span>
                       <span class="ob__stat">{{ counterplays(o) }}</span>
                       @if (!o.isStarter) {
@@ -388,6 +398,8 @@ import type { CounterplayView, MicroWinView, ObstaclePayload, ObstacleView } fro
 })
 export class ObstaclesComponent {
   private readonly _api = inject(AccentApiService);
+  /** Справочник сфер жизни (для человекочитаемых названий). */
+  protected readonly domains = signal<AccentRefItem[]>([]);
   private readonly _dialog = inject(MatDialog);
 
   /** Препятствия в ручном порядке. */
@@ -410,6 +422,8 @@ export class ObstaclesComponent {
   private readonly _microWins = signal<MicroWinView[] | null>(null);
 
   public constructor() {
+    // Справочник сфер — для человекочитаемых названий; ошибка загрузки экран не ломает.
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     this.reload();
   }
 
@@ -742,4 +756,19 @@ export class ObstaclesComponent {
     const filled = Math.max(0, Math.min(5, intensity));
     return '●'.repeat(filled) + '○'.repeat(5 - filled);
   }
+
+  /**
+   * Человекочитаемое название сферы жизни по ключу (2.7.2). Ключ («health», «sport») —
+   * технический, показывать его человеку нельзя. Справочник не загрузился → null, и строка
+   * просто не рисуется.
+   * @param key Ключ сферы или null.
+   * @returns Название сферы или null.
+   */
+  protected domainTitle(key: string | null): string | null {
+    if (key === null) {
+      return null;
+    }
+    return this.domains().find((d) => d.key === key)?.title ?? null;
+  }
+
 }

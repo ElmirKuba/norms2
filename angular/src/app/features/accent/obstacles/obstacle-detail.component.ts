@@ -31,6 +31,7 @@ import {
   outcomeLabel,
 } from './obstacle-format.util';
 import type {
+  AccentRefItem,
   CounterplayView,
   EncounterOutcome,
   MicroWinView,
@@ -183,6 +184,10 @@ import type {
         <app-card>
           <h3 class="obd__section">О препятствии</h3>
           <dl class="obd__facts">
+            @if (domainTitle(o.domainKey); as domain) {
+              <dt>Сфера жизни</dt>
+              <dd>{{ domain }}</dd>
+            }
             @if (o.trigger) {
               <dt>Когда приходит</dt>
               <dd>{{ o.trigger }}</dd>
@@ -475,6 +480,8 @@ import type {
 })
 export class ObstacleDetailComponent {
   private readonly _api = inject(AccentApiService);
+  /** Справочник сфер жизни (для человекочитаемых названий). */
+  protected readonly domains = signal<AccentRefItem[]>([]);
   private readonly _route = inject(ActivatedRoute);
   private readonly _dialog = inject(MatDialog);
 
@@ -520,6 +527,8 @@ export class ObstacleDetailComponent {
   protected editLink = '';
 
   public constructor() {
+    // Справочник сфер — для человекочитаемых названий; ошибка загрузки экран не ломает.
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     this._load();
   }
 
@@ -961,4 +970,19 @@ export class ObstacleDetailComponent {
     const filled = Math.max(0, Math.min(5, intensity));
     return '●'.repeat(filled) + '○'.repeat(5 - filled);
   }
+
+  /**
+   * Человекочитаемое название сферы жизни по ключу (2.7.2). Ключ («health», «sport») —
+   * технический, показывать его человеку нельзя. Справочник не загрузился → null, и строка
+   * просто не рисуется.
+   * @param key Ключ сферы или null.
+   * @returns Название сферы или null.
+   */
+  protected domainTitle(key: string | null): string | null {
+    if (key === null) {
+      return null;
+    }
+    return this.domains().find((d) => d.key === key)?.title ?? null;
+  }
+
 }

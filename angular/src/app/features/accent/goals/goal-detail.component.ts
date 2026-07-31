@@ -83,6 +83,11 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
             @if (g.whyItMatters) {
               <p class="gd__why">{{ g.whyItMatters }}</p>
             }
+            @if (g.tradeoff) {
+              <p class="gd__tradeoff">
+                <strong>⚖️ Ради этого отказываюсь:</strong> {{ g.tradeoff }}
+              </p>
+            }
           </div>
           <div class="gd__head-actions">
             <app-button variant="ghost" (click)="openEdit(g)">Изменить</app-button>
@@ -407,6 +412,14 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         margin: var(--space-1) 0 0;
         color: var(--color-text-muted);
         font-size: var(--fs-sm);
+      }
+      /* Цена выбора (ADR-0053): её спрашивают при взятии в фокус — значит и напоминать должны
+         там, где человек смотрит на цель, иначе фильтр не работает. */
+      .gd__tradeoff {
+        margin: var(--space-1) 0 0;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+        font-style: italic;
       }
       .gd__progress {
         display: flex;

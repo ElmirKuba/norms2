@@ -168,6 +168,11 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       }
                     </div>
                   </div>
+                  @if (t.status === 'pending' && !t.minAction && minText(t); as text) {
+                    <div class="hb__min-row">
+                      <span class="hb__min-text">🌙 На плохой день: {{ text }}</span>
+                    </div>
+                  }
                   @if (t.status === 'pending' && t.minAction; as min) {
                     <div class="hb__min-row">
                       <app-button
@@ -222,6 +227,9 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       @if (h.description) {
                         <span class="hb__desc">{{ h.description }}</span>
                       }
+                      @if (h.minVersion) {
+                        <span class="hb__min-text">🌙 На плохой день: {{ h.minVersion }}</span>
+                      }
                     </div>
                     <div class="hb__actions">
                       @if (h.isStarter) {
@@ -274,6 +282,12 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         justify-content: space-between;
         gap: var(--space-3);
         flex-wrap: wrap;
+      }
+      /* Текст «минимума на плохой день»: человек его вписал в форме — значит должен видеть и
+         на экране, а не только при редактировании (2.7.2). */
+      .hb__min-text {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
       }
       .hb__min-row {
         display: flex;
@@ -877,6 +891,21 @@ export class HabitsComponent {
         ? `🎉 «${task.title}»: планка выросла, ${change} — стало чуть сложнее. Ты справляешься!`
         : `🌙 «${task.title}»: планка мягче, ${change} — это нормально, серия цела.`;
     this.ladderFlash.set({ event: event.direction, text });
+  }
+
+  /**
+   * Текст «минимума на плохой день» для задачи дня (2.7.2). Берётся с её привычки-шаблона —
+   * шаблоны грузятся всегда, независимо от вкладки. Нужен там, где микро-победа НЕ привязана:
+   * кнопки нет, но человек написал себе запасной вариант, и увидеть его он должен на экране, а
+   * не только в форме редактирования.
+   * @param task Задача дня.
+   * @returns Текст минимума или null.
+   */
+  protected minText(task: TaskView): string | null {
+    if (task.templateId === null) {
+      return null;
+    }
+    return this.habits().find((h) => h.id === task.templateId)?.minVersion ?? null;
   }
 
   /** Закрывает баннер-фидбэк вручную. */

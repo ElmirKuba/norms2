@@ -4,8 +4,9 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Observable, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { errorMessage } from '../../../core/http/error-message.util';
+import { AccentApiService } from '../services/accent-api.service';
 import { OBSTACLE_TYPE_OPTIONS } from './obstacle-format.util';
-import type { ObstaclePayload, ObstacleType, ObstacleView } from '../accent.types';
+import type { AccentRefItem, ObstaclePayload, ObstacleType, ObstacleView } from '../accent.types';
 
 /** Данные в модалку: если `obstacle` задан — режим редактирования (префилл). */
 export interface ObstacleFormData {
@@ -60,6 +61,19 @@ export interface ObstacleFormData {
             </select>
             <span class="obf__hint">Это про природу помехи, а не про твой характер.</span>
           </label>
+
+          @if (domains().length > 0) {
+            <label class="obf__field">
+              <span class="obf__label">Сфера жизни <span class="obf__opt">(необязательно)</span></span>
+              <select class="obf__input" formControlName="domainKey">
+                <option [ngValue]="null">— не выбрана —</option>
+                @for (d of domains(); track d.key) {
+                  <option [ngValue]="d.key">{{ d.title }}</option>
+                }
+              </select>
+              <span class="obf__hint">Та же ось, что у целей и привычек — потом будет видно, где тебе мешает чаще.</span>
+            </label>
+          }
 
           <label class="obf__field">
             <span class="obf__label">Когда приходит <span class="obf__opt">(необязательно)</span></span>
@@ -167,6 +181,7 @@ export class ObstacleFormModalComponent {
   private readonly _ref =
     inject<MatDialogRef<ObstacleFormModalComponent, ObstaclePayload | null>>(MatDialogRef);
   private readonly _data = inject<ObstacleFormData>(MAT_DIALOG_DATA);
+  private readonly _api = inject(AccentApiService);
 
   /** Режим редактирования (иначе создание). */
   protected readonly isEdit = this._data.obstacle !== undefined;
@@ -181,22 +196,28 @@ export class ObstacleFormModalComponent {
       validators: [Validators.required, Validators.maxLength(160)],
     }),
     type: new FormControl<ObstacleType>('avoidance', { nonNullable: true }),
+    domainKey: new FormControl<string | null>(null),
     trigger: new FormControl('', { nonNullable: true }),
     symptoms: new FormControl('', { nonNullable: true }),
     intensity: new FormControl<number>(3, { nonNullable: true }),
   });
 
+  /** Справочник сфер жизни (общая ось с целями и привычками). */
+  protected readonly domains = signal<AccentRefItem[]>([]);
   /** Идёт сохранение. */
   protected readonly busy = signal(false);
   /** Ошибка сохранения (форма остаётся открытой — ввод не теряется). */
   protected readonly formError = signal<string | null>(null);
 
   public constructor() {
+    // Ошибка загрузки справочника форму не ломает: селект просто не покажется.
+    this._api.listDomains().subscribe({ next: (d) => this.domains.set(d), error: () => undefined });
     const obstacle = this._data.obstacle;
     if (obstacle) {
       this.form.patchValue({
         name: obstacle.name,
         type: obstacle.type,
+        domainKey: obstacle.domainKey,
         trigger: obstacle.trigger ?? '',
         symptoms: obstacle.symptoms ?? '',
         intensity: obstacle.intensity,
@@ -231,6 +252,7 @@ export class ObstacleFormModalComponent {
     const payload: ObstaclePayload = {
       name: raw.name.trim(),
       type: raw.type,
+      domainKey: raw.domainKey,
       trigger: raw.trigger.trim() === '' ? null : raw.trigger.trim(),
       symptoms: raw.symptoms.trim() === '' ? null : raw.symptoms.trim(),
       intensity: raw.intensity,

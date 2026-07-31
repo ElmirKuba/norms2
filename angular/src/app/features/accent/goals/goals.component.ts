@@ -161,6 +161,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                   </div>
                   <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
                   @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                  @if (g.tradeoff) { <span class="goals__tradeoff">⚖️ Ради этого отказываюсь: {{ g.tradeoff }}</span> }
                   <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
                     <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
                   </div>
@@ -198,6 +199,7 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
                   </div>
                   <a class="goals__name" [routerLink]="[g.id]">{{ g.title }}</a>
                   @if (g.whyItMatters) { <span class="goals__why">{{ g.whyItMatters }}</span> }
+                  @if (g.tradeoff) { <span class="goals__tradeoff">⚖️ Ради этого отказываюсь: {{ g.tradeoff }}</span> }
                   <div class="goals__bar" [attr.aria-label]="(g.percentage ?? 0) + '% выполнено'">
                     <span class="goals__bar-fill" [style.width.%]="g.percentage ?? 0"></span>
                   </div>
@@ -454,6 +456,12 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
       .goals__why {
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
+      }
+      /* Цена выбора (ADR-0053): человек её вписал, беря цель в фокус, — значит должен и видеть. */
+      .goals__tradeoff {
+        font-size: var(--fs-sm);
+        color: var(--color-text-muted);
+        font-style: italic;
       }
       .goals__bar {
         position: relative;

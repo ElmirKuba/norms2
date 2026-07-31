@@ -9,14 +9,13 @@
 странице «О проекте» (`/about`) запущенного приложения.
 
 **Код живёт на пяти площадках** — в разных руках и юрисдикциях, чтобы проект не зависел от
-доступности одного сервиса. Ветка везде `main`, клонировать и форкать можно с любой:
+доступности одного сервиса: [GitHub](https://github.com/ElmirKuba/norms2) ·
+[Codeberg](https://codeberg.org/elmir_kuba/norms2) · [SourceHut](https://git.sr.ht/~elmir_kuba/norms2) ·
+[GitFlic](https://gitflic.ru/project/elmirweb/norms2) · [GitVerse](https://gitverse.ru/elmir_kuba/norms2).
 
-| Всегда свежие | Обновляются на релизах |
-|---|---|
-| [GitHub](https://github.com/ElmirKuba/norms2) · [Codeberg](https://codeberg.org/elmir_kuba/norms2) · [SourceHut](https://git.sr.ht/~elmir_kuba/norms2) | [GitFlic](https://gitflic.ru/project/elmirweb/norms2) · [GitVerse](https://gitverse.ru/elmir_kuba/norms2) |
-
-Первые три получают каждый коммит; российские зеркала догоняются одним пушем при выпуске версии и
-между релизами намеренно отстают. Разработка идёт на **GitHub** — правки и вопросы удобнее туда.
+Все пять обновляются на каждый коммит, ветка везде `main` — клонировать и форкать можно с любой.
+Если какое-то зеркало временно отстало, значит хостинг был недоступен в момент пуша и догоняется
+позже. Разработка идёт на **GitHub** — правки и вопросы удобнее туда.
 
 ## Что это простыми словами
 

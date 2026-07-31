@@ -9,13 +9,13 @@
 - **Сервер:** Selectel VDS «Johanna», Ubuntu 24.04, 2 vCPU / 2 ГБ RAM + 4 ГБ swap, IP `139.100.225.195`. Доступ/секреты — в памяти Claude (`prod-vds-access`), не в репозитории.
 - **Домен:** `нормисы.рф` (Timeweb DNS, A `@` → IP, TTL 600). В конфигах/ACME — **punycode** `xn--h1ahceki4e.xn--p1ai` (в DNS-панели показывается кириллицей).
 - **Каталог деплоя:** `/home/norms2` — git-клон ветки `main` с `https://github.com/ElmirKuba/norms2.git`.
-  Код зеркалится ещё на [Codeberg](https://codeberg.org/elmir_kuba/norms2) (Forgejo, Германия),
-  [SourceHut](https://git.sr.ht/~elmir_kuba/norms2) и — с отставанием, порциями на релизах — на
-  российские GitFlic и GitVerse. **Сервер пулит с GitHub** (пока что). Если GitHub станет
-  недоступен: `git remote set-url origin ssh://git@codeberg.org/elmir_kuba/norms2.git` (или
-  `git@git.sr.ht:~elmir_kuba/norms2`) в `/home/norms2`, плюс ключ доступа на сервере — остальной
-  порядок выкатки не меняется. **Брать горячее зеркало**, не российское: те по устройству отстают,
-  и свежих коммитов на них может не быть. Правило зеркал — в [`CLAUDE.md`](../CLAUDE.md).
+  Код зеркалится ещё на [Codeberg](https://codeberg.org/elmir_kuba/norms2),
+  [SourceHut](https://git.sr.ht/~elmir_kuba/norms2), [GitFlic](https://gitflic.ru/project/elmirweb/norms2)
+  и [GitVerse](https://gitverse.ru/elmir_kuba/norms2) — все пять на каждый коммит. **Сервер пулит с
+  GitHub** (пока что). Если GitHub станет недоступен: `git remote set-url origin <адрес зеркала>` в
+  `/home/norms2` плюс ключ доступа на сервере — остальной порядок выкатки не меняется. Перед
+  переключением **сверить вершину** выбранного зеркала: оно могло не принять последний коммит, если
+  в тот момент лежало. Правило зеркал — в [`CLAUDE.md`](../CLAUDE.md).
 - **Обновление = `git pull` + пересборка + перезапуск** (см. §5).
 
 ### Сервисы (compose-проект `norms2_prod`)

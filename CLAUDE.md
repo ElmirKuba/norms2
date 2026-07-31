@@ -150,25 +150,30 @@ test(invites): cover ban-chain cases
 
 ---
 
-## Куда пушим: два зеркала (реш. Elmir 2026-07-31)
+## Куда пушим: три зеркала (реш. Elmir 2026-07-31)
 
-Код живёт **в двух местах сразу** — [GitHub](https://github.com/ElmirKuba/norms2) (`origin`) и
-[Codeberg](https://codeberg.org/elmir_kuba/norms2) (`codeberg`, Forgejo, Германия). Зеркала
-равноправны по содержимому; смысл — не потерять проект, если один хостинг закроет доступ.
+Код живёт **в трёх местах сразу** — [GitHub](https://github.com/ElmirKuba/norms2) (`origin`),
+[Codeberg](https://codeberg.org/elmir_kuba/norms2) (`codeberg`, Forgejo, Германия) и
+[SourceHut](https://git.sr.ht/~elmir_kuba/norms2) (`sourcehut`, независимый минималистичный
+сервис). Зеркала равноправны по содержимому; смысл — не потерять проект, если один хостинг
+закроет доступ.
 
-- **Пушим обе командой явно, каждый раз:**
+- **Пушим в каждое явной командой, каждый раз:**
   ```bash
   git push origin main      # GitHub
   git push codeberg main    # Codeberg
+  git push sourcehut main   # SourceHut
   ```
   `upstream` у `main` — `origin/main`, поэтому голый `git push` уходит **только на GitHub**;
-  второй пуш — отдельной строкой, не забывать (автозеркалирования нет намеренно: один push,
-  падающий целиком из-за недоступности одного хоста, хуже двух явных).
+  остальные — отдельными строками, не забывать (автозеркалирования нет намеренно: один push,
+  падающий целиком из-за недоступности одного хоста, хуже трёх явных).
 - **Прод (Johanna) пулит с GitHub** — пока что. Если GitHub станет недоступен, переключение =
-  `git remote set-url origin ssh://git@codeberg.org/elmir_kuba/norms2.git` на сервере, ключ там
-  свой; деплой в остальном не меняется ([`docs/deployment.md §5`](./docs/deployment.md)).
-- Ключ доступа к Codeberg — `~/.ssh/codeberg_kuba_minipc` (только для этого хоста, с гитхабовским
-  не пересекается); хост прописан в `~/.ssh/config`.
+  `git remote set-url origin ssh://git@codeberg.org/elmir_kuba/norms2.git` на сервере (или
+  `git@git.sr.ht:~elmir_kuba/norms2`), ключ там свой; деплой в остальном не меняется
+  ([`docs/deployment.md §5`](./docs/deployment.md)).
+- Ключи доступа — по одному на хостинг, чтобы утечка одного не открывала всё:
+  `~/.ssh/codeberg_kuba_minipc`, `~/.ssh/sourcehut_kuba_minipc` (GitHub — прежний
+  `~/.ssh/github_kuba_win_minipc`); хосты прописаны в `~/.ssh/config`.
 
 ---
 

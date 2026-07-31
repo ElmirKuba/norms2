@@ -46,7 +46,8 @@
 | [`backend.md`](./backend.md) | Правила `./nest/`: структура модуля, тесты, DI, версии | ✅ v1 |
 | [`frontend.md`](./frontend.md) | Правила `./angular/`: feature-структура, Signals, HTTP-слой | ✅ v1 |
 | [`ui-ux.md`](./ui-ux.md) | Экраны фазы 1, дизайн-язык, копирайт, адаптивность | ✅ v1 |
-| [`deployment.md`](./deployment.md) | Docker, Traefik+TLS, ENV, бэкапы, sweep, переезд | ✅ v1 |
+| [`deployment.md`](./deployment.md) | Docker, Traefik+TLS, ENV, выкатка, sweep, переезд | ✅ v1 |
+| [`backup.md`](./backup.md) | Бэкап прод-данных: что берём и что нет, процедура, проверки, восстановление, открытые дыры | ✅ v1 (ручной режим) |
 | [`getting-started.md`](./getting-started.md) | Локальный запуск с нуля | ✅ v1 |
 
 ### Разделы (`sections/`)

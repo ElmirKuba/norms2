@@ -6,6 +6,21 @@ import type { GoalDirection, GoalFull, GoalStatus } from './goal-full.interface'
  * `pace`/`forecast`/`projectedCompletionDate`, ADR-0052) добавятся в 2.5·9 — здесь пока
  * статическая проекция цели.
  */
+/**
+ * Привязанная микро-победа как «версия цели на плохой день» (2.7.2) — зеркало `TaskMinAction`
+ * у задач: подпись кнопки и параметры таймера приходят вместе с целью.
+ */
+export interface GoalFallbackAction {
+  /** Идентификатор микро-победы. */
+  microWinId: string;
+  /** Название («Выйти на улицу») — идёт прямо в подпись кнопки. */
+  title: string;
+  /** Длительность действия (сек) — для таймера. */
+  durationSeconds: number;
+  /** Подготовка перед действием (сек) или null. */
+  prepSeconds: number | null;
+}
+
 export interface GoalView {
   /** Идентификатор. */
   id: string;
@@ -45,6 +60,12 @@ export interface GoalView {
   focusOrder: number | null;
   /** Начало текущей паузы (ISO) или null. */
   pausedAt: string | null;
+  /**
+   * Развёрнутая «версия цели на плохой день» (2.7.2) — всё нужное для кнопки и таймера сразу,
+   * чтобы экран цели не тянул каталог микро-побед вторым запросом. Заполняется только на чтении
+   * одной цели; в списках и ответах мутаций — null.
+   */
+  fallbackAction: GoalFallbackAction | null;
 }
 
 /**
@@ -53,8 +74,12 @@ export interface GoalView {
  * @param full Доменная сущность.
  * @returns Проекция наружу.
  */
-export function toGoalView(full: GoalFull): GoalView {
+export function toGoalView(
+  full: GoalFull,
+  fallbackAction: GoalFallbackAction | null = null,
+): GoalView {
   return {
+    fallbackAction,
     id: full.id,
     parentGoalId: full.parentGoalId,
     title: full.title,

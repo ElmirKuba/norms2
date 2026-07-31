@@ -373,6 +373,18 @@ export const GOAL_DIRECTION_DESCRIPTIONS: Readonly<Record<GoalDirection, string>
 };
 
 /** Базовая проекция цели (мутации `POST`/`PATCH`/lifecycle возвращают её). */
+/** Привязанная микро-победа как «версия цели на плохой день» (2.7.2) — зеркало `TaskMinAction`. */
+export interface GoalFallbackAction {
+  /** Идентификатор микро-победы. */
+  microWinId: string;
+  /** Название — идёт в подпись кнопки. */
+  title: string;
+  /** Длительность действия (сек) — для таймера. */
+  durationSeconds: number;
+  /** Подготовка перед действием (сек) или null. */
+  prepSeconds: number | null;
+}
+
 export interface GoalView {
   /** Идентификатор. */
   id: string;
@@ -402,6 +414,11 @@ export interface GoalView {
   completedAt: string | null;
   /** Текст «версия на плохой день» или null. */
   fallbackVersion: string | null;
+  /**
+   * Развёрнутая «версия на плохой день» (2.7.2): всё для кнопки и таймера сразу. Приходит только
+   * при чтении ОДНОЙ цели (`GET /accent/goals/:id`); в списках — null.
+   */
+  fallbackAction?: GoalFallbackAction | null;
   /** Микро-победа как версия цели на плохой день (2.7·H) или null. */
   fallbackMicroWinId: string | null;
   /** «Ради чего откажусь» (mission-filter, ADR-0053) или null. */

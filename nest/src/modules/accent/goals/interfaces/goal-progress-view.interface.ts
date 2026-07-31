@@ -1,6 +1,6 @@
 import type { GoalFull } from './goal-full.interface';
 import { toGoalView } from './goal-view.interface';
-import type { GoalView } from './goal-view.interface';
+import type { GoalFallbackAction, GoalView } from './goal-view.interface';
 import type { GoalProgress } from '../goal-progress.util';
 
 /**
@@ -14,8 +14,13 @@ export type GoalProgressView = GoalView & GoalProgress;
  * Собирает `GoalProgressView` из доменной цели и посчитанного прогресса.
  * @param goal Доменная цель.
  * @param progress Вычисляемый прогресс (из `AccentGoalDomainService.describe`).
+ * @param fallbackAction Развёрнутая «версия на плохой день» (2.7.2; опц.).
  * @returns Проекция с прогрессом.
  */
-export function toGoalProgressView(goal: GoalFull, progress: GoalProgress): GoalProgressView {
-  return { ...toGoalView(goal), ...progress };
+export function toGoalProgressView(
+  goal: GoalFull,
+  progress: GoalProgress,
+  fallbackAction: GoalFallbackAction | null = null,
+): GoalProgressView {
+  return { ...toGoalView(goal, fallbackAction), ...progress };
 }

@@ -23,11 +23,14 @@ import { AccentApiService } from '../services/accent-api.service';
 import { GOAL_DIRECTION_LABELS } from '../accent.types';
 import type {
   GoalEntryView,
+  GoalFallbackAction,
   GoalForecast,
   GoalProgressView,
   GoalStatus,
   MilestoneView,
 } from '../accent.types';
+import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
+import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
 import { GoalFormModalComponent } from './goal-form-modal.component';
 import type { GoalFormData, GoalFormResult } from './goal-form-modal.component';
 
@@ -158,13 +161,31 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
           </app-card>
         }
 
-        @if (g.fallbackVersion) {
+        @if (g.fallbackVersion || g.fallbackAction) {
           <aside class="gd__fallback">
             <span class="gd__fallback-icon" aria-hidden="true">🌱</span>
             <span class="gd__fallback-text">
-              <strong>На плохой день:</strong> {{ g.fallbackVersion }}
+              @if (g.fallbackVersion) {
+                <strong>На плохой день:</strong> {{ g.fallbackVersion }}
+              } @else {
+                <strong>На плохой день</strong> — сделай хотя бы шаг в сторону цели.
+              }
             </span>
+            @if (g.fallbackAction; as min) {
+              <app-button
+                variant="ghost"
+                [loading]="minBusy()"
+                title="Плохой день? Сделай минимум — связь с целью не разорвётся"
+                (click)="doMinimum(min)"
+              >🌙 Сделать минимум: {{ min.title }}</app-button>
+            }
           </aside>
+        }
+        @if (minDone()) {
+          <p class="gd__min-done" role="status">
+            🌙 Минимум засчитан — сегодня ты не разорвал связь с целью. В прогресс это не идёт, и
+            так и задумано: смысл был в том, чтобы не выпасть.
+          </p>
         }
 
         @if (g.parentGoalId === null) {
@@ -400,6 +421,12 @@ const FORECAST_LABELS: Readonly<Record<'ahead' | 'on_track' | 'behind', string>>
         background: var(--color-surface-2);
         border-left: 3px solid var(--color-accent);
         border-radius: var(--radius-md);
+      }
+      .gd__min-done {
+        margin: 0;
+        padding: var(--space-2) var(--space-4);
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
       }
       .gd__fallback-icon {
         font-size: var(--fs-lg);
@@ -680,6 +707,10 @@ export class GoalDetailComponent {
   protected readonly hasMore = signal(false);
   /** Идёт догрузка истории. */
   protected readonly moreBusy = signal(false);
+  /** Идёт зачёт «минимума на плохой день» (2.7.2). */
+  protected readonly minBusy = signal(false);
+  /** Минимум засчитан — показываем спокойное подтверждение (2.7.2). */
+  protected readonly minDone = signal(false);
   /** Открыто ли меню «⋯» действий с целью. */
   protected readonly menuOpen = signal(false);
   /** Идёт присвоение примера. */
@@ -941,6 +972,53 @@ export class GoalDetailComponent {
         this.recordError.set(errorMessage(err));
         this.busy.set(false);
       },
+    });
+  }
+
+  /**
+   * «Версия цели на плохой день» (2.7.2): запускает таймер привязанной микро-победы и по зачёту
+   * логирует её обычным `complete`.
+   *
+   * **В прогресс цели это осознанно НЕ идёт:** выйти на улицу — не километры пробежки, и
+   * подкрутить процент значило бы соврать. Смысл действия другой — не разорвать связь с целью в
+   * тот день, когда на настоящий шаг сил нет. Отмена таймера не пишет ничего: человек передумал,
+   * а не провалился.
+   * @param min Привязанная микро-победа (из `fallbackAction`).
+   */
+  protected doMinimum(min: GoalFallbackAction): void {
+    if (this.minBusy()) {
+      return;
+    }
+    const ref = this._dialog.open<
+      AccentTimerModalComponent,
+      AccentTimerData,
+      AccentTimerResult | null
+    >(AccentTimerModalComponent, {
+      width: MODAL_SMALL_WIDTH,
+      panelClass: 'modal-flush',
+      disableClose: true,
+      data: {
+        title: min.title,
+        durationSeconds: min.durationSeconds,
+        prepSeconds: min.prepSeconds,
+        mode: 'binary',
+      },
+    });
+    ref.afterClosed().subscribe((result) => {
+      if (result?.status !== 'done') {
+        return;
+      }
+      this.minBusy.set(true);
+      this._api.completeMicroWin(min.microWinId).subscribe({
+        next: () => {
+          this.minBusy.set(false);
+          this.minDone.set(true);
+        },
+        error: (err: unknown) => {
+          this.minBusy.set(false);
+          this._modal.error('Не удалось засчитать минимум', errorMessage(err));
+        },
+      });
     });
   }
 

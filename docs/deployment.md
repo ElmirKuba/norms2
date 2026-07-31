@@ -9,6 +9,10 @@
 - **Сервер:** Selectel VDS «Johanna», Ubuntu 24.04, 2 vCPU / 2 ГБ RAM + 4 ГБ swap, IP `139.100.225.195`. Доступ/секреты — в памяти Claude (`prod-vds-access`), не в репозитории.
 - **Домен:** `нормисы.рф` (Timeweb DNS, A `@` → IP, TTL 600). В конфигах/ACME — **punycode** `xn--h1ahceki4e.xn--p1ai` (в DNS-панели показывается кириллицей).
 - **Каталог деплоя:** `/home/norms2` — git-клон ветки `main` с `https://github.com/ElmirKuba/norms2.git`.
+  Код зеркалится ещё и на [Codeberg](https://codeberg.org/elmir_kuba/norms2) (Forgejo, Германия), но
+  **сервер пулит с GitHub** — пока что. Если GitHub станет недоступен: `git remote set-url origin
+  ssh://git@codeberg.org/elmir_kuba/norms2.git` в `/home/norms2` (плюс ключ доступа на сервере),
+  остальной порядок выкатки не меняется. Правило зеркал — в [`CLAUDE.md`](../CLAUDE.md).
 - **Обновление = `git pull` + пересборка + перезапуск** (см. §5).
 
 ### Сервисы (compose-проект `norms2_prod`)

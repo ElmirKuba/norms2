@@ -150,6 +150,28 @@ test(invites): cover ban-chain cases
 
 ---
 
+## Куда пушим: два зеркала (реш. Elmir 2026-07-31)
+
+Код живёт **в двух местах сразу** — [GitHub](https://github.com/ElmirKuba/norms2) (`origin`) и
+[Codeberg](https://codeberg.org/elmir_kuba/norms2) (`codeberg`, Forgejo, Германия). Зеркала
+равноправны по содержимому; смысл — не потерять проект, если один хостинг закроет доступ.
+
+- **Пушим обе командой явно, каждый раз:**
+  ```bash
+  git push origin main      # GitHub
+  git push codeberg main    # Codeberg
+  ```
+  `upstream` у `main` — `origin/main`, поэтому голый `git push` уходит **только на GitHub**;
+  второй пуш — отдельной строкой, не забывать (автозеркалирования нет намеренно: один push,
+  падающий целиком из-за недоступности одного хоста, хуже двух явных).
+- **Прод (Johanna) пулит с GitHub** — пока что. Если GitHub станет недоступен, переключение =
+  `git remote set-url origin ssh://git@codeberg.org/elmir_kuba/norms2.git` на сервере, ключ там
+  свой; деплой в остальном не меняется ([`docs/deployment.md §5`](./docs/deployment.md)).
+- Ключ доступа к Codeberg — `~/.ssh/codeberg_kuba_minipc` (только для этого хоста, с гитхабовским
+  не пересекается); хост прописан в `~/.ssh/config`.
+
+---
+
 ## Где НЕ должно быть кода
 
 - ❌ Бизнес-логика в `app.module.ts` или `main.ts` — только bootstrap.

@@ -74,10 +74,7 @@ export class DataFreshnessService {
       }
       released = true;
       this._busyCount = Math.max(0, this._busyCount - 1);
-      if (this._pending && !this._isBusy()) {
-        this._pending = false;
-        this._reload();
-      }
+      this._releaseIfIdle();
     };
   }
 
@@ -100,6 +97,18 @@ export class DataFreshnessService {
     window.addEventListener('focus', () => this._request());
     // Вернулась сеть — данные могли уйти вперёд, пока нас не было.
     window.addEventListener('online', () => this._request());
+    // Диалог держит занятость сам по себе (без `hold()`), поэтому его закрытие — тоже момент
+    // освобождения: иначе отложенное обновление ждало бы следующего возврата к вкладке, а человек
+    // уже смотрит на устаревший экран.
+    this._dialog.afterAllClosed.subscribe(() => this._releaseIfIdle());
+  }
+
+  /** Если занятости больше нет — выполняет отложенное обновление. */
+  private _releaseIfIdle(): void {
+    if (this._pending && !this._isBusy()) {
+      this._pending = false;
+      this._reload();
+    }
   }
 
   /** Занят ли пользователь: открытый диалог или удержанный «замок». */

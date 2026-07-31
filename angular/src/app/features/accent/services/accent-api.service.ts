@@ -179,9 +179,18 @@ export class AccentApiService {
   /**
    * Отметить выполнение (binary — без `doneValue`; quantitative/timed — со значением).
    * Возвращает задачу + событие лесенки (`ladderEvent`) для фидбэка адаптивности.
+   * `replace` (2.7.1) — осознанная замена уже записанного результата **меньшим** значением
+   * («Начать сначала» в таймере). Без флага понижение → `409 TASK_VALUE_DOWNGRADE`.
    */
-  public completeTask(id: string, doneValue?: number): Observable<CompleteTaskResult> {
-    const body = doneValue === undefined ? {} : { doneValue };
+  public completeTask(
+    id: string,
+    doneValue?: number,
+    replace = false,
+  ): Observable<CompleteTaskResult> {
+    const body = {
+      ...(doneValue === undefined ? {} : { doneValue }),
+      ...(replace ? { replace: true } : {}),
+    };
     return this._http.post<CompleteTaskResult>(`${API_PREFIX}/accent/tasks/${id}/complete`, body);
   }
 

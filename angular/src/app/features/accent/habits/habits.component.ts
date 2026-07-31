@@ -746,8 +746,14 @@ export class HabitsComponent {
     });
   }
 
-  /** Отмечает выполнение задачи (binary — без значения; иначе — введённое). Двигает лесенку на бэке. */
-  protected completeTask(task: TaskView, rawValue?: string): void {
+  /**
+   * Отмечает выполнение задачи (binary — без значения; иначе — введённое). Двигает лесенку на бэке.
+   * @param task Задача дня.
+   * @param rawValue Введённое значение (для quantitative/timed).
+   * @param replace Осознанная замена результата меньшим значением — «Начать сначала» в таймере
+   *   (2.7.1): без этого флага бэк защищает уже записанный результат от понижения.
+   */
+  protected completeTask(task: TaskView, rawValue?: string, replace = false): void {
     const doneValue =
       task.kind === 'binary' || rawValue === undefined || rawValue.trim() === ''
         ? undefined
@@ -758,7 +764,7 @@ export class HabitsComponent {
     this.busyTaskId.set(task.id);
     // Пока летит мутация, обновление по фокусу откладывается — иначе список моргнёт под руками.
     const release = this._freshness.hold();
-    this._api.completeTask(task.id, doneValue).subscribe({
+    this._api.completeTask(task.id, doneValue, replace).subscribe({
       next: (result) => {
         this._patchTask(result.task);
         this._flashLadder(result.ladderEvent, task);
@@ -830,8 +836,10 @@ export class HabitsComponent {
         return;
       }
       // «Сначала» (fromRestart) — заменить прогресс; «Продолжить» — накопить к сделанному.
+      // Замена может оказаться МЕНЬШЕ уже записанного (засчитал раньше срока) — это единственное
+      // легальное понижение, поэтому идёт с явным `replace` (2.7.1), иначе бэк вернёт 409.
       const total = result.fromRestart ? result.performedSeconds : done + result.performedSeconds;
-      this.completeTask(task, String(total));
+      this.completeTask(task, String(total), result.fromRestart);
     });
   }
 

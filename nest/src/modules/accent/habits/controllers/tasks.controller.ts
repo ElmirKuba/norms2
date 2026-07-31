@@ -14,6 +14,7 @@ import { CompleteMinimumTaskUseCase } from '../use-cases/complete-minimum-task.u
 import type { CompleteMinimumResult } from '../use-cases/complete-minimum-task.use-case';
 import { UncompleteTaskUseCase } from '../use-cases/uncomplete-task.use-case';
 import { PostponeTaskUseCase } from '../use-cases/postpone-task.use-case';
+import { UnpostponeTaskUseCase } from '../use-cases/unpostpone-task.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { CompleteTaskResult, TaskView } from '../interfaces/task-view.interface';
 
@@ -43,6 +44,7 @@ export class TasksController {
     private readonly _completeMinimum: CompleteMinimumTaskUseCase,
     private readonly _uncomplete: UncompleteTaskUseCase,
     private readonly _postpone: PostponeTaskUseCase,
+    private readonly _unpostpone: UnpostponeTaskUseCase,
   ) {}
 
   /**
@@ -157,5 +159,20 @@ export class TasksController {
     @Req() request: AuthenticatedRequest,
   ): Promise<TaskView> {
     return this._postpone.execute(id, request.account.id);
+  }
+
+  /**
+   * Возвращает перенесённую задачу обратно на сегодня (2.7.2). Завтрашняя копия, рождённая этим
+   * переносом, удаляется, если её ещё не трогали.
+   * @param id Идентификатор задачи.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция вернувшейся в работу задачи.
+   */
+  @Post('tasks/:id/unpostpone')
+  public unpostpone(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<TaskView> {
+    return this._unpostpone.execute(id, request.account.id, request.account.timezone);
   }
 }

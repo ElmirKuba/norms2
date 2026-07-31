@@ -313,6 +313,56 @@ export class AccentTaskDomainService {
   }
 
   /**
+   * Возвращает перенесённую задачу обратно на сегодня (2.7.2). Зеркало `postpone`: сегодняшняя
+   * строка снова `pending`, а завтрашняя копия, рождённая этим переносом, удаляется.
+   *
+   * **Зачем:** перенос был единственным необратимым действием раздела — и делается он в худшем
+   * состоянии человека. Отметку выполнения отменить можно, а «сегодня не могу» — нельзя; продукт,
+   * обещающий «плохой день не отменяет прогресс», не должен фиксировать плохой день окончательно.
+   *
+   * Границы: только `skipped/postponed` и только **сегодняшняя** задача — воскрешать позавчерашние
+   * переносы значило бы переписывать историю, а не «дух восстановился». Завтрашнюю копию удаляем
+   * лишь если её никто не трогал (`pending`, без значения) и она родилась именно из этого переноса;
+   * тронутую оставляем — там уже чужой результат. Лесенка не двигается: перенос её не двигал.
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param today Сегодняшний день аккаунта (`YYYY-MM-DD`, по его таймзоне).
+   * @returns Задача, вернувшаяся в работу.
+   * @throws {TaskNotFoundError} Если нет / не ваша.
+   * @throws {ValidationError} Если задача не переносилась или относится к другому дню.
+   */
+  public async unpostpone(id: string, accountId: string, today: string): Promise<TaskFull> {
+    const task = await this.getOwned(id, accountId);
+    if (task.status !== 'skipped' || task.skipReason !== 'postponed') {
+      throw new ValidationError('Эта задача не переносилась.');
+    }
+    if (task.occurredOn !== today) {
+      throw new ValidationError('Вернуть можно только сегодняшний перенос.');
+    }
+    const nextDay = this._nextDay(task.occurredOn);
+    const copy = (await this._repository.listByAccountOn(accountId, nextDay)).find(
+      (t) => t.postponedFromTaskId === task.id,
+    );
+    const copyUntouched =
+      copy !== undefined && copy.status === 'pending' && copy.doneValue === null;
+    return this._transactionRunner.run(async (tx) => {
+      if (copy !== undefined && copyUntouched) {
+        await this._repository.deleteOwned(copy.id, accountId, tx);
+      }
+      const restored = await this._repository.update(
+        id,
+        accountId,
+        { status: 'pending', skipReason: null, completedAt: null, doneValue: null },
+        tx,
+      );
+      if (restored === null) {
+        throw new TaskNotFoundError('Задача не найдена.');
+      }
+      return restored;
+    });
+  }
+
+  /**
    * Следующий день для даты `YYYY-MM-DD` (в «пространстве дат», UTC-полночь +1).
    * @param ymd Дата `YYYY-MM-DD`.
    * @returns Дата следующего дня `YYYY-MM-DD`.

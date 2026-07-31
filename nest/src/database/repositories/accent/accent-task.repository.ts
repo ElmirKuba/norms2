@@ -176,6 +176,21 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   }
 
   /**
+   * Удаляет одну свою задачу (2.7.2 — откат переноса убирает завтрашнюю копию).
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param tx Опц. транзакция.
+   * @returns true, если строка была удалена.
+   */
+  public async deleteOwned(id: string, accountId: string, tx?: Transaction): Promise<boolean> {
+    const rows = await this._exec(tx)
+      .delete(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
+      .returning({ id: tasks.id });
+    return rows.length > 0;
+  }
+
+  /**
    * Исполнитель: транзакция (если передана) или базовый клиент. Опаковый `tx` приводится
    * к `DrizzleExecutor` тут — наружу ORM не утекает.
    * @param tx Опц. транзакция.

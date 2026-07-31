@@ -126,4 +126,13 @@ export interface AccentTaskRepositoryPort {
    * @returns Число удалённых.
    */
   deletePendingByTemplate(templateId: string, accountId: string): Promise<number>;
+
+  /**
+   * Удаляет одну свою задачу (2.7.2 — откат переноса убирает завтрашнюю копию).
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param tx Опц. транзакция.
+   * @returns true, если строка была удалена.
+   */
+  deleteOwned(id: string, accountId: string, tx?: Transaction): Promise<boolean>;
 }

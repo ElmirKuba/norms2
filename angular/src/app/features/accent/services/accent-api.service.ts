@@ -212,6 +212,14 @@ export class AccentApiService {
     return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks/${id}/postpone`, {});
   }
 
+  /**
+   * Вернуть перенесённую задачу на сегодня (2.7.2): задача снова в работе, завтрашняя копия
+   * удаляется. Работает только для сегодняшнего переноса.
+   */
+  public unpostponeTask(id: string): Observable<TaskView> {
+    return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks/${id}/unpostpone`, {});
+  }
+
   // ─────────────────────────── Цели (2.5) ───────────────────────────
 
   /** Список целей (с вычисляемым прогрессом), опц. фильтр по статусу/сфере. */

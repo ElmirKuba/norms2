@@ -158,6 +158,14 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       @if (t.status === 'pending') {
                         <app-button variant="ghost" (click)="postpone(t)">→ Завтра</app-button>
                       }
+                      @if (t.status === 'skipped' && t.skipReason === 'postponed') {
+                        <app-button
+                          variant="ghost"
+                          [loading]="busyTaskId() === t.id"
+                          title="Силы вернулись? Забери задачу обратно на сегодня"
+                          (click)="unpostpone(t)"
+                        >↩ Вернуть на сегодня</app-button>
+                      }
                     </div>
                   </div>
                   @if (t.status === 'pending' && t.minAction; as min) {
@@ -885,6 +893,29 @@ export class HabitsComponent {
         this.busyTaskId.set(null);
       },
       error: () => this.busyTaskId.set(null),
+    });
+  }
+
+  /**
+   * Возвращает перенесённую задачу обратно на сегодня (2.7.2): силы вернулись — забираем её
+   * из завтра. Список дня перечитываем целиком: на сервере исчезла завтрашняя копия, и
+   * точечная замена одной строки этого не покажет.
+   * @param task Перенесённая задача.
+   */
+  protected unpostpone(task: TaskView): void {
+    this.busyTaskId.set(task.id);
+    const release = this._freshness.hold();
+    this._api.unpostponeTask(task.id).subscribe({
+      next: () => {
+        this.busyTaskId.set(null);
+        release();
+        this._loadTasks();
+      },
+      error: (err: unknown) => {
+        this.busyTaskId.set(null);
+        release();
+        this._modal.error('Не удалось вернуть задачу', errorMessage(err));
+      },
     });
   }
 

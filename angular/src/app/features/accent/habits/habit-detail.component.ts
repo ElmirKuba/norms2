@@ -65,6 +65,9 @@ import { recurrenceLabel } from './recurrence-label.util';
                   <div class="hd__day">
                     <span class="hd__date">{{ fmtDate(d.occurredOn) }}</span>
                     <span class="hd__event" [attr.data-event]="d.event">{{ eventText(d) }}</span>
+                    @if (d.completedAt; as at) {
+                      <span class="hd__time">в {{ fmtTime(at) }}</span>
+                    }
                     @if (d.event === 'pending' && d.isToday) {
                       <app-button variant="ghost" (click)="toToday()">В «Сегодня»</app-button>
                     }
@@ -154,6 +157,10 @@ import { recurrenceLabel } from './recurrence-label.util';
         gap: var(--space-3);
         flex-wrap: wrap;
       }
+      .hd__time {
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
+      }
       .hd__date {
         min-width: 7rem;
         color: var(--color-text-muted);
@@ -242,6 +249,16 @@ export class HabitDetailComponent {
       default:
         return day.isToday ? 'Ждёт сегодня' : 'Не отмечено';
     }
+  }
+
+  /**
+   * Время выполнения — час и минуты. Показываем рядом с отметкой: сервер знал этот момент и
+   * молчал о нём (хвост «поля без потребителя», `completedAt`).
+   * @param iso Момент выполнения (ISO).
+   * @returns Строка вида «21:35».
+   */
+  protected fmtTime(iso: string): string {
+    return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   }
 
   /**

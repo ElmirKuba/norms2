@@ -373,6 +373,105 @@ export const GOAL_DIRECTION_DESCRIPTIONS: Readonly<Record<GoalDirection, string>
 };
 
 /** Базовая проекция цели (мутации `POST`/`PATCH`/lifecycle возвращают её). */
+/** Что дашборд предлагает сделать прямо сейчас (2.11). */
+export type DashboardNowKind = 'overdue' | 'task' | 'micro_win' | 'all_done';
+
+/** Герой главного экрана: одно дело и одна кнопка. */
+export interface DashboardNow {
+  /** Что именно предлагаем. */
+  kind: DashboardNowKind;
+  /** Название дела или null (для `all_done` дела нет — экран хвалит). */
+  title: string | null;
+  /** Задача для действия или null. */
+  taskId: string | null;
+  /** Микро-победа для действия или null. */
+  microWinId: string | null;
+}
+
+/** Задача дня в короткой сводке. */
+export interface DashboardTaskItem {
+  /** Идентификатор. */
+  id: string;
+  /** Название. */
+  title: string;
+  /** Статус. */
+  status: string;
+}
+
+/** Блок «Сегодня». */
+export interface DashboardToday {
+  /** Сколько задач в дне. */
+  total: number;
+  /** Сколько закрыто. */
+  done: number;
+  /** Процент дня. */
+  percent: number;
+  /** До пяти задач. */
+  items: DashboardTaskItem[];
+}
+
+/** Цель в сводке. */
+export interface DashboardGoalItem {
+  /** Идентификатор. */
+  id: string;
+  /** Название. */
+  title: string;
+  /** Процент или null. */
+  percentage: number | null;
+  /** В фокусе ли. */
+  isFocus: boolean;
+}
+
+/** «Держусь» в сводке (счётчик тикает на фронте от момента старта). */
+export interface DashboardAntiHabitItem {
+  /** Идентификатор. */
+  id: string;
+  /** Название. */
+  title: string;
+  /** Момент старта текущей попытки (unix ms). */
+  currentAttemptStartedAt: number;
+}
+
+/** Просроченная разовая задача. */
+export interface DashboardOverdueItem {
+  /** Идентификатор. */
+  id: string;
+  /** Название. */
+  title: string;
+  /** Дедлайн (ISO). */
+  deadline: string;
+}
+
+/** Три шага первого знакомства: все `true` — чек-лист исчезает. */
+export interface DashboardOnboarding {
+  /** Есть своя привычка. */
+  hasHabits: boolean;
+  /** Хоть раз что-то отмечал. */
+  hasFirstCompletion: boolean;
+  /** Есть своя цель. */
+  hasGoals: boolean;
+}
+
+/** Снимок главного экрана — всё за один запрос (2.11). */
+export interface DashboardView {
+  /** Герой экрана. */
+  now: DashboardNow;
+  /** Блок «Сегодня». */
+  today: DashboardToday;
+  /** Цели, фокусные первыми. */
+  goals: DashboardGoalItem[];
+  /** Идущие «держусь». */
+  antiHabits: DashboardAntiHabitItem[];
+  /** Просроченные разовые задачи. */
+  overdue: DashboardOverdueItem[];
+  /** Есть ли свои препятствия. */
+  hasObstacles: boolean;
+  /** Шаги первого знакомства. */
+  onboarding: DashboardOnboarding;
+  /** Раздел на паузе с (ISO) или null. */
+  pausedFrom: string | null;
+}
+
 /** Что случилось с привычкой в этот день (история, 2.7.3). */
 export type HabitHistoryEvent = 'done' | 'partial' | 'postponed' | 'pending';
 

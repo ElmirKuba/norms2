@@ -11,6 +11,7 @@ import type {
   CounterplayPayload,
   CounterplayUpdatePayload,
   CounterplayView,
+  DashboardView,
   EncounterPayload,
   EncounterRecordResult,
   ObstacleEncounterPage,
@@ -49,6 +50,15 @@ import type {
 @Injectable({ providedIn: 'root' })
 export class AccentApiService {
   private readonly _http = inject(HttpClient);
+
+  /**
+   * Снимок главного экрана одним запросом (2.11): «Сейчас», день, цели, «держусь», просрочка,
+   * шаги онбординга. Задачи дня при этом материализуются — дашборд и есть вход в день.
+   * @returns Снимок дашборда.
+   */
+  public getDashboard(): Observable<DashboardView> {
+    return this._http.get<DashboardView>(`${API_PREFIX}/accent/dashboard`);
+  }
 
   /** Настройки раздела (ленивое создание на бэке). */
   public getSettings(): Observable<AccentSettingsView> {

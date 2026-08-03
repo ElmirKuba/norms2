@@ -14,6 +14,7 @@ import {
   moveItemInArray,
   type CdkDragDrop,
 } from '@angular/cdk/drag-drop';
+import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
@@ -41,6 +42,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
 @Component({
   selector: 'app-habits',
   imports: [
+    RouterLink,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
@@ -124,7 +126,12 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                   <div class="hb__item">
                     <div class="hb__main">
                       <span class="hb__name-row">
-                        <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
+                        @if (t.templateId; as templateId) {
+                          <a class="hb__name hb__link" [class.hb__done]="t.status === 'done'"
+                            [routerLink]="[templateId]">{{ t.title }}</a>
+                        } @else {
+                          <strong class="hb__name" [class.hb__done]="t.status === 'done'">{{ t.title }}</strong>
+                        }
                         @if (t.carriedFromPostpone) {
                           <span class="hb__carried" title="Перенесена с прошлого дня">⤴ со вчера</span>
                         }
@@ -216,7 +223,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                     <button type="button" class="hb__grip" cdkDragHandle aria-label="Перетащить">⠿</button>
                     <div class="hb__main">
                       <span class="hb__name-row">
-                        <strong class="hb__name">{{ h.icon ? h.icon + ' ' : '' }}{{ h.title }}</strong>
+                        <a class="hb__name hb__link" [routerLink]="[h.id]">{{ h.icon ? h.icon + ' ' : '' }}{{ h.title }}</a>
                         @if (h.isStarter) {
                           <span class="hb__example">пример</span>
                         }
@@ -325,6 +332,16 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         font-size: var(--fs-sm);
         color: var(--color-text-muted);
         margin: 0 0 var(--space-3);
+      }
+      /* Название ведёт в историю привычки (2.7.3). Кликаем именно по названию, а не по всей
+         карточке: на ней уже живёт меню «⋯», и два обработчика дрались бы за один тап. */
+      .hb__link {
+        color: inherit;
+        text-decoration: none;
+      }
+      .hb__link:hover {
+        color: var(--color-accent);
+        text-decoration: underline;
       }
       .hb__name-row {
         display: flex;

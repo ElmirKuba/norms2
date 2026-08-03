@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { tasks } from '../../schemas/tasks.schema';
@@ -188,6 +188,57 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
       .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
       .returning({ id: tasks.id });
     return rows.length > 0;
+  }
+
+  /**
+   * История задач одной привычки-шаблона (2.7.3): страница от свежих к старым, keyset по
+   * `occurred_on`. **Материализацию не трогает** — читает, что есть.
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param options `before` — исключающий курсор, `limit` — размер страницы.
+   * @returns Задачи по убыванию `occurredOn`.
+   */
+  public async listByTemplate(
+    templateId: string,
+    accountId: string,
+    options: { before?: string; limit: number },
+  ): Promise<TaskFull[]> {
+    const where =
+      options.before === undefined
+        ? and(eq(tasks.accountId, accountId), eq(tasks.templateId, templateId))
+        : and(
+            eq(tasks.accountId, accountId),
+            eq(tasks.templateId, templateId),
+            lt(tasks.occurredOn, options.before),
+          );
+    return this._db
+      .select()
+      .from(tasks)
+      .where(where)
+      .orderBy(desc(tasks.occurredOn))
+      .limit(options.limit);
+  }
+
+  /**
+   * Последний день с реальной отметкой (`done`/`partial`) по привычке-шаблону (2.7.3).
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Дата `YYYY-MM-DD` или null.
+   */
+  public async findLastMarkedOn(templateId: string, accountId: string): Promise<string | null> {
+    const rows = await this._db
+      .select({ occurredOn: tasks.occurredOn })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.accountId, accountId),
+          eq(tasks.templateId, templateId),
+          inArray(tasks.status, ['done', 'partial']),
+        ),
+      )
+      .orderBy(desc(tasks.occurredOn))
+      .limit(1);
+    return rows[0]?.occurredOn ?? null;
   }
 
   /**

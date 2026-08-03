@@ -135,4 +135,28 @@ export interface AccentTaskRepositoryPort {
    * @returns true, если строка была удалена.
    */
   deleteOwned(id: string, accountId: string, tx?: Transaction): Promise<boolean>;
+
+  /**
+   * История задач одной привычки-шаблона (2.7.3) — **только чтение, ничего не создаёт**.
+   * Keyset-пагинация: страница = `limit` записей строго старше курсора `before`, от свежих к
+   * старым. Offset не используем — он поедет при вставках.
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param options `before` — исключающий курсор (`YYYY-MM-DD`), `limit` — сколько вернуть.
+   * @returns Задачи по убыванию `occurredOn`.
+   */
+  listByTemplate(
+    templateId: string,
+    accountId: string,
+    options: { before?: string; limit: number },
+  ): Promise<TaskFull[]>;
+
+  /**
+   * Последний день, когда привычку реально отметили (`done`/`partial`) — для «последняя отметка
+   * N дней назад» (2.7.3). Отдельным запросом: в страницу истории такой день может не попасть.
+   * @param templateId Идентификатор привычки-шаблона.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Дата `YYYY-MM-DD` или null, если отметок не было ни разу.
+   */
+  findLastMarkedOn(templateId: string, accountId: string): Promise<string | null>;
 }

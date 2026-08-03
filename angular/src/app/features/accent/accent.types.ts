@@ -268,7 +268,7 @@ export interface HabitPayload {
 export type TaskStatus = 'pending' | 'done' | 'partial' | 'skipped';
 
 /** Причина пропуска. */
-export type TaskSkipReason = 'postponed' | 'cancelled';
+export type TaskSkipReason = 'postponed';
 
 /** Задача дня наружу (`GET /accent/tasks`). */
 export interface TaskView {

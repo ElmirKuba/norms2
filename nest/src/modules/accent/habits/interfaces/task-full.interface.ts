@@ -6,8 +6,12 @@ export const TASK_STATUSES = ['pending', 'done', 'partial', 'skipped'] as const;
 /** Статус задачи (производно от `TASK_STATUSES`). */
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
-/** Причина пропуска: `postponed` (перенесена) или `cancelled` (отменена). */
-export const TASK_SKIP_REASONS = ['postponed', 'cancelled'] as const;
+/**
+ * Причина пропуска. Значение ровно одно — `postponed` (перенесена на завтра): кнопки «отменить
+ * задачу на сегодня» в продукте нет и не планировалась. `cancelled` было заведено «на будущее» и
+ * не писалось никогда — убрано 2026-08-01, чтобы тип не обещал того, чего в данных не бывает.
+ */
+export const TASK_SKIP_REASONS = ['postponed'] as const;
 
 /** Причина пропуска (производно от `TASK_SKIP_REASONS`). */
 export type TaskSkipReason = (typeof TASK_SKIP_REASONS)[number];

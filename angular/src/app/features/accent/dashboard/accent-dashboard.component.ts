@@ -9,7 +9,7 @@ import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { AccentTimerModalComponent } from '../shared/accent-timer-modal.component';
 import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-modal.component';
-import type { DashboardView } from '../accent.types';
+import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
 
 /**
  * Главный экран «Акцента» (2.11) — **кокпит, а не витрина**.
@@ -33,7 +33,7 @@ import type { DashboardView } from '../accent.types';
         <p class="dash__error">{{ error() }}</p>
       } @else if (data(); as d) {
         @if (showChecklist(d)) {
-          <app-card>
+          <app-card class="dash__tile dash__wide">
             <div class="dash__start">
               <h3 class="dash__block-title">С чего начать</h3>
               <p class="dash__now-hint">Три шага — и раздел начнёт работать на тебя.</p>
@@ -52,7 +52,7 @@ import type { DashboardView } from '../accent.types';
           </app-card>
         }
 
-        <app-card>
+        <app-card class="dash__tile dash__tile--hero dash__wide">
           <div class="dash__now" [attr.data-kind]="d.now.kind">
             <span class="dash__now-label">{{ nowLabel(d) }}</span>
             @if (d.now.title; as title) {
@@ -71,11 +71,12 @@ import type { DashboardView } from '../accent.types';
         </app-card>
 
         @if (d.today.total > 0) {
-          <app-card>
+          <app-card class="dash__tile dash__tile--today">
             <div class="dash__block">
-              <div class="dash__block-head">
-                <h3 class="dash__block-title">Сегодня</h3>
-                <span class="dash__pct">{{ d.today.done }} из {{ d.today.total }} · {{ d.today.percent }}%</span>
+              <span class="dash__kicker">Сегодня</span>
+              <div class="dash__kpi-row">
+                <strong class="dash__kpi">{{ d.today.percent }}%</strong>
+                <span class="dash__kpi-note">{{ d.today.done }} из {{ d.today.total }}</span>
               </div>
               <div class="dash__bar"><span class="dash__bar-fill" [style.width.%]="d.today.percent"></span></div>
               <ul class="dash__list">
@@ -92,9 +93,9 @@ import type { DashboardView } from '../accent.types';
         }
 
         @if (d.overdue.length > 0) {
-          <app-card>
+          <app-card class="dash__tile dash__tile--overdue">
             <div class="dash__block">
-              <h3 class="dash__block-title">Просрочено</h3>
+              <span class="dash__kicker">Просрочено</span>
               <ul class="dash__list">
                 @for (task of d.overdue; track task.id) {
                   <li class="dash__row">
@@ -108,9 +109,9 @@ import type { DashboardView } from '../accent.types';
         }
 
         @if (d.goals.length > 0) {
-          <app-card>
+          <app-card class="dash__tile dash__tile--goals">
             <div class="dash__block">
-              <h3 class="dash__block-title">Цели</h3>
+              <span class="dash__kicker">Цели</span>
               <ul class="dash__list">
                 @for (goal of d.goals; track goal.id) {
                   <li class="dash__row">
@@ -130,29 +131,39 @@ import type { DashboardView } from '../accent.types';
         }
 
         @if (d.antiHabits.length > 0) {
-          <app-card>
+          <app-card class="dash__tile dash__tile--anti">
             <div class="dash__block">
-              <h3 class="dash__block-title">Держусь</h3>
-              <ul class="dash__list">
-                @for (item of d.antiHabits; track item.id) {
-                  <li class="dash__row">
-                    <a class="dash__link" [routerLink]="['../anti-habits', item.id]">{{ item.title }}</a>
-                    <span class="dash__streak">{{ heldFor(item.currentAttemptStartedAt) }}</span>
-                  </li>
-                }
-              </ul>
+              <span class="dash__kicker">Держусь</span>
+              @if (soleAntiHabit(d); as only) {
+                <!-- Одна серия — показываем её как счётчик: число крупно, название мелко. -->
+                <div class="dash__kpi-row">
+                  <strong class="dash__kpi">{{ heldFor(only.currentAttemptStartedAt) }}</strong>
+                </div>
+                <a class="dash__link dash__kpi-note" [routerLink]="['../anti-habits', only.id]">
+                  {{ only.title }}
+                </a>
+              } @else {
+                <ul class="dash__list">
+                  @for (item of d.antiHabits; track item.id) {
+                    <li class="dash__row">
+                      <a class="dash__link" [routerLink]="['../anti-habits', item.id]">{{ item.title }}</a>
+                      <span class="dash__streak">{{ heldFor(item.currentAttemptStartedAt) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
             </div>
           </app-card>
         }
 
         @if (d.hasObstacles) {
-          <p class="dash__obstacles">
+          <p class="dash__obstacles dash__wide">
             Накрыло? <a class="dash__link" [routerLink]="['../obstacles']">Отметить, что помешало →</a>
           </p>
         }
 
         @if (d.pausedFrom !== null) {
-          <div class="dash__paused">
+          <div class="dash__paused dash__wide">
             <span>Раздел на паузе с {{ pausedLabel(d.pausedFrom) }} — вернёшься, когда будешь готов.</span>
             <app-button variant="ghost" [loading]="busy()" (click)="resume()">Снять паузу</app-button>
           </div>
@@ -162,13 +173,83 @@ import type { DashboardView } from '../accent.types';
   `,
   styles: [
     `
+      /* Бенто-сетка: иерархия делается РАЗМЕРОМ плитки, а не цветом. Мобильный — одна колонка
+         (порядок = приоритет), планшет — две, десктоп — четыре с крупной плиткой дня.
+         Пустые блоки не рисуются вовсе, поэтому сетка должна переживать дыры: спаны заданы так,
+         что оставшиеся плитки просто перетекают, а не оставляют пустые клетки. */
       .dash {
         /* Тот же воздух, что у остальных экранов раздела: без него карточки липнут к
            вкладкам сверху и к краю снизу. */
         padding: var(--space-4) 0;
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: var(--space-4);
+      }
+      .dash__wide {
+        grid-column: 1 / -1;
+      }
+      @media (min-width: 768px) {
+        .dash {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (min-width: 1200px) {
+        .dash {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        /* День — вторая по важности вещь после «Сейчас»: занимает половину ширины и две строки.
+           Больше двух «героев» на экран не делаем — глазу нужен один якорь. */
+        .dash__tile--today {
+          grid-column: span 2;
+          grid-row: span 2;
+        }
+        .dash__tile--goals {
+          grid-column: span 2;
+        }
+      }
+      /* Тема-зависимый градиент: почти незаметный тёплый отсвет от акцента. Не неон из трендов —
+         раздел про спокойствие; цвет берём из переменной темы, поэтому он живёт и в светлой, и в
+         тёмной. Если color-mix не поддержан — просто не будет градиента, вёрстка цела. */
+      .dash__tile {
+        background-image: linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--color-accent) 5%, transparent),
+          transparent 55%
+        );
+      }
+      .dash__tile--hero {
+        background-image: linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--color-accent) 13%, transparent),
+          transparent 70%
+        );
+      }
+      .dash__tile--overdue {
+        background-image: linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--color-accent) 10%, transparent),
+          transparent 60%
+        );
+      }
+      /* Подпись-надзаголовок: мелкая и приглушённая, потому что крупным идёт ЗНАЧЕНИЕ. */
+      .dash__kicker {
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .dash__kpi-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+      }
+      .dash__kpi {
+        font-size: var(--fs-2xl);
+        line-height: 1.1;
+      }
+      .dash__kpi-note {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
       }
       .dash__muted {
         color: var(--color-text-muted);
@@ -485,6 +566,17 @@ export class AccentDashboardComponent {
         this._modal.error('Не удалось снять с паузы', errorMessage(err));
       },
     });
+  }
+
+  /**
+   * Единственная серия «держусь» или null. Отдельный метод, потому что шаблон Angular не даст
+   * обратиться к `antiHabits[0]` напрямую: под `noUncheckedIndexedAccess` элемент может быть
+   * `undefined`, и компилятор шаблонов это ловит (а `tsc` — нет).
+   * @param view Снимок.
+   * @returns Серия или null.
+   */
+  protected soleAntiHabit(view: DashboardView): DashboardAntiHabitItem | null {
+    return view.antiHabits.length === 1 ? (view.antiHabits[0] ?? null) : null;
   }
 
   /**

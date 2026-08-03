@@ -14,6 +14,7 @@ import { HabitsController } from './controllers/habits.controller';
 import { TasksController } from './controllers/tasks.controller';
 import { ListHabitsUseCase } from './use-cases/list-habits.use-case';
 import { GetHabitUseCase } from './use-cases/get-habit.use-case';
+import { GetHabitHistoryUseCase } from './use-cases/get-habit-history.use-case';
 import { CreateHabitUseCase } from './use-cases/create-habit.use-case';
 import { UpdateHabitUseCase } from './use-cases/update-habit.use-case';
 import { DeactivateHabitUseCase } from './use-cases/deactivate-habit.use-case';
@@ -50,6 +51,7 @@ import { UnpostponeTaskUseCase } from './use-cases/unpostpone-task.use-case';
     AccentLadderEngine,
     ListHabitsUseCase,
     GetHabitUseCase,
+    GetHabitHistoryUseCase,
     CreateHabitUseCase,
     UpdateHabitUseCase,
     DeactivateHabitUseCase,

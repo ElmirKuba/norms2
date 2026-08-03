@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
+import { ValidationError } from '../../../../shared/errors/validation.error';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createHabitSchema } from '../dtos/create-habit.dto';
 import type { CreateHabitDto } from '../dtos/create-habit.dto';
@@ -10,6 +11,7 @@ import { updateHabitSchema } from '../dtos/update-habit.dto';
 import type { UpdateHabitDto } from '../dtos/update-habit.dto';
 import { ListHabitsUseCase } from '../use-cases/list-habits.use-case';
 import { GetHabitUseCase } from '../use-cases/get-habit.use-case';
+import { GetHabitHistoryUseCase } from '../use-cases/get-habit-history.use-case';
 import { CreateHabitUseCase } from '../use-cases/create-habit.use-case';
 import { UpdateHabitUseCase } from '../use-cases/update-habit.use-case';
 import { DeactivateHabitUseCase } from '../use-cases/deactivate-habit.use-case';
@@ -17,6 +19,7 @@ import { SeedHabitStarterPackUseCase } from '../use-cases/seed-habit-starter-pac
 import { ClearHabitStartersUseCase } from '../use-cases/clear-habit-starters.use-case';
 import { AdoptHabitUseCase } from '../use-cases/adopt-habit.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
+import type { HabitHistoryView } from '../interfaces/habit-history-view.interface';
 import type { HabitView } from '../interfaces/habit-view.interface';
 
 /**
@@ -37,6 +40,7 @@ export class HabitsController {
   public constructor(
     private readonly _list: ListHabitsUseCase,
     private readonly _get: GetHabitUseCase,
+    private readonly _history: GetHabitHistoryUseCase,
     private readonly _create: CreateHabitUseCase,
     private readonly _update: UpdateHabitUseCase,
     private readonly _deactivate: DeactivateHabitUseCase,
@@ -131,6 +135,39 @@ export class HabitsController {
   @Get('habits/:id')
   public get(@Param('id') id: string, @Req() request: AuthenticatedRequest): Promise<HabitView> {
     return this._get.execute(id, request.account.id);
+  }
+
+  /**
+   * История привычки (2.7.3): что было по дням + «тишина». **Ничего не создаёт** — в отличие от
+   * `GET /accent/tasks`, который материализует запрошенный день.
+   * @param id Идентификатор привычки.
+   * @param request Запрос (аккаунт из Guard).
+   * @param before Курсор «Показать ещё» (`YYYY-MM-DD`, исключающий).
+   * @param limit Размер страницы (по умолчанию 30, максимум 90 — режет домен).
+   * @returns Страница истории.
+   * @throws {ValidationError} Если параметры запроса некорректны.
+   */
+  @Get('habits/:id/history')
+  public history(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Query('before') before?: string,
+    @Query('limit') limit?: string,
+  ): Promise<HabitHistoryView> {
+    if (before !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(before)) {
+      throw new ValidationError('Курсор: формат YYYY-MM-DD.');
+    }
+    let parsedLimit: number | undefined;
+    if (limit !== undefined) {
+      parsedLimit = Number(limit);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1) {
+        throw new ValidationError('Размер страницы: целое ≥ 1.');
+      }
+    }
+    return this._history.execute(id, request.account.id, request.account.timezone, {
+      ...(before === undefined ? {} : { before }),
+      ...(parsedLimit === undefined ? {} : { limit: parsedLimit }),
+    });
   }
 
   /**

@@ -414,8 +414,6 @@ export interface HabitHistoryView {
   lastMarkedOn: string | null;
   /** Сколько дней с последней отметки или null. */
   daysSinceLastMark: number | null;
-  /** Оценка пропусков по расписанию (не факт: расписание могли менять). */
-  missedEstimate: number;
 }
 
 /** Привязанная микро-победа как «версия цели на плохой день» (2.7.2) — зеркало `TaskMinAction`. */

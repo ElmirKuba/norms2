@@ -204,6 +204,8 @@ export class HabitDetailComponent {
   protected readonly error = signal<string | null>(null);
   /** Сколько дней прошло с последней отметки (null — отметок не было). */
   protected readonly daysSince = signal<number | null>(null);
+  /** Дата последней отметки или null. */
+  protected readonly lastMarkedOn = signal<string | null>(null);
 
   /** Идентификатор из маршрута. */
   private _id = '';
@@ -220,7 +222,9 @@ export class HabitDetailComponent {
     if (days <= 0) {
       return null;
     }
-    return `Последняя отметка — ${days === 1 ? 'вчера' : `${days} дн. назад`}.`;
+    const date = this.lastMarkedOn();
+    const when = days === 1 ? 'вчера' : `${days} дн. назад`;
+    return date === null ? `Последняя отметка — ${when}.` : `Последняя отметка — ${this.fmtDate(date)} (${when}).`;
   });
 
   public constructor() {
@@ -330,6 +334,7 @@ export class HabitDetailComponent {
             this.days.set(page.items);
             this.cursor.set(page.nextCursor);
             this.daysSince.set(page.daysSinceLastMark);
+            this.lastMarkedOn.set(page.lastMarkedOn);
             this.loading.set(false);
           },
           error: (err: unknown) => {

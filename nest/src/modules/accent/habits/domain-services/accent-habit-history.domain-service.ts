@@ -8,9 +8,6 @@ import {
   type AccentTaskRepositoryPort,
 } from '../adapters/accent-task-repository.port';
 import { HabitNotFoundError } from '../../../../shared/errors/habit-not-found.error';
-import { localYmd } from '../../../../shared/utility-level/today-in-timezone.util';
-import { isHabitDueOn } from '../recurrence.util';
-import type { HabitFull } from '../interfaces/habit-full.interface';
 import type { TaskFull } from '../interfaces/task-full.interface';
 import type {
   HabitHistoryDay,
@@ -23,12 +20,6 @@ import type {
 const DEFAULT_LIMIT = 30;
 /** Максимум за раз — чтобы «Показать ещё» не превращалось в выгрузку всей жизни. */
 const MAX_LIMIT = 90;
-/**
- * Насколько глубоко считаем «тишину». Привычка живёт годами; без потолка человек, вернувшийся
- * через год, увидел бы трёхзначное число пропусков — это не информация, а удар по голове.
- */
-const SILENCE_WINDOW_DAYS = 90;
-
 /** Сколько суток между двумя `YYYY-MM-DD`. */
 function daysBetween(from: string, to: string): number {
   const a = Date.parse(`${from}T00:00:00.000Z`);
@@ -92,8 +83,12 @@ export class AccentHabitHistoryDomainService {
       ...(options.before === undefined ? {} : { before: options.before }),
       limit: limit + 1,
     });
-    const page = rows.slice(0, limit);
-    const olderNeighbour = rows[limit] ?? null;
+    // Будущее в «историю» не пускаем: завтрашняя копия переноса или заранее материализованный
+    // день — это ещё не то, что было. Отсекаем здесь, а не в SQL: страница уже прочитана, а
+    // будущих дней у привычки максимум один-два.
+    const past = rows.filter((task) => task.occurredOn <= today);
+    const page = past.slice(0, limit);
+    const olderNeighbour = past[limit] ?? null;
 
     const items = page.map((task, index) =>
       this._toDay(task, page[index + 1] ?? olderNeighbour, today),
@@ -102,10 +97,9 @@ export class AccentHabitHistoryDomainService {
 
     return {
       items,
-      nextCursor: rows.length > limit ? (page[page.length - 1]?.occurredOn ?? null) : null,
+      nextCursor: past.length > limit ? (page[page.length - 1]?.occurredOn ?? null) : null,
       lastMarkedOn,
       daysSinceLastMark: lastMarkedOn === null ? null : daysBetween(lastMarkedOn, today),
-      missedEstimate: this._missedEstimate(habit, lastMarkedOn, today, timezone),
     };
   }
 
@@ -170,35 +164,4 @@ export class AccentHabitHistoryDomainService {
       : { from: older.targetValue, to: task.targetValue };
   }
 
-  /**
-   * Сколько дней по расписанию прошло без отметки — **оценка**, считается на лету.
-   *
-   * Почему оценка, а не факт: расписание могли менять задним числом, а материализация ленивая —
-   * за дни, когда человек не заходил, строк нет вовсе. Поэтому считаем по **текущему** правилу
-   * повторения и честно называем это оценкой. Сегодняшний день не считаем: он ещё не кончился.
-   * @param habit Привычка (расписание и якорь).
-   * @param lastMarkedOn Последняя отметка или null.
-   * @param today Сегодняшний день аккаунта.
-   * @param timezone IANA-таймзона (для якоря по дате создания).
-   * @returns Число дней.
-   */
-  private _missedEstimate(
-    habit: HabitFull,
-    lastMarkedOn: string | null,
-    today: string,
-    timezone: string,
-  ): number {
-    const dtstart = habit.startDate ?? localYmd(habit.createdAt, timezone);
-    const windowStart = shiftDay(today, -SILENCE_WINDOW_DAYS);
-    const from = lastMarkedOn === null ? dtstart : shiftDay(lastMarkedOn, 1);
-    let cursor = from < windowStart ? windowStart : from;
-    let count = 0;
-    while (cursor < today) {
-      if (isHabitDueOn(habit.recurrence, dtstart, cursor)) {
-        count += 1;
-      }
-      cursor = shiftDay(cursor, 1);
-    }
-    return count;
-  }
 }

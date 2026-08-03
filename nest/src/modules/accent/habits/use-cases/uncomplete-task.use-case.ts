@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
 import { AccentTaskDomainService } from '../domain-services/accent-task.domain-service';
 import { AccentGoalDomainService } from '../../goals/domain-services/accent-goal.domain-service';
 import { toTaskView } from '../interfaces/task-view.interface';
@@ -23,10 +24,11 @@ export class UncompleteTaskUseCase {
   /**
    * @param id Идентификатор задачи.
    * @param accountId Идентификатор аккаунта (из Guard).
+   * @param timezone IANA-таймзона аккаунта (из Guard) — для границы «только сегодня».
    * @returns Проекция обновлённой задачи.
    */
-  public async execute(id: string, accountId: string): Promise<TaskView> {
-    const task = await this._tasks.uncomplete(id, accountId);
+  public async execute(id: string, accountId: string, timezone: string): Promise<TaskView> {
+    const task = await this._tasks.uncomplete(id, accountId, todayInTimezone(timezone));
     if (task.goalId !== null) {
       await this._goals.revokeProgressFromHabit(task.goalId, accountId, task.id);
     }

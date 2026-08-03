@@ -441,16 +441,30 @@ export class AccentTaskDomainService {
    * @returns Обновлённая задача.
    * @throws {TaskNotFoundError} Если нет / не ваша.
    */
-  public async uncomplete(id: string, accountId: string): Promise<TaskFull> {
-    await this.getOwned(id, accountId);
+  public async uncomplete(id: string, accountId: string, today: string): Promise<TaskFull> {
+    const task = await this.getOwned(id, accountId);
+    // Граница «только сегодня» (2.7.3, реш. Elmir): отменить можно ровно то, что видно в
+    // «Сегодня». Вчерашнее не отменяем принципиально — ответственность за прошлое остаётся у
+    // человека, продукт не делает вид, что умеет его переписывать. Технически граница снимает
+    // и главную засаду отката: возврат НЕ последней отметки стёр бы все последующие движения
+    // планки.
+    if (task.occurredOn !== today) {
+      throw new ValidationError('Отменить можно только сегодняшнюю отметку.');
+    }
     const updated = await this._repository.update(id, accountId, {
       status: 'pending',
       doneValue: null,
       completedAt: null,
       skipReason: null,
+      ladderBefore: null,
     });
     if (!updated) {
       throw new TaskNotFoundError('Задача не найдена.');
+    }
+    // Возврат планки (2.7.3): отменил отметку — значит её не было. Снимок снят при complete;
+    // нет снимка (минимум, ручная лесенка, разовая задача) — возвращать нечего, и это норма.
+    if (task.templateId !== null && task.ladderBefore !== null) {
+      await this._ladder.revert(task.templateId, accountId, task.ladderBefore);
     }
     return updated;
   }

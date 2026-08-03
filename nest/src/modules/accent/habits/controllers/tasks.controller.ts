@@ -144,7 +144,7 @@ export class TasksController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<TaskView> {
-    return this._uncomplete.execute(id, request.account.id);
+    return this._uncomplete.execute(id, request.account.id, request.account.timezone);
   }
 
   /**

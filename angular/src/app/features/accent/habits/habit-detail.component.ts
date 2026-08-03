@@ -96,6 +96,9 @@ import { recurrenceLabel } from './recurrence-label.util';
   styles: [
     `
       .hd {
+        /* Тот же воздух, что у остальных экранов раздела: без него карточки липнут к
+           вкладкам сверху и к краю снизу. */
+        padding: var(--space-4) 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-4);

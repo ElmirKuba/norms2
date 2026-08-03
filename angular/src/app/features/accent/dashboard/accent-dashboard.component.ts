@@ -32,6 +32,26 @@ import type { DashboardView } from '../accent.types';
       } @else if (error()) {
         <p class="dash__error">{{ error() }}</p>
       } @else if (data(); as d) {
+        @if (showChecklist(d)) {
+          <app-card>
+            <div class="dash__start">
+              <h3 class="dash__block-title">С чего начать</h3>
+              <p class="dash__now-hint">Три шага — и раздел начнёт работать на тебя.</p>
+              <ol class="dash__steps">
+                @for (step of steps(d); track step.key) {
+                  <li class="dash__step" [class.dash__step--done]="step.done">
+                    <span class="dash__step-mark" aria-hidden="true">{{ step.done ? '✓' : '○' }}</span>
+                    <span class="dash__step-text">{{ step.text }}</span>
+                    @if (step.active) {
+                      <app-button [routerLink]="step.link">{{ step.action }}</app-button>
+                    }
+                  </li>
+                }
+              </ol>
+            </div>
+          </app-card>
+        }
+
         <app-card>
           <div class="dash__now" [attr.data-kind]="d.now.kind">
             <span class="dash__now-label">{{ nowLabel(d) }}</span>
@@ -185,6 +205,37 @@ import type { DashboardView } from '../accent.types';
         gap: var(--space-2);
         margin-top: var(--space-1);
       }
+      .dash__start {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .dash__steps {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
+      }
+      .dash__step {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--fs-sm);
+      }
+      .dash__step--done .dash__step-text {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+      }
+      .dash__step-mark {
+        color: var(--color-accent);
+        flex-shrink: 0;
+      }
+      .dash__step-text {
+        flex: 1;
+      }
       .dash__block {
         display: flex;
         flex-direction: column;
@@ -305,6 +356,55 @@ export class AccentDashboardComponent {
 
   public constructor() {
     this._load();
+  }
+
+  /**
+   * Показывать ли чек-лист первых шагов. Исчезает, как только пройдены все три: дальше человек
+   * знает, что делать, и напоминание превращается в шум.
+   * @param view Снимок.
+   * @returns true, если что-то из трёх ещё не сделано.
+   */
+  protected showChecklist(view: DashboardView): boolean {
+    const { hasHabits, hasFirstCompletion, hasGoals } = view.onboarding;
+    return !hasHabits || !hasFirstCompletion || !hasGoals;
+  }
+
+  /**
+   * Три шага первого знакомства. **Кнопка только у первого невыполненного** — путь видно
+   * целиком, а делать нужно одно: выбор из пяти дверей на старте парализует сильнее, чем пустой
+   * экран.
+   * @param view Снимок.
+   * @returns Шаги в порядке прохождения.
+   */
+  protected steps(
+    view: DashboardView,
+  ): { key: string; text: string; action: string; link: string[]; done: boolean; active: boolean }[] {
+    const { hasHabits, hasFirstCompletion, hasGoals } = view.onboarding;
+    const raw = [
+      {
+        key: 'habit',
+        text: 'Заведи привычку — маленькую, которую точно потянешь',
+        action: 'К привычкам',
+        link: ['../habits'],
+        done: hasHabits,
+      },
+      {
+        key: 'mark',
+        text: 'Отметь её хоть раз — так система начнёт подстраивать планку',
+        action: 'Открыть день',
+        link: ['../habits'],
+        done: hasFirstCompletion,
+      },
+      {
+        key: 'goal',
+        text: 'Поставь цель — чтобы шаги вели куда-то',
+        action: 'К целям',
+        link: ['../goals'],
+        done: hasGoals,
+      },
+    ];
+    const firstOpen = raw.findIndex((step) => !step.done);
+    return raw.map((step, index) => ({ ...step, active: index === firstOpen }));
   }
 
   /**

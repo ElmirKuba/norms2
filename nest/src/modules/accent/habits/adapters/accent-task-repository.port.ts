@@ -166,4 +166,12 @@ export interface AccentTaskRepositoryPort {
    * @returns Дата `YYYY-MM-DD` или null, если отметок не было ни разу.
    */
   findLastMarkedOn(templateId: string, accountId: string): Promise<string | null>;
+
+  /**
+   * Отмечал ли человек хоть когда-нибудь хоть одну задачу (2.11) — для шага онбординга на
+   * дашборде. Одним EXISTS: считать все отметки ради булева флага незачем.
+   * @param accountId Идентификатор аккаунта.
+   * @returns true, если есть хотя бы одна `done`/`partial`.
+   */
+  hasAnyCompletion(accountId: string): Promise<boolean>;
 }

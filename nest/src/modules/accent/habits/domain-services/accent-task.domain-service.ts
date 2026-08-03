@@ -138,6 +138,15 @@ export class AccentTaskDomainService {
    * @param timezone IANA-таймзона аккаунта.
    * @returns Просроченные задачи.
    */
+  /**
+   * Отмечал ли человек хоть раз хоть что-то (2.11) — шаг онбординга на дашборде.
+   * @param accountId Идентификатор аккаунта.
+   * @returns true, если отметки были.
+   */
+  public async hasAnyCompletion(accountId: string): Promise<boolean> {
+    return this._repository.hasAnyCompletion(accountId);
+  }
+
   public async listOverdue(accountId: string, today: string, timezone: string): Promise<TaskFull[]> {
     const open = await this._repository.listOpenOneOffWithDeadline(accountId);
     return open.filter((t) => t.deadline !== null && localYmd(t.deadline, timezone) < today);

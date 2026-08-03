@@ -242,6 +242,20 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   }
 
   /**
+   * Отмечал ли человек хоть одну задачу когда-либо (2.11, флаг онбординга).
+   * @param accountId Идентификатор аккаунта.
+   * @returns true, если есть хотя бы одна `done`/`partial`.
+   */
+  public async hasAnyCompletion(accountId: string): Promise<boolean> {
+    const rows = await this._db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(and(eq(tasks.accountId, accountId), inArray(tasks.status, ['done', 'partial'])))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  /**
    * Исполнитель: транзакция (если передана) или базовый клиент. Опаковый `tx` приводится
    * к `DrizzleExecutor` тут — наружу ORM не утекает.
    * @param tx Опц. транзакция.

@@ -6,6 +6,7 @@ import { HabitsModule } from './habits/habits.module';
 import { GoalsModule } from './goals/goals.module';
 import { AntiHabitsModule } from './anti-habits/anti-habits.module';
 import { ObstaclesModule } from './obstacles/obstacles.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 /**
  * Зонтик раздела «Акцент» (фаза 2, мультимодуль — ADR-0050): импортит area-модули
@@ -23,6 +24,7 @@ import { ObstaclesModule } from './obstacles/obstacles.module';
     GoalsModule,
     AntiHabitsModule,
     ObstaclesModule,
+    DashboardModule,
   ],
 })
 export class AccentModule {}

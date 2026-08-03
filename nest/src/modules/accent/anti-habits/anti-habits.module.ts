@@ -49,5 +49,7 @@ import { AdoptAntiHabitUseCase } from './use-cases/adopt-anti-habit.use-case';
     ClearAntiHabitStartersUseCase,
     AdoptAntiHabitUseCase,
   ],
+  // Дашборд (2.11) читает идущие «держусь» — кросс-домен вниз.
+  exports: [AccentAntiHabitDomainService],
 })
 export class AntiHabitsModule {}

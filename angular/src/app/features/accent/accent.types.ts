@@ -373,6 +373,51 @@ export const GOAL_DIRECTION_DESCRIPTIONS: Readonly<Record<GoalDirection, string>
 };
 
 /** Базовая проекция цели (мутации `POST`/`PATCH`/lifecycle возвращают её). */
+/** Что случилось с привычкой в этот день (история, 2.7.3). */
+export type HabitHistoryEvent = 'done' | 'partial' | 'postponed' | 'pending';
+
+/** Движение планки в этот день (факт «было → стало»; механику роста бэк не отдаёт). */
+export interface HabitLadderMove {
+  /** Планка до этого дня. */
+  from: number;
+  /** Планка в этот день. */
+  to: number;
+}
+
+/** Один день истории привычки — обработанный факт, а не сырая строка задачи. */
+export interface HabitHistoryDay {
+  /** Локальная дата `YYYY-MM-DD`. */
+  occurredOn: string;
+  /** Что случилось. */
+  event: HabitHistoryEvent;
+  /** Сколько сделано или null. */
+  doneValue: number | null;
+  /** Какая была планка в этот день или null. */
+  targetValue: number | null;
+  /** Момент выполнения (ISO) или null. */
+  completedAt: string | null;
+  /** Куда перенесли (`YYYY-MM-DD`) — только у `postponed`. */
+  postponedTo: string | null;
+  /** Сегодняшний день — значит кнопка «В „Сегодня“» имеет смысл. */
+  isToday: boolean;
+  /** Движение планки или null. */
+  ladderMove: HabitLadderMove | null;
+}
+
+/** Ответ истории привычки: страница дней + «тишина» (2.7.3). */
+export interface HabitHistoryView {
+  /** Дни от свежих к старым. */
+  items: HabitHistoryDay[];
+  /** Курсор «Показать ещё» или null. */
+  nextCursor: string | null;
+  /** Последняя реальная отметка (`YYYY-MM-DD`) или null. */
+  lastMarkedOn: string | null;
+  /** Сколько дней с последней отметки или null. */
+  daysSinceLastMark: number | null;
+  /** Оценка пропусков по расписанию (не факт: расписание могли менять). */
+  missedEstimate: number;
+}
+
 /** Привязанная микро-победа как «версия цели на плохой день» (2.7.2) — зеркало `TaskMinAction`. */
 export interface GoalFallbackAction {
   /** Идентификатор микро-победы. */

@@ -31,6 +31,7 @@ import type {
   GoalStatus,
   GoalUpdatePayload,
   GoalView,
+  HabitHistoryView,
   HabitPayload,
   HabitView,
   MicroWinPayload,
@@ -205,6 +206,18 @@ export class AccentApiService {
   /** Снять отметку выполнения. */
   public uncompleteTask(id: string): Observable<TaskView> {
     return this._http.post<TaskView>(`${API_PREFIX}/accent/tasks/${id}/uncomplete`, {});
+  }
+
+  /**
+   * История привычки (2.7.3): что было по дням + «тишина». Keyset-пагинация — `before` берётся
+   * из `nextCursor` предыдущей страницы. Эндпоинт только читает и ничего не создаёт.
+   * @param id Идентификатор привычки.
+   * @param before Курсор «Показать ещё» (опц.).
+   * @returns Страница истории.
+   */
+  public getHabitHistory(id: string, before?: string): Observable<HabitHistoryView> {
+    const query = before === undefined ? '' : `?before=${encodeURIComponent(before)}`;
+    return this._http.get<HabitHistoryView>(`${API_PREFIX}/accent/habits/${id}/history${query}`);
   }
 
   /** Перенести задачу на завтра. */

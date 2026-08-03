@@ -1,9 +1,10 @@
-import { date, integer, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { date, integer, jsonb, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { habits } from './habits.schema';
 import { fkColumn, idColumn } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type {
+  TaskLadderSnapshot,
   TaskSkipReason,
   TaskStatus,
 } from '../../modules/accent/habits/interfaces/task-full.interface';
@@ -34,6 +35,10 @@ export const tasks = defineTableWithSchema<TaskFull>()(
     status: varchar('status', { length: 16 }).$type<TaskStatus>().notNull().default('pending'),
     skipReason: varchar('skip_reason', { length: 16 }).$type<TaskSkipReason>(),
     postponedFromTaskId: fkColumn('postponed_from_task_id'),
+    // Появилась в 2.7.3: снимок лесенки «как было до этой отметки». Нужен, чтобы отмена
+    // выполнения возвращала планку назад — лесенка накопитель, восстанавливать её из истории
+    // нельзя (планку правят и руками). Пишется только когда отметка реально двигала лесенку.
+    ladderBefore: jsonb('ladder_before').$type<TaskLadderSnapshot>(),
     priority: integer('priority').notNull().default(0),
     category: varchar('category', { length: 32 }),
     deadline: timestamp('deadline', { withTimezone: true }),

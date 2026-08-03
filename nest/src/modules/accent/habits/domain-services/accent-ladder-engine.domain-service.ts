@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AccentHabitDomainService } from './accent-habit.domain-service';
+import type { TaskLadderSnapshot } from '../interfaces/task-full.interface';
 import type { HabitLadder } from '../interfaces/habit-full.interface';
 import type { Env } from '../../../../system/config/env.schema';
 
@@ -47,24 +48,65 @@ export class AccentLadderEngine {
     habitId: string,
     accountId: string,
     performed: number,
-  ): Promise<LadderEvent> {
+  ): Promise<{ event: LadderEvent; before: TaskLadderSnapshot | null }> {
     // CAS+retry (ADR-0035): читаем привычку (с version), считаем новую лесенку, пишем только
     // если version не изменилась; при конфликте (параллельная правка/complete) — перечитываем.
     const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
     for (let attempt = 0; attempt < attempts; attempt++) {
       const habit = await this._habits.findOwnedOrNull(habitId, accountId);
       if (!habit || habit.ladder.policy !== 'adaptive') {
-        return null;
+        return { event: null, before: null };
       }
       const { ladder, event } = this._apply(habit.ladder, performed);
       const written = await this._habits.setLadderCas(habitId, accountId, habit.version, ladder);
       if (written) {
         // TODO: Claude Code: 2026-06-18: 2.9 — при event эмитить ladder.raised/lowered (очки/тосты).
-        return event;
+        // Снимок «как было до» (2.7.3) отдаём вызывающему: он положит его на строку задачи, и
+        // отмена отметки сможет вернуть планку. Здесь не сохраняем — движок про задачи не знает.
+        return {
+          event,
+          before: {
+            currentTarget: habit.ladder.currentTarget,
+            easyStreak: habit.ladder.easyStreak,
+            missStreak: habit.ladder.missStreak,
+          },
+        };
       }
     }
     // Не разрешилось за N попыток — лучше не двигать планку, чем затереть чужой апдейт.
-    return null;
+    return { event: null, before: null };
+  }
+
+  /**
+   * Возвращает лесенку к снимку «до отметки» (2.7.3) — зеркало `onComplete` для отмены.
+   * Пишется тем же CAS с повтором: параллельная правка привычки не должна быть затёрта.
+   * @param habitId Идентификатор привычки.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @param snapshot Снимок, снятый при отметке.
+   * @returns true, если удалось вернуть.
+   */
+  public async revert(
+    habitId: string,
+    accountId: string,
+    snapshot: TaskLadderSnapshot,
+  ): Promise<boolean> {
+    const attempts = this._configService.get('OPTIMISTIC_RETRY_ATTEMPTS', { infer: true });
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const habit = await this._habits.findOwnedOrNull(habitId, accountId);
+      if (!habit || habit.ladder.policy !== 'adaptive') {
+        return false;
+      }
+      const written = await this._habits.setLadderCas(habitId, accountId, habit.version, {
+        ...habit.ladder,
+        currentTarget: snapshot.currentTarget,
+        easyStreak: snapshot.easyStreak,
+        missStreak: snapshot.missStreak,
+      });
+      if (written) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

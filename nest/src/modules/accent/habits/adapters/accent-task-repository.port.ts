@@ -1,5 +1,10 @@
 import type { HabitKind } from '../interfaces/habit-full.interface';
-import type { TaskFull, TaskSkipReason, TaskStatus } from '../interfaces/task-full.interface';
+import type {
+  TaskFull,
+  TaskLadderSnapshot,
+  TaskSkipReason,
+  TaskStatus,
+} from '../interfaces/task-full.interface';
 import type { Transaction } from '../../../../shared/transactions/transaction.interface';
 
 /** DI-токен порта репозитория задач дня (биндится в habits.module). */
@@ -45,6 +50,8 @@ export interface TaskUpdateData {
   doneValue?: number | null | undefined;
   completedAt?: Date | null | undefined;
   skipReason?: TaskSkipReason | null | undefined;
+  /** Снимок лесенки «до отметки» (2.7.3): пишется при complete, гасится при отмене. */
+  ladderBefore?: TaskLadderSnapshot | null | undefined;
 }
 
 /**

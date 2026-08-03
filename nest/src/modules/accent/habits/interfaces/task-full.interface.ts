@@ -17,6 +17,21 @@ export const TASK_SKIP_REASONS = ['postponed'] as const;
 export type TaskSkipReason = (typeof TASK_SKIP_REASONS)[number];
 
 /**
+ * Снимок лесенки «как было до этой отметки» (2.7.3) — только те три числа, что двигает движок.
+ * Хранится на строке задачи и нужен ровно для одного: вернуть планку, если человек отменил
+ * отметку. Лесенка — накопитель, а не производная от истории: без снимка откатывать нечего
+ * (пересчёт из истории не годится — планку правят и руками).
+ */
+export interface TaskLadderSnapshot {
+  /** Планка до отметки. */
+  currentTarget: number;
+  /** Серия «лёгких» до отметки. */
+  easyStreak: number;
+  /** Серия недоборов до отметки. */
+  missStreak: number;
+}
+
+/**
  * TaskFull — задача дня (инстанс привычки или разовая; колонки 1:1 со схемой, ADR-0033).
  * Материализуется из активной привычки по RRULE на день (`templateId` задан), либо
  * создаётся как разовая (one-off, `templateId=null`, с `category?`/`deadline?`).
@@ -46,6 +61,12 @@ export interface TaskFull {
   status: TaskStatus;
   /** Причина пропуска (если `skipped`) или null. */
   skipReason: TaskSkipReason | null;
+  /**
+   * Снимок лесенки до этой отметки (2.7.3) или null. Пишет `complete` — но только если он
+   * реально двигал планку; `uncomplete` его применяет и гасит. Наружу в `TaskView` **не
+   * отдаётся**: это внутренняя механика отката, показывать человеку нечего.
+   */
+  ladderBefore: TaskLadderSnapshot | null;
   /** Из какой задачи перенесена (мягкая ссылка на `tasks.id`) или null. */
   postponedFromTaskId: string | null;
   /** Приоритет (сортировка). */

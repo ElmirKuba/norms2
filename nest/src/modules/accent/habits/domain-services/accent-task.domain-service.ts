@@ -232,8 +232,19 @@ export class AccentTaskDomainService {
     if (templateId !== null) {
       const transitionedRow = await this._repository.updateIfOpen(id, accountId, patch);
       if (transitionedRow) {
-        const ladderEvent = await this._ladder.onComplete(templateId, accountId, effectiveDone);
-        return { task: transitionedRow, ladderEvent, transitioned: true };
+        const { event: ladderEvent, before } = await this._ladder.onComplete(
+          templateId,
+          accountId,
+          effectiveDone,
+        );
+        // Снимок «как было до» кладём на строку задачи (2.7.3): без него отмена отметки не сможет
+        // вернуть планку — лесенка накопитель, прежнего состояния нигде больше нет.
+        const withSnapshot =
+          before === null
+            ? transitionedRow
+            : ((await this._repository.update(id, accountId, { ladderBefore: before })) ??
+              transitionedRow);
+        return { task: withSnapshot, ladderEvent, transitioned: true };
       }
     }
     // Разовая задача, либо повторный complete (уже не открыта) — обновляем значение без лесенки.

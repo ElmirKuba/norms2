@@ -47,6 +47,10 @@ const ALLOW = new Map([
   ['currentDays', 'дубль: экран «Держусь» тикает вживую от currentAttemptStartedAt, снимок в днях ему не нужен'],
   ['heldDays', 'дубль attemptDurationMs: фронт форматирует из миллисекунд («9 ч 22 мин», а не «0 дней»)'],
   ['thresholdDays', 'дубль thresholdLabel: человеку показываем ярлык порога, не число'],
+  [
+    'accentPausedFrom',
+    'дашборд с 2.11 берёт паузу из своего снимка (DashboardView.pausedFrom); GET /accent/settings ждёт экран настроек раздела (ui-ux §4)',
+  ],
 ]);
 
 /** Рекурсивный обход .ts-файлов каталога. */

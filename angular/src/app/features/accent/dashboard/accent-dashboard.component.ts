@@ -50,6 +50,87 @@ import type { DashboardView } from '../accent.types';
           </div>
         </app-card>
 
+        @if (d.today.total > 0) {
+          <app-card>
+            <div class="dash__block">
+              <div class="dash__block-head">
+                <h3 class="dash__block-title">Сегодня</h3>
+                <span class="dash__pct">{{ d.today.done }} из {{ d.today.total }} · {{ d.today.percent }}%</span>
+              </div>
+              <div class="dash__bar"><span class="dash__bar-fill" [style.width.%]="d.today.percent"></span></div>
+              <ul class="dash__list">
+                @for (task of d.today.items; track task.id) {
+                  <li class="dash__row">
+                    <span class="dash__dot" [attr.data-status]="task.status" aria-hidden="true"></span>
+                    <span [class.dash__struck]="task.status === 'done'">{{ task.title }}</span>
+                  </li>
+                }
+              </ul>
+              <a class="dash__more" [routerLink]="['../habits']">Все задачи →</a>
+            </div>
+          </app-card>
+        }
+
+        @if (d.overdue.length > 0) {
+          <app-card>
+            <div class="dash__block">
+              <h3 class="dash__block-title">Просрочено</h3>
+              <ul class="dash__list">
+                @for (task of d.overdue; track task.id) {
+                  <li class="dash__row">
+                    <span>{{ task.title }}</span>
+                    <span class="dash__muted">срок {{ fmtDate(task.deadline) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </app-card>
+        }
+
+        @if (d.goals.length > 0) {
+          <app-card>
+            <div class="dash__block">
+              <h3 class="dash__block-title">Цели</h3>
+              <ul class="dash__list">
+                @for (goal of d.goals; track goal.id) {
+                  <li class="dash__row">
+                    <a class="dash__link" [routerLink]="['../goals', goal.id]">
+                      {{ goal.isFocus ? '⭐ ' : '' }}{{ goal.title }}
+                    </a>
+                    <span class="dash__bar dash__bar--thin">
+                      <span class="dash__bar-fill" [style.width.%]="goal.percentage ?? 0"></span>
+                    </span>
+                    <span class="dash__muted">{{ goal.percentage === null ? '—' : goal.percentage + '%' }}</span>
+                  </li>
+                }
+              </ul>
+              <a class="dash__more" [routerLink]="['../goals']">Все цели →</a>
+            </div>
+          </app-card>
+        }
+
+        @if (d.antiHabits.length > 0) {
+          <app-card>
+            <div class="dash__block">
+              <h3 class="dash__block-title">Держусь</h3>
+              <ul class="dash__list">
+                @for (item of d.antiHabits; track item.id) {
+                  <li class="dash__row">
+                    <a class="dash__link" [routerLink]="['../anti-habits', item.id]">{{ item.title }}</a>
+                    <span class="dash__streak">{{ heldFor(item.currentAttemptStartedAt) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </app-card>
+        }
+
+        @if (d.hasObstacles) {
+          <p class="dash__obstacles">
+            Накрыло? <a class="dash__link" [routerLink]="['../obstacles']">Отметить, что помешало →</a>
+          </p>
+        }
+
         @if (d.pausedFrom !== null) {
           <div class="dash__paused">
             <span>Раздел на паузе с {{ pausedLabel(d.pausedFrom) }} — вернёшься, когда будешь готов.</span>
@@ -103,6 +184,96 @@ import type { DashboardView } from '../accent.types';
         flex-wrap: wrap;
         gap: var(--space-2);
         margin-top: var(--space-1);
+      }
+      .dash__block {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .dash__block-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+      .dash__block-title {
+        margin: 0;
+        font-size: var(--fs-md);
+      }
+      .dash__pct {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+      }
+      .dash__bar {
+        height: 6px;
+        background: var(--color-surface-2);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+      }
+      .dash__bar--thin {
+        flex: 1;
+        min-width: 4rem;
+      }
+      .dash__bar-fill {
+        display: block;
+        height: 100%;
+        background: var(--color-accent);
+      }
+      .dash__list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .dash__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--fs-sm);
+      }
+      .dash__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-border);
+        flex-shrink: 0;
+      }
+      .dash__dot[data-status='done'] {
+        background: var(--color-success);
+      }
+      .dash__dot[data-status='partial'] {
+        background: var(--color-accent);
+      }
+      .dash__struck {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+      }
+      .dash__link {
+        color: inherit;
+        text-decoration: none;
+      }
+      .dash__link:hover {
+        color: var(--color-accent);
+        text-decoration: underline;
+      }
+      .dash__more {
+        align-self: flex-start;
+        color: var(--color-accent);
+        font-size: var(--fs-sm);
+        text-decoration: none;
+      }
+      .dash__streak {
+        margin-left: auto;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+      }
+      /* Короткий путь к помощи в плохую минуту — не список, одна строка. */
+      .dash__obstacles {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
       }
       .dash__paused {
         display: flex;
@@ -211,6 +382,30 @@ export class AccentDashboardComponent {
         this._modal.error('Не удалось снять с паузы', errorMessage(err));
       },
     });
+  }
+
+  /**
+   * Сколько держится серия — считаем **на фронте** от момента старта: снимок в днях устарел бы
+   * через минуту после загрузки. Целые сутки, без секундной точности: на дашборде важен порядок,
+   * а живой таймер живёт на своём экране.
+   * @param startedAt Момент старта попытки (unix ms).
+   * @returns Строка вида «12 дн.».
+   */
+  protected heldFor(startedAt: number): string {
+    const days = Math.max(0, Math.floor((Date.now() - startedAt) / 86_400_000));
+    if (days === 0) {
+      return 'сегодня';
+    }
+    return `${days} дн.`;
+  }
+
+  /**
+   * Дата по-человечески.
+   * @param iso Момент (ISO).
+   * @returns Строка вида «1 августа».
+   */
+  protected fmtDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   }
 
   /**

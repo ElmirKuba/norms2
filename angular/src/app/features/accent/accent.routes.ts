@@ -31,6 +31,11 @@ export const accentRoutes: Routes = [
         loadComponent: () => import('./habits/habits.component').then((m) => m.HabitsComponent),
       },
       {
+        path: 'habits/:id',
+        loadComponent: () =>
+          import('./habits/habit-detail.component').then((m) => m.HabitDetailComponent),
+      },
+      {
         path: 'anti-habits',
         loadComponent: () =>
           import('./anti-habits/anti-habits.component').then((m) => m.AntiHabitsComponent),

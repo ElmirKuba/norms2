@@ -75,4 +75,10 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.7.3 — «Препятствия», минимум на плохой день, свежесть и история привычки',
     contentFile: 'notifications/release-2.7.3.md',
   },
+  // Первая нота по правилу от 03.08.2026: только про НОВОЕ, без пересказа прошлых патчей.
+  {
+    key: 'release-2.8.0',
+    title: 'Нормисы 2.8 — главный экран: «Сейчас» вместо списка вкладок',
+    contentFile: 'notifications/release-2.8.0.md',
+  },
 ];

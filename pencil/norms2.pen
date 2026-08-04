@@ -150,9 +150,9 @@
       "type": "note",
       "id": "H2BlGJ",
       "x": 880,
-      "y": -190,
+      "y": -300,
       "name": "Секция: превью релизов",
-      "width": 1200,
+      "width": 1000,
       "height": 0,
       "content": "ПРЕВЬЮ РЕЛИЗОВ — 1200×630\nПодфаза 2.9.1, шаги ·4.6 и ·4.7. Картинка уходит в Telegram-канал t.me/norms2 первым сообщением поста (sendPhoto), подпись со ссылкой на публичную витрину /releases/:key.\nЦвета берутся из переменных документа = токены продукта (angular/src/styles/_tokens.scss, тёмная тема). Меняешь переменную — меняются все карточки.\nЭкспорт: PNG, масштаб 1, ровно 1200×630, в nest/seed-content/notifications/previews/release-<версия>.png"
     },
@@ -164,7 +164,582 @@
       "name": "Секция: айдентика",
       "width": 900,
       "height": 0,
-      "content": "АЙДЕНТИКА\nПорядок работы (реш. Elmir 04.08.2026): СНАЧАЛА персонажи, потом всё остальное на их основе — аватарка канала t.me/norms2 (512×512, показывается кругом) и карточки превью релизов.\nПервый подход к аватарке (Н + акцентный штрих на оранжевом) отклонён 04.08.2026: знак сам по себе, без персонажей, — не то. Лежит в истории git, коммит 810daac и далее.\nПерсонажи рисуются здесь же, в этом файле, отдельной секцией выше."
+      "content": "АЙДЕНТИКА\nПорядок (реш. Elmir 04.08.2026): сначала персонажи, потом на их основе аватарка канала и превью релизов.\nАватарка 512×512 показывается КРУГОМ: всё держится в центральном квадрате ~362×362, базовая линия персонажей на y=400. «Н» — не надпись, а фоновая текстура тон-в-тон: слово «Нормисы» на аватарке 40 px нечитаемо, а буква работает крупным планом и не мешает мелкому.\nСЦЕНЫ. Групп несколько (А, Б, В, Г) — разный состав, порядок и отражения, чтобы превью релизов не выглядели под копирку. Каждому релизу — своя сцена."
+    },
+    {
+      "type": "note",
+      "id": "k6cx1l",
+      "x": 880,
+      "y": -990,
+      "name": "Секция: персонажи",
+      "width": 1200,
+      "height": 0,
+      "content": "ПЕРСОНАЖИ — база айдентики\nРисуются первыми, всё остальное (аватарка канала, превью релизов) собирается из них (реш. Elmir 04.08.2026).\nПринцип: плоское геометрическое тело без обводки, минимальное лицо — глаза-точки и короткая дуга. Формы и цвета свои, из токенов продукта; внешний референс дал только принцип.\nКаждый — reusable-компонент: правишь компонент, меняются все сцены. Инстансы вставлять через ref, а не копировать."
+    },
+    {
+      "type": "frame",
+      "id": "Z3wFa",
+      "x": 880,
+      "y": -690,
+      "name": "Персонаж — Арка",
+      "reusable": true,
+      "width": 150,
+      "height": 300,
+      "fill": "#E8915B",
+      "cornerRadius": [
+        75,
+        75,
+        0,
+        0
+      ],
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "DGRST",
+          "x": 45,
+          "y": 96,
+          "name": "Глаз",
+          "fill": "#1A1206",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "type": "ellipse",
+          "id": "BRCMa",
+          "x": 89,
+          "y": 96,
+          "name": "Глаз",
+          "fill": "#1A1206",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "type": "path",
+          "id": "btnS6",
+          "x": 55,
+          "y": 132,
+          "name": "Улыбка",
+          "geometry": "M0 0q12 16 24 0-12 7-24 0z",
+          "viewBox": [
+            0,
+            0,
+            24,
+            16
+          ],
+          "fill": "#1A1206",
+          "width": 40,
+          "height": 20
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "pEI6d",
+      "x": 1100,
+      "y": -525,
+      "name": "Персонаж — Купол",
+      "reusable": true,
+      "width": 270,
+      "height": 135,
+      "fill": "#E0B15A",
+      "cornerRadius": [
+        135,
+        135,
+        0,
+        0
+      ],
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "DVMot",
+          "x": 92,
+          "y": 56,
+          "name": "Глаз",
+          "fill": "#1A1206",
+          "width": 18,
+          "height": 18
+        },
+        {
+          "type": "ellipse",
+          "id": "JvTSs",
+          "x": 160,
+          "y": 56,
+          "name": "Глаз",
+          "fill": "#1A1206",
+          "width": 18,
+          "height": 18
+        },
+        {
+          "type": "path",
+          "id": "bhMX6",
+          "x": 109,
+          "y": 90,
+          "name": "Улыбка",
+          "geometry": "M0 0q12 16 24 0-12 7-24 0z",
+          "viewBox": [
+            0,
+            0,
+            24,
+            16
+          ],
+          "fill": "#1A1206",
+          "width": 52,
+          "height": 24
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "aSpcN",
+      "x": 1440,
+      "y": -750,
+      "name": "Персонаж — Столбик",
+      "reusable": true,
+      "width": 120,
+      "height": 360,
+      "fill": "#262932",
+      "cornerRadius": 10,
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "q1NlhP",
+          "x": 32.5,
+          "y": 120,
+          "name": "Глаз",
+          "fill": "#E7E9EE",
+          "width": 15,
+          "height": 15
+        },
+        {
+          "type": "ellipse",
+          "id": "JKdLu",
+          "x": 72.5,
+          "y": 120,
+          "name": "Глаз",
+          "fill": "#E7E9EE",
+          "width": 15,
+          "height": 15
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "nSfRn",
+      "x": 1630,
+      "y": -620,
+      "name": "Персонаж — Таблетка",
+      "reusable": true,
+      "width": 130,
+      "height": 230,
+      "fill": "#C2693A",
+      "cornerRadius": 65,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "cornerRadius": 3,
+          "id": "TJ9bP",
+          "x": 29,
+          "y": 98,
+          "name": "Глаз закрытый",
+          "fill": "#1A1206",
+          "width": 20,
+          "height": 6
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 3,
+          "id": "QuGkO",
+          "x": 81,
+          "y": 98,
+          "name": "Глаз закрытый",
+          "fill": "#1A1206",
+          "width": 20,
+          "height": 6
+        },
+        {
+          "type": "path",
+          "id": "mwGkU",
+          "x": 46,
+          "y": 130,
+          "name": "Улыбка",
+          "geometry": "M0 0q12 16 24 0-12 7-24 0z",
+          "viewBox": [
+            0,
+            0,
+            24,
+            16
+          ],
+          "fill": "#1A1206",
+          "width": 38,
+          "height": 18
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "GqnHv",
+      "x": 1900,
+      "y": -620,
+      "name": "Группа персонажей",
+      "reusable": true,
+      "width": 500,
+      "height": 380,
+      "layout": "none",
+      "children": [
+        {
+          "id": "SzFrT",
+          "type": "ref",
+          "ref": "Z3wFa",
+          "name": "Арка",
+          "x": 120,
+          "y": 80
+        },
+        {
+          "id": "gmcAS",
+          "type": "ref",
+          "ref": "aSpcN",
+          "name": "Столбик",
+          "x": 250,
+          "y": 20
+        },
+        {
+          "id": "uWyL4",
+          "type": "ref",
+          "ref": "nSfRn",
+          "name": "Таблетка",
+          "x": 345,
+          "y": 150
+        },
+        {
+          "id": "gEJAI",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Купол",
+          "x": 20,
+          "y": 245
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "bcaHR",
+      "x": 880,
+      "y": 859,
+      "name": "Аватарка канала 512",
+      "clip": true,
+      "width": 512,
+      "height": 512,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 145,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#F0A373",
+            "position": 0
+          },
+          {
+            "color": "#E8915B",
+            "position": 0.5
+          },
+          {
+            "color": "#C2693A",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "RTVu8",
+          "x": 56,
+          "y": 46,
+          "name": "Свет",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#FFE3C4B3",
+                "position": 0
+              },
+              {
+                "color": "#FFE3C400",
+                "position": 1
+              }
+            ]
+          },
+          "width": 400,
+          "height": 400
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            37,
+            37,
+            0,
+            0
+          ],
+          "id": "DDr7f",
+          "x": 52,
+          "y": 250,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF26",
+          "width": 74,
+          "height": 150
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            31,
+            31,
+            0,
+            0
+          ],
+          "id": "r7Lfj",
+          "x": 398,
+          "y": 285,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF26",
+          "width": 62,
+          "height": 115
+        },
+        {
+          "type": "text",
+          "id": "uuhEG",
+          "x": 0,
+          "y": 76,
+          "name": "Н фоном",
+          "fill": "#1A12063D",
+          "textGrowth": "fixed-width",
+          "width": 512,
+          "content": "Н",
+          "lineHeight": 1,
+          "textAlign": "center",
+          "fontFamily": "$font",
+          "fontSize": 340,
+          "fontWeight": "700"
+        },
+        {
+          "type": "rectangle",
+          "id": "chR2i",
+          "x": 0,
+          "y": 400,
+          "name": "Земля",
+          "fill": "#8C4A2414",
+          "width": 512,
+          "height": 112
+        },
+        {
+          "type": "ellipse",
+          "id": "MlOun",
+          "x": 128,
+          "y": 132,
+          "name": "Искра",
+          "fill": "#FFF2E0A6",
+          "width": 14,
+          "height": 14
+        },
+        {
+          "type": "ellipse",
+          "id": "QNbtK",
+          "x": 392,
+          "y": 168,
+          "name": "Искра",
+          "fill": "#FFF2E0A6",
+          "width": 10,
+          "height": 10
+        },
+        {
+          "type": "ellipse",
+          "id": "jQW2J",
+          "x": 330,
+          "y": 96,
+          "name": "Искра",
+          "fill": "#FFF2E0A6",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "ellipse",
+          "id": "i08bL",
+          "x": 100,
+          "y": 318,
+          "name": "Искра",
+          "fill": "#FFF2E0A6",
+          "width": 9,
+          "height": 9
+        },
+        {
+          "type": "ellipse",
+          "id": "byJDt",
+          "x": 430,
+          "y": 250,
+          "name": "Искра",
+          "fill": "#FFF2E0A6",
+          "width": 7,
+          "height": 7
+        },
+        {
+          "id": "tBWG9",
+          "type": "ref",
+          "ref": "Z3wFa",
+          "name": "Арка",
+          "x": 113,
+          "y": 100
+        },
+        {
+          "id": "RQbJo",
+          "type": "ref",
+          "ref": "nSfRn",
+          "name": "Таблетка",
+          "x": 243,
+          "y": 170
+        },
+        {
+          "id": "j1RiS7",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Купол",
+          "x": 128,
+          "y": 265
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "BMys1",
+      "x": 3140,
+      "y": -620,
+      "name": "Группа персонажей Б",
+      "reusable": true,
+      "width": 500,
+      "height": 380,
+      "layout": "none",
+      "children": [
+        {
+          "id": "RHlbI",
+          "type": "ref",
+          "ref": "nSfRn",
+          "name": "Персонаж",
+          "x": 30,
+          "y": 150,
+          "flipX": false
+        },
+        {
+          "id": "swH9s",
+          "type": "ref",
+          "ref": "aSpcN",
+          "name": "Персонаж",
+          "x": 130,
+          "y": 20,
+          "flipX": false
+        },
+        {
+          "id": "gXbhT",
+          "type": "ref",
+          "ref": "Z3wFa",
+          "name": "Персонаж",
+          "x": 390,
+          "y": 80,
+          "flipX": true
+        },
+        {
+          "id": "bFDXh",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Персонаж",
+          "x": 210,
+          "y": 245,
+          "flipX": false
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "AXoiO",
+      "x": 3720,
+      "y": -620,
+      "name": "Группа персонажей В",
+      "reusable": true,
+      "width": 500,
+      "height": 380,
+      "layout": "none",
+      "children": [
+        {
+          "id": "Awt9W",
+          "type": "ref",
+          "ref": "Z3wFa",
+          "name": "Персонаж",
+          "x": 40,
+          "y": 80,
+          "flipX": false
+        },
+        {
+          "id": "a1dqX",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Персонаж",
+          "x": 150,
+          "y": 245,
+          "flipX": false
+        },
+        {
+          "id": "vHEem",
+          "type": "ref",
+          "ref": "aSpcN",
+          "name": "Персонаж",
+          "x": 360,
+          "y": 20,
+          "flipX": false
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "aqYaD",
+      "x": 4300,
+      "y": -620,
+      "name": "Группа персонажей Г",
+      "reusable": true,
+      "width": 500,
+      "height": 380,
+      "layout": "none",
+      "children": [
+        {
+          "id": "XmmXW",
+          "type": "ref",
+          "ref": "aSpcN",
+          "name": "Персонаж",
+          "x": 240,
+          "y": 20,
+          "flipX": true
+        },
+        {
+          "id": "MNFLQ",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Персонаж",
+          "x": 180,
+          "y": 245,
+          "flipX": false
+        }
+      ]
     }
   ],
   "variables": {

@@ -70,6 +70,6 @@ import { UnpostponeTaskUseCase } from './use-cases/unpostpone-task.use-case';
     UnpostponeTaskUseCase,
   ],
   // Дашборд (2.11) собирает день через domain-services — кросс-домен вниз.
-  exports: [AccentHabitDomainService, AccentTaskDomainService],
+  exports: [AccentHabitDomainService, AccentTaskDomainService, AccentLadderEngine],
 })
 export class HabitsModule {}

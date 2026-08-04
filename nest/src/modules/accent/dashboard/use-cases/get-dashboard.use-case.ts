@@ -8,6 +8,7 @@ import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/ac
 import { AccentObstacleDomainService } from '../../obstacles/domain-services/accent-obstacle.domain-service';
 import { AccentSettingsDomainService } from '../../settings/domain-services/accent-settings.domain-service';
 import { AccentNowDomainService } from '../domain-services/accent-now.domain-service';
+import { AccentPersistenceDomainService } from '../../progress/domain-services/accent-persistence.domain-service';
 import type { DashboardView } from '../interfaces/dashboard-view.interface';
 
 /** Сколько задач дня показываем в сводке — дальше человек идёт в «Привычки». */
@@ -48,6 +49,7 @@ export class GetDashboardUseCase {
     private readonly _obstacles: AccentObstacleDomainService,
     private readonly _settings: AccentSettingsDomainService,
     private readonly _now: AccentNowDomainService,
+    private readonly _persistence: AccentPersistenceDomainService,
   ) {}
 
   /**
@@ -70,6 +72,13 @@ export class GetDashboardUseCase {
       ]);
     const completedMicroWinIds = await this._microWins.completedIdsOn(accountId, today);
     const everMarked = await this._tasks.hasAnyCompletion(accountId);
+    // Постоянство (2.9) — считаем здесь же, отдельным заходом за днями активности: на дашборде
+    // нужна только пара чисел, а разбор по привычкам живёт на `/accent/stats`.
+    const [taskDays, microWinDays, goalDays] = await Promise.all([
+      this._tasks.activeDays(accountId),
+      this._microWins.activeDays(accountId),
+      this._goals.activeDays(accountId),
+    ]);
 
     // Фокусные цели первыми: человек сам сказал, что для него сейчас главное (ADR-0053).
     const topGoals = goals
@@ -118,6 +127,7 @@ export class GetDashboardUseCase {
         deadline: (task.deadline ?? new Date()).toISOString(),
       })),
       hasObstacles: obstacles.items.some((obstacle) => !obstacle.isStarter),
+      persistence: this._persistence.compute([taskDays, microWinDays, goalDays], today),
       onboarding: {
         hasHabits: habits.some((habit) => !habit.isStarter),
         // «Отмечал хоть раз» — по всей истории задач, а не по сегодняшнему дню: иначе человек,

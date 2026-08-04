@@ -86,6 +86,15 @@ export class AccentAchievementDomainService {
   }
 
   /**
+   * Выданные достижения аккаунта (новые→старые).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Записи.
+   */
+  public listAwarded(accountId: string): Promise<UserAchievementFull[]> {
+    return this._repository.listByAccount(accountId);
+  }
+
+  /**
    * Правило одного достижения.
    * @param code Код.
    * @param facts Факты.

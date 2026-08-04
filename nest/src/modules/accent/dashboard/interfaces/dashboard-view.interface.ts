@@ -1,4 +1,5 @@
 import type { DashboardNow } from './dashboard-now.interface';
+import type { PersistenceView } from '../../progress/interfaces/persistence.interface';
 
 /** Задача дня в короткой сводке дашборда (полный чеклист — на `/accent/habits`). */
 export interface DashboardTaskItem {
@@ -90,6 +91,11 @@ export interface DashboardView {
   overdue: DashboardOverdueItem[];
   /** Есть ли свои препятствия — от этого зависит строка «накрыло? → Столкнулся». */
   hasObstacles: boolean;
+  /**
+   * Постоянство (2.9): итог «дней с действием» и окно «X из последних 7». На дашборде — одна
+   * плитка на бегу; вся картина, включая привычки по отдельности, живёт на `/accent/stats`.
+   */
+  persistence: PersistenceView;
   /** Шаги первого знакомства. */
   onboarding: DashboardOnboarding;
   /** Раздел на паузе с (ISO) или null. */

@@ -6,6 +6,7 @@ import { HabitsModule } from '../habits/habits.module';
 import { MicroWinsModule } from '../micro-wins/micro-wins.module';
 import { ObstaclesModule } from '../obstacles/obstacles.module';
 import { AccentSettingsModule } from '../settings/accent-settings.module';
+import { ProgressModule } from '../progress/progress.module';
 import { DashboardController } from './controllers/dashboard.controller';
 import { AccentNowDomainService } from './domain-services/accent-now.domain-service';
 import { GetDashboardUseCase } from './use-cases/get-dashboard.use-case';
@@ -24,6 +25,7 @@ import { GetDashboardUseCase } from './use-cases/get-dashboard.use-case';
     MicroWinsModule,
     ObstaclesModule,
     AccentSettingsModule,
+    ProgressModule,
   ],
   controllers: [DashboardController],
   providers: [GetDashboardUseCase, AccentNowDomainService],

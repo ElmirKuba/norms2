@@ -6,6 +6,7 @@ import { BanDomainService } from '../../bans/domain-services/ban.domain-service'
 import { SessionDomainService } from '../../sessions/domain-services/session.domain-service';
 import { SecretQaDomainService } from '../../recovery/domain-services/secret-qa.domain-service';
 import type { AccountFull } from '../../account/interfaces/account-full.interface';
+import { AccentSnapshotDomainService } from '../../accent/dashboard/domain-services/accent-snapshot.domain-service';
 import type { OverviewStats } from '../interfaces/overview-stats.interface';
 
 /**
@@ -24,6 +25,7 @@ export class GetOverviewStatsUseCase {
    * @param _banDomainService Bans (мои баны).
    * @param _sessionDomainService Sessions (устройства).
    * @param _secretQaDomainService Recovery (вопросы).
+   * @param _accentSnapshotDomainService Срез раздела «Акцент» (2.9·16).
    */
   public constructor(
     private readonly _accountDomainService: AccountDomainService,
@@ -32,6 +34,7 @@ export class GetOverviewStatsUseCase {
     private readonly _banDomainService: BanDomainService,
     private readonly _sessionDomainService: SessionDomainService,
     private readonly _secretQaDomainService: SecretQaDomainService,
+    private readonly _accentSnapshotDomainService: AccentSnapshotDomainService,
   ) {}
 
   /**
@@ -41,7 +44,7 @@ export class GetOverviewStatsUseCase {
    */
   public async execute(account: AccountFull): Promise<OverviewStats> {
     const me = account.id;
-    const [totalUsers, invitees, codes, bans, sessions, subtreeTotal, recoveryQuestions] =
+    const [totalUsers, invitees, codes, bans, sessions, subtreeTotal, recoveryQuestions, accent] =
       await Promise.all([
         this._accountDomainService.countActiveUsers(),
         this._inviteDomainService.listInvitees(me),
@@ -50,6 +53,8 @@ export class GetOverviewStatsUseCase {
         this._sessionDomainService.listActive(me),
         this._inviteTreeDomainService.countDescendants(me),
         this._secretQaDomainService.countQuestions(me),
+        // Раздел сам отвечает, как у него дела: обзор не знает про лесенки и материализацию.
+        this._accentSnapshotDomainService.build(me, account.timezone),
       ]);
 
     const activeBanTargets = new Set(bans.filter((ban) => ban.active).map((ban) => ban.targetId));
@@ -83,6 +88,7 @@ export class GetOverviewStatsUseCase {
       activeSessions: sessions.length,
       recoveryQuestions,
       recoveryRequiredCount: account.recoveryRequiredCount,
+      accent,
     };
   }
 }

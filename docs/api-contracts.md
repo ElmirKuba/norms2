@@ -115,6 +115,10 @@ Body: `{ login, password }`.
 ## Статистика (overview, F4)
 
 - `GET /stats/overview` (auth) → `OverviewStats` = `{ totalUsers, invitedDirect, subtreeTotal, inviteesBannedByMe, inviteesBannedByAncestor, bansActive, pendingCodes, invitesRemaining, activeSessions, recoveryQuestions, recoveryRequiredCount: number|null }`. Только агрегаты (счётчики), без ПДн/списков; точечные значения «здесь и сейчас» (без истории/трендов). `inviteesBannedByMe`/`inviteesBannedByAncestor` — прямые приглашённые с активным баном от меня / от вышестоящего по дереву (взаимоисключающе: забанен и мной, и вышестоящим → к «мной»); «полезность» = `invitedDirect − оба`. Сервер считает за один запрос (новые `COUNT`: пользователи active, поддерево CTE; остальное — длина существующих списков).
+  - **`accent` (2.9·16)** — срез единственного живого раздела продукта: `{ today: { done, total, percent }, persistence: { totalDays, windowDays, windowSize }, focusGoal: { id, title, percentage } | null, isPaused, hasContent }`. Приходит **тем же запросом**, а не вторым походом с фронта: обзор обязан показывать согласованный снимок, а не склейку двух моментов времени.
+  - Собирает [`AccentSnapshotDomainService`](../nest/src/modules/accent/dashboard/domain-services/accent-snapshot.domain-service.ts) — **раздел сам отвечает, как у него дела**, а обзор не знает ни про лесенки, ни про ленивую материализацию задач. Появятся другие разделы — рядом встанут их срезы той же формы, и модуль статистики не будет обрастать зависимостями на каждый новый раздел. Кросс-домен идёт вниз: use-case ЛК зовёт domain-service «Акцента», а не его use-case.
+  - **Задачи дня материализуются и здесь** (как на дашборде раздела): обзор — тоже вход в день, а без материализации человек, заходящий только на главную, видел бы ноль вместо своих задач.
+  - `hasContent = false` — у человека нет ничего своего (только примеры); экран **зовёт начать вместо нулей**: пустой раздел не должен выглядеть как проваленный. `today.total = 0` при непустом разделе — «на сегодня задач нет», а не «0%»: провалить нечего, если по расписанию ничего не выпало.
 
 ---
 

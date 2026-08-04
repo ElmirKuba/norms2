@@ -1,3 +1,5 @@
+import type { AccentOverviewSnapshot } from '../../accent/dashboard/interfaces/accent-snapshot.interface';
+
 /**
  * OverviewStats — числа для главного экрана (`GET /stats/overview`, F4). Только
  * агрегаты (счётчики), без списков/ПДн. Точечные значения «здесь и сейчас» (без
@@ -26,4 +28,13 @@ export interface OverviewStats {
   recoveryQuestions: number;
   /** K (сколько спрашивать) или null, если не задано. */
   recoveryRequiredCount: number | null;
+  /**
+   * Срез раздела «Акцент» (2.9·16) — как идёт единственный живой раздел продукта. Приходит
+   * тем же запросом, а не вторым походом с фронта: обзор должен показывать **согласованный**
+   * снимок, а не склейку двух моментов времени.
+   *
+   * Появятся другие разделы — рядом встанут их срезы, форма та же: раздел сам отвечает, как у
+   * него дела ([`AccentSnapshotDomainService`](../../accent/dashboard/domain-services/accent-snapshot.domain-service.ts)).
+   */
+  accent: AccentOverviewSnapshot;
 }

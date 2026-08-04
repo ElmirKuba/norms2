@@ -10,6 +10,57 @@
     <app-spinner />
   } @else if (stats(); as s) {
     <div class="grid">
+      <!-- Герой — единственный живой раздел продукта. Он крупнее карточек аккаунта не из-за
+           красоты: обзор отвечает «как у меня дела», а дела — в разделах, а не в числе
+           приглашений. Появятся «Финансы» — встанут рядом такими же героями. -->
+      <a class="card card--hero" routerLink="/app/accent">
+        <span class="card__label">Акцент</span>
+
+        @if (s.accent.isPaused) {
+          <span class="card__value card__value--sm">На паузе</span>
+          <span class="card__sub">Раздел приостановлен — задачи не начисляются.</span>
+        } @else if (!s.accent.hasContent) {
+          <span class="card__value card__value--sm">Ещё не начат</span>
+          <span class="card__sub">Заведи первую привычку — раздел начнёт работать на тебя.</span>
+        } @else if (s.accent.today.total === 0) {
+          <!-- Ноль процентов при пустом дне читался бы как провал, хотя провалить нечего:
+               по расписанию сегодня ничего не выпало. Показываем факт, а не упрёк. -->
+          <span class="card__value card__value--sm">На сегодня задач нет</span>
+          <span class="card__sub">По расписанию сегодня ничего не выпало.</span>
+        } @else {
+          <div class="kpi-row">
+            <strong class="card__value">{{ s.accent.today.percent }}%</strong>
+            <span class="kpi-unit">
+              день закрыт<br />
+              <span class="kpi-note">{{ s.accent.today.done }} из {{ s.accent.today.total }}</span>
+            </span>
+          </div>
+          <div class="bar"><span class="bar__fill" [style.width.%]="s.accent.today.percent"></span></div>
+
+          @if (s.accent.focusGoal; as goal) {
+            <div class="goal">
+              <span class="goal__title">{{ goal.title }}</span>
+              <span class="goal__pct">{{ goal.percentage }}%</span>
+            </div>
+          }
+        }
+      </a>
+
+      <!-- Постоянство — отдельной плиткой, а не строкой внутри героя: это ответ на другой
+           вопрос («сколько я вообще держусь»), и он не должен тонуть в проценте дня. -->
+      @if (s.accent.persistence.totalDays > 0) {
+        <a class="card card--persistence" routerLink="/app/accent/stats">
+          <span class="card__label">Постоянство</span>
+          <div class="kpi-row">
+            <strong class="card__value">{{ s.accent.persistence.totalDays }}</strong>
+            <span class="kpi-unit">{{ dayWord(s.accent.persistence.totalDays) }} с действием</span>
+          </div>
+          <span class="card__sub">
+            {{ s.accent.persistence.windowDays }} из последних {{ s.accent.persistence.windowSize }} →
+          </span>
+        </a>
+      }
+
       <div class="card card--accent">
         <span class="card__label">Нас всего</span>
         <span class="card__value">{{ s.totalUsers }}</span>

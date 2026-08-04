@@ -9,6 +9,7 @@ import { AccentSettingsModule } from '../settings/accent-settings.module';
 import { ProgressModule } from '../progress/progress.module';
 import { DashboardController } from './controllers/dashboard.controller';
 import { AccentNowDomainService } from './domain-services/accent-now.domain-service';
+import { AccentSnapshotDomainService } from './domain-services/accent-snapshot.domain-service';
 import { GetDashboardUseCase } from './use-cases/get-dashboard.use-case';
 
 /**
@@ -28,6 +29,9 @@ import { GetDashboardUseCase } from './use-cases/get-dashboard.use-case';
     ProgressModule,
   ],
   controllers: [DashboardController],
-  providers: [GetDashboardUseCase, AccentNowDomainService],
+  providers: [GetDashboardUseCase, AccentNowDomainService, AccentSnapshotDomainService],
+  // Наружу отдаём только срез для чужих экранов («Обзор» ЛК): соседям не нужен ни use-case,
+  // ни «Сейчас» — им нужен ответ на вопрос «как идёт Акцент».
+  exports: [AccentSnapshotDomainService],
 })
 export class DashboardModule {}

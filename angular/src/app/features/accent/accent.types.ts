@@ -452,6 +452,27 @@ export interface DashboardOnboarding {
   hasGoals: boolean;
 }
 
+/**
+ * Постоянство (2.9) — два числа, отвечающие на разные вопросы: итог «кто я» (не падает никогда)
+ * и окно «как я сейчас» (восстанавливается само). Порознь они врут, поэтому показываются парой.
+ */
+export interface PersistenceView {
+  /** Сколько всего дней с действием. */
+  totalDays: number;
+  /** Сколько дней с действием в окне последних `windowSize`. */
+  windowDays: number;
+  /** Размер окна в днях (приходит с бэка — фронт его не знает наизусть). */
+  windowSize: number;
+  /** Последний день с действием (`YYYY-MM-DD`) или null. */
+  lastActiveOn: string | null;
+  /** Сколько раз возвращался после долгого перерыва. */
+  returnCount: number;
+  /** Длина перерыва перед последним возвращением или null. */
+  lastReturnSilenceDays: number | null;
+  /** Сколько дней тишины идёт сейчас (0 — сегодня уже было действие). */
+  silenceDays: number;
+}
+
 /** Снимок главного экрана — всё за один запрос (2.11). */
 export interface DashboardView {
   /** Герой экрана. */
@@ -466,6 +487,8 @@ export interface DashboardView {
   overdue: DashboardOverdueItem[];
   /** Есть ли свои препятствия. */
   hasObstacles: boolean;
+  /** Постоянство: итог и окно (вся картина — на `/accent/stats`). */
+  persistence: PersistenceView;
   /** Шаги первого знакомства. */
   onboarding: DashboardOnboarding;
   /** Раздел на паузе с (ISO) или null. */

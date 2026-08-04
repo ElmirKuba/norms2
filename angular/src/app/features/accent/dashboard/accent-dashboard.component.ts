@@ -156,6 +156,23 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
           </app-card>
         }
 
+        @if (d.persistence.totalDays > 0) {
+          <app-card class="dash__tile dash__tile--persistence">
+            <div class="dash__block">
+              <span class="dash__kicker">Постоянство</span>
+              <!-- Итог крупно («кто я»), окно рядом мелко («как я сейчас»). Порознь эти числа
+                   врут: итог у того, кто месяц не заходил, — правда про прошлое. -->
+              <div class="dash__kpi-row">
+                <strong class="dash__kpi">{{ d.persistence.totalDays }}</strong>
+                <span class="dash__kpi-unit">{{ dayWord(d.persistence.totalDays) }} с действием</span>
+              </div>
+              <span class="dash__kpi-note">
+                {{ d.persistence.windowDays }} из последних {{ d.persistence.windowSize }}
+              </span>
+            </div>
+          </app-card>
+        }
+
         @if (d.hasObstacles) {
           <p class="dash__obstacles dash__wide">
             Накрыло? <a class="dash__link" [routerLink]="['../obstacles']">Отметить, что помешало →</a>
@@ -230,6 +247,19 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
           color-mix(in srgb, var(--color-accent) 10%, transparent),
           transparent 60%
         );
+      }
+      .dash__tile--persistence {
+        background-image: linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--color-accent) 8%, transparent),
+          transparent 60%
+        );
+      }
+      /* Единица при крупном числе: живёт на базовой линии рядом со значением, не соперничая
+         с ним по весу — «37 дней с действием» читается как одна фраза, а не два блока. */
+      .dash__kpi-unit {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
       }
       /* Подпись-надзаголовок: мелкая и приглушённая, потому что крупным идёт ЗНАЧЕНИЕ. */
       .dash__kicker {
@@ -592,6 +622,27 @@ export class AccentDashboardComponent {
       return 'сегодня';
     }
     return `${days} дн.`;
+  }
+
+  /**
+   * Склонение слова «день» при числе. Нужно, потому что число идёт крупно и отдельно от
+   * единицы: «37 дней», «21 день», «22 дня» — иначе фраза читается как машинная.
+   * @param count Число дней.
+   * @returns «день» / «дня» / «дней».
+   */
+  protected dayWord(count: number): string {
+    const tens = count % 100;
+    const ones = count % 10;
+    if (tens >= 11 && tens <= 14) {
+      return 'дней';
+    }
+    if (ones === 1) {
+      return 'день';
+    }
+    if (ones >= 2 && ones <= 4) {
+      return 'дня';
+    }
+    return 'дней';
   }
 
   /**

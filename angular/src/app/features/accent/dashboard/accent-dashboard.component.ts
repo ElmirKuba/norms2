@@ -98,7 +98,9 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
         @if (d.today.total > 0) {
           <app-card class="dash__tile dash__tile--today">
             <div class="dash__block">
-              <span class="dash__kicker">Сегодня</span>
+              <!-- Не «Привычки сегодня»: сюда попадают и разовые задачи (без шаблона привычки),
+                   и такой кикер обещал бы то, чего в списке нет. -->
+              <span class="dash__kicker">Задачи сегодня</span>
               <div class="dash__kpi-row">
                 <strong class="dash__kpi">{{ d.today.percent }}%</strong>
                 <span class="dash__kpi-note">{{ d.today.done }} из {{ d.today.total }}</span>

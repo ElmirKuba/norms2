@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { notifications } from '../../schemas/notifications.schema';
@@ -167,10 +167,38 @@ export class NotificationRepository implements NotificationRepositoryPort {
    * @param data Данные (с непустым `key`).
    * @returns Промис завершения.
    */
-  public async createIfAbsentByKey(id: string, data: NotificationBase): Promise<void> {
-    await this._db
+  public async createIfAbsentByKey(id: string, data: NotificationBase): Promise<boolean> {
+    // `returning` отдаёт строку только при реальной вставке — по этому и различаем «создали
+    // сейчас» и «уже была». Без различения сид объявлял бы в канал всю историю разом.
+    const rows = await this._db
       .insert(notifications)
       .values({ id, ...data })
-      .onConflictDoNothing({ target: notifications.key });
+      .onConflictDoNothing({ target: notifications.key })
+      .returning({ id: notifications.id });
+    return rows.length > 0;
+  }
+
+  /**
+   * Помечает ноту объявленной во внешний канал.
+   * @param id Идентификатор ноты.
+   * @returns Промис завершения.
+   */
+  public async markBroadcasted(id: string): Promise<void> {
+    await this._db
+      .update(notifications)
+      .set({ broadcastedAt: new Date() })
+      .where(eq(notifications.id, id));
+  }
+
+  /**
+   * Релизные ноты без отметки о вещании, старые → новые.
+   * @returns Ноты в хронологическом порядке.
+   */
+  public async listUnbroadcastedReleases(): Promise<NotificationFull[]> {
+    return this._db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.kind, 'release'), isNull(notifications.broadcastedAt)))
+      .orderBy(asc(notifications.createdAt));
   }
 }

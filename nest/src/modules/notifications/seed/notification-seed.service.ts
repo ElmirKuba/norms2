@@ -4,6 +4,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { OnApplicationBootstrap } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY } from '../adapters/notification-repository.port';
+import { RELEASE_BROADCAST } from '../adapters/release-broadcast.port';
+import type { ReleaseBroadcastPort } from '../adapters/release-broadcast.port';
 import type { NotificationRepositoryPort } from '../adapters/notification-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RELEASE_NOTES } from './release-notes.seed';
@@ -26,10 +28,12 @@ export class NotificationSeedService implements OnApplicationBootstrap {
 
   /**
    * @param _notificationRepository Порт репозитория уведомлений.
+   * @param _broadcast Порт вещания релизов наружу (2.9.1).
    * @param _configService Конфиг (CONTENT_DIR).
    */
   public constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly _notificationRepository: NotificationRepositoryPort,
+    @Inject(RELEASE_BROADCAST) private readonly _broadcast: ReleaseBroadcastPort,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
 
@@ -41,19 +45,46 @@ export class NotificationSeedService implements OnApplicationBootstrap {
     for (const note of RELEASE_NOTES) {
       try {
         this._ensureFile(seedDir, contentDir, note.contentFile);
-        await this._notificationRepository.createIfAbsentByKey(generateId(), {
+        const id = generateId();
+        const created = await this._notificationRepository.createIfAbsentByKey(id, {
           kind: 'release',
           accountId: null,
           title: note.title,
           body: null,
           contentFile: note.contentFile,
           key: note.key,
-          // Новая нота ещё не объявлена в канал — этим займётся вещатель (2.9.1·3).
+          // Новая нота ещё не объявлена наружу — этим займётся вещатель ниже.
           broadcastedAt: null,
         });
+        // Объявляем ТОЛЬКО что созданное. Накопленная история (десять старых нот) ждёт явной
+        // команды владельца: иначе первый же запуск с подключённым ботом высыпал бы в канал
+        // все релизы разом (2.9.1·3).
+        if (created) {
+          await this._announce(id, note.title, note.key, note.contentFile);
+        }
       } catch (error) {
         this._logger.warn(`Сид релиз-ноты '${note.key}' пропущен: ${String(error)}`);
       }
+    }
+  }
+
+  /**
+   * Объявляет свежесозданную ноту во внешний канал и ставит отметку. Best-effort: нота уже в
+   * колокольчике, несостоявшийся пост её не отменяет.
+   * @param id Идентификатор ноты.
+   * @param title Заголовок.
+   * @param key Ключ ноты.
+   * @param contentFile Путь к `.md`.
+   * @returns Промис завершения.
+   */
+  private async _announce(id: string, title: string, key: string, contentFile: string): Promise<void> {
+    try {
+      const delivered = await this._broadcast.announce({ key, title, contentFile });
+      if (delivered) {
+        await this._notificationRepository.markBroadcasted(id);
+      }
+    } catch (error) {
+      this._logger.warn(`Релиз '${key}' не объявлен наружу: ${String(error)}`);
     }
   }
 

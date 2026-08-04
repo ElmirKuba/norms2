@@ -78,7 +78,22 @@ export interface NotificationRepositoryPort {
    * плодит дублей.
    * @param id Идентификатор (используется только при вставке).
    * @param data Данные (обязателен непустой `key`).
+   * @returns `true`, если строка создана прямо сейчас; `false` — она уже была (2.9.1: по этому признаку объявляем в канал только новое, а накопленную историю — отдельной командой).
+   */
+  createIfAbsentByKey(id: string, data: NotificationBase): Promise<boolean>;
+
+  /**
+   * Помечает ноту объявленной во внешний канал (2.9.1).
+   * @param id Идентификатор ноты.
    * @returns Промис завершения.
    */
-  createIfAbsentByKey(id: string, data: NotificationBase): Promise<void>;
+  markBroadcasted(id: string): Promise<void>;
+
+  /**
+   * Релизные ноты, ещё не объявленные наружу (`broadcasted_at is null`), старые → новые.
+   * Нужен для публикации истории по явной команде: обычный сид объявляет только то, что создал
+   * прямо сейчас, а накопленное прошлое ждёт отдельного решения владельца.
+   * @returns Ноты в хронологическом порядке.
+   */
+  listUnbroadcastedReleases(): Promise<NotificationFull[]>;
 }

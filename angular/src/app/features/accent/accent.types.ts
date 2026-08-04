@@ -473,6 +473,44 @@ export interface PersistenceView {
   silenceDays: number;
 }
 
+/** Постоянство по одной привычке. */
+export interface HabitPersistenceItem {
+  /** Идентификатор привычки. */
+  habitId: string;
+  /** Название. */
+  title: string;
+  /** Её постоянство. */
+  persistence: PersistenceView;
+}
+
+/** Достижение на экране статистики — выданное или ещё нет. */
+export interface AchievementItem {
+  /** Код из каталога. */
+  code: string;
+  /** Название. */
+  title: string;
+  /** Что произошло (для выданного). */
+  description: string;
+  /** Как получить (для невыданного). */
+  hint: string;
+  /** Когда выдано (ISO) или null. */
+  awardedAt: string | null;
+  /** Деталь момента («после 12 дней тишины») или null. */
+  context: string | null;
+}
+
+/** Снимок экрана статистики (2.9). */
+export interface StatsView {
+  /** Постоянство по аккаунту. */
+  persistence: PersistenceView;
+  /** Постоянство по каждой своей привычке. */
+  habits: HabitPersistenceItem[];
+  /** Весь каталог достижений: выданные — с датой, остальные — с подсказкой. */
+  achievements: AchievementItem[];
+  /** Сколько выдано. */
+  awardedCount: number;
+}
+
 /** Снимок главного экрана — всё за один запрос (2.11). */
 export interface DashboardView {
   /** Герой экрана. */

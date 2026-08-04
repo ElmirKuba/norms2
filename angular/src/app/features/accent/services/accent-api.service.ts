@@ -12,6 +12,7 @@ import type {
   CounterplayUpdatePayload,
   CounterplayView,
   DashboardView,
+  StatsView,
   EncounterPayload,
   EncounterRecordResult,
   ObstacleEncounterPage,
@@ -58,6 +59,15 @@ export class AccentApiService {
    */
   public getDashboard(): Observable<DashboardView> {
     return this._http.get<DashboardView>(`${API_PREFIX}/accent/dashboard`);
+  }
+
+  /**
+   * Статистика раздела (2.9): постоянство и достижения. Запрос **лениво догоняет** выдачу
+   * достижений и вехи «держусь» на бэке — поэтому после него в колокольчике может появиться
+   * новая строка.
+   */
+  public getStats(): Observable<StatsView> {
+    return this._http.get<StatsView>(`${API_PREFIX}/accent/stats`);
   }
 
   /** Настройки раздела (ленивое создание на бэке). */

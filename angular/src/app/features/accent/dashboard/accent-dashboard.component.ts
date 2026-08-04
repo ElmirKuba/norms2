@@ -166,9 +166,9 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
                 <strong class="dash__kpi">{{ d.persistence.totalDays }}</strong>
                 <span class="dash__kpi-unit">{{ dayWord(d.persistence.totalDays) }} с действием</span>
               </div>
-              <span class="dash__kpi-note">
-                {{ d.persistence.windowDays }} из последних {{ d.persistence.windowSize }}
-              </span>
+              <a class="dash__link dash__kpi-note" [routerLink]="['../stats']">
+                {{ d.persistence.windowDays }} из последних {{ d.persistence.windowSize }} →
+              </a>
             </div>
           </app-card>
         }

@@ -60,6 +60,11 @@ export const accentRoutes: Routes = [
         loadComponent: () =>
           import('./micro-wins/micro-wins.component').then((m) => m.MicroWinsComponent),
       },
+      {
+        path: 'stats',
+        loadComponent: () =>
+          import('./stats/accent-stats.component').then((m) => m.AccentStatsComponent),
+      },
     ],
   },
 ];

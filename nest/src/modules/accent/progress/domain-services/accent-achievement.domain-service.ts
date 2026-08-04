@@ -108,7 +108,10 @@ export class AccentAchievementDomainService {
   ): Promise<UserAchievementFull | null> {
     const since = Date.now() - withinDays * 86_400_000;
     const awarded = await this._repository.listByAccount(accountId);
-    const latest = awarded[0] ?? null;
+    // Тихие признания сюда не попадают (2.9·17): «Вернулся» и на дашборде было бы витриной —
+    // человек услышит о нём один раз, строкой в колокольчике, и этого достаточно.
+    const latest =
+      awarded.find((item) => ACHIEVEMENT_CATALOG[item.code].visibility === 'catalog') ?? null;
     return latest !== null && latest.awardedAt.getTime() >= since ? latest : null;
   }
 

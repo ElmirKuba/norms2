@@ -6,7 +6,7 @@ import { AccentHabitDomainService } from '../../habits/domain-services/accent-ha
 import { AccentLadderEngine } from '../../habits/domain-services/accent-ladder-engine.domain-service';
 import { AccentTaskDomainService } from '../../habits/domain-services/accent-task.domain-service';
 import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/accent-micro-win.domain-service';
-import { ACHIEVEMENT_LIST } from '../interfaces/achievement-catalog.const';
+import { ACHIEVEMENT_CATALOG, ACHIEVEMENT_LIST } from '../interfaces/achievement-catalog.const';
 import { AccentAchievementDomainService } from '../domain-services/accent-achievement.domain-service';
 import { AccentMilestoneNoticeDomainService } from '../domain-services/accent-milestone-notice.domain-service';
 import { AccentPersistenceDomainService } from '../domain-services/accent-persistence.domain-service';
@@ -88,7 +88,11 @@ export class GetStatsUseCase {
         persistence: this._persistence.compute([habitDays[index] ?? []], today),
       })),
       achievements: this._describeAchievements(awarded),
-      awardedCount: awarded.length,
+      // Считаем только видимые: сетка показывает пять, и счётчик «6 из 5» выглядел бы
+      // сломанным. Тихое признание в счёт витрины не идёт (2.9·17).
+      awardedCount: awarded.filter(
+        (item) => ACHIEVEMENT_CATALOG[item.code].visibility === 'catalog',
+      ).length,
     };
   }
 

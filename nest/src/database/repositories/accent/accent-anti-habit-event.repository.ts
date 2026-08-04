@@ -3,11 +3,13 @@ import { and, desc, eq, gte, lt, max, or } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { antiHabitEvents } from '../../schemas/anti-habit-events.schema';
+import { antiHabits } from '../../schemas/anti-habits.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type {
   AccentAntiHabitEventRepositoryPort,
   AntiHabitEventCreateData,
   AntiHabitEventListOptions,
+  ReachedMilestoneRow,
 } from '../../../modules/accent/anti-habits/adapters/accent-anti-habit-event-repository.port';
 import type { AntiHabitEventFull } from '../../../modules/accent/anti-habits/interfaces/anti-habit-event-full.interface';
 
@@ -109,5 +111,49 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
         ),
       );
     return rows[0]?.maxThreshold ?? 0;
+  }
+
+  /**
+   * Самая свежая веха аккаунта по всем анти-привычкам (join с `anti_habits` ради названия и
+   * владельца). При совпадении момента побеждает старший порог: догнав 3 и 7 дней одним
+   * заходом, человек должен увидеть «неделю», а не «три дня».
+   * @param accountId Владелец.
+   * @param sinceOccurredAt Нижняя граница `occurredAt` (unix ms).
+   * @returns Веха или null.
+   */
+  public async latestGoalReachedForAccount(
+    accountId: string,
+    sinceOccurredAt: number,
+  ): Promise<ReachedMilestoneRow | null> {
+    const rows = await this._db
+      .select({
+        antiHabitId: antiHabitEvents.antiHabitId,
+        title: antiHabits.title,
+        label: antiHabitEvents.thresholdLabel,
+        thresholdDays: antiHabitEvents.thresholdDays,
+        occurredAt: antiHabitEvents.occurredAt,
+      })
+      .from(antiHabitEvents)
+      .innerJoin(antiHabits, eq(antiHabits.id, antiHabitEvents.antiHabitId))
+      .where(
+        and(
+          eq(antiHabits.accountId, accountId),
+          eq(antiHabitEvents.type, 'goal_reached'),
+          gte(antiHabitEvents.occurredAt, sinceOccurredAt),
+        ),
+      )
+      .orderBy(desc(antiHabitEvents.occurredAt), desc(antiHabitEvents.thresholdDays))
+      .limit(1);
+    const row = rows[0];
+    if (row === undefined || row.label === null || row.thresholdDays === null) {
+      return null;
+    }
+    return {
+      antiHabitId: row.antiHabitId,
+      title: row.title,
+      label: row.label,
+      thresholdDays: row.thresholdDays,
+      occurredAt: row.occurredAt,
+    };
   }
 }

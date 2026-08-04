@@ -521,6 +521,16 @@ export interface DashboardAchievement {
   context: string | null;
 }
 
+/** Только что пройденная веха «держусь» для строки на дашборде. */
+export interface DashboardMilestone {
+  /** Анти-привычка, чей рубеж пройден. */
+  antiHabitId: string;
+  /** Её название. */
+  title: string;
+  /** Ярлык порога («неделя», «месяц») — готовая форма, склонять не нужно. */
+  label: string;
+}
+
 /** Снимок главного экрана — всё за один запрос (2.11). */
 export interface DashboardView {
   /** Герой экрана. */
@@ -539,6 +549,8 @@ export interface DashboardView {
   persistence: PersistenceView;
   /** Только что полученное достижение или null — событие на пару дней, не постоянный блок. */
   freshAchievement: DashboardAchievement | null;
+  /** Только что пройденная веха «держусь» или null — событие того же класса. */
+  freshMilestone: DashboardMilestone | null;
   /** Шаги первого знакомства. */
   onboarding: DashboardOnboarding;
   /** Раздел на паузе с (ISO) или null. */

@@ -36,6 +36,20 @@ export interface AntiHabitEventCreateData {
   thresholdDays?: number | null;
 }
 
+/** Веха «держусь» из журнала — с названием анти-привычки и моментом достижения. */
+export interface ReachedMilestoneRow {
+  /** Анти-привычка, чей рубеж пройден. */
+  antiHabitId: string;
+  /** Её название. */
+  title: string;
+  /** Ярлык порога (`неделя`, `месяц`…). */
+  label: string;
+  /** Номинал порога в днях. */
+  thresholdDays: number;
+  /** Когда рубеж пройден (unix ms). */
+  occurredAt: number;
+}
+
 /** Keyset-курсор истории событий: пара (occurredAt, id), сортировка desc/desc. */
 export interface AntiHabitEventCursor {
   /** occurredAt последнего отданного элемента. */
@@ -85,4 +99,17 @@ export interface AccentAntiHabitEventRepositoryPort {
    * @returns Наибольший уже отмеченный порог (дней) или 0, если отметок нет.
    */
   latestGoalReachedThreshold(antiHabitId: string, sinceOccurredAt: number): Promise<number>;
+
+  /**
+   * Самая свежая веха аккаунта по **всем** его анти-привычкам (2.9·15) — для строки-события на
+   * дашборде. Одним запросом с join, а не проходом по каждой анти-привычке: активных бывает
+   * десяток, а нужна ровно одна строка.
+   * @param accountId Владелец.
+   * @param sinceOccurredAt Нижняя граница `occurredAt` (unix ms): старше — уже не событие.
+   * @returns Веха или null, если за окном ничего не пройдено.
+   */
+  latestGoalReachedForAccount(
+    accountId: string,
+    sinceOccurredAt: number,
+  ): Promise<ReachedMilestoneRow | null>;
 }

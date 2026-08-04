@@ -104,7 +104,12 @@ export class GetDashboardUseCase {
       ),
     });
     await this._milestones.announce(accountId, await this._antiHabits.syncMilestones(accountId));
-    const fresh = await this._achievements.freshest(accountId, FRESH_ACHIEVEMENT_DAYS);
+    const [fresh, freshMilestone] = await Promise.all([
+      this._achievements.freshest(accountId, FRESH_ACHIEVEMENT_DAYS),
+      // Читаем журнал, а не результат `announce` выше: он вернул бы только вехи, догнанные
+      // ЭТИМ запросом, и второй заход за день оставил бы экран пустым (2.9·15).
+      this._antiHabits.freshestMilestone(accountId, FRESH_ACHIEVEMENT_DAYS),
+    ]);
 
     // Фокусные цели первыми: человек сам сказал, что для него сейчас главное (ADR-0053).
     const topGoals = goals
@@ -161,6 +166,14 @@ export class GetDashboardUseCase {
               code: fresh.code,
               title: ACHIEVEMENT_CATALOG[fresh.code].title,
               context: fresh.context,
+            },
+      freshMilestone:
+        freshMilestone === null
+          ? null
+          : {
+              antiHabitId: freshMilestone.antiHabitId,
+              title: freshMilestone.title,
+              label: freshMilestone.label,
             },
       onboarding: {
         hasHabits: habits.some((habit) => !habit.isStarter),

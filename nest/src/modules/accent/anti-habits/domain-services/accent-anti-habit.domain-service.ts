@@ -444,6 +444,34 @@ export class AccentAntiHabitDomainService {
   }
 
   /**
+   * Самая свежая веха аккаунта, если рубеж пройден **совсем недавно** (2.9·15) — строка-событие
+   * на дашборде. Событие, а не блок: за окном `withinDays` строка исчезает сама.
+   *
+   * Читает журнал, а не пересчитывает: `syncMilestones` уже материализовал всё, что догнал, и
+   * веха, записанная вчерашним заходом, обязана показаться сегодня — иначе человек, зашедший
+   * дважды за день, увидел бы её только в первый раз.
+   * @param accountId Идентификатор аккаунта.
+   * @param withinDays Сколько дней веха считается свежей.
+   * @returns Веха или null.
+   */
+  public async freshestMilestone(
+    accountId: string,
+    withinDays: number,
+  ): Promise<ReachedMilestone | null> {
+    const since = Date.now() - withinDays * 86_400_000;
+    const row = await this._events.latestGoalReachedForAccount(accountId, since);
+    if (row === null) {
+      return null;
+    }
+    return {
+      antiHabitId: row.antiHabitId,
+      title: row.title,
+      label: row.label,
+      thresholdDays: row.thresholdDays,
+    };
+  }
+
+  /**
    * Засевает стартовый пак «держусь» (кнопка «Получить пак», ADR-0051): создаёт примеры из
    * `STARTER_ANTI_HABITS` с `is_starter=true`. Только докидывает недостающие (дедуп по названию).
    * @param accountId Идентификатор аккаунта.

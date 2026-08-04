@@ -83,6 +83,18 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
           </a>
         }
 
+        <!-- Веха «держусь» — того же класса событие. Ведёт не в статистику, а в саму
+             анти-привычку: рубеж пройден именно там, и смотреть человек пойдёт туда. -->
+        @if (d.freshMilestone; as milestone) {
+          <a class="dash__fresh dash__wide" [routerLink]="['../anti-habits', milestone.antiHabitId]">
+            <span class="dash__fresh-mark" aria-hidden="true">●</span>
+            <span>
+              Новый рубеж: <strong>{{ milestone.label }}</strong> без срыва · {{ milestone.title }}
+            </span>
+            <span class="dash__fresh-more">открыть →</span>
+          </a>
+        }
+
         @if (d.today.total > 0) {
           <app-card class="dash__tile dash__tile--today">
             <div class="dash__block">
@@ -182,6 +194,14 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
               <a class="dash__link dash__kpi-note" [routerLink]="['../stats']">
                 {{ d.persistence.windowDays }} из последних {{ d.persistence.windowSize }} →
               </a>
+              <!-- Тишина — не витрина прошлого, а повод вернуться, поэтому живёт на дашборде.
+                   Молчим про «сегодня» и «вчера»: человек и так знает, а строка тогда читается
+                   упрёком за один пропущенный день. -->
+              @if (d.persistence.silenceDays > 1) {
+                <span class="dash__silence">
+                  последняя отметка {{ d.persistence.silenceDays }} {{ dayWord(d.persistence.silenceDays) }} назад
+                </span>
+              }
             </div>
           </app-card>
         }
@@ -285,6 +305,11 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
       .dash__fresh-more {
         margin-left: auto;
         color: var(--color-accent);
+        font-size: var(--fs-sm);
+      }
+      /* Тишина — приглушённо: это сведение, а не обвинение. */
+      .dash__silence {
+        color: var(--color-text-muted);
         font-size: var(--fs-sm);
       }
       .dash__tile--persistence {

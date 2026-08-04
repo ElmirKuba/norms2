@@ -276,6 +276,7 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
       .dash__kpi {
         font-size: var(--fs-2xl);
         line-height: 1.1;
+        letter-spacing: -0.02em;
       }
       .dash__kpi-note {
         color: var(--color-text-muted);

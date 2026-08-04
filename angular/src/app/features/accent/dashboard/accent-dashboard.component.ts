@@ -73,7 +73,11 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
         <!-- Свежая награда — строка, а не плитка: это событие на пару дней, оно исчезнет само.
              Постоянный блок наград превратил бы вход в день в витрину достижений. -->
         @if (d.freshAchievement; as fresh) {
-          <a class="dash__fresh dash__wide" [routerLink]="['../stats']">
+          <a
+            class="dash__fresh dash__wide"
+            [routerLink]="['../stats']"
+            [queryParams]="{ focus: fresh.code }"
+          >
             <span class="dash__fresh-mark" aria-hidden="true">●</span>
             <span>
               Новое достижение: <strong>{{ fresh.title }}</strong>
@@ -649,7 +653,12 @@ export class AccentDashboardComponent {
       this._runMicroWin(view.now.microWinId, view.now.title ?? '');
       return;
     }
-    void this._router.navigate(['/app/accent/habits']);
+    // Ведём К КОНКРЕТНОЙ задаче, а не просто в список (2.9·20). До этого «Открыть» и «Все
+    // задачи» шли ровно в одно место — две кнопки, одно поведение (поймал Elmir): герой обещал
+    // «одно дело, просто начни с него», а за обещанием стоял общий чеклист.
+    void this._router.navigate(['/app/accent/habits'], {
+      queryParams: view.now.taskId === null ? {} : { focus: view.now.taskId },
+    });
   }
 
   /** Снимает паузу раздела. */

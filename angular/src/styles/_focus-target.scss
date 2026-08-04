@@ -1,0 +1,36 @@
+// Подсветка цели перехода (`FocusTargetDirective`, 2.9·20).
+//
+// Глобально, потому что классы вешает директива на чужой хост-элемент: у компонентных стилей
+// до него не всегда есть доступ, а правило должно работать одинаково на любом экране.
+//
+// Тон: подсветка **зовёт взгляд, а не кричит**. Свечение через `box-shadow` от акцента — оно
+// не двигает раскладку (в отличие от `border`, который добавил бы элементу ширины и дёрнул бы
+// соседей в момент появления).
+
+@keyframes focus-target-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  20%,
+  60% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  40%,
+  80% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+}
+
+.is-focus-target {
+  border-radius: var(--radius-md);
+  // 2,4 с = три волны по 0,8 с: заметно, но не превращается в мигалку.
+  animation: focus-target-pulse 0.8s ease-in-out 3;
+}
+
+// Уважение к `prefers-reduced-motion`: та же метка, но без движения — статичное свечение
+// живёт ровно столько же и снимается тем же таймером.
+.is-focus-target-static {
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/ui/card/card.component';
+import { FocusTargetDirective } from '../../../shared/ui/focus-target.directive';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import type { AchievementItem, PersistenceView, StatsView } from '../accent.types';
@@ -19,7 +20,7 @@ import type { AchievementItem, PersistenceView, StatsView } from '../accent.type
  */
 @Component({
   selector: 'app-accent-stats',
-  imports: [CardComponent],
+  imports: [CardComponent, FocusTargetDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="st">
@@ -113,8 +114,11 @@ import type { AchievementItem, PersistenceView, StatsView } from '../accent.type
              чтобы разница «есть / впереди» читалась мгновенно. -->
         <ul class="st__grid st__wide">
           @for (item of s.achievements; track item.code) {
+            <!-- Цель перехода с дашборда: строка «Новое достижение» ведёт сюда с ?focus=<code>,
+                 и нужная карточка сама себя показывает в сетке (2.9·20). -->
             <li
               class="st__badge"
+              [appFocusTarget]="item.code"
               [class.st__badge--locked]="item.awardedAt === null"
               [class.st__badge--fresh]="item.code === freshCode(s)"
             >

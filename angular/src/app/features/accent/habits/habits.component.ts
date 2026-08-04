@@ -19,6 +19,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
+import { FocusTargetDirective } from '../../../shared/ui/focus-target.directive';
 import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { DataFreshnessService } from '../../../core/freshness/data-freshness.service';
@@ -50,6 +51,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
     CardComponent,
     EmptyStateComponent,
     HscrollHintDirective,
+    FocusTargetDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -121,7 +123,9 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
           </div>
           <ul class="hb__list">
             @for (t of tasks(); track t.id) {
-              <li>
+              <!-- Цель перехода с дашборда: «Открыть» ведёт сюда с ?focus=<id> задачи, и она
+                   сама себя показывает — раньше человек искал её глазами в списке (2.9·20). -->
+              <li [appFocusTarget]="t.id">
                 <app-card>
                   <div class="hb__item">
                     <div class="hb__main">

@@ -5,6 +5,7 @@ import { ACCENT_PROGRESS_NOTIFIER } from './adapters/accent-progress-notifier.po
 import { ACCENT_USER_ACHIEVEMENT_REPOSITORY } from './adapters/accent-user-achievement-repository.port';
 import { NotificationProgressNotifierAdapter } from './adapters/notification-progress-notifier.adapter';
 import { AccentAchievementDomainService } from './domain-services/accent-achievement.domain-service';
+import { AccentMilestoneNoticeDomainService } from './domain-services/accent-milestone-notice.domain-service';
 import { AccentPersistenceDomainService } from './domain-services/accent-persistence.domain-service';
 
 /**
@@ -26,12 +27,14 @@ import { AccentPersistenceDomainService } from './domain-services/accent-persist
     { provide: ACCENT_PROGRESS_NOTIFIER, useClass: NotificationProgressNotifierAdapter },
     AccentPersistenceDomainService,
     AccentAchievementDomainService,
+    AccentMilestoneNoticeDomainService,
   ],
   exports: [
     ACCENT_USER_ACHIEVEMENT_REPOSITORY,
     ACCENT_PROGRESS_NOTIFIER,
     AccentPersistenceDomainService,
     AccentAchievementDomainService,
+    AccentMilestoneNoticeDomainService,
   ],
 })
 export class ProgressModule {}

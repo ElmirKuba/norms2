@@ -34,6 +34,18 @@ function daysBetween(fromMs: number, toMs: number): number {
   return Math.floor(Math.max(0, toMs - fromMs) / DAY_MS);
 }
 
+/** Впервые записанная веха «держусь» — для уведомления человека (2.9·5). */
+export interface ReachedMilestone {
+  /** Анти-привычка. */
+  antiHabitId: string;
+  /** Её название — идёт в текст уведомления. */
+  title: string;
+  /** Ярлык порога (`неделя`/`месяц`/`+7д`…). */
+  label: string;
+  /** Номинал порога в днях. */
+  thresholdDays: number;
+}
+
 /** Данные создания анти-привычки на уровне домена (без служебных полей попытки). */
 export interface AntiHabitCreateInput {
   /** Владелец. */
@@ -380,15 +392,16 @@ export class AccentAntiHabitDomainService {
    * только ступени `thresholdDays > since`, поэтому повторный вызов ничего не дублирует.
    * @param antiHabit Анти-привычка владельца (уже проверена).
    */
-  private async _materializeReachedGoals(antiHabit: AntiHabitFull): Promise<void> {
+  private async _materializeReachedGoals(antiHabit: AntiHabitFull): Promise<ReachedMilestone[]> {
     // Пример инертен (ADR-0051): авто-цель не считается, событий `goal_reached` не пишем.
     if (antiHabit.isStarter) {
-      return;
+      return [];
     }
     const now = Date.now();
     const startedAt = antiHabit.currentAttemptStartedAt;
     const since = await this._events.latestGoalReachedThreshold(antiHabit.id, startedAt);
     const goals = reachedGoals(startedAt, now, antiHabit.targetDays, since);
+    const fresh: ReachedMilestone[] = [];
     for (const goal of goals) {
       await this._events.insert({
         antiHabitId: antiHabit.id,
@@ -397,7 +410,37 @@ export class AccentAntiHabitDomainService {
         thresholdLabel: goal.label,
         thresholdDays: goal.thresholdDays,
       });
+      fresh.push({
+        antiHabitId: antiHabit.id,
+        title: antiHabit.title,
+        label: goal.label,
+        thresholdDays: goal.thresholdDays,
+      });
     }
+    return fresh;
+  }
+
+  /**
+   * Догоняет вехи по **всем** анти-привычкам аккаунта (2.9·5) и отдаёт те, что записались
+   * впервые. Раньше вехи материализовались только при заходе в таймлайн конкретной
+   * анти-привычки — то есть человек, который туда не заходит, о своих «7 дней» не узнавал.
+   *
+   * **Лениво, без крона** (решение 04.08.2026): доставка у нас в любом случае происходит в
+   * момент, когда человек пришёл — push-уведомлений нет и не планируется. Ночной проход
+   * записал бы веху раньше, а показал бы в ту же секунду, что и ленивый расчёт.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Впервые записанные вехи (обычно пусто).
+   */
+  public async syncMilestones(accountId: string): Promise<ReachedMilestone[]> {
+    const items = await this._repository.listByAccount(accountId);
+    const fresh: ReachedMilestone[] = [];
+    for (const item of items) {
+      if (!item.isActive) {
+        continue;
+      }
+      fresh.push(...(await this._materializeReachedGoals(item)));
+    }
+    return fresh;
   }
 
   /**

@@ -1,0 +1,191 @@
+{
+  "version": "2.15",
+  "children": [
+    {
+      "type": "frame",
+      "id": "Zgt0h",
+      "x": 880,
+      "y": 0,
+      "name": "Release Preview 2.9.0",
+      "clip": true,
+      "width": 1200,
+      "height": 630,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 145,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "$accent-deep",
+            "position": 0
+          },
+          {
+            "color": "$accent-mid",
+            "position": 0.42
+          },
+          {
+            "color": "$bg",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "vertical",
+      "padding": 72,
+      "justifyContent": "space_between",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Q77Jlc",
+          "name": "Head",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "F1TpSy",
+              "name": "Brand",
+              "fill": "$accent",
+              "content": "НОРМИСЫ",
+              "fontFamily": "$font",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "letterSpacing": 4
+            },
+            {
+              "type": "text",
+              "id": "SZ8cc",
+              "name": "Date",
+              "fill": "$text-muted",
+              "content": "4 АВГУСТА 2026",
+              "fontFamily": "$font",
+              "fontSize": 20,
+              "fontWeight": "500",
+              "letterSpacing": 2
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "vSYpG",
+          "name": "Main",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "children": [
+            {
+              "type": "text",
+              "id": "M7whGC",
+              "name": "Version",
+              "fill": "$text",
+              "content": "2.9.0",
+              "lineHeight": 1,
+              "fontFamily": "$font",
+              "fontSize": 148,
+              "fontWeight": "700",
+              "letterSpacing": -4
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 3,
+              "id": "GngjO",
+              "name": "Accent Rule",
+              "fill": "$accent",
+              "width": 104,
+              "height": 5
+            },
+            {
+              "type": "text",
+              "id": "f0k9H",
+              "name": "Title",
+              "fill": "$text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Нормисы 2.9 — постоянство и достижения",
+              "lineHeight": 1.2,
+              "fontFamily": "$font",
+              "fontSize": 46,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ET9dA",
+          "name": "Foot",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "OjEOJ",
+              "name": "Site",
+              "fill": "$text-muted",
+              "content": "нормисы.рф",
+              "fontFamily": "$font",
+              "fontSize": 22,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "euJ2A",
+              "name": "Kicker",
+              "fill": "$text-muted",
+              "content": "РЕЛИЗ",
+              "fontFamily": "$font",
+              "fontSize": 18,
+              "fontWeight": "700",
+              "letterSpacing": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "H2BlGJ",
+      "x": 880,
+      "y": -190,
+      "name": "Секция: превью релизов",
+      "width": 1200,
+      "height": 0,
+      "content": "ПРЕВЬЮ РЕЛИЗОВ — 1200×630\nПодфаза 2.9.1, шаги ·4.6 и ·4.7. Картинка уходит в Telegram-канал t.me/norms2 первым сообщением поста (sendPhoto), подпись со ссылкой на публичную витрину /releases/:key.\nЦвета берутся из переменных документа = токены продукта (angular/src/styles/_tokens.scss, тёмная тема). Меняешь переменную — меняются все карточки.\nЭкспорт: PNG, масштаб 1, ровно 1200×630, в nest/seed-content/notifications/previews/release-<версия>.png"
+    }
+  ],
+  "variables": {
+    "bg": {
+      "type": "color",
+      "value": "#14151A"
+    },
+    "text": {
+      "type": "color",
+      "value": "#E7E9EE"
+    },
+    "text-muted": {
+      "type": "color",
+      "value": "#9AA0AD"
+    },
+    "accent": {
+      "type": "color",
+      "value": "#E8915B"
+    },
+    "accent-deep": {
+      "type": "color",
+      "value": "#5E4031"
+    },
+    "accent-mid": {
+      "type": "color",
+      "value": "#433028"
+    },
+    "font": {
+      "type": "string",
+      "value": "Inter"
+    }
+  },
+  "fileToken": "e42f9981-8700-4d28-9d68-e39861bf0b3a"
+}

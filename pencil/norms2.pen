@@ -1226,6 +1226,228 @@
           "height": 44
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "jGhhT",
+      "x": 1500,
+      "y": 1471,
+      "name": "Аватарка дев-канала 512",
+      "clip": true,
+      "width": 512,
+      "height": 512,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 145,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#3A3F4C",
+            "position": 0
+          },
+          {
+            "color": "#22252E",
+            "position": 0.55
+          },
+          {
+            "color": "#15171C",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "zFRHt",
+          "x": -510,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "MVuPr",
+          "x": -380,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "EQUdR",
+          "x": -250,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "a04i3e",
+          "x": -120,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "n0tpP7",
+          "x": 10,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "Ec7WU",
+          "x": 140,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "CN5AT",
+          "x": 270,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "cdsW5",
+          "x": 400,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "rWp5J",
+          "x": 530,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "YOid7",
+          "x": 660,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "VSNtH",
+          "x": 790,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "id": "OApuc",
+          "x": 920,
+          "y": -140,
+          "name": "Полоса",
+          "rotation": -45,
+          "fill": "#E0B15A14",
+          "width": 62,
+          "height": 900
+        },
+        {
+          "id": "Ys8iK",
+          "type": "ref",
+          "ref": "pEI6d",
+          "name": "Купол-тест",
+          "x": 121,
+          "y": 315,
+          "fill": "#464C5A",
+          "descendants": {
+            "DVMot": {
+              "fill": "#20232A"
+            },
+            "JvTSs": {
+              "fill": "#20232A"
+            },
+            "bhMX6": {
+              "fill": "#20232A"
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "z4O65",
+          "x": 0,
+          "y": 136,
+          "name": "ТЕСТ",
+          "fill": "#E7E9EE",
+          "textGrowth": "fixed-width",
+          "width": 512,
+          "content": "ТЕСТ",
+          "lineHeight": 1,
+          "textAlign": "center",
+          "fontFamily": "$font",
+          "fontSize": 104,
+          "fontWeight": "700",
+          "letterSpacing": 6
+        },
+        {
+          "type": "text",
+          "id": "eZNYa",
+          "x": 0,
+          "y": 250,
+          "name": "Подпись",
+          "fill": "#E0B15A",
+          "textGrowth": "fixed-width",
+          "width": 512,
+          "content": "НЕ БОЕВОЙ КАНАЛ",
+          "lineHeight": 1,
+          "textAlign": "center",
+          "fontFamily": "$font",
+          "fontSize": 26,
+          "fontWeight": "500",
+          "letterSpacing": 3
+        }
+      ]
     }
   ],
   "variables": {

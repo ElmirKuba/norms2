@@ -1,6 +1,7 @@
 import type { NotificationBase } from '../interfaces/notification-base.interface';
 import type { NotificationFull } from '../interfaces/notification-full.interface';
 import type { NotificationView } from '../interfaces/notification-view.interface';
+import type { ReleaseView } from '../interfaces/release-view.interface';
 
 /** DI-токен порта репозитория уведомлений. */
 export const NOTIFICATION_REPOSITORY = Symbol('NOTIFICATION_REPOSITORY');
@@ -88,6 +89,21 @@ export interface NotificationRepositoryPort {
    * @returns Промис завершения.
    */
   markBroadcasted(id: string): Promise<void>;
+
+  /**
+   * Релизные ноты для **публичной** витрины (`kind = 'release'`), новые сверху.
+   * Без отметок о прочтении: смотрящего нет, `notification_reads` не участвует.
+   * @returns Проекции витрины.
+   */
+  listReleases(): Promise<ReleaseView[]>;
+
+  /**
+   * Одна релизная нота по публичному ключу (`release-2.9.0`).
+   * Ищет **только среди релизных**: персональные уведомления по ключу наружу не отдаются.
+   * @param key Ключ ноты.
+   * @returns Проекция витрины или null.
+   */
+  findReleaseByKey(key: string): Promise<ReleaseView | null>;
 
   /**
    * Релизные ноты, ещё не объявленные наружу (`broadcasted_at is null`), старые → новые.

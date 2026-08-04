@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { notifications } from '../../schemas/notifications.schema';
@@ -8,9 +8,13 @@ import type { NotificationRepositoryPort, NotificationReadInsert } from '../../.
 import type { NotificationBase } from '../../../modules/notifications/interfaces/notification-base.interface';
 import type { NotificationFull } from '../../../modules/notifications/interfaces/notification-full.interface';
 import type { NotificationView } from '../../../modules/notifications/interfaces/notification-view.interface';
+import type { ReleaseView } from '../../../modules/notifications/interfaces/release-view.interface';
 
 /** Лимит выдачи списка (центр показывает последние). */
 const LIST_LIMIT = 50;
+
+/** Лимит публичной витрины релизов: релизов за всю жизнь проекта меньше сотни. */
+const RELEASES_LIMIT = 100;
 
 /**
  * Drizzle-реализация порта уведомлений. «Мои» — broadcast (`account_id IS NULL`)
@@ -188,6 +192,51 @@ export class NotificationRepository implements NotificationRepositoryPort {
       .update(notifications)
       .set({ broadcastedAt: new Date() })
       .where(eq(notifications.id, id));
+  }
+
+  /**
+   * Релизные ноты для публичной витрины, новые сверху.
+   * `notification_reads` не джойнится вовсе — витрина открыта без авторизации,
+   * прочтения остаются приватной механикой ЛК (ADR-0064 §5).
+   *
+   * `key` в схеме nullable (у персональных уведомлений его нет), поэтому в выборку
+   * берутся только ноты с ключом: без этого условия каст `sql<string>` обещал бы
+   * строку, а отдавал `null` — и витрина построила бы ссылку `/releases/null`.
+   * @returns Проекции витрины.
+   */
+  public async listReleases(): Promise<ReleaseView[]> {
+    return this._db
+      .select({
+        key: sql<string>`${notifications.key}`,
+        title: notifications.title,
+        body: notifications.body,
+        contentFile: notifications.contentFile,
+        createdAt: notifications.createdAt,
+      })
+      .from(notifications)
+      .where(and(eq(notifications.kind, 'release'), isNotNull(notifications.key)))
+      .orderBy(desc(notifications.createdAt))
+      .limit(RELEASES_LIMIT);
+  }
+
+  /**
+   * Одна релизная нота по публичному ключу.
+   * @param key Ключ (`release-2.9.0`).
+   * @returns Проекция или null.
+   */
+  public async findReleaseByKey(key: string): Promise<ReleaseView | null> {
+    const rows = await this._db
+      .select({
+        key: sql<string>`${notifications.key}`,
+        title: notifications.title,
+        body: notifications.body,
+        contentFile: notifications.contentFile,
+        createdAt: notifications.createdAt,
+      })
+      .from(notifications)
+      .where(and(eq(notifications.kind, 'release'), eq(notifications.key, key)))
+      .limit(1);
+    return rows[0] ?? null;
   }
 
   /**

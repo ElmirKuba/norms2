@@ -16,6 +16,18 @@ export const authRoutes: Routes = [
       { path: 'privacy', loadComponent: () => import('../legal/privacy.component').then((m) => m.PrivacyComponent) },
       { path: 'terms', loadComponent: () => import('../legal/terms.component').then((m) => m.TermsComponent) },
       { path: 'about', loadComponent: () => import('../legal/about.component').then((m) => m.AboutComponent) },
+      // Витрина релизов — публичная и БЕЗ `guestGuard`: гостевые гарды уводят
+      // авторизованного в /app, а сюда должны попадать все, включая своих.
+      {
+        path: 'releases',
+        loadComponent: () =>
+          import('../releases/releases-list/releases-list.component').then((m) => m.ReleasesListComponent),
+      },
+      {
+        path: 'releases/:key',
+        loadComponent: () =>
+          import('../releases/release-detail/release-detail.component').then((m) => m.ReleaseDetailComponent),
+      },
       {
         path: 'invite',
         canActivate: [guestGuard],

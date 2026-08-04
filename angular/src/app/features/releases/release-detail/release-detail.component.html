@@ -1,0 +1,33 @@
+<article class="release-page">
+  <a class="release-page__back" routerLink="/releases">← Все релизы</a>
+
+  @if (loading()) {
+    <div class="release-page__center"><app-spinner /></div>
+  } @else if (failed()) {
+    <div class="release-page__missing">
+      <h1>Релиз не найден</h1>
+      <p>Возможно, ссылка устарела или в ней опечатка.</p>
+      <a routerLink="/releases">Посмотреть все выпуски</a>
+    </div>
+  } @else if (release(); as item) {
+    <header class="release-page__head">
+      <h1 class="release-page__title">{{ item.title }}</h1>
+      <time class="release-page__date" [attr.datetime]="item.createdAt">
+        {{ item.createdAt | date: 'dd.MM.yyyy' }}
+      </time>
+    </header>
+
+    @if (html(); as content) {
+      <div class="md" [innerHTML]="content"></div>
+    }
+
+    <footer class="release-page__foot">
+      <p>
+        Новые выпуски объявляются в
+        <a href="https://t.me/norms2" target="_blank" rel="noopener">канале «Нормисы»</a>.
+        Нет приглашения — оставьте заявку
+        <a href="https://t.me/norms2_bot" target="_blank" rel="noopener">боту</a>.
+      </p>
+    </footer>
+  }
+</article>

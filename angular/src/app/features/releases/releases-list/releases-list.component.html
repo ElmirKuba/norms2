@@ -1,0 +1,33 @@
+<section class="releases">
+  <header class="releases__hero">
+    <h1>Релизы</h1>
+    <p class="releases__lead">
+      Что менялось в «Нормисах» и почему. Каждый выпуск объявляется в
+      <a href="https://t.me/norms2" target="_blank" rel="noopener">канале</a>, подробности — здесь.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="releases__center"><app-spinner /></div>
+  } @else if (failed()) {
+    <p class="releases__error">Не удалось загрузить список релизов. Попробуйте позже.</p>
+  } @else if (releases().length === 0) {
+    <p class="releases__empty">Пока ни одного выпуска.</p>
+  } @else {
+    <ul class="releases__list">
+      @for (release of releases(); track release.key) {
+        <li class="release">
+          <a class="release__link" [routerLink]="['/releases', release.key]">
+            <span class="release__version">{{ version(release.key) }}</span>
+            <span class="release__body">
+              <span class="release__title">{{ release.title }}</span>
+              <time class="release__date" [attr.datetime]="release.createdAt">
+                {{ release.createdAt | date: 'dd.MM.yyyy' }}
+              </time>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

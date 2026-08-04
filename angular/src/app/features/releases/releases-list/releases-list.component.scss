@@ -1,0 +1,96 @@
+.releases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  text-align: left;
+}
+
+.releases__hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  text-align: center;
+
+  h1 {
+    margin: 0;
+    font-size: var(--fs-3xl);
+    line-height: 1.15;
+  }
+}
+
+.releases__lead {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.releases__center {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+.releases__error,
+.releases__empty {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.releases__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--transition),
+    background var(--transition);
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--color-accent);
+    background: var(--color-surface-2);
+  }
+}
+
+// Версия — якорь строки: по ней глаз находит нужный выпуск быстрее, чем по заголовку.
+// Ширина фиксирована, чтобы заголовки выстроились в колонку и список читался как таблица.
+.release__version {
+  flex: 0 0 auto;
+  min-width: 5.5rem;
+  color: var(--color-accent);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.release__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.release__title {
+  font-weight: var(--fw-medium);
+}
+
+.release__date {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}

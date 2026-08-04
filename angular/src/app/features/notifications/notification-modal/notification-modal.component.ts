@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import { NotificationsApiService } from '../services/notifications-api.service';
-import { renderMarkdown } from '../md-render.util';
+import { renderMarkdown, stripLeadingHeading } from '../md-render.util';
 import type { NotificationView } from '../notifications.types';
 
 /** Данные модалки просмотра уведомления. */
@@ -58,7 +58,7 @@ export class NotificationModalComponent {
     this.loading.set(true);
     this._api.fetchContent(contentFile).subscribe({
       next: (markdown) => {
-        this.html.set(renderMarkdown(markdown));
+        this.html.set(renderMarkdown(stripLeadingHeading(markdown)));
         this.loading.set(false);
       },
       error: () => {

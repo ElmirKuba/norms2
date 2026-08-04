@@ -3,6 +3,58 @@ import { NOTIFICATION_REPOSITORY } from '../adapters/notification-repository.por
 import type { NotificationRepositoryPort } from '../adapters/notification-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { NotificationView } from '../interfaces/notification-view.interface';
+import type { ReleaseView } from '../interfaces/release-view.interface';
+
+/**
+ * Разбирает ключ релиз-ноты (`release-2.9.0`) в числа версии.
+ * @param key Ключ ноты.
+ * @returns Части версии или null, если ключ не той формы.
+ */
+function parseReleaseVersion(key: string): number[] | null {
+  const match = /^release-(\d+(?:\.\d+)*)$/.exec(key);
+  const version = match?.[1];
+  if (version === undefined) {
+    return null;
+  }
+  return version.split('.').map(Number);
+}
+
+/**
+ * Сравнивает ключи релизов так, чтобы новая версия шла первой.
+ *
+ * **Почему не по `createdAt`.** У нот сейчас нет даты выпуска: `createdAt` — это момент, когда
+ * сидер положил ноту в базу. После пересева базы все ноты получают близкие метки, а после
+ * точечного пересева одной (например при отладке вещания) она уезжает наверх: витрина честно
+ * показывала `release-1.0.0` первым, выше 2.9.0. Пять нот от 25.07 и вовсе делят одну метку с
+ * точностью до секунды, и порядок внутри них произвольный.
+ *
+ * Это временная опора на имя файла, а не решение. Настоящее — `published_at` (шаг ·15): дата
+ * выпуска должна храниться, а не выводиться из того, когда строку записали.
+ *
+ * @param leftKey Ключ слева.
+ * @param rightKey Ключ справа.
+ * @returns Отрицательное — левый новее.
+ */
+function compareReleaseKeysDesc(leftKey: string, rightKey: string): number {
+  const left = parseReleaseVersion(leftKey);
+  const right = parseReleaseVersion(rightKey);
+  if (left === null || right === null) {
+    // Ключ неожиданной формы не должен утаскивать список в случайный порядок:
+    // такие ноты уходят вниз, между собой — по алфавиту.
+    if (left === null && right === null) {
+      return leftKey.localeCompare(rightKey);
+    }
+    return left === null ? 1 : -1;
+  }
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (right[index] ?? 0) - (left[index] ?? 0);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+  return 0;
+}
 
 /**
  * Domain-service области notifications: список/счётчик/отметки + создание
@@ -25,6 +77,25 @@ export class NotificationDomainService {
    */
   public async list(accountId: string): Promise<NotificationView[]> {
     return this._notificationRepository.listForAccount(accountId);
+  }
+
+  /**
+   * Релизные ноты для публичной витрины, новые сверху. Без авторизации и без
+   * отметок о прочтении (ADR-0064 §5).
+   * @returns Проекции витрины.
+   */
+  public async listReleases(): Promise<ReleaseView[]> {
+    const releases = await this._notificationRepository.listReleases();
+    return [...releases].sort((left, right) => compareReleaseKeysDesc(left.key, right.key));
+  }
+
+  /**
+   * Одна релизная нота по публичному ключу.
+   * @param key Ключ (`release-2.9.0`).
+   * @returns Проекция или null, если такой релизной ноты нет.
+   */
+  public async findReleaseByKey(key: string): Promise<ReleaseView | null> {
+    return this._notificationRepository.findReleaseByKey(key);
   }
 
   /**

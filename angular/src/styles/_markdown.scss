@@ -1,0 +1,119 @@
+// Стили отрендеренной ноты (`renderMarkdown` -> `[innerHTML]`).
+//
+// **Почему глобально, а не в компоненте модалки.** Angular с эмулируемой инкапсуляцией
+// дописывает селекторам атрибут `[_ngcontent-...]`, а элементы, вставленные через `innerHTML`,
+// этот атрибут НЕ получают — правила компонента до них не долетают. Дефект прожил с F5.6
+// незамеченным: заголовки, списки и абзацы выглядели прилично сами по себе, на браузерном
+// дефолте, и расхождение вскрылось только на таблице (2.9·11) — у неё дефолт без границ.
+//
+// Класс `.md` намеренно узкий и ставится ровно в одном месте — контейнере ноты.
+.md {
+  color: var(--color-text);
+  line-height: 1.6;
+
+  :first-child {
+    margin-top: 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--color-text);
+    font-weight: var(--fw-bold);
+    line-height: 1.3;
+    margin: var(--space-4) 0 var(--space-2);
+  }
+
+  h1 {
+    font-size: var(--fs-lg);
+  }
+
+  h2 {
+    font-size: var(--fs-md);
+  }
+
+  h3 {
+    font-size: var(--fs-base);
+  }
+
+  p {
+    margin: 0 0 var(--space-3);
+  }
+
+  ul,
+  ol {
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-5);
+  }
+
+  // Вложенный уровень (ровно один — глубже рендерер не поддерживает): без нижнего отступа,
+  // иначе подпункты отрываются от своего пункта и список рассыпается на куски.
+  li > ul,
+  li > ol {
+    margin: var(--space-1) 0 0;
+  }
+
+  li {
+    margin: var(--space-1) 0;
+  }
+
+  blockquote {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-left: 3px solid var(--color-accent);
+    color: var(--color-text-muted);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  code {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-sm, 6px);
+    background: color-mix(in srgb, var(--color-text) 10%, transparent);
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+    font-size: 0.9em;
+    // Длинный путь или id не должен распирать модалку по горизонтали.
+    overflow-wrap: anywhere;
+  }
+
+  // Таблица шире модалки не растягивает страницу: скроллится внутри своей обёртки. На узком
+  // экране это единственный честный вариант — сжимать колонки до нечитаемости хуже.
+  table {
+    display: block;
+    width: 100%;
+    margin: 0 0 var(--space-3);
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: var(--fw-bold);
+    background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  }
+
+  a {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  strong {
+    font-weight: var(--fw-bold);
+  }
+
+  hr {
+    height: 1px;
+    border: 0;
+    margin: var(--space-4) 0;
+    background: var(--color-border);
+  }
+}

@@ -6,3 +6,5 @@
 @use 'buttons';
 @use 'dialog';
 @use 'tooltip';
+// Разметка релиз-нот: рисуется через [innerHTML], поэтому стили обязаны быть глобальными.
+@use 'markdown';

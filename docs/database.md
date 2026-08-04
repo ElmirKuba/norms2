@@ -25,7 +25,7 @@
 | `avatar` | varchar | null; путь `content/avatars/<id>.<ext>` — аватар в MVP ([ADR-0031](./decisions/0031-file-storage-uploads.md), [ADR-0032](./decisions/0032-phase1-refinements.md)) |
 | `password_hash` | text | argon2id |
 | `registration_source` | varchar(8) | CHECK in (`free`,`invite`,`seed`) ([ADR-0010](./decisions/0010-registration-auth-flow.md)) |
-| `invites_remaining` | int | not null, default из ENV `INVITE_DEFAULT_QUOTA`=3 ([ADR-0007](./decisions/0007-invite-quota-counter.md)) |
+| `invites_remaining` | int | not null, default из ENV `INVITE_DEFAULT_QUOTA`=**0** (реш. Elmir 04.08.2026; было 3) ([ADR-0007](./decisions/0007-invite-quota-counter.md)) |
 | `recovery_required_count` | int | null; K вопросов при восстановлении ([ADR-0008](./decisions/0008-account-recovery-secret-questions.md)) |
 | `timezone` | varchar(64) | not null default `'UTC'`; IANA TZ пользователя (для ролловера/серий разделов) ([ADR-0028](./decisions/0028-accent-timezone-and-domains.md)) |
 | `deactivated_at` | timestamptz | null; обратимая деактивация ([ADR-0017](./decisions/0017-account-soft-delete.md)) |
@@ -145,7 +145,7 @@ accounts ──1:N── sessions.account_id
 
 ## ENV, влияющие на схему/данные
 
-`INVITE_DEFAULT_QUOTA`=3, `INVITE_TTL_DAYS`=3, `FREE_REGISTRATION`, TTL логов 60д, дневная соль для `ip_hash`. Полный список — `deployment.md`.
+`INVITE_DEFAULT_QUOTA`=0, `INVITE_TTL_DAYS`=3, `FREE_REGISTRATION`, TTL логов 60д, дневная соль для `ip_hash`. Полный список — `deployment.md`.
 
 ## Открытые мелочи
 

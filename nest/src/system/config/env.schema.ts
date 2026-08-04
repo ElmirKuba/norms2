@@ -33,7 +33,7 @@ export const envSchema = z.object({
   COOKIE_SECURE: booleanFromEnv.default(false),
 
   FREE_REGISTRATION: booleanFromEnv.default(false),
-  INVITE_DEFAULT_QUOTA: z.coerce.number().int().nonnegative().default(3),
+  INVITE_DEFAULT_QUOTA: z.coerce.number().int().nonnegative().default(0),
   INVITE_TTL_DAYS: z.coerce.number().int().positive().default(3),
   AVATAR_MAX_BYTES: z.coerce.number().int().positive().default(512_000),
   CONTENT_DIR: z.string().min(1).default('content'),

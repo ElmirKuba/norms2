@@ -1,5 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { map } from 'rxjs';
+import type { Observable } from 'rxjs';
 import {
   MODAL_LARGE_WIDTH,
   MODAL_VIEWPORT_MAX_WIDTH,
@@ -19,10 +21,14 @@ export class NotificationModalService {
 
   /**
    * Показывает уведомление (inline `body` или рич `.md` из `contentFile`).
+   *
+   * Возвращает поток закрытия — колокольчику он нужен, чтобы снять подсветку с открытой строки.
+   * Сам `MatDialogRef` наружу не отдаём: компоненты не должны знать про `MatDialog` (ADR-0026).
    * @param notification Уведомление.
+   * @returns Поток, отдающий значение в момент закрытия модалки.
    */
-  public open(notification: NotificationView): void {
-    this._dialog.open<NotificationModalComponent, NotificationModalData>(NotificationModalComponent, {
+  public open(notification: NotificationView): Observable<void> {
+    const ref = this._dialog.open<NotificationModalComponent, NotificationModalData>(NotificationModalComponent, {
       width: MODAL_LARGE_WIDTH,
       maxWidth: MODAL_VIEWPORT_MAX_WIDTH,
       maxHeight: MODAL_VIEWPORT_MAX_HEIGHT,
@@ -32,5 +38,6 @@ export class NotificationModalService {
       panelClass: 'modal-flush',
       data: { notification },
     });
+    return ref.afterClosed().pipe(map(() => undefined));
   }
 }

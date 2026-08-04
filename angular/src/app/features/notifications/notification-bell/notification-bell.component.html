@@ -29,7 +29,13 @@
           <div class="panel__state">Уведомлений пока нет</div>
         } @else {
           @for (item of store.items(); track item.id) {
-            <button type="button" class="row" [class.row--unread]="!item.read" (click)="select(item)">
+            <button
+              type="button"
+              class="row"
+              [class.row--unread]="!item.read"
+              [class.row--active]="activeId() === item.id"
+              (click)="select(item)"
+            >
               <span class="row__dot" aria-hidden="true"></span>
               <span class="row__main">
                 <span class="row__title">{{ item.title }}</span>

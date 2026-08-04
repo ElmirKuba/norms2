@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationsStore } from '../services/notifications-store.service';
 import { NotificationModalService } from '../services/notification-modal.service';
 import type { NotificationView } from '../notifications.types';
@@ -19,9 +20,12 @@ export class NotificationBellComponent {
   /** Стор уведомлений (счётчик/список/загрузка). */
   protected readonly store = inject(NotificationsStore);
   private readonly _modal = inject(NotificationModalService);
+  private readonly _destroyRef = inject(DestroyRef);
 
   /** Открыта ли панель. */
   protected readonly open = signal(false);
+  /** Идентификатор ноты, открытой в модалке прямо сейчас (для подсветки строки). */
+  protected readonly activeId = signal<string | null>(null);
 
   /** Переключает панель; при открытии — грузит список. */
   protected toggle(): void {
@@ -50,7 +54,13 @@ export class NotificationBellComponent {
    */
   protected select(notification: NotificationView): void {
     this.store.markRead(notification.id);
-    this._modal.open(notification);
+    this.activeId.set(notification.id);
+    // Подсветка держится ровно пока открыта модалка: панель осталась под ней, и без отметки
+    // не видно, какую из строк сейчас читаешь.
+    this._modal
+      .open(notification)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe(() => this.activeId.set(null));
   }
 
   /** Отмечает все прочитанными. */

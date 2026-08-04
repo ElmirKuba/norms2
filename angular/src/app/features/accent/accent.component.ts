@@ -15,13 +15,15 @@ import { HscrollHintDirective } from '../../shared/ui/hscroll-hint.directive';
   template: `
     <div class="accent">
       <nav class="accent__tabs" appHscrollHint>
+        <!-- «Дашборд · Статистика» — пара «сейчас · весь путь»; дальше группа рабочих
+             инструментов раздела (реш. Elmir 04.08.2026). -->
         <a routerLink="dashboard" routerLinkActive="active">Дашборд</a>
+        <a routerLink="stats" routerLinkActive="active">Статистика</a>
         <a routerLink="goals" routerLinkActive="active">Цели</a>
         <a routerLink="habits" routerLinkActive="active">Привычки</a>
         <a routerLink="anti-habits" routerLinkActive="active">Держусь</a>
         <a routerLink="micro-wins" routerLinkActive="active">Микро-победы</a>
         <a routerLink="obstacles" routerLinkActive="active">Препятствия</a>
-        <a routerLink="stats" routerLinkActive="active">Статистика</a>
       </nav>
       <router-outlet />
     </div>

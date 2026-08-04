@@ -6,7 +6,8 @@
       "id": "Zgt0h",
       "x": 880,
       "y": 0,
-      "name": "Release Preview 2.9.0",
+      "name": "Карточка релиза (компонент)",
+      "reusable": true,
       "clip": true,
       "width": 1200,
       "height": 630,
@@ -281,7 +282,7 @@
               "fill": "#EDEFF4",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Нормисы 2.9 — постоянство и достижения",
+              "content": "Постоянство и достижения",
               "lineHeight": 1.2,
               "fontFamily": "$font",
               "fontSize": 40,
@@ -1717,6 +1718,974 @@
           "fontSize": 26,
           "fontWeight": "500",
           "letterSpacing": 3
+        }
+      ]
+    },
+    {
+      "type": "note",
+      "id": "UvS0f",
+      "x": 880,
+      "y": 2000,
+      "name": "Секция: превью остальных релизов",
+      "width": 1200,
+      "height": 0,
+      "content": "ПРЕВЬЮ ОСТАЛЬНЫХ РЕЛИЗОВ (шаг ·4.7)\nВсе девять — ИНСТАНСЫ компонента «Карточка релиза», а не копии: правишь компонент — меняются все.\nПереопределяются три текста (версия, заголовок, дата) и сцена персонажей: у соседних релизов сцены разные (А/Б/В/Г), чтобы лента канала не выглядела под копирку.\nЗаголовок на карточке БЕЗ префикса «Нормисы X.Y —»: номер уже стоит герой-числом, а длинные заголовки иначе не влезают в колонку."
+    },
+    {
+      "id": "i0NXTD",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.8.0",
+      "x": 880,
+      "y": 2200,
+      "alignItems": "end",
+      "descendants": {
+        "zdSnA": {
+          "x": 420,
+          "y": -190
+        },
+        "nzBIo": {
+          "id": "gEH0S",
+          "type": "ref",
+          "ref": "GqnHv",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 20,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 150,
+          "y": 470,
+          "width": 11,
+          "height": 11
+        },
+        "Go4OZ": {
+          "x": 430,
+          "y": 120,
+          "width": 8,
+          "height": 8
+        },
+        "y42Rk": {
+          "x": 92,
+          "y": 150,
+          "width": 13,
+          "height": 13
+        },
+        "gnPz5": {
+          "x": 520,
+          "y": 86,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "4 АВГУСТА 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "end"
+        },
+        "M7whGC": {
+          "content": "2.8.0"
+        },
+        "f0k9H": {
+          "content": "Главный экран: «Сейчас» вместо списка вкладок",
+          "textAlign": "right"
+        },
+        "ET9dA": {
+          "justifyContent": "end"
+        }
+      }
+    },
+    {
+      "id": "Y0NgL",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.7.3",
+      "x": 2180,
+      "y": 2200,
+      "alignItems": "start",
+      "descendants": {
+        "zdSnA": {
+          "x": 200,
+          "y": -260
+        },
+        "nzBIo": {
+          "id": "V1kMG2",
+          "type": "ref",
+          "ref": "BMys1",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 580,
+          "y": 320
+        },
+        "hDiPF": {
+          "x": 980,
+          "y": 470,
+          "width": 10,
+          "height": 10
+        },
+        "Go4OZ": {
+          "x": 640,
+          "y": 120,
+          "width": 12,
+          "height": 12
+        },
+        "y42Rk": {
+          "x": 1120,
+          "y": 300,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 840,
+          "y": 64,
+          "width": 9,
+          "height": 9
+        },
+        "SZ8cc": {
+          "content": "3 АВГУСТА 2026"
+        },
+        "vSYpG": {
+          "width": 460,
+          "alignItems": "start"
+        },
+        "M7whGC": {
+          "content": "2.7.3"
+        },
+        "f0k9H": {
+          "content": "«Препятствия», минимум на плохой день, свежесть и история привычки",
+          "textAlign": "left"
+        },
+        "ET9dA": {
+          "justifyContent": "start"
+        }
+      }
+    },
+    {
+      "id": "sWzzO",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.6.3",
+      "x": 3480,
+      "y": 2200,
+      "alignItems": "start",
+      "descendants": {
+        "zdSnA": {
+          "x": -120,
+          "y": -190
+        },
+        "nzBIo": {
+          "id": "LN4UE",
+          "type": "ref",
+          "ref": "aqYaD",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 660,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 300,
+          "y": 96,
+          "width": 9,
+          "height": 9
+        },
+        "Go4OZ": {
+          "x": 1140,
+          "y": 140,
+          "width": 11,
+          "height": 11
+        },
+        "y42Rk": {
+          "x": 560,
+          "y": 430,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 70,
+          "y": 300,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "25 ИЮЛЯ 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "start"
+        },
+        "M7whGC": {
+          "content": "2.6.3"
+        },
+        "f0k9H": {
+          "content": "«Держусь» + приглашения по ссылке",
+          "textAlign": "left"
+        },
+        "ET9dA": {
+          "justifyContent": "start"
+        }
+      }
+    },
+    {
+      "id": "zZISW",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.5.0",
+      "x": 880,
+      "y": 2920,
+      "alignItems": "end",
+      "descendants": {
+        "zdSnA": {
+          "x": 420,
+          "y": -190
+        },
+        "nzBIo": {
+          "id": "xi8sR",
+          "type": "ref",
+          "ref": "GqnHv",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 20,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 720,
+          "y": 150,
+          "width": 12,
+          "height": 12
+        },
+        "Go4OZ": {
+          "x": 1090,
+          "y": 210,
+          "width": 9,
+          "height": 9
+        },
+        "y42Rk": {
+          "x": 880,
+          "y": 96,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 1010,
+          "y": 120,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "29 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "end"
+        },
+        "M7whGC": {
+          "content": "2.5.0"
+        },
+        "f0k9H": {
+          "content": "«Акцент»: Цели, графики и фокус",
+          "textAlign": "right"
+        },
+        "ET9dA": {
+          "justifyContent": "end"
+        }
+      }
+    },
+    {
+      "id": "SObKu",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.4.19",
+      "x": 2180,
+      "y": 2920,
+      "alignItems": "start",
+      "descendants": {
+        "zdSnA": {
+          "x": 200,
+          "y": -260
+        },
+        "nzBIo": {
+          "id": "Qy9M6",
+          "type": "ref",
+          "ref": "BMys1",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 580,
+          "y": 320
+        },
+        "hDiPF": {
+          "x": 150,
+          "y": 470,
+          "width": 11,
+          "height": 11
+        },
+        "Go4OZ": {
+          "x": 430,
+          "y": 120,
+          "width": 8,
+          "height": 8
+        },
+        "y42Rk": {
+          "x": 92,
+          "y": 150,
+          "width": 13,
+          "height": 13
+        },
+        "gnPz5": {
+          "x": 520,
+          "y": 86,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "19 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 460,
+          "alignItems": "start"
+        },
+        "M7whGC": {
+          "content": "2.4.19"
+        },
+        "f0k9H": {
+          "content": "«Акцент»: Привычки и адаптивная лесенка",
+          "textAlign": "left"
+        },
+        "ET9dA": {
+          "justifyContent": "start"
+        }
+      }
+    },
+    {
+      "id": "W41acg",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.3.0",
+      "x": 3480,
+      "y": 2920,
+      "alignItems": "start",
+      "descendants": {
+        "zdSnA": {
+          "x": -120,
+          "y": -190
+        },
+        "nzBIo": {
+          "x": 660,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 980,
+          "y": 470,
+          "width": 10,
+          "height": 10
+        },
+        "Go4OZ": {
+          "x": 640,
+          "y": 120,
+          "width": 12,
+          "height": 12
+        },
+        "y42Rk": {
+          "x": 1120,
+          "y": 300,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 840,
+          "y": 64,
+          "width": 9,
+          "height": 9
+        },
+        "SZ8cc": {
+          "content": "17 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "start"
+        },
+        "M7whGC": {
+          "content": "2.3.0"
+        },
+        "f0k9H": {
+          "content": "Микро-победы: стартовый пак и «для тяжёлых дней»",
+          "textAlign": "left"
+        },
+        "ET9dA": {
+          "justifyContent": "start"
+        }
+      }
+    },
+    {
+      "id": "t0ZLDe",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.2.0",
+      "x": 880,
+      "y": 3640,
+      "alignItems": "end",
+      "descendants": {
+        "zdSnA": {
+          "x": 420,
+          "y": -190
+        },
+        "nzBIo": {
+          "id": "ZKDCU",
+          "type": "ref",
+          "ref": "aqYaD",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 20,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 300,
+          "y": 96,
+          "width": 9,
+          "height": 9
+        },
+        "Go4OZ": {
+          "x": 1140,
+          "y": 140,
+          "width": 11,
+          "height": 11
+        },
+        "y42Rk": {
+          "x": 560,
+          "y": 430,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 70,
+          "y": 300,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "17 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "end"
+        },
+        "M7whGC": {
+          "content": "2.2.0"
+        },
+        "f0k9H": {
+          "content": "«Акцент»: Микро-победы",
+          "textAlign": "right"
+        },
+        "ET9dA": {
+          "justifyContent": "end"
+        }
+      }
+    },
+    {
+      "id": "EhEYJ",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 2.0.0",
+      "x": 2180,
+      "y": 3640,
+      "alignItems": "start",
+      "descendants": {
+        "zdSnA": {
+          "x": 200,
+          "y": -260
+        },
+        "nzBIo": {
+          "id": "YeJCO",
+          "type": "ref",
+          "ref": "GqnHv",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 580,
+          "y": 320
+        },
+        "hDiPF": {
+          "x": 720,
+          "y": 150,
+          "width": 12,
+          "height": 12
+        },
+        "Go4OZ": {
+          "x": 1090,
+          "y": 210,
+          "width": 9,
+          "height": 9
+        },
+        "y42Rk": {
+          "x": 880,
+          "y": 96,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 1010,
+          "y": 120,
+          "width": 7,
+          "height": 7
+        },
+        "SZ8cc": {
+          "content": "16 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 460,
+          "alignItems": "start"
+        },
+        "M7whGC": {
+          "content": "2.0.0"
+        },
+        "f0k9H": {
+          "content": "Раздел «Акцент»",
+          "textAlign": "left"
+        },
+        "ET9dA": {
+          "justifyContent": "start"
+        }
+      }
+    },
+    {
+      "id": "A0FmF",
+      "type": "ref",
+      "ref": "Zgt0h",
+      "name": "Превью 1.0.0",
+      "x": 3480,
+      "y": 3640,
+      "alignItems": "end",
+      "descendants": {
+        "zdSnA": {
+          "x": 420,
+          "y": -190
+        },
+        "nzBIo": {
+          "id": "Hlach",
+          "type": "ref",
+          "ref": "BMys1",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 20,
+          "y": 250
+        },
+        "hDiPF": {
+          "x": 980,
+          "y": 470,
+          "width": 10,
+          "height": 10
+        },
+        "Go4OZ": {
+          "x": 640,
+          "y": 120,
+          "width": 12,
+          "height": 12
+        },
+        "y42Rk": {
+          "x": 1120,
+          "y": 300,
+          "width": 8,
+          "height": 8
+        },
+        "gnPz5": {
+          "x": 840,
+          "y": 64,
+          "width": 9,
+          "height": 9
+        },
+        "SZ8cc": {
+          "content": "10 ИЮНЯ 2026"
+        },
+        "vSYpG": {
+          "width": 560,
+          "alignItems": "end"
+        },
+        "M7whGC": {
+          "content": "1.0.0"
+        },
+        "f0k9H": {
+          "content": "Что уже внутри",
+          "textAlign": "right"
+        },
+        "ET9dA": {
+          "justifyContent": "end"
+        }
+      }
+    },
+    {
+      "type": "note",
+      "id": "H9pGyv",
+      "x": 880,
+      "y": 4410,
+      "name": "Секция: первый пост в канал",
+      "width": 1200,
+      "height": 0,
+      "content": "ПЕРВЫЙ ПОСТ В КАНАЛ — 1200×630\nОдноразовая карточка, открывающая t.me/norms2 перед публикацией истории релизов (·7). Не инстанс компонента: у неё нет номера версии и даты, герой здесь — вся группа персонажей, а не число.\nЭкспорт: pencil/out/channel-first-post.png (в канал кладётся руками)."
+    },
+    {
+      "type": "frame",
+      "id": "r3qDTf",
+      "x": 880,
+      "y": 4600,
+      "name": "Первый пост в канал",
+      "clip": true,
+      "width": 1200,
+      "height": 630,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 150,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#5E4031",
+            "position": 0
+          },
+          {
+            "color": "#433028",
+            "position": 0.44
+          },
+          {
+            "color": "#14151A",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "PYZ2L",
+          "x": -40,
+          "y": -220,
+          "name": "Свет",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#E8915B47",
+                "position": 0
+              },
+              {
+                "color": "#E8915B00",
+                "position": 1
+              }
+            ]
+          },
+          "width": 980,
+          "height": 980
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            46,
+            46,
+            0,
+            0
+          ],
+          "id": "ohILU",
+          "x": 600,
+          "y": 392,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF12",
+          "width": 92,
+          "height": 238
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            37,
+            37,
+            0,
+            0
+          ],
+          "id": "fAQTr",
+          "x": 1128,
+          "y": 436,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF12",
+          "width": 74,
+          "height": 194
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            32,
+            32,
+            0,
+            0
+          ],
+          "id": "ituIo",
+          "x": 40,
+          "y": 470,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF12",
+          "width": 64,
+          "height": 160
+        },
+        {
+          "type": "ellipse",
+          "id": "A0R3Az",
+          "x": 596,
+          "y": 582,
+          "name": "Тень под группой",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#0A0B0F99",
+                "position": 0
+              },
+              {
+                "color": "#0A0B0F00",
+                "position": 1
+              }
+            ]
+          },
+          "width": 640,
+          "height": 72
+        },
+        {
+          "id": "Sscql",
+          "type": "ref",
+          "ref": "GqnHv",
+          "name": "Сцена персонажей",
+          "x": 690,
+          "y": 250
+        },
+        {
+          "type": "rectangle",
+          "id": "eF9zU",
+          "x": 0,
+          "y": 612,
+          "name": "Земля",
+          "fill": "#0A0B0F26",
+          "width": 1200,
+          "height": 18
+        },
+        {
+          "type": "ellipse",
+          "id": "RrWFw",
+          "x": 520,
+          "y": 120,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 13,
+          "height": 13
+        },
+        {
+          "type": "ellipse",
+          "id": "EgkiU",
+          "x": 1040,
+          "y": 168,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 9,
+          "height": 9
+        },
+        {
+          "type": "ellipse",
+          "id": "lk9kt",
+          "x": 830,
+          "y": 80,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "ellipse",
+          "id": "aL2ov",
+          "x": 300,
+          "y": 300,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 10,
+          "height": 10
+        },
+        {
+          "type": "ellipse",
+          "id": "w2XySb",
+          "x": 1150,
+          "y": 320,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 7,
+          "height": 7
+        },
+        {
+          "type": "ellipse",
+          "id": "r23ZS",
+          "x": 160,
+          "y": 180,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "rectangle",
+          "id": "t0OKyv",
+          "x": 0,
+          "y": 626,
+          "name": "Акцентная кромка",
+          "fill": "#E8915B",
+          "width": 1200,
+          "height": 4
+        },
+        {
+          "type": "frame",
+          "id": "jxN6l",
+          "x": 72,
+          "y": 96,
+          "name": "Текст",
+          "width": 600,
+          "layout": "vertical",
+          "gap": 22,
+          "children": [
+            {
+              "type": "text",
+              "id": "uXeYv",
+              "name": "Надзаголовок",
+              "fill": "$accent",
+              "content": "НОРМИСЫ",
+              "fontFamily": "$font",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "letterSpacing": 5
+            },
+            {
+              "type": "text",
+              "id": "RnV48",
+              "name": "Заголовок",
+              "fill": "$text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "История начинается",
+              "lineHeight": 1.05,
+              "fontFamily": "$font",
+              "fontSize": 76,
+              "fontWeight": "700",
+              "letterSpacing": -2
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 3,
+              "id": "RuO23",
+              "name": "Акцентная черта",
+              "fill": "$accent",
+              "width": 104,
+              "height": 5
+            },
+            {
+              "type": "text",
+              "id": "PIHZ4",
+              "name": "Подзаголовок",
+              "fill": "#C9CED9",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Здесь будет выходить каждый релиз «Нормисов» — что появилось и почему именно так.",
+              "lineHeight": 1.35,
+              "fontFamily": "$font",
+              "fontSize": 27,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "fD5qn",
+          "x": 72,
+          "y": 470,
+          "name": "Подвал",
+          "gap": 26,
+          "alignItems": "end",
+          "children": [
+            {
+              "type": "frame",
+              "id": "buzLs",
+              "name": "QR нормисы.рф",
+              "layout": "vertical",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "G6iub",
+                  "name": "Код",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "qr-site.png",
+                    "mode": "fit"
+                  },
+                  "width": 74,
+                  "height": 74
+                },
+                {
+                  "type": "text",
+                  "id": "AXMdP",
+                  "name": "Подпись",
+                  "fill": "#C9CED9",
+                  "content": "нормисы.рф",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "osCpC",
+              "name": "QR @norms2_bot",
+              "layout": "vertical",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "LN2Qb",
+                  "name": "Код",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "qr-bot.png",
+                    "mode": "fit"
+                  },
+                  "width": 74,
+                  "height": 74
+                },
+                {
+                  "type": "text",
+                  "id": "r4xbh",
+                  "name": "Подпись",
+                  "fill": "#C9CED9",
+                  "content": "@norms2_bot",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
         }
       ]
     }

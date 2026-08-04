@@ -699,7 +699,13 @@ export class HabitsComponent {
 
   /** Метаданные задачи (тип + явные «надо/сделано» — без неявной дроби). */
   protected taskMeta(task: TaskView): string {
-    const kind = HABIT_KIND_LABELS[task.kind];
+    // Разовая задача (`templateId = null`) ничем не отличалась от порождённой привычкой, хотя
+    // ведёт себя иначе: живёт один день, её нельзя открыть как шаблон и у неё нет лесенки.
+    // Пока разовых нет ни у кого, это незаметно; появятся — список станет непонятным (2.9·22).
+    const kind =
+      task.templateId === null
+        ? `Разовая · ${HABIT_KIND_LABELS[task.kind]}`
+        : HABIT_KIND_LABELS[task.kind];
     if (task.targetValue === null) {
       return kind; // бинарная — без чисел
     }

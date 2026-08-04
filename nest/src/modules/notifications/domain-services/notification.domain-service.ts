@@ -83,4 +83,29 @@ export class NotificationDomainService {
       key: null,
     });
   }
+
+  /**
+   * Персональное уведомление о личном событии в разделе — достижение, веха «держусь» (2.9).
+   * **Спокойная строка в колокольчик вместо модалки с конфетти:** праздник, который перебивает
+   * экран, это язык казино, а достижение у нас — констатация поступка.
+   * Best-effort: зовётся после того, как факт уже записан, и падать за собой ничего не тянет.
+   * @param accountId Кому.
+   * @param title Заголовок (название достижения или вехи).
+   * @param body Текст.
+   * @returns Промис завершения.
+   */
+  public async notifyPersonalMilestone(
+    accountId: string,
+    title: string,
+    body: string,
+  ): Promise<void> {
+    await this._notificationRepository.create(generateId(), {
+      kind: 'personal',
+      accountId,
+      title,
+      body,
+      contentFile: null,
+      key: null,
+    });
+  }
 }

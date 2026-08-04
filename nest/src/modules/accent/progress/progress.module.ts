@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AccentUserAchievementRepository } from '../../../database/repositories/accent/accent-user-achievement.repository';
+import { NotificationCoreModule } from '../../notifications/notification-core.module';
+import { ACCENT_PROGRESS_NOTIFIER } from './adapters/accent-progress-notifier.port';
 import { ACCENT_USER_ACHIEVEMENT_REPOSITORY } from './adapters/accent-user-achievement-repository.port';
+import { NotificationProgressNotifierAdapter } from './adapters/notification-progress-notifier.adapter';
+import { AccentAchievementDomainService } from './domain-services/accent-achievement.domain-service';
 import { AccentPersistenceDomainService } from './domain-services/accent-persistence.domain-service';
 
 /**
@@ -9,14 +13,25 @@ import { AccentPersistenceDomainService } from './domain-services/accent-persist
  * Своя таблица ровно одна — `user_achievements`; постоянство считается проекцией из данных
  * соседних областей.
  *
- * Состав растёт по шагам подфазы: ·3 движок постоянства, ·4 выдача достижений, ·6 API.
- * Замысел целиком — [паспорт фичи](../../../../../docs/sections/accent/gamification-passport.md).
+ * `NotificationCoreModule` — ядро центра уведомлений без контроллера и Guard (кросс-фаза вниз,
+ * тот же приём, что у `AuthModule`): достижение сообщается спокойной строкой в колокольчик.
+ *
+ * Состав растёт по шагам подфазы: ·6 API. Замысел целиком —
+ * [паспорт фичи](../../../../../docs/sections/accent/gamification-passport.md).
  */
 @Module({
+  imports: [NotificationCoreModule],
   providers: [
     { provide: ACCENT_USER_ACHIEVEMENT_REPOSITORY, useClass: AccentUserAchievementRepository },
+    { provide: ACCENT_PROGRESS_NOTIFIER, useClass: NotificationProgressNotifierAdapter },
     AccentPersistenceDomainService,
+    AccentAchievementDomainService,
   ],
-  exports: [ACCENT_USER_ACHIEVEMENT_REPOSITORY, AccentPersistenceDomainService],
+  exports: [
+    ACCENT_USER_ACHIEVEMENT_REPOSITORY,
+    ACCENT_PROGRESS_NOTIFIER,
+    AccentPersistenceDomainService,
+    AccentAchievementDomainService,
+  ],
 })
 export class ProgressModule {}

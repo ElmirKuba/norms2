@@ -178,9 +178,9 @@ export class AccentMicroWinDomainService {
     if (microWin.isStarter) {
       microWin = (await this._repository.update(id, accountId, { isStarter: false })) ?? microWin;
     }
-    // TODO: Claude Code: 2026-06-16: 2.9 (геймификация) — при newlyCompleted эмитить
-    // доменное событие `micro_win.completed`; листенер начислит очки. Сейчас механизма
-    // событий нет (event-emitter не подключён) → начисление отложено до 2.9.
+    // Событие `micro_win.completed` не понадобилось (решение 2.9, 04.08.2026): очков нет,
+    // а достижения и постоянство читаются из `micro_win_logs` при показе статистики. Начислять
+    // надо в момент действия, увидеть факт — можно когда угодно.
     return { microWin, newlyCompleted };
   }
 

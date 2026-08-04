@@ -60,7 +60,9 @@ export class AccentLadderEngine {
       const { ladder, event } = this._apply(habit.ladder, performed);
       const written = await this._habits.setLadderCas(habitId, accountId, habit.version, ladder);
       if (written) {
-        // TODO: Claude Code: 2026-06-18: 2.9 — при event эмитить ladder.raised/lowered (очки/тосты).
+        // Порт событий `ladder.raised/lowered` не понадобился (решение 2.9, 04.08.2026):
+        // геймификация считает факты, а не очки, и «планка поднималась» видно прямо в лесенке —
+        // `wasRaised()` ниже. Подписка нужна только тому, кто обязан среагировать в момент.
         // Снимок «как было до» (2.7.3) отдаём вызывающему: он положит его на строку задачи, и
         // отмена отметки сможет вернуть планку. Здесь не сохраняем — движок про задачи не знает.
         return {
@@ -107,6 +109,22 @@ export class AccentLadderEngine {
       }
     }
     return false;
+  }
+
+  /**
+   * Двигалась ли планка от стартового минимума в сторону цели (2.9) — признак достижения
+   * «Планка выросла». Считается **из самой лесенки**, а не из журнала событий: подъём — это не
+   * мгновение, а состояние, и оно записано в `currentTarget`.
+   *
+   * Полярность учитывается (ADR-0058): при `direction='lower'` рост планки означает движение
+   * ВНИЗ, к более раннему/меньшему значению.
+   * @param ladder Лесенка привычки.
+   * @returns true, если планка сдвинута от `minTarget` в сторону цели.
+   */
+  public wasRaised(ladder: HabitLadder): boolean {
+    return ladder.direction === 'lower'
+      ? ladder.currentTarget < ladder.minTarget
+      : ladder.currentTarget > ladder.minTarget;
   }
 
   /**

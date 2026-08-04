@@ -40,26 +40,28 @@ export class AccentPersistenceDomainService {
     const days = [...new Set(sources.flat())].filter((day) => day <= today).sort();
     const lastActiveOn = days[days.length - 1] ?? null;
     const windowStart = this._shiftDays(today, -(PERSISTENCE_WINDOW_DAYS - 1));
+    const returns = this._findReturns(days);
 
     return {
       totalDays: days.length,
       windowDays: days.filter((day) => day >= windowStart).length,
       windowSize: PERSISTENCE_WINDOW_DAYS,
       lastActiveOn,
-      returnCount: this._countReturns(days),
+      returnCount: returns.length,
+      lastReturnSilenceDays: returns[returns.length - 1] ?? null,
       silenceDays: lastActiveOn === null ? 0 : this._diffDays(today, lastActiveOn),
     };
   }
 
   /**
-   * Сколько раз между соседними активными днями лежал перерыв длиной `RETURN_SILENCE_DAYS` и
-   * больше. Считается по **уже прожитым** дням: текущая тишина, ещё не прерванная, возвращением
-   * не является — возвращение случается в момент, когда человек снова отметил.
+   * Длины перерывов, которые человек уже **прервал** возвращением: разрывы между соседними
+   * активными днями от `RETURN_SILENCE_DAYS` дней тишины. Текущая тишина, ещё не прерванная,
+   * сюда не входит — возвращение случается в момент, когда снова отметил, а не пока молчишь.
    * @param days Отсортированные различные даты.
-   * @returns Число возвращений.
+   * @returns Длины перерывов в днях, в хронологическом порядке.
    */
-  private _countReturns(days: readonly string[]): number {
-    let returns = 0;
+  private _findReturns(days: readonly string[]): number[] {
+    const silences: number[] = [];
     for (let i = 1; i < days.length; i += 1) {
       const previous = days[i - 1];
       const current = days[i];
@@ -67,11 +69,12 @@ export class AccentPersistenceDomainService {
         continue;
       }
       // Пустых дней между отметками: разница минус сам переход.
-      if (this._diffDays(current, previous) - 1 >= RETURN_SILENCE_DAYS) {
-        returns += 1;
+      const silence = this._diffDays(current, previous) - 1;
+      if (silence >= RETURN_SILENCE_DAYS) {
+        silences.push(silence);
       }
     }
-    return returns;
+    return silences;
   }
 
   /**

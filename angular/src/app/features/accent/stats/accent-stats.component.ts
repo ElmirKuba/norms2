@@ -37,15 +37,16 @@ import type { AchievementItem, StatsView } from '../accent.types';
           <!-- Итог и окно рядом: «37 дней всего» без «5 из 7» умалчивает, что человек ушёл. -->
           <p class="st__note">
             {{ s.persistence.windowDays }} из последних {{ s.persistence.windowSize }} дней
-            @if (s.persistence.silenceDays > 0) {
-              · последняя отметка {{ s.persistence.silenceDays }}
-              {{ dayWord(s.persistence.silenceDays) }} назад
+            @if (s.persistence.silenceDays > 0 && s.persistence.lastActiveOn !== null) {
+              · последняя отметка {{ fmtDay(s.persistence.lastActiveOn) }}, это
+              {{ s.persistence.silenceDays }} {{ dayWord(s.persistence.silenceDays) }} назад
             }
           </p>
           @if (s.persistence.returnCount > 0) {
             <p class="st__return">
               Возвращался после долгого перерыва: {{ s.persistence.returnCount }}
-              {{ timesWord(s.persistence.returnCount) }}. Это и есть главное умение.
+              {{ timesWord(s.persistence.returnCount) }}{{ lastReturnNote(s) }}. Это и есть
+              главное умение.
             </p>
           }
         </app-card>
@@ -277,6 +278,33 @@ export class AccentStatsComponent {
    */
   protected fmtDate(iso: string): string {
     return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  }
+
+  /**
+   * Локальная дата `YYYY-MM-DD` по-человечески. Разбираем по частям, а не через `new Date(iso)`:
+   * строка без времени трактуется как UTC-полночь, и у кого таймзона позади — дата съезжала бы
+   * на день назад.
+   * @param ymd Дата `YYYY-MM-DD`.
+   * @returns Строка вида «3 августа».
+   */
+  protected fmtDay(ymd: string): string {
+    const [year, month, day] = ymd.split('-').map(Number);
+    return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+    });
+  }
+
+  /**
+   * Хвост строки о возвращениях: «, последний раз — после 18 дней тишины». Отдельным методом,
+   * потому что вкладывать `@if` в середину предложения — верный способ получить лишний пробел
+   * перед запятой.
+   * @param stats Снимок.
+   * @returns Хвост или пустая строка.
+   */
+  protected lastReturnNote(stats: StatsView): string {
+    const silence = stats.persistence.lastReturnSilenceDays;
+    return silence === null ? '' : `, последний раз — после ${silence} ${this.dayWord(silence)} тишины`;
   }
 
   /** Достижение выдано. @param item Достижение. @returns true, если выдано. */

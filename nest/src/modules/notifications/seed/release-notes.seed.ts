@@ -81,4 +81,9 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     title: 'Нормисы 2.8 — главный экран: «Сейчас» вместо списка вкладок',
     contentFile: 'notifications/release-2.8.0.md',
   },
+  {
+    key: 'release-2.9.0',
+    title: 'Нормисы 2.9 — постоянство и достижения',
+    contentFile: 'notifications/release-2.9.0.md',
+  },
 ];

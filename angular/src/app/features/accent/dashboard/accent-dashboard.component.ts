@@ -168,12 +168,24 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
             <div class="dash__block">
               <span class="dash__kicker">Держусь</span>
               @if (soleAntiHabit(d); as only) {
-                <!-- Одна серия — показываем её как счётчик: число крупно, название мелко. -->
-                <div class="dash__kpi-row">
-                  <strong class="dash__kpi">{{ heldFor(only.currentAttemptStartedAt) }}</strong>
-                </div>
+                <!-- Одна серия — счётчик в том же формате, что постоянство: число героем,
+                     единица рядом словом. Раньше тут стояло «4 дн.» — сокращение внутри
+                     числа, и две соседние плитки читались как два разных языка. -->
+                @if (heldDays(only.currentAttemptStartedAt); as days) {
+                  <div class="dash__kpi-row">
+                    <strong class="dash__kpi">{{ days }}</strong>
+                    <span class="dash__kpi-unit">{{ dayWord(days) }} без срыва</span>
+                  </div>
+                } @else {
+                  <div class="dash__kpi-row">
+                    <strong class="dash__kpi dash__kpi--word">Сегодня</strong>
+                    <span class="dash__kpi-unit">первый день</span>
+                  </div>
+                }
+                <!-- Название в кавычках и со стрелкой: без них строка читалась подписью к
+                     числу («4 дня проверки связи»), а не именем того, что держим. -->
                 <a class="dash__link dash__kpi-note" [routerLink]="['../anti-habits', only.id]">
-                  {{ only.title }}
+                  «{{ only.title }}» →
                 </a>
               } @else {
                 <ul class="dash__list">
@@ -314,6 +326,11 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
         margin-left: auto;
         color: var(--color-accent);
         font-size: var(--fs-sm);
+      }
+      /* Слово вместо числа («Сегодня») — тем же весом, но мельче: у слова другая плотность,
+         и в размере числа оно выглядело бы кричащим. */
+      .dash__kpi--word {
+        font-size: var(--fs-2xl);
       }
       /* Тишина — приглушённо: это сведение, а не обвинение. */
       .dash__silence {
@@ -700,6 +717,16 @@ export class AccentDashboardComponent {
       return 'сегодня';
     }
     return `${days} дн.`;
+  }
+
+  /**
+   * Дней в текущей попытке числом — для плитки, где число идёт героем и склоняется отдельно
+   * (`heldFor` остаётся для компактных строк списка, там сокращение уместно).
+   * @param startedAt Старт попытки (unix ms).
+   * @returns Число полных дней (0 — начали сегодня).
+   */
+  protected heldDays(startedAt: number): number {
+    return Math.max(0, Math.floor((Date.now() - startedAt) / 86_400_000));
   }
 
   /**

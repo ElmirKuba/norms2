@@ -511,6 +511,16 @@ export interface StatsView {
   awardedCount: number;
 }
 
+/** Свежеполученное достижение для строки на дашборде. */
+export interface DashboardAchievement {
+  /** Код из каталога. */
+  code: string;
+  /** Название. */
+  title: string;
+  /** Деталь момента или null. */
+  context: string | null;
+}
+
 /** Снимок главного экрана — всё за один запрос (2.11). */
 export interface DashboardView {
   /** Герой экрана. */
@@ -527,6 +537,8 @@ export interface DashboardView {
   hasObstacles: boolean;
   /** Постоянство: итог и окно (вся картина — на `/accent/stats`). */
   persistence: PersistenceView;
+  /** Только что полученное достижение или null — событие на пару дней, не постоянный блок. */
+  freshAchievement: DashboardAchievement | null;
   /** Шаги первого знакомства. */
   onboarding: DashboardOnboarding;
   /** Раздел на паузе с (ISO) или null. */

@@ -3,12 +3,16 @@ import { todayInTimezone } from '../../../../shared/utility-level/today-in-timez
 import { AccentAntiHabitDomainService } from '../../anti-habits/domain-services/accent-anti-habit.domain-service';
 import { AccentGoalDomainService } from '../../goals/domain-services/accent-goal.domain-service';
 import { AccentHabitDomainService } from '../../habits/domain-services/accent-habit.domain-service';
+import { AccentLadderEngine } from '../../habits/domain-services/accent-ladder-engine.domain-service';
 import { AccentTaskDomainService } from '../../habits/domain-services/accent-task.domain-service';
 import { AccentMicroWinDomainService } from '../../micro-wins/domain-services/accent-micro-win.domain-service';
 import { AccentObstacleDomainService } from '../../obstacles/domain-services/accent-obstacle.domain-service';
 import { AccentSettingsDomainService } from '../../settings/domain-services/accent-settings.domain-service';
 import { AccentNowDomainService } from '../domain-services/accent-now.domain-service';
 import { AccentPersistenceDomainService } from '../../progress/domain-services/accent-persistence.domain-service';
+import { AccentAchievementDomainService } from '../../progress/domain-services/accent-achievement.domain-service';
+import { AccentMilestoneNoticeDomainService } from '../../progress/domain-services/accent-milestone-notice.domain-service';
+import { ACHIEVEMENT_CATALOG } from '../../progress/interfaces/achievement-catalog.const';
 import type { DashboardView } from '../interfaces/dashboard-view.interface';
 
 /** Сколько задач дня показываем в сводке — дальше человек идёт в «Привычки». */
@@ -17,6 +21,8 @@ const TODAY_PREVIEW = 5;
 const GOALS_PREVIEW = 5;
 /** Сколько «держусь» показываем. */
 const ANTI_HABITS_PREVIEW = 3;
+/** Сколько дней достижение считается свежим и висит строкой на дашборде. */
+const FRESH_ACHIEVEMENT_DAYS = 2;
 
 /**
  * Use-case главного экрана (`GET /accent/dashboard`, 2.11): собирает **один согласованный
@@ -50,6 +56,9 @@ export class GetDashboardUseCase {
     private readonly _settings: AccentSettingsDomainService,
     private readonly _now: AccentNowDomainService,
     private readonly _persistence: AccentPersistenceDomainService,
+    private readonly _ladder: AccentLadderEngine,
+    private readonly _achievements: AccentAchievementDomainService,
+    private readonly _milestones: AccentMilestoneNoticeDomainService,
   ) {}
 
   /**
@@ -79,6 +88,23 @@ export class GetDashboardUseCase {
       this._microWins.activeDays(accountId),
       this._goals.activeDays(accountId),
     ]);
+    const persistence = this._persistence.compute([taskDays, microWinDays, goalDays], today);
+
+    // Достижения и вехи догоняем и ЗДЕСЬ, а не только на экране статистики (2.9·14). Иначе
+    // человек, который туда не заходит, не получил бы ни одной награды — а дашборд и есть
+    // место, где он бывает каждый день.
+    await this._achievements.sync(accountId, {
+      persistence,
+      hasTaskCompletion: taskDays.length > 0,
+      taskDays,
+      microWinDays,
+      hasCompletedGoal: goals.some((goal) => goal.status === 'completed' && !goal.isStarter),
+      hasRaisedLadder: habits.some(
+        (habit) => !habit.isStarter && this._ladder.wasRaised(habit.ladder),
+      ),
+    });
+    await this._milestones.announce(accountId, await this._antiHabits.syncMilestones(accountId));
+    const fresh = await this._achievements.freshest(accountId, FRESH_ACHIEVEMENT_DAYS);
 
     // Фокусные цели первыми: человек сам сказал, что для него сейчас главное (ADR-0053).
     const topGoals = goals
@@ -127,7 +153,15 @@ export class GetDashboardUseCase {
         deadline: (task.deadline ?? new Date()).toISOString(),
       })),
       hasObstacles: obstacles.items.some((obstacle) => !obstacle.isStarter),
-      persistence: this._persistence.compute([taskDays, microWinDays, goalDays], today),
+      persistence,
+      freshAchievement:
+        fresh === null
+          ? null
+          : {
+              code: fresh.code,
+              title: ACHIEVEMENT_CATALOG[fresh.code].title,
+              context: fresh.context,
+            },
       onboarding: {
         hasHabits: habits.some((habit) => !habit.isStarter),
         // «Отмечал хоть раз» — по всей истории задач, а не по сегодняшнему дню: иначе человек,

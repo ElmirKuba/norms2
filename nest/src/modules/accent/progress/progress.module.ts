@@ -44,6 +44,10 @@ import { GetStatsUseCase } from './use-cases/get-stats.use-case';
     AccentMilestoneNoticeDomainService,
     GetStatsUseCase,
   ],
-  exports: [AccentPersistenceDomainService, AccentAchievementDomainService],
+  exports: [
+    AccentPersistenceDomainService,
+    AccentAchievementDomainService,
+    AccentMilestoneNoticeDomainService,
+  ],
 })
 export class ProgressModule {}

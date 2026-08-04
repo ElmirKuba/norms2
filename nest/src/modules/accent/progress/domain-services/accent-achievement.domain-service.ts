@@ -95,6 +95,24 @@ export class AccentAchievementDomainService {
   }
 
   /**
+   * Самое свежее достижение, если оно получено **совсем недавно** — строка на дашборде
+   * (2.9·14). Это **событие, а не постоянный блок**: через `withinDays` строка исчезает сама,
+   * иначе главный экран превратился бы в витрину наград вместо призыва к действию.
+   * @param accountId Идентификатор аккаунта.
+   * @param withinDays Сколько дней достижение считается свежим.
+   * @returns Достижение или null.
+   */
+  public async freshest(
+    accountId: string,
+    withinDays: number,
+  ): Promise<UserAchievementFull | null> {
+    const since = Date.now() - withinDays * 86_400_000;
+    const awarded = await this._repository.listByAccount(accountId);
+    const latest = awarded[0] ?? null;
+    return latest !== null && latest.awardedAt.getTime() >= since ? latest : null;
+  }
+
+  /**
    * Правило одного достижения.
    * @param code Код.
    * @param facts Факты.

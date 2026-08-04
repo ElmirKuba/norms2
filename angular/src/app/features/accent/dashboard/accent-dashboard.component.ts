@@ -70,6 +70,19 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
           </div>
         </app-card>
 
+        <!-- Свежая награда — строка, а не плитка: это событие на пару дней, оно исчезнет само.
+             Постоянный блок наград превратил бы вход в день в витрину достижений. -->
+        @if (d.freshAchievement; as fresh) {
+          <a class="dash__fresh dash__wide" [routerLink]="['../stats']">
+            <span class="dash__fresh-mark" aria-hidden="true">●</span>
+            <span>
+              Новое достижение: <strong>{{ fresh.title }}</strong>
+              {{ fresh.context ? '· ' + fresh.context : '' }}
+            </span>
+            <span class="dash__fresh-more">посмотреть →</span>
+          </a>
+        }
+
         @if (d.today.total > 0) {
           <app-card class="dash__tile dash__tile--today">
             <div class="dash__block">
@@ -247,6 +260,32 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
           color-mix(in srgb, var(--color-accent) 10%, transparent),
           transparent 60%
         );
+      }
+      /* Строка свежей награды: заметная, но не кричащая — тонкая акцентная рамка вместо
+         заливки, чтобы она не спорила с героем «Сейчас» за внимание. */
+      .dash__fresh {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        padding: var(--space-3);
+        border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+        border-radius: var(--radius-md);
+        background-image: linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--color-accent) 10%, transparent),
+          transparent 70%
+        );
+        color: var(--color-text);
+        text-decoration: none;
+      }
+      .dash__fresh-mark {
+        color: var(--color-accent);
+      }
+      .dash__fresh-more {
+        margin-left: auto;
+        color: var(--color-accent);
+        font-size: var(--fs-sm);
       }
       .dash__tile--persistence {
         background-image: linear-gradient(

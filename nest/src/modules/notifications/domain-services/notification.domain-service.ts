@@ -22,14 +22,11 @@ function parseReleaseVersion(key: string): number[] | null {
 /**
  * Сравнивает ключи релизов так, чтобы новая версия шла первой.
  *
- * **Почему не по `createdAt`.** У нот сейчас нет даты выпуска: `createdAt` — это момент, когда
- * сидер положил ноту в базу. После пересева базы все ноты получают близкие метки, а после
- * точечного пересева одной (например при отладке вещания) она уезжает наверх: витрина честно
- * показывала `release-1.0.0` первым, выше 2.9.0. Пять нот от 25.07 и вовсе делят одну метку с
- * точностью до секунды, и порядок внутри них произвольный.
- *
- * Это временная опора на имя файла, а не решение. Настоящее — `published_at` (шаг ·15): дата
- * выпуска должна храниться, а не выводиться из того, когда строку записали.
+ * **Это тайбрейк, а не основная сортировка.** Основную делает БД по `published_at` (·15). Но дату
+ * выпуска мы знаем с точностью до дня — часа выпуска у нас нет, и выдумывать минуты, лишь бы
+ * получить строгий порядок, значит подделывать факт. Поэтому релизы одного дня (2.2.0 и 2.3.0,
+ * 2.8.0 и 2.9.0) приходят из базы в произвольном порядке, и здесь их разводит номер версии —
+ * величина, которая про очерёдность выпусков знает точно.
  *
  * @param leftKey Ключ слева.
  * @param rightKey Ключ справа.
@@ -86,7 +83,13 @@ export class NotificationDomainService {
    */
   public async listReleases(): Promise<ReleaseView[]> {
     const releases = await this._notificationRepository.listReleases();
-    return [...releases].sort((left, right) => compareReleaseKeysDesc(left.key, right.key));
+    // База уже отсортировала по дате выпуска; здесь разводим только совпавшие дни.
+    return [...releases].sort((left, right) => {
+      const leftDate = (left.publishedAt ?? left.createdAt).getTime();
+      const rightDate = (right.publishedAt ?? right.createdAt).getTime();
+      const sameDay = new Date(leftDate).toDateString() === new Date(rightDate).toDateString();
+      return sameDay ? compareReleaseKeysDesc(left.key, right.key) : rightDate - leftDate;
+    });
   }
 
   /**
@@ -152,6 +155,8 @@ export class NotificationDomainService {
       body: `По вашему коду присоединился @${joinedLogin}`,
       contentFile: null,
       key: null,
+      // У персонального уведомления дата создания и есть дата события.
+      publishedAt: null,
       // Персональные ноты в канал не вещаются — он публичный.
       broadcastedAt: null,
     });
@@ -179,6 +184,8 @@ export class NotificationDomainService {
       body,
       contentFile: null,
       key: null,
+      // У персонального уведомления дата создания и есть дата события.
+      publishedAt: null,
       // Персональные ноты в канал не вещаются — он публичный.
       broadcastedAt: null,
     });

@@ -42,7 +42,7 @@
                 @if (item.body) {
                   <span class="row__preview">{{ item.body }}</span>
                 }
-                <span class="row__date">{{ formatDate(item.createdAt) }}</span>
+                <span class="row__date">{{ formatDate(item.publishedAt ?? item.createdAt) }}</span>
               </span>
             </button>
           }

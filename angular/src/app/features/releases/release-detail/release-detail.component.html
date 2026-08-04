@@ -12,8 +12,8 @@
   } @else if (release(); as item) {
     <header class="release-page__head">
       <h1 class="release-page__title">{{ item.title }}</h1>
-      <time class="release-page__date" [attr.datetime]="item.createdAt">
-        {{ item.createdAt | date: 'dd.MM.yyyy' }}
+      <time class="release-page__date" [attr.datetime]="item.publishedAt ?? item.createdAt">
+        {{ (item.publishedAt ?? item.createdAt) | date: 'dd.MM.yyyy' }}
       </time>
     </header>
 

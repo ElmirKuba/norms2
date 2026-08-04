@@ -21,8 +21,8 @@
             <span class="release__version">{{ version(release.key) }}</span>
             <span class="release__body">
               <span class="release__title">{{ release.title }}</span>
-              <time class="release__date" [attr.datetime]="release.createdAt">
-                {{ release.createdAt | date: 'dd.MM.yyyy' }}
+              <time class="release__date" [attr.datetime]="release.publishedAt ?? release.createdAt">
+                {{ (release.publishedAt ?? release.createdAt) | date: 'dd.MM.yyyy' }}
               </time>
             </span>
           </a>

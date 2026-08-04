@@ -126,9 +126,11 @@ Body: `{ login, password }`.
 
 Модель «fan-out-on-read»: уведомление адресовано ИЛИ всем (broadcast, `accountId=null`), ИЛИ персонально (`accountId` задан). «Прочитано» — наличие строки в `notification_reads` для смотрящего; непрочитанные = адресованные мне уведомления без моей отметки. Контент: ИЛИ inline `body`, ИЛИ `contentFile` (путь к `.md` относительно `content/`, раздаётся бэком как статика — для богатого текста релизов). Все роуты — под Guard (уведомления адресные).
 
+**`published_at` (2.9.1·15)** — дата **выпуска** релиза; `null` у персональных уведомлений. Показывать человеку и сортировать надо по `COALESCE(published_at, created_at)`: `created_at` — это когда сидер записал строку, и после пересева одной ноты она уезжала наверх колокольчика у всех. Сортировка на бэке: `coalesce(published_at, created_at) desc, id desc`.
+
 **`broadcasted_at` (2.9.1)** — отметка о публикации ноты во внешний канал (Telegram): `null` = ещё не объявляли. Поле служебное, наружу в контрактах не отдаётся; нужно потому, что сидер релизов отрабатывает при каждом старте бэка, и без отметки канал получал бы все ноты заново на каждый деплой.
 
-- `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, createdAt, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
+- `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, createdAt, publishedAt: Date|null, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
 - `GET /notifications/unread-count` (auth) → `{ count: number }`. Для бейджа колокольчика.
 - `POST /notifications/:id/read` (auth) → 204. Идемпотентно; чужое персональное (адресовано не мне) → no-op (без утечки, без read-строки).
 - `POST /notifications/read-all` (auth) → 204. Отмечает все мои непрочитанные.
@@ -139,7 +141,7 @@ Body: `{ login, password }`.
 
 **Без авторизации — намеренно.** Текст релиз-ноты и так публичен: `.md` раздаётся из `content/` без токена. Закрыт был только API центра уведомлений, потому что он адресный; у витрины адресности нет. Сюда ведёт ссылка из поста в Telegram-канале: пост несёт тезисы, полный текст — здесь.
 
-- `GET /releases` → `ReleaseView[]` = `[{ key, title, body: string|null, contentFile: string|null, createdAt }]`. Только `kind='release'`, новые сверху, лимит 100.
+- `GET /releases` → `ReleaseView[]` = `[{ key, title, body: string|null, contentFile: string|null, createdAt, publishedAt: Date|null }]`. Только `kind='release'`, новые сверху, лимит 100.
 - `GET /releases/:key` → `ReleaseView`; нет такой релизной ноты → **404**.
 
 **Чем `ReleaseView` отличается от `NotificationView` и почему это не косметика:**

@@ -17,6 +17,13 @@ export interface NotificationView {
   contentFile: string | null;
   /** Момент создания (ISO-строка из JSON). */
   createdAt: string;
+  /**
+   * Дата ВЫПУСКА (2.9.1·15) или null у персональных уведомлений.
+   *
+   * Человеку показываем `publishedAt ?? createdAt`: у релиз-ноты `createdAt` — это когда
+   * сидер положил строку в базу, а не когда вышел релиз.
+   */
+  publishedAt: string | null;
   /** Прочитано ли мной. */
   read: boolean;
 }

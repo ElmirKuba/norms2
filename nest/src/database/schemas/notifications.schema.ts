@@ -27,6 +27,10 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
     key: varchar('key', { length: 128 }),
     // Отметка о вещании во внешний канал (2.9.1): null — ещё не объявляли.
     broadcastedAt: timestamp('broadcasted_at', { withTimezone: true }),
+    // Дата ВЫПУСКА (2.9.1·15), а не записи строки. `created_at` — это момент, когда сидер
+    // положил ноту в базу: он меняется при пересеве и врёт про возраст релиза. Null у
+    // персональных уведомлений — там дата создания и есть дата события.
+    publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [

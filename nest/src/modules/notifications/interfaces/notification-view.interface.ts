@@ -15,8 +15,13 @@ export interface NotificationView {
   body: string | null;
   /** Путь к .md относительно content/ или null. */
   contentFile: string | null;
-  /** Когда создано. */
+  /** Когда создано (момент записи строки). */
   createdAt: Date;
+  /**
+   * Дата выпуска релиза или null у персональных. Показывать человеку нужно
+   * `publishedAt ?? createdAt`: `createdAt` у релизов — это когда сидер положил ноту в базу.
+   */
+  publishedAt: Date | null;
   /** Прочитано ли мной. */
   read: boolean;
 }

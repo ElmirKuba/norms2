@@ -91,6 +91,19 @@ export interface NotificationRepositoryPort {
   markBroadcasted(id: string): Promise<void>;
 
   /**
+   * Проставляет дату выпуска ноте, у которой её ещё нет (2.9.1·15).
+   *
+   * Нужен ради **уже засеянных** баз: `createIfAbsentByKey` на существующую ноту не действует,
+   * поэтому без досева поле осталось бы пустым и на dev, и на проде — то есть ровно там, где
+   * порядок нот и врал. Обновление **только когда `published_at is null`**: правка даты у ноты,
+   * которой её однажды поставили, — это уже не сид, а переписывание истории.
+   * @param key Ключ ноты.
+   * @param publishedAt Дата выпуска.
+   * @returns Промис завершения.
+   */
+  setPublishedAtIfAbsent(key: string, publishedAt: Date): Promise<void>;
+
+  /**
    * Релизные ноты для **публичной** витрины (`kind = 'release'`), новые сверху.
    * Без отметок о прочтении: смотрящего нет, `notification_reads` не участвует.
    * @returns Проекции витрины.

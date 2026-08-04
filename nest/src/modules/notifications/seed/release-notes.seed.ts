@@ -14,6 +14,15 @@ export interface ReleaseNoteSeed {
   title: string;
   /** Путь к `.md` относительно `content/` (и `seed-content/`). */
   contentFile: string;
+  /**
+   * Дата **выпуска** (2.9.1·15). Взята из git: коммит, которым нота впервые появилась в
+   * репозитории. Это факт, а не догадка, и он не зависит от того, когда база засеяна.
+   *
+   * Время намеренно одинаковое (12:00 UTC) — мы знаем день выпуска, но не час, и
+   * притворяться, что знаем, не будем. Совпадения дат разруливаются вторичной сортировкой
+   * по номеру версии, а не выдуманными минутами.
+   */
+  publishedAt: Date;
 }
 
 /**
@@ -36,31 +45,37 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     key: 'release-1.0.0',
     title: 'Нормисы 1.0 — что уже внутри',
     contentFile: 'notifications/release-1.0.0.md',
+    publishedAt: new Date('2026-06-10T12:00:00Z'),
   },
   {
     key: 'release-2.0.0',
     title: 'Нормисы 2.0 — раздел «Акцент»',
     contentFile: 'notifications/release-2.0.0.md',
+    publishedAt: new Date('2026-06-16T12:00:00Z'),
   },
   {
     key: 'release-2.2.0',
     title: 'Нормисы 2.2 — «Акцент»: Микро-победы',
     contentFile: 'notifications/release-2.2.0.md',
+    publishedAt: new Date('2026-06-17T12:00:00Z'),
   },
   {
     key: 'release-2.3.0',
     title: 'Нормисы 2.3 — Микро-победы: стартовый пак и «для тяжёлых дней»',
     contentFile: 'notifications/release-2.3.0.md',
+    publishedAt: new Date('2026-06-17T12:00:00Z'),
   },
   {
     key: 'release-2.4.19',
     title: 'Нормисы 2.4 — «Акцент»: Привычки и адаптивная лесенка',
     contentFile: 'notifications/release-2.4.19.md',
+    publishedAt: new Date('2026-06-19T12:00:00Z'),
   },
   {
     key: 'release-2.5.0',
     title: 'Нормисы 2.5 — «Акцент»: Цели, графики и фокус',
     contentFile: 'notifications/release-2.5.0.md',
+    publishedAt: new Date('2026-06-29T12:00:00Z'),
   },
   // Линия 2.6.x — ОДНА накопительная нота, названная по текущему патчу (как release-2.4.19 на всю
   // линию 2.4). Новый патч 2.6.x: переименовать файл/ключ на новый номер и дописать раздел (не
@@ -70,6 +85,7 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     key: 'release-2.6.3',
     title: 'Нормисы 2.6 — «Держусь» + приглашения по ссылке',
     contentFile: 'notifications/release-2.6.3.md',
+    publishedAt: new Date('2026-07-25T12:00:00Z'),
   },
   // ⚠️ Линия 2.7.x собрана по СТАРОМУ правилу (накопительная нота + новый ключ на каждый патч) —
   // и это оказалось ошибкой: в колокольчике выросли три почти одинаковых заголовка 2.7.1/2.7.2/
@@ -79,16 +95,19 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     key: 'release-2.7.3',
     title: 'Нормисы 2.7.3 — «Препятствия», минимум на плохой день, свежесть и история привычки',
     contentFile: 'notifications/release-2.7.3.md',
+    publishedAt: new Date('2026-08-03T12:00:00Z'),
   },
   // Первая нота по правилу от 03.08.2026: только про НОВОЕ, без пересказа прошлых патчей.
   {
     key: 'release-2.8.0',
     title: 'Нормисы 2.8 — главный экран: «Сейчас» вместо списка вкладок',
     contentFile: 'notifications/release-2.8.0.md',
+    publishedAt: new Date('2026-08-04T12:00:00Z'),
   },
   {
     key: 'release-2.9.0',
     title: 'Нормисы 2.9 — постоянство и достижения',
     contentFile: 'notifications/release-2.9.0.md',
+    publishedAt: new Date('2026-08-04T12:00:00Z'),
   },
 ];

@@ -57,6 +57,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         body: notifications.body,
         contentFile: notifications.contentFile,
         createdAt: notifications.createdAt,
+        publishedAt: notifications.publishedAt,
         read: sql<boolean>`${notificationReads.id} is not null`,
       })
       .from(notifications)
@@ -68,7 +69,10 @@ export class NotificationRepository implements NotificationRepositoryPort {
         ),
       )
       .where(or(isNull(notifications.accountId), eq(notifications.accountId, accountId)))
-      .orderBy(desc(notifications.createdAt))
+      // По дате ВЫПУСКА, а не записи строки: пересев одной ноты не должен выкидывать её
+      // наверх колокольчика у всех (2.9.1·15). `id` вторым — детерминированный тайбрейк:
+      // в uuidv7___unixmillis время зашито в сам ключ.
+      .orderBy(sql`coalesce(${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
       .limit(LIST_LIMIT);
   }
 
@@ -195,6 +199,19 @@ export class NotificationRepository implements NotificationRepositoryPort {
   }
 
   /**
+   * Проставляет дату выпуска, если её ещё нет (досев уже засеянных баз).
+   * @param key Ключ ноты.
+   * @param publishedAt Дата выпуска.
+   * @returns Промис завершения.
+   */
+  public async setPublishedAtIfAbsent(key: string, publishedAt: Date): Promise<void> {
+    await this._db
+      .update(notifications)
+      .set({ publishedAt })
+      .where(and(eq(notifications.key, key), isNull(notifications.publishedAt)));
+  }
+
+  /**
    * Релизные ноты для публичной витрины, новые сверху.
    * `notification_reads` не джойнится вовсе — витрина открыта без авторизации,
    * прочтения остаются приватной механикой ЛК (ADR-0064 §5).
@@ -212,10 +229,11 @@ export class NotificationRepository implements NotificationRepositoryPort {
         body: notifications.body,
         contentFile: notifications.contentFile,
         createdAt: notifications.createdAt,
+        publishedAt: notifications.publishedAt,
       })
       .from(notifications)
       .where(and(eq(notifications.kind, 'release'), isNotNull(notifications.key)))
-      .orderBy(desc(notifications.createdAt))
+      .orderBy(sql`coalesce(${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
       .limit(RELEASES_LIMIT);
   }
 
@@ -232,6 +250,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         body: notifications.body,
         contentFile: notifications.contentFile,
         createdAt: notifications.createdAt,
+        publishedAt: notifications.publishedAt,
       })
       .from(notifications)
       .where(and(eq(notifications.kind, 'release'), eq(notifications.key, key)))

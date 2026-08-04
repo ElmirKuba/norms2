@@ -18,6 +18,8 @@ export interface ReleaseView {
   body: string | null;
   /** Путь к `.md` относительно `content/` или null. */
   contentFile: string | null;
-  /** Когда нота появилась. */
+  /** Когда строка записана в базу (не дата выпуска). */
   createdAt: Date;
+  /** Дата выпуска (2.9.1·15). Null не ожидается у релизов, но поле общее со схемой. */
+  publishedAt: Date | null;
 }

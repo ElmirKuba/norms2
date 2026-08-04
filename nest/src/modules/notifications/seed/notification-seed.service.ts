@@ -55,12 +55,17 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           key: note.key,
           // Новая нота ещё не объявлена наружу — этим займётся вещатель ниже.
           broadcastedAt: null,
+          publishedAt: note.publishedAt,
         });
         // Объявляем ТОЛЬКО что созданное. Накопленная история (десять старых нот) ждёт явной
         // команды владельца: иначе первый же запуск с подключённым ботом высыпал бы в канал
         // все релизы разом (2.9.1·3).
         if (created) {
           await this._announce(id, note.title, note.key, note.contentFile);
+        } else {
+          // Нота уже была: вставка её не тронула, а дату выпуска проставить надо — иначе
+          // на всех существующих базах поле осталось бы пустым (2.9.1·15).
+          await this._notificationRepository.setPublishedAtIfAbsent(note.key, note.publishedAt);
         }
       } catch (error) {
         this._logger.warn(`Сид релиз-ноты '${note.key}' пропущен: ${String(error)}`);

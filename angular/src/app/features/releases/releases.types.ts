@@ -16,4 +16,11 @@ export interface ReleaseView {
   contentFile: string | null;
   /** Когда нота появилась (ISO-строка с бэка). */
   createdAt: string;
+  /**
+   * Дата ВЫПУСКА (2.9.1·15) или null у персональных уведомлений.
+   *
+   * Человеку показываем `publishedAt ?? createdAt`: у релиз-ноты `createdAt` — это когда
+   * сидер положил строку в базу, а не когда вышел релиз.
+   */
+  publishedAt: string | null;
 }

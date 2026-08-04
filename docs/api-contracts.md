@@ -126,6 +126,8 @@ Body: `{ login, password }`.
 
 Модель «fan-out-on-read»: уведомление адресовано ИЛИ всем (broadcast, `accountId=null`), ИЛИ персонально (`accountId` задан). «Прочитано» — наличие строки в `notification_reads` для смотрящего; непрочитанные = адресованные мне уведомления без моей отметки. Контент: ИЛИ inline `body`, ИЛИ `contentFile` (путь к `.md` относительно `content/`, раздаётся бэком как статика — для богатого текста релизов). Все роуты — под Guard (уведомления адресные).
 
+**`broadcasted_at` (2.9.1)** — отметка о публикации ноты во внешний канал (Telegram): `null` = ещё не объявляли. Поле служебное, наружу в контрактах не отдаётся; нужно потому, что сидер релизов отрабатывает при каждом старте бэка, и без отметки канал получал бы все ноты заново на каждый деплой.
+
 - `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, createdAt, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
 - `GET /notifications/unread-count` (auth) → `{ count: number }`. Для бейджа колокольчика.
 - `POST /notifications/:id/read` (auth) → 204. Идемпотентно; чужое персональное (адресовано не мне) → no-op (без утечки, без read-строки).

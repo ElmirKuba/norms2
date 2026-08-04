@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
@@ -11,7 +11,9 @@ import type { NotificationKind } from '../../modules/notifications/interfaces/no
  * broadcast всем, set = персональное. Контент: ИЛИ `body` (inline), ИЛИ
  * `content_file` (путь к .md относительно content/, раздаётся бэком). `key` —
  * стабильный ключ идемпотентного сида релизов (NULL у персональных; NULL'ы в
- * unique различны → можно много). «Прочитано» — наличие строки в notification_reads.
+ * unique различны → можно много). «Прочитано» — наличие строки в notification_reads. `broadcasted_at` — отметка о
+ * публикации во внешний канал (Telegram, 2.9.1): сидер идёт при каждом старте, и без неё канал
+ * получал бы все релизы заново на каждый деплой.
  */
 export const notifications = defineTableWithSchema<NotificationFull>()(
   'notifications',
@@ -23,6 +25,8 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
     body: text('body'),
     contentFile: varchar('content_file', { length: 255 }),
     key: varchar('key', { length: 128 }),
+    // Отметка о вещании во внешний канал (2.9.1): null — ещё не объявляли.
+    broadcastedAt: timestamp('broadcasted_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [

@@ -48,6 +48,8 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           body: null,
           contentFile: note.contentFile,
           key: note.key,
+          // Новая нота ещё не объявлена в канал — этим займётся вещатель (2.9.1·3).
+          broadcastedAt: null,
         });
       } catch (error) {
         this._logger.warn(`Сид релиз-ноты '${note.key}' пропущен: ${String(error)}`);

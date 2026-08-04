@@ -81,6 +81,8 @@ export class NotificationDomainService {
       body: `По вашему коду присоединился @${joinedLogin}`,
       contentFile: null,
       key: null,
+      // Персональные ноты в канал не вещаются — он публичный.
+      broadcastedAt: null,
     });
   }
 
@@ -106,6 +108,8 @@ export class NotificationDomainService {
       body,
       contentFile: null,
       key: null,
+      // Персональные ноты в канал не вещаются — он публичный.
+      broadcastedAt: null,
     });
   }
 }

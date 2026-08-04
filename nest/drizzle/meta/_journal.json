@@ -253,6 +253,13 @@
       "when": 1785836254391,
       "tag": "0035_faithful_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1785857963772,
+      "tag": "0036_bright_chameleon",
+      "breakpoints": true
     }
   ]
 }

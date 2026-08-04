@@ -520,22 +520,6 @@
           "height": 115
         },
         {
-          "type": "text",
-          "id": "uuhEG",
-          "x": 0,
-          "y": 76,
-          "name": "Н фоном",
-          "fill": "#1A12063D",
-          "textGrowth": "fixed-width",
-          "width": 512,
-          "content": "Н",
-          "lineHeight": 1,
-          "textAlign": "center",
-          "fontFamily": "$font",
-          "fontSize": 340,
-          "fontWeight": "700"
-        },
-        {
           "type": "rectangle",
           "id": "chR2i",
           "x": 0,
@@ -544,6 +528,22 @@
           "fill": "#8C4A2414",
           "width": 512,
           "height": 112
+        },
+        {
+          "type": "text",
+          "id": "EbbEN",
+          "x": 0,
+          "y": 424,
+          "name": "Монограмма Н",
+          "fill": "#FFF1DE59",
+          "textGrowth": "fixed-width",
+          "width": 512,
+          "content": "Н",
+          "lineHeight": 1,
+          "textAlign": "center",
+          "fontFamily": "$font",
+          "fontSize": 64,
+          "fontWeight": "700"
         },
         {
           "type": "ellipse",
@@ -609,7 +609,7 @@
           "ref": "nSfRn",
           "name": "Таблетка",
           "x": 243,
-          "y": 170
+          "y": 110
         },
         {
           "id": "j1RiS7",

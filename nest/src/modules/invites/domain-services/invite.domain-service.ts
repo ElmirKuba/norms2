@@ -118,6 +118,25 @@ export class InviteDomainService {
   }
 
   /**
+   * Проверяет код и отдаёт его подпись — для экрана «Тебя пригласили!».
+   *
+   * Отдельно от {@link checkCode}, потому что у того другой контракт (`boolean`) и другие
+   * вызывающие: расширять его до объекта значило бы тащить подпись туда, где нужен только факт.
+   * @param rawCode Сырой код.
+   * @returns `{ valid, reason }`; у невалидного кода `reason` всегда null.
+   */
+  public async describeCode(rawCode: string): Promise<{ valid: boolean; reason: string | null }> {
+    let normalized: string;
+    try {
+      normalized = InviteCodeValue.create(rawCode).value;
+    } catch {
+      return { valid: false, reason: null };
+    }
+    const code = await this._inviteRepository.findActiveCodeByValue(normalized);
+    return code === null ? { valid: false, reason: null } : { valid: true, reason: code.reason };
+  }
+
+  /**
    * Список приглашённых данным аккаунтом (с login/alias из accounts).
    * @param inviterId Идентификатор пригласившего.
    * @returns Проекции приглашённых.

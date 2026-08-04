@@ -13,11 +13,11 @@ export class CheckInviteCodeUseCase {
   public constructor(private readonly _inviteDomainService: InviteDomainService) {}
 
   /**
-   * Проверяет валидность кода.
+   * Проверяет код и отдаёт подпись, с которой он выдан.
    * @param rawCode Сырой код.
-   * @returns { valid }.
+   * @returns `{ valid, reason }`.
    */
   public async execute(rawCode: string): Promise<CheckInviteResponse> {
-    return { valid: await this._inviteDomainService.checkCode(rawCode) };
+    return this._inviteDomainService.describeCode(rawCode);
   }
 }

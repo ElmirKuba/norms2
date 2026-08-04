@@ -30,6 +30,8 @@ export class InviteComponent {
   private readonly _code = signal<string | null>(null);
   /** Состояние проверки приглашения. */
   protected readonly state = signal<InviteState>('checking');
+  /** Подпись пригласившего («мой брат», «по заявке через бота») или null. */
+  protected readonly reason = signal<string | null>(null);
 
   public constructor() {
     const raw = this._route.snapshot.queryParamMap.get('code') ?? '';
@@ -40,7 +42,10 @@ export class InviteComponent {
     }
     this._code.set(code);
     this._api.checkInvite(code).subscribe({
-      next: (res) => this.state.set(res.valid ? 'valid' : 'invalid'),
+      next: (res) => {
+        this.reason.set(res.valid ? res.reason : null);
+        this.state.set(res.valid ? 'valid' : 'invalid');
+      },
       error: () => this.state.set('invalid'),
     });
   }

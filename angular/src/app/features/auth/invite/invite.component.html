@@ -7,6 +7,12 @@
     @case ('valid') {
       <div class="invite__badge" aria-hidden="true">🎉</div>
       <h1 class="invite__title">Тебя пригласили!</h1>
+      @if (reason(); as note) {
+        <figure class="invite__reason">
+          <figcaption class="invite__reason-label">Пригласивший подписал приглашение так</figcaption>
+          <blockquote class="invite__reason-text">«{{ note }}»</blockquote>
+        </figure>
+      }
       <p class="invite__lead">
         И это, между прочим, редкость. «Нормисы» — территория по приглашениям: без рекламы, без
         слежки, только свои. Кто-то решил, что тебе здесь место. 🙌

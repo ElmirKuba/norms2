@@ -39,3 +39,15 @@
     min-width: 160px;
   }
 }
+
+// Ссылка на витрину релизов: снаружи проект выглядел мёртвым — лендинг не давал
+// ни одного следа, что продукт развивается (причина ADR-0064).
+.landing__releases {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+
+  a {
+    color: var(--color-accent);
+  }
+}

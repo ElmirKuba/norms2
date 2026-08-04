@@ -81,3 +81,29 @@
   font-size: var(--fs-xs);
   color: var(--color-text-muted);
 }
+
+// Подпись пригласившего — единственное на экране, что обращается к человеку лично,
+// поэтому она идёт сразу под заголовком и оформлена как цитата, а не как строка мелочи.
+.invite__reason {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  text-align: left;
+}
+
+.invite__reason-label {
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.invite__reason-text {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--fs-lg);
+  line-height: 1.4;
+}

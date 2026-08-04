@@ -256,6 +256,23 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   }
 
   /**
+   * Дни с закрытой задачей — различные `occurred_on` по возрастанию (2.9). `DISTINCT` делает БД:
+   * тянуть все отметки и схлопывать в памяти незачем, а строк по дням мало даже за годы.
+   * @param accountId Идентификатор аккаунта.
+   * @param templateId Опц. привычка-шаблон.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  public async listActiveDays(accountId: string, templateId?: string): Promise<string[]> {
+    const base = and(eq(tasks.accountId, accountId), inArray(tasks.status, ['done', 'partial']));
+    const rows = await this._db
+      .selectDistinct({ occurredOn: tasks.occurredOn })
+      .from(tasks)
+      .where(templateId === undefined ? base : and(base, eq(tasks.templateId, templateId)))
+      .orderBy(tasks.occurredOn);
+    return rows.map((row) => row.occurredOn);
+  }
+
+  /**
    * Исполнитель: транзакция (если передана) или базовый клиент. Опаковый `tx` приводится
    * к `DrizzleExecutor` тут — наружу ORM не утекает.
    * @param tx Опц. транзакция.

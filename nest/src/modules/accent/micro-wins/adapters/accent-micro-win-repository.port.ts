@@ -128,6 +128,14 @@ export interface AccentMicroWinRepositoryPort {
   listLoggedOn(accountId: string, occurredOn: string): Promise<string[]>;
 
   /**
+   * Дни, в которые была сделана хотя бы одна микро-победа — источник постоянства (2.9).
+   * Различные даты по возрастанию.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  listActiveDays(accountId: string): Promise<string[]>;
+
+  /**
    * Переставляет микро-победы аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих id.
    * @param accountId Идентификатор аккаунта-владельца.
    * @param ids Желаемый порядок.

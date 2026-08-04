@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AccentUserAchievementRepository } from '../../../database/repositories/accent/accent-user-achievement.repository';
 import { ACCENT_USER_ACHIEVEMENT_REPOSITORY } from './adapters/accent-user-achievement-repository.port';
+import { AccentPersistenceDomainService } from './domain-services/accent-persistence.domain-service';
 
 /**
  * Прогресс (2.9) — постоянство и достижения. **Читатель, а не участник:** ничего не меняет в
@@ -14,7 +15,8 @@ import { ACCENT_USER_ACHIEVEMENT_REPOSITORY } from './adapters/accent-user-achie
 @Module({
   providers: [
     { provide: ACCENT_USER_ACHIEVEMENT_REPOSITORY, useClass: AccentUserAchievementRepository },
+    AccentPersistenceDomainService,
   ],
-  exports: [ACCENT_USER_ACHIEVEMENT_REPOSITORY],
+  exports: [ACCENT_USER_ACHIEVEMENT_REPOSITORY, AccentPersistenceDomainService],
 })
 export class ProgressModule {}

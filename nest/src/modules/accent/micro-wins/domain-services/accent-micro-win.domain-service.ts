@@ -195,6 +195,15 @@ export class AccentMicroWinDomainService {
   }
 
   /**
+   * Дни с хотя бы одной микро-победой (2.9) — сырьё для постоянства.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  public async activeDays(accountId: string): Promise<string[]> {
+    return this._repository.listActiveDays(accountId);
+  }
+
+  /**
    * Засевает стартовый набор (по кнопке «Получить пак», 2.3): создаёт победы из
    * `STARTER_MICRO_WINS` с `is_starter=true`. **Только докидывает** (своё не трогает) и
    * пропускает названия, которые у аккаунта уже есть (без дублей). Данные — доверенные

@@ -174,4 +174,15 @@ export interface AccentTaskRepositoryPort {
    * @returns true, если есть хотя бы одна `done`/`partial`.
    */
   hasAnyCompletion(accountId: string): Promise<boolean>;
+
+  /**
+   * Дни, в которые была закрыта хотя бы одна задача (`done`/`partial`) — источник постоянства
+   * (2.9). Возвращает **различные даты по возрастанию**, а не количество: объединять их с днями
+   * микро-побед и записей целей приходится в домене, и суммой счётчиков это не считается —
+   * дни пересекаются.
+   * @param accountId Идентификатор аккаунта.
+   * @param templateId Опц. привычка-шаблон — тогда только её дни (постоянство одной привычки).
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  listActiveDays(accountId: string, templateId?: string): Promise<string[]>;
 }

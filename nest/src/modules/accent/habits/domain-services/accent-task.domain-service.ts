@@ -132,12 +132,16 @@ export class AccentTaskDomainService {
   }
 
   /**
-   * Просроченные разовые задачи: открытые с дедлайном, чья локальная дата дедлайна < сегодня.
+   * Дни, в которые была закрыта хотя бы одна задача (2.9) — сырьё для постоянства.
+   * **Материализацию не зовёт:** мы запрашиваем историю, а не создаём её.
    * @param accountId Идентификатор аккаунта.
-   * @param today Сегодня `YYYY-MM-DD` (в TZ аккаунта).
-   * @param timezone IANA-таймзона аккаунта.
-   * @returns Просроченные задачи.
+   * @param templateId Опц. привычка-шаблон — тогда дни только этой привычки.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
    */
+  public async activeDays(accountId: string, templateId?: string): Promise<string[]> {
+    return this._repository.listActiveDays(accountId, templateId);
+  }
+
   /**
    * Отмечал ли человек хоть раз хоть что-то (2.11) — шаг онбординга на дашборде.
    * @param accountId Идентификатор аккаунта.
@@ -147,6 +151,13 @@ export class AccentTaskDomainService {
     return this._repository.hasAnyCompletion(accountId);
   }
 
+  /**
+   * Просроченные разовые задачи: открытые с дедлайном, чья локальная дата дедлайна < сегодня.
+   * @param accountId Идентификатор аккаунта.
+   * @param today Сегодня `YYYY-MM-DD` (в TZ аккаунта).
+   * @param timezone IANA-таймзона аккаунта.
+   * @returns Просроченные задачи.
+   */
   public async listOverdue(accountId: string, today: string, timezone: string): Promise<TaskFull[]> {
     const open = await this._repository.listOpenOneOffWithDeadline(accountId);
     return open.filter((t) => t.deadline !== null && localYmd(t.deadline, timezone) < today);

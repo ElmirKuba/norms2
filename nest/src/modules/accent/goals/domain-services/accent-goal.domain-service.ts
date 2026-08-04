@@ -710,6 +710,15 @@ export class AccentGoalDomainService {
   }
 
   /**
+   * Дни, в которые была сделана запись прогресса по любой цели (2.9) — сырьё для постоянства.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  public async activeDays(accountId: string): Promise<string[]> {
+    return this._entryRepository.listActiveDaysByAccount(accountId);
+  }
+
+  /**
    * Считает вычисляемый прогресс цели (currentValue/%/forecast/…, ADR-0052) из её записей.
    * @param goal Цель.
    * @param timezone TZ пользователя (для «сегодня» в daysLeft).

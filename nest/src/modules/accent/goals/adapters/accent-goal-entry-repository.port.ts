@@ -157,4 +157,12 @@ export interface AccentGoalEntryRepositoryPort {
    * @returns Карта `goalId → первое значение`.
    */
   earliestValuesByAccount(accountId: string): Promise<Map<string, number>>;
+
+  /**
+   * Дни, в которые была сделана хотя бы одна запись прогресса по любой цели аккаунта —
+   * источник постоянства (2.9). Различные даты по возрастанию.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  listActiveDaysByAccount(accountId: string): Promise<string[]>;
 }

@@ -202,6 +202,20 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
   }
 
   /**
+   * Дни с микро-победами — различные `occurred_on` по возрастанию (2.9).
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  public async listActiveDays(accountId: string): Promise<string[]> {
+    const rows = await this._db
+      .selectDistinct({ occurredOn: microWinLogs.occurredOn })
+      .from(microWinLogs)
+      .where(eq(microWinLogs.accountId, accountId))
+      .orderBy(microWinLogs.occurredOn);
+    return rows.map((row) => row.occurredOn);
+  }
+
+  /**
    * Переставляет микро-победы аккаунта в порядок `ids` (ADR-0054): `position = индекс` для своих id,
    * атомарным UPDATE FROM (VALUES …). Чужие id игнорируются (скоуп по account_id).
    * @param accountId Идентификатор аккаунта-владельца.

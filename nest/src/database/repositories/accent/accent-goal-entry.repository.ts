@@ -259,6 +259,22 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
   }
 
   /**
+   * Дни с записями прогресса по целям аккаунта — различные `occurred_on` по возрастанию (2.9).
+   * Владение — через join с `goals`: у записи своего `account_id` нет.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Даты `YYYY-MM-DD` по возрастанию.
+   */
+  public async listActiveDaysByAccount(accountId: string): Promise<string[]> {
+    const rows = await this._db
+      .selectDistinct({ occurredOn: goalEntries.occurredOn })
+      .from(goalEntries)
+      .innerJoin(goals, eq(goals.id, goalEntries.goalId))
+      .where(eq(goals.accountId, accountId))
+      .orderBy(goalEntries.occurredOn);
+    return rows.map((row) => row.occurredOn);
+  }
+
+  /**
    * Последний замер по каждой цели аккаунта (occurred_on desc, created_at desc) — батч.
    * @param accountId Идентификатор аккаунта.
    * @returns Карта `goalId → последнее значение`.

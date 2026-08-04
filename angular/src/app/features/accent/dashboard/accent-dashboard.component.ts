@@ -112,7 +112,9 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
                   </li>
                 }
               </ul>
-              <a class="dash__more" [routerLink]="['../habits']">Все задачи →</a>
+              <!-- «на сегодня» не лишнее слово: ссылка ведёт в «Привычки», и без уточнения
+                   читается как «все задачи вообще», хотя за ней тот же сегодняшний список. -->
+              <a class="dash__more" [routerLink]="['../habits']">Все задачи на сегодня →</a>
             </div>
           </app-card>
         }

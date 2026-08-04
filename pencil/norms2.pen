@@ -740,6 +740,492 @@
           "flipX": false
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "NvP2t",
+      "x": 880,
+      "y": 1471,
+      "name": "Аватарка бота 512",
+      "clip": true,
+      "width": 512,
+      "height": 512,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 145,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#333846",
+            "position": 0
+          },
+          {
+            "color": "#262932",
+            "position": 0.5
+          },
+          {
+            "color": "#14151A",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "Z6CLT6",
+          "x": 76,
+          "y": 66,
+          "name": "Свет",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#E8915B4D",
+                "position": 0
+              },
+              {
+                "color": "#E8915B00",
+                "position": 1
+              }
+            ]
+          },
+          "width": 360,
+          "height": 360
+        },
+        {
+          "type": "group",
+          "id": "RtiDQ",
+          "x": 34,
+          "y": 0,
+          "name": "Шестерня",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "v53JhI",
+              "x": 30,
+              "y": 120,
+              "name": "Обод",
+              "innerRadius": 0.42,
+              "fill": "#FFFFFF14",
+              "width": 190,
+              "height": 190
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "fLdki",
+              "x": 196.25,
+              "y": 200.75,
+              "name": "Зуб",
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "uCXGM",
+              "x": 176.02454210763568,
+              "y": 256.31898885740134,
+              "name": "Зуб",
+              "rotation": -40,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "D4A7xX",
+              "x": 124.81188495930614,
+              "y": 285.8866302479054,
+              "name": "Зуб",
+              "rotation": -80,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "lUnF6",
+              "x": 66.57500000000002,
+              "y": 275.61789615716475,
+              "name": "Зуб",
+              "rotation": -119.99999999999999,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "NinFQ",
+              "x": 28.563572933058225,
+              "y": 230.31764139050406,
+              "name": "Зуб",
+              "rotation": -160,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "GLzQ3",
+              "x": 28.56357293305821,
+              "y": 171.18235860949594,
+              "name": "Зуб",
+              "rotation": -200,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "h0Nib",
+              "x": 66.57499999999996,
+              "y": 125.8821038428353,
+              "name": "Зуб",
+              "rotation": -239.99999999999997,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "H4dcpM",
+              "x": 124.81188495930608,
+              "y": 115.6133697520946,
+              "name": "Зуб",
+              "rotation": -280,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "Xn03C",
+              "x": 176.02454210763563,
+              "y": 145.18101114259866,
+              "name": "Зуб",
+              "rotation": -320,
+              "fill": "#FFFFFF14",
+              "width": 30.400000000000002,
+              "height": 28.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "y2rZBm",
+          "x": 0,
+          "y": 0,
+          "name": "Шестерня",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "kr2yU",
+              "x": 330,
+              "y": 300,
+              "name": "Обод",
+              "innerRadius": 0.42,
+              "fill": "#FFFFFF12",
+              "width": 150,
+              "height": 150
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "fN1eQ",
+              "x": 461.25,
+              "y": 363.75,
+              "name": "Зуб",
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "I90omi",
+              "x": 441.2600378159819,
+              "y": 412.0100378159819,
+              "name": "Зуб",
+              "rotation": -45,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "J5OLgc",
+              "x": 393,
+              "y": 432,
+              "name": "Зуб",
+              "rotation": -90,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "Vadea",
+              "x": 344.7399621840181,
+              "y": 412.0100378159819,
+              "name": "Зуб",
+              "rotation": -135,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "mrjjA",
+              "x": 324.75,
+              "y": 363.75,
+              "name": "Зуб",
+              "rotation": -180,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "ySnl8",
+              "x": 344.7399621840181,
+              "y": 315.4899621840181,
+              "name": "Зуб",
+              "rotation": -225,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "cW3Rc",
+              "x": 393,
+              "y": 295.5,
+              "name": "Зуб",
+              "rotation": -270,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "J9Vlk8",
+              "x": 441.26003781598183,
+              "y": 315.4899621840181,
+              "name": "Зуб",
+              "rotation": -315,
+              "fill": "#FFFFFF12",
+              "width": 24,
+              "height": 22.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "HARKr",
+          "x": 0,
+          "y": 0,
+          "name": "Шестерня",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "Igu4V",
+              "x": 300,
+              "y": 60,
+              "name": "Обод",
+              "innerRadius": 0.42,
+              "fill": "#FFFFFF0F",
+              "width": 110,
+              "height": 110
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "Srs86",
+              "x": 396.25,
+              "y": 106.75,
+              "name": "Зуб",
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "Q7e83",
+              "x": 377.4056645830296,
+              "y": 145.88066569752488,
+              "name": "Зуб",
+              "rotation": -51.42857142857143,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "feFYU",
+              "x": 335.06282725548647,
+              "y": 155.54514200470027,
+              "name": "Зуб",
+              "rotation": -102.85714285714286,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "m5bL5Y",
+              "x": 301.10650816148393,
+              "y": 128.46588114283378,
+              "name": "Зуб",
+              "rotation": -154.2857142857143,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "qhb3O",
+              "x": 301.10650816148393,
+              "y": 85.03411885716622,
+              "name": "Зуб",
+              "rotation": -205.71428571428572,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "g2DFqq",
+              "x": 335.06282725548647,
+              "y": 57.95485799529973,
+              "name": "Зуб",
+              "rotation": -257.1428571428571,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "zWIvy",
+              "x": 377.4056645830296,
+              "y": 67.6193343024751,
+              "name": "Зуб",
+              "rotation": -308.5714285714286,
+              "fill": "#FFFFFF0F",
+              "width": 17.6,
+              "height": 16.5
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "HlRgd",
+          "x": 0,
+          "y": 470,
+          "name": "Земля",
+          "fill": "#00000026",
+          "width": 512,
+          "height": 42
+        },
+        {
+          "id": "ZuVEe",
+          "type": "ref",
+          "ref": "aSpcN",
+          "name": "Столбик-бот",
+          "x": 196,
+          "y": 110,
+          "fill": "#E8915B",
+          "descendants": {
+            "q1NlhP": {
+              "fill": "#1A1206"
+            },
+            "JKdLu": {
+              "fill": "#1A1206"
+            }
+          }
+        },
+        {
+          "type": "ellipse",
+          "id": "IVVI9",
+          "x": 282,
+          "y": 55,
+          "name": "Нимб",
+          "rotation": -45,
+          "innerRadius": 0.84,
+          "fill": "#FFF3CC",
+          "width": 126,
+          "height": 30,
+          "effect": [
+            {
+              "type": "shadow",
+              "shadowType": "outer",
+              "color": "#FFDE95E6",
+              "blur": 22,
+              "spread": 3
+            },
+            {
+              "type": "shadow",
+              "shadowType": "outer",
+              "color": "#F2C86B73",
+              "blur": 56,
+              "spread": 12
+            }
+          ]
+        },
+        {
+          "type": "ellipse",
+          "id": "CFgt9",
+          "x": 247,
+          "y": 52,
+          "name": "Огонёк антенны",
+          "fill": "#E0B15A",
+          "width": 20,
+          "height": 20
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 4,
+          "id": "jeoQY",
+          "x": 253,
+          "y": 70,
+          "name": "Антенна",
+          "fill": "#E8915B",
+          "width": 7,
+          "height": 44
+        }
+      ]
     }
   ],
   "variables": {

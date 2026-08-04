@@ -13,6 +13,7 @@ import { RecoveryModule } from './modules/recovery/recovery.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TelegramCoreModule } from './modules/telegram/telegram-core.module';
 import { VersionModule } from './modules/version/version.module';
 import { AccentModule } from './modules/accent/accent.module';
 import { RateLimitGuard } from './shared/guards/rate-limit.guard';
@@ -39,6 +40,7 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
     ProfileModule,
     StatsModule,
     NotificationsModule,
+    TelegramCoreModule,
     VersionModule,
     AccentModule,
   ],

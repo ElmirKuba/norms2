@@ -24,3 +24,5 @@ export * from './obstacles.schema';
 export * from './counterplays.schema';
 export * from './obstacle-encounters.schema';
 export * from './user-achievements.schema';
+export * from './telegram-requests.schema';
+export * from './telegram-links.schema';

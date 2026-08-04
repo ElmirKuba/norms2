@@ -38,6 +38,164 @@
       "justifyContent": "space_between",
       "children": [
         {
+          "type": "ellipse",
+          "id": "zdSnA",
+          "layoutPosition": "absolute",
+          "x": -120,
+          "y": -190,
+          "name": "Свет",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#E8915B3D",
+                "position": 0
+              },
+              {
+                "color": "#E8915B00",
+                "position": 1
+              }
+            ]
+          },
+          "width": 900,
+          "height": 900
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            46,
+            46,
+            0,
+            0
+          ],
+          "id": "ODgsq",
+          "layoutPosition": "absolute",
+          "x": 606,
+          "y": 372,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF12",
+          "width": 92,
+          "height": 258
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": [
+            37,
+            37,
+            0,
+            0
+          ],
+          "id": "HSrMm",
+          "layoutPosition": "absolute",
+          "x": 1122,
+          "y": 424,
+          "name": "Дальний силуэт",
+          "fill": "#FFFFFF0F",
+          "width": 74,
+          "height": 206
+        },
+        {
+          "type": "ellipse",
+          "id": "GuTuW",
+          "layoutPosition": "absolute",
+          "x": 596,
+          "y": 588,
+          "name": "Тень под группой",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#0A0B0F8C",
+                "position": 0
+              },
+              {
+                "color": "#0A0B0F00",
+                "position": 1
+              }
+            ]
+          },
+          "width": 628,
+          "height": 66
+        },
+        {
+          "id": "nzBIo",
+          "type": "ref",
+          "ref": "AXoiO",
+          "name": "Сцена персонажей",
+          "layoutPosition": "absolute",
+          "x": 660,
+          "y": 250
+        },
+        {
+          "type": "rectangle",
+          "id": "w2ltxI",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 614,
+          "name": "Земля",
+          "fill": "#0A0B0F26",
+          "width": 1200,
+          "height": 16
+        },
+        {
+          "type": "ellipse",
+          "id": "hDiPF",
+          "layoutPosition": "absolute",
+          "x": 720,
+          "y": 150,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 12,
+          "height": 12
+        },
+        {
+          "type": "ellipse",
+          "id": "Go4OZ",
+          "layoutPosition": "absolute",
+          "x": 1090,
+          "y": 210,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 9,
+          "height": 9
+        },
+        {
+          "type": "ellipse",
+          "id": "y42Rk",
+          "layoutPosition": "absolute",
+          "x": 880,
+          "y": 96,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 8,
+          "height": 8
+        },
+        {
+          "type": "ellipse",
+          "id": "gnPz5",
+          "layoutPosition": "absolute",
+          "x": 1010,
+          "y": 120,
+          "name": "Искра",
+          "fill": "#FFF2E08C",
+          "width": 7,
+          "height": 7
+        },
+        {
           "type": "frame",
           "id": "Q77Jlc",
           "name": "Head",
@@ -73,7 +231,7 @@
           "type": "frame",
           "id": "vSYpG",
           "name": "Main",
-          "width": "fill_container",
+          "width": 560,
           "layout": "vertical",
           "gap": 20,
           "children": [
@@ -81,13 +239,31 @@
               "type": "text",
               "id": "M7whGC",
               "name": "Version",
-              "fill": "$text",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 200,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#FFD7B0",
+                    "position": 0
+                  },
+                  {
+                    "color": "#E8915B",
+                    "position": 1
+                  }
+                ]
+              },
               "content": "2.9.0",
               "lineHeight": 1,
               "fontFamily": "$font",
-              "fontSize": 148,
+              "fontSize": 120,
               "fontWeight": "700",
-              "letterSpacing": -4
+              "letterSpacing": -3
             },
             {
               "type": "rectangle",
@@ -102,13 +278,13 @@
               "type": "text",
               "id": "f0k9H",
               "name": "Title",
-              "fill": "$text",
+              "fill": "#EDEFF4",
               "textGrowth": "fixed-width",
               "width": "fill_container",
               "content": "Нормисы 2.9 — постоянство и достижения",
               "lineHeight": 1.2,
               "fontFamily": "$font",
-              "fontSize": 46,
+              "fontSize": 40,
               "fontWeight": "500"
             }
           ]
@@ -118,31 +294,126 @@
           "id": "ET9dA",
           "name": "Foot",
           "width": "fill_container",
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "gap": 26,
+          "alignItems": "end",
           "children": [
             {
-              "type": "text",
-              "id": "OjEOJ",
-              "name": "Site",
-              "fill": "$text-muted",
-              "content": "нормисы.рф",
-              "fontFamily": "$font",
-              "fontSize": 22,
-              "fontWeight": "500"
+              "type": "frame",
+              "id": "C4qzj",
+              "name": "QR нормисы.рф",
+              "layout": "vertical",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "iGErn",
+                  "name": "Код",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "qr-site.png",
+                    "mode": "fit"
+                  },
+                  "width": 74,
+                  "height": 74
+                },
+                {
+                  "type": "text",
+                  "id": "NCkXi",
+                  "name": "Подпись",
+                  "fill": "#C9CED9",
+                  "content": "нормисы.рф",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "500",
+                  "letterSpacing": 0.5
+                }
+              ]
             },
             {
-              "type": "text",
-              "id": "euJ2A",
-              "name": "Kicker",
-              "fill": "$text-muted",
-              "content": "РЕЛИЗ",
-              "fontFamily": "$font",
-              "fontSize": 18,
-              "fontWeight": "700",
-              "letterSpacing": 3
+              "type": "frame",
+              "id": "aZ2Y3",
+              "name": "QR t.me/norms2",
+              "layout": "vertical",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "SLOO3",
+                  "name": "Код",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "qr-channel.png",
+                    "mode": "fit"
+                  },
+                  "width": 74,
+                  "height": 74
+                },
+                {
+                  "type": "text",
+                  "id": "I911l",
+                  "name": "Подпись",
+                  "fill": "#C9CED9",
+                  "content": "t.me/norms2",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "500",
+                  "letterSpacing": 0.5
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ydklW",
+              "name": "QR @norms2_bot",
+              "layout": "vertical",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 8,
+                  "id": "o2TUad",
+                  "name": "Код",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "qr-bot.png",
+                    "mode": "fit"
+                  },
+                  "width": 74,
+                  "height": 74
+                },
+                {
+                  "type": "text",
+                  "id": "B17Es",
+                  "name": "Подпись",
+                  "fill": "#C9CED9",
+                  "content": "@norms2_bot",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "500",
+                  "letterSpacing": 0.5
+                }
+              ]
             }
           ]
+        },
+        {
+          "type": "rectangle",
+          "id": "L6tdT",
+          "layoutPosition": "absolute",
+          "x": 0,
+          "y": 626,
+          "name": "Акцентная кромка",
+          "fill": "#E8915B",
+          "width": 1200,
+          "height": 4
         }
       ]
     },

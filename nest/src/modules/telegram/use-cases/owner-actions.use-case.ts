@@ -11,7 +11,6 @@ import {
   escapeHtml,
   grantButtons,
 } from '../domain-services/telegram.domain-service';
-import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
 import type { TransactionRunnerPort } from '../../../shared/transactions/transaction-runner.port';
@@ -51,7 +50,7 @@ export class OwnerActionsUseCase {
    * @param _repository Порт репозитория заявок.
    * @param _api Исходящий порт Bot API.
    * @param _pending Незавершённые действия владельца (ждём причину).
-   * @param _accountDomainService Domain-service аккаунтов (квота, поиск по логину).
+   * @param _accountDomainService Domain-service аккаунтов (квота, аккаунт по идентификатору).
    * @param _inviteDomainService Domain-service приглашений (создание кода).
    * @param _transactionRunner Раннер транзакций.
    * @param configService Конфиг (публичный адрес для ссылки-приглашения).
@@ -86,40 +85,9 @@ export class OwnerActionsUseCase {
       linked === null ? null : await this._accountDomainService.getActiveById(linked.accountId).catch(() => null);
     const hint =
       account === null
-        ? '\n\n⚠️ Аккаунт не привязан — выдать код я не смогу. Привяжи: <code>/link логин</code>'
+        ? '\n\n⚠️ Аккаунт не привязан — выдать код я не смогу. Возьми код в личном кабинете («Настройки → Telegram») и пришли мне: <code>/link КОД</code>'
         : `\n\nПриглашения выдаются от аккаунта <b>@${escapeHtml(account.login)}</b> (осталось: ${String(account.invitesRemaining)}).`;
     await this._api.sendMessage(chatId, `<b>Меню владельца</b>${hint}`, menu);
-  }
-
-  /**
-   * Привязывает аккаунт владельца к его чату по логину.
-   *
-   * Обычным людям привязка выдаётся одноразовым кодом из ЛК (·14) — здесь короткий путь, и он
-   * безопасен ровно потому, что команда принимается **только из чата владельца**: этот чат уже
-   * является главной границей доверия всей фичи.
-   * @param chatId Чат владельца.
-   * @param login Логин аккаунта.
-   * @returns Промис завершения.
-   */
-  public async linkAccount(chatId: string, login: string): Promise<void> {
-    if (login === '') {
-      await this._api.sendMessage(chatId, 'Нужен логин: <code>/link мой_логин</code>');
-      return;
-    }
-    const account = await this._accountDomainService.getPublicByLogin(login);
-    if (account === null) {
-      await this._api.sendMessage(chatId, `Аккаунта @${escapeHtml(login)} нет.`);
-      return;
-    }
-    const existing = await this._repository.findLinkByChat(chatId);
-    if (existing !== null) {
-      await this._repository.deleteLinkByChat(chatId);
-    }
-    await this._repository.createLink(generateId(), account.id, chatId);
-    await this._api.sendMessage(
-      chatId,
-      `Готово: чат привязан к @${escapeHtml(account.login)}. Приглашения будут выдаваться от него.`,
-    );
   }
 
   /**

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { TelegramDomainService } from '../domain-services/telegram.domain-service';
 import { OwnerActionsUseCase } from './owner-actions.use-case';
 import { RequestInvitesUseCase } from './request-invites.use-case';
+import { ManageTelegramLinkUseCase } from './manage-telegram-link.use-case';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { GuestOutcome } from '../domain-services/telegram.domain-service';
@@ -29,12 +30,14 @@ export class HandleTelegramUpdateUseCase {
    * @param _telegramDomainService Гостевая часть (меню, анкета).
    * @param _ownerActions Сценарий владельца (очередь, решения).
    * @param _requestInvites Просьба о дополнительных приглашениях (нужен аккаунт заявителя).
+   * @param _manageLink Привязка чата к аккаунту (`/link КОД`, `/unlink`).
    * @param _api Исходящий порт Bot API (гашение «часиков» на кнопке).
    */
   public constructor(
     private readonly _telegramDomainService: TelegramDomainService,
     private readonly _ownerActions: OwnerActionsUseCase,
     private readonly _requestInvites: RequestInvitesUseCase,
+    private readonly _manageLink: ManageTelegramLinkUseCase,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
   ) {}
 
@@ -84,6 +87,20 @@ export class HandleTelegramUpdateUseCase {
    * @returns Промис завершения.
    */
   private async _routeMessage(chatId: string, text: string | undefined): Promise<void> {
+    // Привязка — команда для всех, включая владельца: аккаунт у него такой же, как у остальных,
+    // и отдельный путь для него означал бы вторую реализацию той же вещи.
+    if (text !== undefined) {
+      const trimmed = text.trim();
+      const command = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
+      if (command === '/link') {
+        await this._manageLink.linkByCode(chatId, trimmed.slice('/link'.length).trim());
+        return;
+      }
+      if (command === '/unlink') {
+        await this._manageLink.unlinkByChat(chatId);
+        return;
+      }
+    }
     if (!this._telegramDomainService.isOwner(chatId)) {
       await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
       return;
@@ -95,10 +112,6 @@ export class HandleTelegramUpdateUseCase {
     const trimmed = text.trim();
     const command = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
 
-    if (command === '/link') {
-      await this._ownerActions.linkAccount(chatId, trimmed.slice('/link'.length).trim());
-      return;
-    }
     if (command === '/start' || command === '/menu') {
       await this._ownerActions.sendMenu(chatId);
       return;

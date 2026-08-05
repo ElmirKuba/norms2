@@ -4,6 +4,7 @@ import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { telegramRequests } from '../../schemas/telegram-requests.schema';
 import { telegramLinks } from '../../schemas/telegram-links.schema';
+import { telegramUpdates } from '../../schemas/telegram-updates.schema';
 import type {
   TelegramRepositoryPort,
   TelegramRequestDecision,
@@ -22,6 +23,20 @@ export class TelegramRepository implements TelegramRepositoryPort {
    * @param _db Инстанс Drizzle.
    */
   public constructor(@Inject(DRIZZLE) private readonly _db: DrizzleDatabase) {}
+
+  /**
+   * Отмечает апдейт обработанным.
+   * @param updateId `update_id` из Bot API.
+   * @returns `true`, если апдейт видим впервые.
+   */
+  public async markUpdateProcessed(updateId: number): Promise<boolean> {
+    const rows = await this._db
+      .insert(telegramUpdates)
+      .values({ updateId })
+      .onConflictDoNothing({ target: telegramUpdates.updateId })
+      .returning({ updateId: telegramUpdates.updateId });
+    return rows.length > 0;
+  }
 
   /**
    * Создаёт заявку.

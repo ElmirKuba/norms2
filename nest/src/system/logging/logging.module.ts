@@ -22,6 +22,10 @@ import type { Env } from '../config/env.schema';
             redact: [
               'req.headers.authorization',
               'req.headers.cookie',
+              // Секрет вебхука Telegram (2.9.1·9): без этой строки он печатался в логах
+              // открытым текстом на каждом апдейте — поймано живой проверкой 05.08.2026.
+              // Знающий секрет может слать боту любые апдейты, включая команды владельца.
+              'req.headers["x-telegram-bot-api-secret-token"]',
               '*.password',
               '*.token',
               '*.answer',

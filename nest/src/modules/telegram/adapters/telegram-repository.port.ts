@@ -21,6 +21,16 @@ export interface TelegramRequestDecision {
  */
 export interface TelegramRepositoryPort {
   /**
+   * Отмечает апдейт обработанным — **атомарно**, вставкой с `ON CONFLICT DO NOTHING`.
+   *
+   * Telegram повторяет доставку, если вебхук не ответил 200, поэтому «сначала посмотрим, был
+   * ли такой, потом запишем» не годится: два повтора подряд успевают пройти проверку оба.
+   * @param updateId `update_id` из Bot API.
+   * @returns `true`, если апдейт видим впервые; `false` — это повтор, обрабатывать не надо.
+   */
+  markUpdateProcessed(updateId: number): Promise<boolean>;
+
+  /**
    * Создаёт заявку.
    * @param id Идентификатор.
    * @param data Карточка заявки (без текста — его в БД нет).

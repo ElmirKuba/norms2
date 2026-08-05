@@ -2950,6 +2950,501 @@
           "letterSpacing": 5
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "j6czf",
+      "x": 880,
+      "y": -1300,
+      "name": "Карточка привычки (компонент)",
+      "reusable": true,
+      "width": 1216,
+      "fill": "$surface",
+      "cornerRadius": 14,
+      "stroke": "$border",
+      "strokeWidth": 1,
+      "gap": 16,
+      "padding": [
+        18,
+        20
+      ],
+      "children": [
+        {
+          "type": "text",
+          "id": "Em53I",
+          "name": "Ручка перетаскивания",
+          "fill": "$text-muted",
+          "content": "⠿",
+          "fontFamily": "$font",
+          "fontSize": 16,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "xSGWF",
+          "name": "Содержимое",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "frame",
+              "id": "J97YX",
+              "name": "Строка названия",
+              "width": "fill_container",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JlQ87",
+                  "name": "Название",
+                  "fill": "$accent",
+                  "content": "💪 Отжимания",
+                  "fontFamily": "$font",
+                  "fontSize": 17,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "FFHbF",
+                  "name": "Бейдж «пример»",
+                  "fill": "$accent-mid",
+                  "cornerRadius": 999,
+                  "stroke": "$accent-deep",
+                  "strokeWidth": 1,
+                  "padding": [
+                    3,
+                    9
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hC7LR",
+                      "name": "Текст бейджа",
+                      "fill": "$accent",
+                      "content": "пример",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "gKL5h",
+              "name": "Мета",
+              "fill": "$text-muted",
+              "content": "Счётная · каждый день · лесенка 3 → 30",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "epRcg",
+              "name": "Описание",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Каждый день немного — тело привыкает само.",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "c2mhF",
+              "name": "Минимум на плохой день",
+              "fill": "$success",
+              "content": "🌙 На плохой день: в худший день — 1 отжимание. Серия не рвётся.",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ruU4z",
+          "name": "Действия",
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "znODc",
+              "name": "Кнопка «Добавить себе»",
+              "fill": "$accent",
+              "cornerRadius": 999,
+              "padding": [
+                9,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "QGpZw",
+                  "name": "Текст кнопки",
+                  "fill": "$on-accent",
+                  "content": "Добавить себе",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wiCoY",
+              "name": "Кнопка меню",
+              "cornerRadius": 10,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "padding": [
+                7,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "iwLAI",
+                  "name": "Три точки",
+                  "fill": "$text-muted",
+                  "content": "⋯",
+                  "fontFamily": "$font",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "CiAzO",
+      "x": 880,
+      "y": 5430,
+      "name": "Экран — Привычки · Шаблоны",
+      "clip": true,
+      "width": 1280,
+      "height": 975,
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 18,
+      "padding": 32,
+      "children": [
+        {
+          "type": "frame",
+          "id": "Rzk9l",
+          "name": "Шапка",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "JZvyU",
+              "name": "Заголовок",
+              "fill": "$text",
+              "content": "Привычки",
+              "fontFamily": "$font",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "Sojm8",
+              "name": "Действия шапки",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "oRrFH",
+                  "name": "Кнопка «Получить пак»",
+                  "cornerRadius": 999,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    9,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "g750PD",
+                      "name": "Текст",
+                      "fill": "$text-muted",
+                      "content": "🎁 Получить пак",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eGYuD",
+                  "name": "Кнопка «+»",
+                  "fill": "$accent",
+                  "cornerRadius": 999,
+                  "padding": [
+                    9,
+                    18
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "fpNm6",
+                      "name": "Плюс",
+                      "fill": "$on-accent",
+                      "content": "+",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LT6Hn",
+          "name": "Полоса «зачем»",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": 14,
+          "stroke": "$border",
+          "strokeWidth": 1,
+          "gap": 12,
+          "padding": [
+            14,
+            18
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "nmXYY",
+              "name": "Иконка",
+              "fill": "$text",
+              "content": "🪜",
+              "fontFamily": "$font",
+              "fontSize": 18,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "w9Hmn",
+              "name": "Текст",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Не идеально, а постоянно. Маленькие регулярные шаги; лесенка бережёт от выгорания — в трудный день делаешь минимум, и серия цела.",
+              "fontFamily": "$font",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "BTHO1",
+          "name": "Вкладки",
+          "width": "fill_container",
+          "gap": 8,
+          "padding": [
+            0,
+            0,
+            4,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "aucAR",
+              "name": "Вкладка «Сегодня»",
+              "cornerRadius": 10,
+              "padding": [
+                10,
+                18
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "F8l6zG",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Сегодня",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "E8QYy",
+              "name": "Вкладка «Шаблоны» (активна)",
+              "fill": "$accent-mid",
+              "cornerRadius": 10,
+              "stroke": "$accent-deep",
+              "strokeWidth": 1,
+              "padding": [
+                10,
+                18
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ugT7Z",
+                  "name": "Текст",
+                  "fill": "$accent",
+                  "content": "Шаблоны",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "S5fWNT",
+          "name": "Подсказка про примеры",
+          "fill": "$text-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "«Добавить себе» или «⋯» → ✏️ Изменить оставит привычку себе — и она начнёт давать задачи.",
+          "fontFamily": "$font",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "s0CTB",
+          "name": "Список шаблонов",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "id": "Hi0HS",
+              "type": "ref",
+              "ref": "j6czf",
+              "name": "Шаблон — 💪 Отжимания",
+              "width": "fill_container",
+              "descendants": {
+                "JlQ87": {
+                  "content": "💪 Отжимания"
+                },
+                "gKL5h": {
+                  "content": "Счётная · каждый день · лесенка 3 → 30"
+                },
+                "epRcg": {
+                  "content": "Каждый день немного — тело привыкает само."
+                },
+                "c2mhF": {
+                  "content": "🌙 На плохой день: в худший день — 1 отжимание. Серия не рвётся."
+                }
+              }
+            },
+            {
+              "id": "ITXeb",
+              "type": "ref",
+              "ref": "j6czf",
+              "name": "Шаблон — 📖 Чтение",
+              "width": "fill_container",
+              "descendants": {
+                "JlQ87": {
+                  "content": "📖 Чтение"
+                },
+                "gKL5h": {
+                  "content": "Счётная · каждый день · лесенка 2 → 10"
+                },
+                "epRcg": {
+                  "content": "Несколько страниц в день складываются в книги за год."
+                },
+                "c2mhF": {
+                  "content": "🌙 На плохой день: хотя бы один абзац."
+                }
+              }
+            },
+            {
+              "id": "OumeA",
+              "type": "ref",
+              "ref": "j6czf",
+              "name": "Шаблон — 🧘 Дыхание / тишина",
+              "width": "fill_container",
+              "descendants": {
+                "JlQ87": {
+                  "content": "🧘 Дыхание / тишина"
+                },
+                "gKL5h": {
+                  "content": "Со временем · каждый день · лесенка 3 → 15 мин"
+                },
+                "epRcg": {
+                  "content": "Минута спокойствия среди дня сбивает тревогу."
+                },
+                "c2mhF": {
+                  "content": "🌙 На плохой день: 5 медленных вдохов."
+                }
+              }
+            },
+            {
+              "id": "VAdye",
+              "type": "ref",
+              "ref": "j6czf",
+              "name": "Шаблон — 🚶 Прогулка",
+              "width": "fill_container",
+              "descendants": {
+                "JlQ87": {
+                  "content": "🚶 Прогулка"
+                },
+                "gKL5h": {
+                  "content": "Да/нет · каждый день · без лесенки"
+                },
+                "epRcg": {
+                  "content": "Свет и движение перезапускают день."
+                },
+                "c2mhF": {
+                  "content": "🌙 На плохой день: выйти хотя бы на 5 минут."
+                }
+              }
+            },
+            {
+              "id": "HpSvs",
+              "type": "ref",
+              "ref": "j6czf",
+              "name": "Шаблон — 💧 Вода",
+              "width": "fill_container",
+              "descendants": {
+                "JlQ87": {
+                  "content": "💧 Вода"
+                },
+                "gKL5h": {
+                  "content": "Счётная · каждый день · лесенка 3 → 8"
+                },
+                "epRcg": {
+                  "content": "Тело работает лучше, когда не обезвожено."
+                },
+                "c2mhF": {
+                  "content": "🌙 На плохой день: один стакан воды."
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
@@ -2980,6 +3475,26 @@
     "font": {
       "type": "string",
       "value": "Inter"
+    },
+    "surface": {
+      "type": "color",
+      "value": "#1D1F27"
+    },
+    "surface-2": {
+      "type": "color",
+      "value": "#262932"
+    },
+    "border": {
+      "type": "color",
+      "value": "#313542"
+    },
+    "success": {
+      "type": "color",
+      "value": "#4BBF7B"
+    },
+    "on-accent": {
+      "type": "color",
+      "value": "#1A1206"
     }
   },
   "fileToken": "e42f9981-8700-4d28-9d68-e39861bf0b3a"

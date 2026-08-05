@@ -1,0 +1,67 @@
+<app-card>
+  <div class="tglink">
+    <div class="tglink__head">
+      <h2>Telegram</h2>
+      <p class="hint">
+        Привязанный чат нужен, чтобы просить у владельца дополнительные приглашения: начислять их
+        «на слово» нельзя, аккаунт должен быть подтверждён. Писать вам бот при этом не начнёт —
+        на сообщения он спросит разрешение отдельно.
+      </p>
+    </div>
+
+    @if (loading()) {
+      <app-spinner />
+    } @else {
+      @if (error(); as message) {
+        <p class="tglink__error">{{ message }}</p>
+      }
+
+      @if (status()?.linked) {
+        <p class="tglink__state">
+          <span class="tglink__dot tglink__dot--on"></span>
+          Чат привязан{{ linkedAtLabel() ? ' — с ' + linkedAtLabel() : '' }}.
+        </p>
+        <p class="hint">
+          Отвязать можно и отсюда, и командой <code>/unlink</code> в самом чате.
+        </p>
+        <div class="tglink__actions">
+          <app-button type="button" variant="ghost" [disabled]="busy()" (click)="unlink()">
+            Отвязать
+          </app-button>
+        </div>
+      } @else {
+        <p class="tglink__state">
+          <span class="tglink__dot"></span>
+          Чат не привязан.
+        </p>
+
+        @if (code(); as issued) {
+          <div class="tglink__code">
+            <span class="tglink__code-value">{{ issued }}</span>
+            <span class="hint">действует {{ codeMinutes() }} мин, одноразовый</span>
+          </div>
+          <ol class="tglink__steps">
+            <li>
+              @if (botLink(); as link) {
+                Откройте <a [href]="link" target="_blank" rel="noopener">чат с ботом</a>.
+              } @else {
+                Откройте чат с нашим ботом.
+              }
+            </li>
+            <li>Отправьте ему <code>/link {{ issued }}</code></li>
+            <li>Бот ответит, что чат привязан — обновите эту страницу.</li>
+          </ol>
+        } @else {
+          @if (!botLink()) {
+            <p class="hint">Бот на этом стенде не настроен — привязка работать не будет.</p>
+          }
+          <div class="tglink__actions">
+            <app-button type="button" [disabled]="busy()" (click)="issueCode()">
+              Получить код привязки
+            </app-button>
+          </div>
+        }
+      }
+    }
+  </div>
+</app-card>

@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
 import { LinkCodeStore } from '../domain-services/link-code.store';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
+import type { Env } from '../../../system/config/env.schema';
 import type { TelegramLinkStatus } from '../interfaces/telegram-link-status.interface';
 import type { TelegramLinkCodeView } from '../interfaces/telegram-link-code-view.interface';
 
@@ -18,16 +20,22 @@ import type { TelegramLinkCodeView } from '../interfaces/telegram-link-code-view
  */
 @Injectable()
 export class ManageTelegramLinkUseCase {
+  private readonly _botUsername: string;
+
   /**
    * @param _repository Порт репозитория привязок.
    * @param _api Исходящий порт Bot API (ответы на команды `/link` и `/unlink`).
    * @param _codes Одноразовые коды привязки (в памяти процесса).
+   * @param configService Конфиг (имя бота для ссылки на экране).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     private readonly _codes: LinkCodeStore,
-  ) {}
+    configService: ConfigService<Env, true>,
+  ) {
+    this._botUsername = configService.get('TELEGRAM_BOT_USERNAME', { infer: true }).replace(/^@/, '');
+  }
 
   /**
    * Показывает состояние привязки аккаунта.
@@ -36,8 +44,9 @@ export class ManageTelegramLinkUseCase {
    */
   public async getStatus(accountId: string): Promise<TelegramLinkStatus> {
     const link = await this._repository.findLinkByAccount(accountId);
+    const botUsername = this._botUsername;
     if (link === null) {
-      return { linked: false, linkedAt: null, notificationsAllowed: false };
+      return { linked: false, linkedAt: null, notificationsAllowed: false, botUsername };
     }
     // `chat_id` наружу не отдаём: экрану он не нужен, а это идентификатор человека в чужом
     // сервисе — чем меньше мест, где он появляется, тем лучше (ADR-0064 §10).
@@ -45,6 +54,7 @@ export class ManageTelegramLinkUseCase {
       linked: true,
       linkedAt: link.createdAt.toISOString(),
       notificationsAllowed: link.notificationsAllowed,
+      botUsername,
     };
   }
 

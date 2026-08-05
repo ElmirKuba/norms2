@@ -21,6 +21,14 @@
     <button
       type="button"
       class="tabs__tab"
+      [class.tabs__tab--active]="tab() === 'telegram'"
+      (click)="tab.set('telegram')"
+    >
+      Telegram
+    </button>
+    <button
+      type="button"
+      class="tabs__tab"
       [class.tabs__tab--active]="tab() === 'theme'"
       (click)="tab.set('theme')"
     >
@@ -34,6 +42,9 @@
         <app-recovery-settings />
         <app-sessions />
       </div>
+    }
+    @case ('telegram') {
+      <app-telegram-link />
     }
     @case ('account') {
       <app-card>

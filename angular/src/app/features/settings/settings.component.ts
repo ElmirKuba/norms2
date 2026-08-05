@@ -9,19 +9,21 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 import { SessionsComponent } from '../sessions/sessions.component';
 import { RecoverySettingsComponent } from './recovery-settings/recovery-settings.component';
+import { TelegramLinkComponent } from './telegram-link/telegram-link.component';
 
 /** Активная вкладка настроек. */
-type SettingsTab = 'security' | 'account' | 'theme';
+type SettingsTab = 'security' | 'telegram' | 'account' | 'theme';
 
 /**
  * Настройки (хаб из аккаунт-дропдауна). Вкладки: **Безопасность** (сессии F3.6;
  * секретные вопросы — F3.7.2), **Аккаунт** (деактивация/удаление с подтверждением
- * → сброс сессии и редирект), **Тема** (тумблер). Деактивация/удаление на бэке
+ * → сброс сессии и редирект), **Telegram** (привязка чата одноразовым кодом — нужна, чтобы просить
+ * дополнительные приглашения), **Тема** (тумблер). Деактивация/удаление на бэке
  * отзывают сессии (ADR-0043), поэтому локально просто чистим стор и уходим.
  */
 @Component({
   selector: 'app-settings',
-  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent, RecoverySettingsComponent],
+  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent, RecoverySettingsComponent, TelegramLinkComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',

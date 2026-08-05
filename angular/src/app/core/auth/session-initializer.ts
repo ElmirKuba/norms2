@@ -5,12 +5,12 @@ import { API_PREFIX } from '../config/api.constants';
 import { FeatureFlagsStore } from '../feature-flags/feature-flags-store.service';
 import { AuthStore } from './auth-store.service';
 import { TokenRefreshService } from './token-refresh.service';
-import type { FeatureFlags } from '../interfaces/feature-flags.interface';
+import type { PublicConfig } from '../interfaces/public-config.interface';
 import type { AccountRead } from '../interfaces/account-read.interface';
 
 /**
  * App-initializer (через `provideAppInitializer`): на старте (1) грузит флаги
- * площадки (`GET /feature-flags`) и (2) **тихо восстанавливает сессию** по
+ * площадки (`GET /public-config`) и (2) **тихо восстанавливает сессию** по
  * httpOnly refresh-cookie (`POST /auth/refresh` → `GET /accounts/me`). Это нужно,
  * чтобы после перезагрузки страницы (access-токен живёт в памяти и теряется)
  * guard не выкидывал на login при валидной cookie. Обе ветки best-effort —
@@ -24,10 +24,10 @@ export function sessionInitializer(): Promise<void> {
 
   return (async (): Promise<void> => {
     try {
-      const flags = await firstValueFrom(http.get<FeatureFlags>(`${API_PREFIX}/feature-flags`));
-      flagsStore.set(flags);
+      const config = await firstValueFrom(http.get<PublicConfig>(`${API_PREFIX}/public-config`));
+      flagsStore.set(config);
     } catch {
-      /* флаги недоступны — остаётся invite-only дефолт */
+      /* конфигурация недоступна — остаются осторожные дефолты стора */
     }
 
     try {

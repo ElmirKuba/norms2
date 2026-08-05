@@ -1,23 +1,41 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import type { FeatureFlags } from '../interfaces/feature-flags.interface';
+import type { PublicConfig } from '../interfaces/public-config.interface';
+
+/** Пока конфигурация не загружена — самый осторожный дефолт: invite-only и бота нет. */
+const FALLBACK: PublicConfig = {
+  features: { freeRegistration: false },
+  telegram: { botUsername: '', botUrl: '' },
+};
 
 /**
- * Хранилище флагов площадки (Signal). Заполняется на старте через app-initializer
- * (`GET /feature-flags`). Дефолт — invite-only (как дефолт бэка), пока флаги не
- * загружены/недоступны.
+ * Публичная конфигурация приложения (Signal). Заполняется на старте через app-initializer
+ * (`GET /public-config`).
+ *
+ * Дефолт совпадает с дефолтом бэка и выбран по принципу «недоступность не должна открывать
+ * лишнего»: регистрация считается закрытой, ссылки на бота нет.
  */
 @Injectable({ providedIn: 'root' })
 export class FeatureFlagsStore {
-  private readonly _flags = signal<FeatureFlags>({ freeRegistration: false });
+  private readonly _config = signal<PublicConfig>(FALLBACK);
 
-  /** Текущие флаги (readonly-сигнал). */
-  public readonly flags = this._flags.asReadonly();
+  /** Вся публичная конфигурация. */
+  public readonly config = this._config.asReadonly();
+
+  /** Флаги площадки (readonly-сигнал). */
+  public readonly flags = computed<FeatureFlags>(() => this._config().features);
+
+  /** Ссылка на бота или null, если он не настроен. */
+  public readonly botUrl = computed<string | null>(() => {
+    const url = this._config().telegram.botUrl;
+    return url === '' ? null : url;
+  });
 
   /**
-   * Устанавливает флаги (из app-initializer).
-   * @param flags Флаги площадки.
+   * Устанавливает конфигурацию (из app-initializer).
+   * @param config Публичная конфигурация.
    */
-  public set(flags: FeatureFlags): void {
-    this._flags.set(flags);
+  public set(config: PublicConfig): void {
+    this._config.set(config);
   }
 }

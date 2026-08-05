@@ -127,8 +127,25 @@ export class AccentTaskDomainService {
    * @param accountId Идентификатор аккаунта-владельца.
    * @returns Число удалённых.
    */
-  public async removePendingForTemplate(templateId: string, accountId: string): Promise<number> {
-    return this._repository.deletePendingByTemplate(templateId, accountId);
+  /**
+   * Удаляет одну задачу человека.
+   *
+   * Нужна для уборки осиротевших переносов: шаблона нет, вернуть задачу некуда, и оставлять её
+   * на экране — значит показывать кнопку, которая никогда не сработает.
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async removeOwned(id: string, accountId: string): Promise<void> {
+    await this._repository.deleteOwned(id, accountId);
+  }
+
+  public async removeOpenForTemplate(
+    templateId: string,
+    accountId: string,
+    today: string,
+  ): Promise<number> {
+    return this._repository.deleteOpenByTemplate(templateId, accountId, today);
   }
 
   /**

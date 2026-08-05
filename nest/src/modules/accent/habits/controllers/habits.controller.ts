@@ -197,6 +197,6 @@ export class HabitsController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<HabitView> {
-    return this._deactivate.execute(id, request.account.id);
+    return this._deactivate.execute(id, request.account.id, request.account.timezone);
   }
 }

@@ -42,12 +42,14 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
                   <li class="dash__step" [class.dash__step--done]="step.done">
                     <span class="dash__step-mark" aria-hidden="true">{{ step.done ? '✓' : '○' }}</span>
                     <span class="dash__step-text">{{ step.text }}</span>
-                    @if (step.active) {
-                      <app-button [routerLink]="step.link">{{ step.action }}</app-button>
-                    }
                   </li>
                 }
               </ol>
+              @if (activeStep(d); as step) {
+                <div class="dash__start-action">
+                  <app-button [routerLink]="step.link">{{ step.action }}</app-button>
+                </div>
+              }
             </div>
           </app-card>
         }
@@ -429,6 +431,12 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
         gap: var(--space-2);
         font-size: var(--fs-sm);
       }
+      /* Кнопка стоит под списком: внутри строки она задавала ей свою высоту, и весь список
+         разъезжался. */
+      .dash__start-action {
+        display: flex;
+        margin-top: var(--space-3);
+      }
       .dash__step--done .dash__step-text {
         color: var(--color-text-muted);
         text-decoration: line-through;
@@ -580,6 +588,14 @@ export class AccentDashboardComponent {
    * @param view Снимок.
    * @returns Шаги в порядке прохождения.
    */
+  protected activeStep(
+    view: DashboardView,
+  ): { key: string; text: string; action: string; link: string[]; done: boolean; active: boolean } | null {
+    // Кнопка живёт под списком, а не в строке шага: внутри `li` она распирала строку и ломала
+    // высоту всего списка (поймано живым пользователем 05.08.2026).
+    return this.steps(view).find((step) => step.active) ?? null;
+  }
+
   protected steps(
     view: DashboardView,
   ): { key: string; text: string; action: string; link: string[]; done: boolean; active: boolean }[] {

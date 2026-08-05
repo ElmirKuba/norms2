@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { tasks } from '../../schemas/tasks.schema';
@@ -161,14 +161,28 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @param accountId Идентификатор аккаунта-владельца.
    * @returns Число удалённых.
    */
-  public async deletePendingByTemplate(templateId: string, accountId: string): Promise<number> {
+  public async deleteOpenByTemplate(
+    templateId: string,
+    accountId: string,
+    today: string,
+  ): Promise<number> {
     const rows = await this._db
       .delete(tasks)
       .where(
         and(
           eq(tasks.accountId, accountId),
           eq(tasks.templateId, templateId),
-          eq(tasks.status, 'pending'),
+          or(
+            eq(tasks.status, 'pending'),
+            // Перенос — это НЕ история, а незакрытое дело с другой датой: у него живая кнопка
+            // «Вернуть на сегодня». Оставь его — и человек вернёт задачу шаблона, которого в
+            // списке уже нет (поймано живым пользователем 05.08.2026).
+            and(
+              eq(tasks.status, 'skipped'),
+              eq(tasks.skipReason, 'postponed'),
+              gte(tasks.occurredOn, today),
+            ),
+          ),
         ),
       )
       .returning({ id: tasks.id });

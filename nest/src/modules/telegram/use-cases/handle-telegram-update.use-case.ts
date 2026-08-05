@@ -129,6 +129,14 @@ export class HandleTelegramUpdateUseCase {
       await this._ownerActions.showCard(chatId, payload);
       return;
     }
+    if (isOwner && prefix === 'menu') {
+      await this._ownerActions.sendMenu(chatId);
+      return;
+    }
+    if (isOwner && prefix === 'cancel') {
+      await this._ownerActions.cancelPending(chatId);
+      return;
+    }
     if (isOwner && (prefix === 'ok' || prefix === 'no')) {
       await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
       return;

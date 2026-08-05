@@ -13,6 +13,9 @@ import type { TransactionRunnerPort } from '../../../shared/transactions/transac
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
 import type { OwnerActionKind } from '../domain-services/owner-action.store';
 
+/** Возврат в меню — есть на каждом экране: без него любой список тупик. */
+const MENU_BUTTON = { text: '🏠 Меню', callbackData: 'menu' };
+
 /** Сколько заявок показываем на странице очереди. */
 const PAGE_SIZE = 5;
 
@@ -129,29 +132,37 @@ export class OwnerActionsUseCase {
       await this._api.sendMessage(
         chatId,
         history ? 'Решений пока не было.' : 'Ожидающих заявок нет.',
+        [[MENU_BUTTON]],
       );
       return;
     }
 
-    const lines = all.map((request, index) => this._renderQueueLine(request, offset + index + 1));
-    const buttons: TelegramButton[][] = all.map((request) => [
+    // Кнопка сама себя описывает — дублировать её текстом в списке незачем.
+    const buttons: TelegramButton[][] = all.map((request, index) => [
       {
-        text: `${this._statusIcon(request)} ${this._shortLabel(request)}`,
+        text: `${String(offset + index + 1)}. ${this._statusIcon(request)} ${this._shortLabel(request)}`,
         callbackData: `c:${request.id}`,
       },
     ]);
     const nav: TelegramButton[] = [];
     if (offset > 0) {
-      nav.push({ text: '← Назад', callbackData: `${history ? 'h' : 'q'}:${String(Math.max(0, offset - PAGE_SIZE))}` });
+      nav.push({
+        text: '← Назад',
+        callbackData: `${history ? 'h' : 'q'}:${String(Math.max(0, offset - PAGE_SIZE))}`,
+      });
     }
     if (all.length === PAGE_SIZE) {
-      nav.push({ text: 'Дальше →', callbackData: `${history ? 'h' : 'q'}:${String(offset + PAGE_SIZE)}` });
+      nav.push({
+        text: 'Дальше →',
+        callbackData: `${history ? 'h' : 'q'}:${String(offset + PAGE_SIZE)}`,
+      });
     }
     if (nav.length > 0) {
       buttons.push(nav);
     }
+    buttons.push([MENU_BUTTON]);
     const title = history ? '<b>История решений</b>' : '<b>Заявки на рассмотрении</b>';
-    await this._api.sendMessage(chatId, [title, '', ...lines].join('\n'), buttons);
+    await this._api.sendMessage(chatId, `${title}\n\nВыбери заявку — покажу её и что с ней можно сделать.`, buttons);
   }
 
   /**
@@ -167,24 +178,25 @@ export class OwnerActionsUseCase {
       return;
     }
     // Текста заявки у нас нет — он не хранится (ADR-0064 §10). Зато сохранён id сообщения
-    // в этом же чате: пересылаем его сам себе, и владелец видит исходную карточку.
+    // в этом же чате: пересылаем его сам себе, и владелец видит исходную анкету.
+    // ВАЖНО: при пересылке Telegram срезает инлайн-кнопки, поэтому действия идут отдельным
+    // сообщением следом — иначе карточка приходит «мёртвой» (поймано 05.08.2026).
     if (request.ownerMessageId !== null) {
       await this._api.forwardMessage(chatId, chatId, request.ownerMessageId);
     }
     if (request.status !== 'pending') {
-      await this._api.sendMessage(chatId, this._renderClosed(request));
+      await this._api.sendMessage(chatId, this._renderClosed(request), [
+        [{ text: '◀️ К списку', callbackData: 'h:0' }, MENU_BUTTON],
+      ]);
       return;
     }
-    await this._api.sendMessage(
-      chatId,
-      'Что делаем с этой заявкой?',
+    await this._api.sendMessage(chatId, 'Что делаем с этой заявкой?', [
       [
-        [
-          { text: '✅ Выдать код', callbackData: `ok:${request.id}` },
-          { text: '✖️ Отказать', callbackData: `no:${request.id}` },
-        ],
+        { text: '✅ Выдать код', callbackData: `ok:${request.id}` },
+        { text: '✖️ Отказать', callbackData: `no:${request.id}` },
       ],
-    );
+      [{ text: '◀️ К списку', callbackData: 'q:0' }, MENU_BUTTON],
+    ]);
   }
 
   /**
@@ -213,7 +225,19 @@ export class OwnerActionsUseCase {
             '',
             `Прочерк <code>${SKIP_REASON}</code> — отправлю без объяснения.`,
           ].join('\n');
-    await this._api.sendMessage(chatId, hint);
+    await this._api.sendMessage(chatId, hint, [[{ text: '◀️ Отмена', callbackData: 'cancel' }]]);
+  }
+
+  /**
+   * Отменяет начатое действие (кнопка «Отмена» под запросом причины).
+   * @param chatId Чат владельца.
+   * @returns Промис завершения.
+   */
+  public async cancelPending(chatId: string): Promise<void> {
+    this._pending.forget(chatId);
+    await this._api.sendMessage(chatId, 'Отменил. Заявка осталась на рассмотрении.', [
+      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
+    ]);
   }
 
   /**
@@ -305,7 +329,9 @@ export class OwnerActionsUseCase {
         'Регистрация: https://нормисы.рф/register — код подставится, останется придумать логин и пароль.',
       ].join('\n'),
     );
-    await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(code)}</code>`);
+    await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(code)}</code>`, [
+      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
+    ]);
   }
 
   /**
@@ -336,7 +362,9 @@ export class OwnerActionsUseCase {
         ? 'К сожалению, заявка отклонена.'
         : `К сожалению, заявка отклонена.\n\nПричина: ${escapeHtml(reason)}`,
     );
-    await this._api.sendMessage(chatId, 'Отказ отправлен.');
+    await this._api.sendMessage(chatId, 'Отказ отправлен.', [
+      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
+    ]);
   }
 
   /**

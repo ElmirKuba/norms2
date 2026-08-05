@@ -1,22 +1,128 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TelegramDomainService } from '../domain-services/telegram.domain-service';
+import { OwnerActionsUseCase } from './owner-actions.use-case';
+import { TELEGRAM_API } from '../adapters/telegram-api.port';
+import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
 
 /**
- * Use-case обработки апдейта из вебхука (2.9.1·9). Тонкая оркестрация над domain-service.
+ * Маршрутизатор апдейтов (2.9.1·9, расширен в ·11–·12).
+ *
+ * **Порядок проверок — часть безопасности, а не стиль:**
+ * 1. повтор апдейта отсекается **до любых действий** — Telegram повторяет доставку, и без этого
+ *    заявка создалась бы дважды, а код выдался бы дважды;
+ * 2. **владелец определяется до разбора команды.** Бот умеет выдавать приглашения; сверяй мы
+ *    автора после разбора — любой, кто дотянется до вебхука, выдал бы их себе
+ *    ([ADR-0064 §2a](../../../../docs/decisions/0064-telegram-release-channel.md)).
+ *
+ * Кросс-домен живёт здесь: выдача приглашения ходит в `invites` и `account`, и по правилам
+ * такие вызовы делает use-case, а не domain-service.
  */
 @Injectable()
 export class HandleTelegramUpdateUseCase {
   /**
-   * @param _telegramDomainService Domain-service Telegram-области.
+   * @param _telegramDomainService Гостевая часть (меню, анкета).
+   * @param _ownerActions Сценарий владельца (очередь, решения).
+   * @param _api Исходящий порт Bot API (гашение «часиков» на кнопке).
    */
-  public constructor(private readonly _telegramDomainService: TelegramDomainService) {}
+  public constructor(
+    private readonly _telegramDomainService: TelegramDomainService,
+    private readonly _ownerActions: OwnerActionsUseCase,
+    @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
+  ) {}
 
   /**
-   * @param update Апдейт.
+   * Обрабатывает апдейт.
+   * @param update Апдейт из Bot API.
    * @returns Промис завершения.
    */
   public async execute(update: TelegramUpdate): Promise<void> {
-    await this._telegramDomainService.handleUpdate(update);
+    if (!(await this._telegramDomainService.consumeUpdate(update.update_id))) {
+      return;
+    }
+
+    const callback = update.callback_query;
+    if (callback !== undefined) {
+      const chatId = callback.message?.chat.id;
+      // Гасим «часики» сразу: без ответа Telegram крутит их 30 секунд, и человек решает,
+      // что бот завис. Делаем это ДО работы, которая может занять время.
+      await this._api.answerCallback(callback.id);
+      if (chatId !== undefined) {
+        await this._routeCallback(String(chatId), callback.data);
+      }
+      return;
+    }
+
+    const message = update.message;
+    if (message === undefined) {
+      return;
+    }
+    await this._routeMessage(String(message.chat.id), message.text);
+  }
+
+  /**
+   * Раскладывает сообщение по сценариям.
+   * @param chatId Чат.
+   * @param text Текст.
+   * @returns Промис завершения.
+   */
+  private async _routeMessage(chatId: string, text: string | undefined): Promise<void> {
+    if (!this._telegramDomainService.isOwner(chatId)) {
+      await this._telegramDomainService.handleGuestMessage(chatId, text);
+      return;
+    }
+    if (text === undefined) {
+      await this._ownerActions.sendMenu(chatId);
+      return;
+    }
+    const trimmed = text.trim();
+    const command = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
+
+    if (command === '/link') {
+      await this._ownerActions.linkAccount(chatId, trimmed.slice('/link'.length).trim());
+      return;
+    }
+    if (command === '/start' || command === '/menu') {
+      await this._ownerActions.sendMenu(chatId);
+      return;
+    }
+    // Владелец мог нажать кнопку решения и теперь пишет причину. Проверяем ПОСЛЕ команд:
+    // иначе «/start», набранный вместо причины, стал бы подписью к приглашению.
+    if (await this._ownerActions.applyReason(chatId, trimmed)) {
+      return;
+    }
+    // Владелец — тоже человек: если он проходит анкету, отдаём гостевой сценарий.
+    await this._telegramDomainService.handleGuestMessage(chatId, text);
+  }
+
+  /**
+   * Раскладывает нажатие кнопки.
+   * @param chatId Чат.
+   * @param data Данные кнопки.
+   * @returns Промис завершения.
+   */
+  private async _routeCallback(chatId: string, data: string | undefined): Promise<void> {
+    if (data === undefined) {
+      return;
+    }
+    const isOwner = this._telegramDomainService.isOwner(chatId);
+    const separator = data.indexOf(':');
+    const prefix = separator === -1 ? data : data.slice(0, separator);
+    const payload = separator === -1 ? '' : data.slice(separator + 1);
+
+    // Кнопки владельца исполняются только из его чата. Для чужих их как бы нет.
+    if (isOwner && (prefix === 'q' || prefix === 'h')) {
+      await this._ownerActions.showQueue(chatId, Number(payload) || 0, prefix === 'h');
+      return;
+    }
+    if (isOwner && prefix === 'c') {
+      await this._ownerActions.showCard(chatId, payload);
+      return;
+    }
+    if (isOwner && (prefix === 'ok' || prefix === 'no')) {
+      await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
+      return;
+    }
+    await this._telegramDomainService.handleGuestCallback(chatId, data);
   }
 }

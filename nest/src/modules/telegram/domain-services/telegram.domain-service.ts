@@ -3,8 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
-import type { TelegramApiPort } from '../adapters/telegram-api.port';
-import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
+import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RequestDraftStore } from './request-draft.store';
 import { PRIVACY_NOTICE, QUESTIONS, validateAnswer } from './request-dialog.util';
@@ -13,55 +12,77 @@ import type { Env } from '../../../system/config/env.schema';
 /**
  * Экранирует текст под HTML-разметку Telegram.
  *
- * Обязательно именно здесь: в карточку владельцу подставляется то, что написал человек, а он
- * может прислать `<b>` или `&`. Без экранирования Telegram отклонит сообщение целиком —
- * и заявка просто не дойдёт.
- * @param text Ответ человека.
+ * Обязательно там, где в сообщение подставляется написанное человеком: пришлёт `<b>` или `&` —
+ * Telegram отклонит сообщение целиком, и оно просто не дойдёт.
+ * @param text Произвольный текст.
  * @returns Безопасный фрагмент.
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Ответы бота, которые не зависят от шага диалога. */
+/**
+ * Кнопки решения под карточкой заявки.
+ *
+ * `callback_data` ограничен **64 байтами**, а наш `id` занимает 52 символа — на префикс
+ * остаётся 12. Отсюда короткие `ok:` и `no:`.
+ * @param requestId Заявка.
+ * @returns Ряды кнопок.
+ */
+export function decisionButtons(requestId: string): TelegramButton[][] {
+  return [
+    [
+      { text: '✅ Выдать код', callbackData: `ok:${requestId}` },
+      { text: '✖️ Отказать', callbackData: `no:${requestId}` },
+    ],
+  ];
+}
+
+/**
+ * Собирает карточку заявки для владельца.
+ * @param answers Ответы анкеты.
+ * @returns HTML-текст карточки.
+ */
+export function renderRequestCard(answers: Record<string, string | undefined>): string {
+  return [
+    '<b>Новая заявка на вступление</b>',
+    '',
+    `Имя: ${escapeHtml(answers['name'] ?? '—')}`,
+    `Возраст: ${escapeHtml(answers['age'] ?? '—')}`,
+    `Пол: ${escapeHtml(answers['gender'] ?? '—')}`,
+    '',
+    `Зачем: ${escapeHtml(answers['why'] ?? '—')}`,
+  ].join('\n');
+}
+
+/** Меню гостя — кнопками, а не командами: человек не должен запоминать `/join`. */
+const GUEST_MENU: TelegramButton[][] = [
+  [{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }],
+  [{ text: '➕ Получить приглашения', callbackData: 'invites' }],
+];
+
+/** Тексты, не зависящие от шага диалога. */
 const REPLY = {
-  greetingGuest: [
-    'Привет! Это бот «Нормисов» — площадки по приглашениям.',
+  guestGreeting: [
+    '<b>Нормисы</b> — площадка по приглашениям: без рекламы, без слежки, только свои.',
     '',
-    'Нет приглашения? Оставь заявку: /join',
-    'Уже есть аккаунт, но кончились приглашения? /invites',
-    'Что умеет бот: /help',
+    'Выбери, что нужно.',
   ].join('\n'),
-  greetingOwner: [
-    'Привет, владелец. Отсюда разбираются заявки.',
-    '',
-    '📋 Очередь заявок: /queue',
-    'Справка: /help',
-  ].join('\n'),
-  helpGuest: [
-    '<b>Что умеет этот бот</b>',
-    '',
-    '/join — заявка на вступление, если приглашения нет',
-    '/invites — попросить ещё приглашений (нужен аккаунт)',
-    '/cancel — прервать заполнение заявки',
-    '',
-    'Личные данные писать не нужно — мы их не храним.',
-  ].join('\n'),
-  unknown: 'Не понял команду. Что я умею — /help',
+  unknown: 'Не понял. Нажми /start — покажу меню.',
+  alreadyPending: 'У тебя уже есть заявка на рассмотрении. Я напишу, как только будет решение.',
+  needText: 'Мне нужен текст — картинки и стикеры я не понимаю.',
+  cancelled: 'Заполнение прервано. Захочешь вернуться — нажми /start.',
 } as const;
 
 /**
- * Domain-service Telegram-области: маршрутизация апдейтов (2.9.1·9).
+ * Domain-service Telegram-области: **гостевая** часть — меню и пошаговая анкета (2.9.1·9–·10).
  *
- * **Порядок проверок здесь — часть безопасности, а не стиль.**
- * 1. Повтор апдейта отсекается до любых действий: Telegram повторяет доставку, и без этого
- *    заявка создалась бы дважды, а код выдался бы дважды.
- * 2. **Владелец определяется ДО разбора команды** (`TELEGRAM_OWNER_CHAT_ID`). Это главная
- *    граница фичи: бот умеет выдавать приглашения, и если сверять автора после разбора, то
- *    любой, кто дотянется до вебхука, выдаст их себе
- *    ([ADR-0064 §2a](../../../../docs/decisions/0064-telegram-release-channel.md)).
+ * Сценарий владельца сюда не входит намеренно: он выдаёт приглашения, то есть ходит в чужую
+ * область (`invites`, `account`), а кросс-доменные вызовы живут в use-case, не в domain-service
+ * (CLAUDE.md, правила зависимостей). Здесь только то, что область умеет сама.
  *
- * ⚠️ **Тело апдейта не логируется никогда** — там имя, возраст и «зачем».
+ * ⚠️ **Тело апдейта не логируется никогда** — там имя, возраст и «зачем»
+ * ([ADR-0064 §10](../../../../docs/decisions/0064-telegram-release-channel.md)).
  */
 @Injectable()
 export class TelegramDomainService {
@@ -71,6 +92,7 @@ export class TelegramDomainService {
   /**
    * @param _repository Порт репозитория заявок.
    * @param _api Исходящий порт Bot API.
+   * @param _drafts Черновики анкет (в памяти процесса).
    * @param configService Конфиг (чат владельца).
    */
   public constructor(
@@ -82,87 +104,70 @@ export class TelegramDomainService {
     this._ownerChatId = configService.get('TELEGRAM_OWNER_CHAT_ID', { infer: true });
   }
 
-  /**
-   * Обрабатывает апдейт целиком.
-   * @param update Апдейт из Bot API.
-   * @returns Промис завершения.
-   */
-  public async handleUpdate(update: TelegramUpdate): Promise<void> {
-    const isFirstTime = await this._repository.markUpdateProcessed(update.update_id);
-    if (!isFirstTime) {
-      this._logger.log(`Апдейт ${update.update_id} уже обработан — повтор пропущен.`);
-      return;
-    }
-
-    if (update.callback_query !== undefined) {
-      await this._handleCallback(update.callback_query.id, update.callback_query.data);
-      return;
-    }
-
-    const message = update.message;
-    if (message === undefined) {
-      return;
-    }
-    const chatId = String(message.chat.id);
-    // Владелец определяется здесь — до того, как мы посмотрели, что за команда пришла.
-    const isOwner = this._ownerChatId !== '' && chatId === this._ownerChatId;
-    await this._handleMessage(chatId, isOwner, message.text);
+  /** Чат владельца из конфига (пусто — владелец не настроен). */
+  public get ownerChatId(): string {
+    return this._ownerChatId;
   }
 
   /**
-   * Разбирает текстовое сообщение.
+   * Владелец ли пишет. Проверяется **до разбора команды**: бот умеет выдавать приглашения, и
+   * если сверять автора после разбора, любой, кто дотянется до вебхука, выдаст их себе
+   * ([ADR-0064 §2a](../../../../docs/decisions/0064-telegram-release-channel.md)).
    * @param chatId Чат.
-   * @param isOwner Владелец ли пишет.
-   * @param text Текст (может отсутствовать — стикер, фото).
+   * @returns Признак владельца.
+   */
+  public isOwner(chatId: string): boolean {
+    return this._ownerChatId !== '' && chatId === this._ownerChatId;
+  }
+
+  /**
+   * Отмечает апдейт обработанным (защита от повторной доставки).
+   * @param updateId `update_id` из Bot API.
+   * @returns `true`, если апдейт видим впервые.
+   */
+  public async consumeUpdate(updateId: number): Promise<boolean> {
+    const first = await this._repository.markUpdateProcessed(updateId);
+    if (!first) {
+      this._logger.log(`Апдейт ${String(updateId)} уже обработан — повтор пропущен.`);
+    }
+    return first;
+  }
+
+  /**
+   * Показывает гостевое меню.
+   * @param chatId Чат.
    * @returns Промис завершения.
    */
-  private async _handleMessage(
-    chatId: string,
-    isOwner: boolean,
-    text: string | undefined,
-  ): Promise<void> {
+  public async sendGuestMenu(chatId: string): Promise<void> {
+    await this._api.sendMessage(chatId, REPLY.guestGreeting, GUEST_MENU);
+  }
+
+  /**
+   * Разбирает сообщение гостя: команды, ответы анкеты, всё остальное.
+   * @param chatId Чат.
+   * @param text Текст (undefined у стикеров и фото).
+   * @returns Промис завершения.
+   */
+  public async handleGuestMessage(chatId: string, text: string | undefined): Promise<void> {
     if (text === undefined) {
-      await this._api.sendMessage(chatId, 'Мне нужен текст — картинки и стикеры я не понимаю.');
+      await this._api.sendMessage(chatId, REPLY.needText);
       return;
     }
     const command = text.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
 
     if (command === '/start') {
-      await this._api.sendMessage(chatId, isOwner ? REPLY.greetingOwner : REPLY.greetingGuest);
+      this._drafts.forget(chatId);
+      await this.sendGuestMenu(chatId);
       return;
     }
-    if (command === '/help') {
-      await this._api.sendMessage(chatId, isOwner ? REPLY.greetingOwner : REPLY.helpGuest);
-      return;
-    }
-    // Команды владельца исполняются ТОЛЬКО из его чата. Для всех остальных их как бы нет —
-    // отвечаем обычным «не понял», не подсказывая, что такая команда существует.
-    if (command === '/queue') {
-      await this._api.sendMessage(
-        chatId,
-        isOwner ? 'Очередь заявок появится в следующем шаге (·12).' : REPLY.unknown,
-      );
-      return;
-    }
+    // `/cancel` проверяется РАНЬШЕ ответов анкеты: иначе, набранный на шаге «зачем тебе
+    // Нормисы», он стал бы ответом на вопрос, а не отменой.
     if (command === '/cancel') {
       this._drafts.forget(chatId);
-      await this._api.sendMessage(chatId, 'Заполнение прервано. Захочешь вернуться — /join');
+      await this._api.sendMessage(chatId, REPLY.cancelled);
       return;
     }
-    if (command === '/join') {
-      await this._startJoin(chatId);
-      return;
-    }
-    // TODO: Claude Code: 2026-08-05: /invites — заявка на дополнительные приглашения (шаг ·13).
-    if (command === '/invites') {
-      await this._api.sendMessage(chatId, 'Заявки на приглашения ещё настраиваются — загляни позже.');
-      return;
-    }
-
-    // Не команда: возможно, это ответ на вопрос анкеты. Проверяем ПОСЛЕ команд, чтобы «/cancel»
-    // посреди диалога оставался командой, а не ответом на вопрос «зачем тебе Нормисы».
-    const draft = this._drafts.get(chatId);
-    if (draft !== null) {
+    if (this._drafts.get(chatId) !== null) {
       await this._continueDraft(chatId, text);
       return;
     }
@@ -170,17 +175,36 @@ export class TelegramDomainService {
   }
 
   /**
+   * Разбирает нажатие кнопки гостя.
+   * @param chatId Чат.
+   * @param data Данные кнопки.
+   * @returns Промис завершения.
+   */
+  public async handleGuestCallback(chatId: string, data: string | undefined): Promise<void> {
+    if (data === 'join') {
+      await this.startJoin(chatId);
+      return;
+    }
+    if (data === 'invites') {
+      // TODO: Claude Code: 2026-08-05: заявка на дополнительные приглашения (шаг ·13).
+      await this._api.sendMessage(
+        chatId,
+        'Заявки на дополнительные приглашения скоро появятся. Пока — только вступление.',
+      );
+      return;
+    }
+    await this.sendGuestMenu(chatId);
+  }
+
+  /**
    * Начинает анкету, если у чата нет незакрытой заявки.
    * @param chatId Чат.
    * @returns Промис завершения.
    */
-  private async _startJoin(chatId: string): Promise<void> {
+  public async startJoin(chatId: string): Promise<void> {
     const pending = await this._repository.findPendingByChat(chatId);
     if (pending !== null) {
-      await this._api.sendMessage(
-        chatId,
-        'У тебя уже есть заявка на рассмотрении. Я напишу, как только будет решение.',
-      );
+      await this._api.sendMessage(chatId, REPLY.alreadyPending);
       return;
     }
     this._drafts.start(chatId);
@@ -212,21 +236,23 @@ export class TelegramDomainService {
       await this._api.sendMessage(chatId, QUESTIONS[updated.step]);
       return;
     }
-    // Последний шаг записан — отправляем владельцу и забываем черновик.
     await this._submit(chatId, updated.answers);
   }
 
   /**
    * Создаёт заявку и отправляет карточку владельцу.
    *
-   * **Порядок именно такой:** сначала строка в БД (чтобы у кнопок был `id`), потом сообщение
-   * владельцу. Если отправка не удалась, заявка помечается протухшей — иначе человек ждал бы
-   * решения по заявке, которой владелец никогда не видел.
+   * **Порядок именно такой:** сначала строка в БД (у кнопок должен быть `id`), потом сообщение
+   * владельцу. Не доставили — заявка помечается протухшей: иначе человек ждал бы решения по
+   * заявке, которой владелец никогда не видел.
    * @param chatId Чат заявителя.
    * @param answers Собранные ответы.
    * @returns Промис завершения.
    */
-  private async _submit(chatId: string, answers: Record<string, string | undefined>): Promise<void> {
+  private async _submit(
+    chatId: string,
+    answers: Record<string, string | undefined>,
+  ): Promise<void> {
     const id = generateId();
     try {
       await this._repository.createRequest(id, {
@@ -240,32 +266,20 @@ export class TelegramDomainService {
         decidedAt: null,
       });
     } catch {
-      // Сюда попадаем, если уникальный индекс «одна pending на чат» отклонил вставку:
-      // человек успел отправить две анкеты подряд.
+      // Сработал уникальный индекс «одна pending на чат»: человек отправил две анкеты подряд.
       this._drafts.forget(chatId);
-      await this._api.sendMessage(chatId, 'Похоже, заявка от тебя уже есть. Дождись решения.');
+      await this._api.sendMessage(chatId, REPLY.alreadyPending);
       return;
     }
-
-    const card = [
-      '<b>Новая заявка на вступление</b>',
-      '',
-      `Имя: ${escapeHtml(answers['name'] ?? '—')}`,
-      `Возраст: ${escapeHtml(answers['age'] ?? '—')}`,
-      `Пол: ${escapeHtml(answers['gender'] ?? '—')}`,
-      '',
-      `Зачем: ${escapeHtml(answers['why'] ?? '—')}`,
-    ].join('\n');
 
     const messageId =
       this._ownerChatId === ''
         ? null
-        : await this._api.sendMessage(this._ownerChatId, card, [
-            [
-              { text: '✅ Выдать код', callbackData: `ok:${id}` },
-              { text: '✖️ Отказать', callbackData: `no:${id}` },
-            ],
-          ]);
+        : await this._api.sendMessage(
+            this._ownerChatId,
+            renderRequestCard(answers),
+            decisionButtons(id),
+          );
 
     this._drafts.forget(chatId);
 
@@ -278,7 +292,7 @@ export class TelegramDomainService {
       this._logger.warn(`Заявка ${id} не доставлена владельцу — помечена протухшей.`);
       await this._api.sendMessage(
         chatId,
-        'Не получилось отправить заявку — попробуй ещё раз чуть позже: /join',
+        'Не получилось отправить заявку — попробуй ещё раз чуть позже: /start',
       );
       return;
     }
@@ -288,17 +302,5 @@ export class TelegramDomainService {
       chatId,
       'Заявка отправлена. Владелец посмотрит и я напишу сюда с решением.',
     );
-  }
-
-  /**
-   * Разбирает нажатие инлайн-кнопки.
-   * @param callbackQueryId Идентификатор нажатия.
-   * @param data Данные кнопки.
-   * @returns Промис завершения.
-   */
-  private async _handleCallback(callbackQueryId: string, data: string | undefined): Promise<void> {
-    // TODO: Claude Code: 2026-08-05: разбор действий владельца по кнопкам (шаг ·11).
-    // Гасим «часики» в любом случае: без ответа Telegram крутит их 30 секунд.
-    await this._api.answerCallback(callbackQueryId, data === undefined ? undefined : 'Пока не умею');
   }
 }

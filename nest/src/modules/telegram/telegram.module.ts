@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { TelegramCoreModule } from './telegram-core.module';
 import { TelegramWebhookController } from './controllers/telegram-webhook.controller';
 import { TelegramLinkController } from './controllers/telegram-link.controller';
+import { TelegramPublicController } from './controllers/telegram-public.controller';
 import { ManageTelegramLinkUseCase } from './use-cases/manage-telegram-link.use-case';
+import { GetTelegramPublicUseCase } from './use-cases/get-telegram-public.use-case';
 import { LinkCodeStore } from './domain-services/link-code.store';
 import { HandleTelegramUpdateUseCase } from './use-cases/handle-telegram-update.use-case';
 import { OwnerActionsUseCase } from './use-cases/owner-actions.use-case';
@@ -20,12 +22,13 @@ import { AccessControlModule } from '../auth/access-control.module';
   // `AccessControlModule`, а не `AuthModule` — он даёт `AuthGuard` для экрана привязки в ЛК и
   // не тянет за собой весь модуль авторизации (та же причина, что в `InvitesModule`).
   imports: [TelegramCoreModule, AccountModule, InvitesModule, AccessControlModule],
-  controllers: [TelegramWebhookController, TelegramLinkController],
+  controllers: [TelegramWebhookController, TelegramLinkController, TelegramPublicController],
   providers: [
     HandleTelegramUpdateUseCase,
     OwnerActionsUseCase,
     RequestInvitesUseCase,
     ManageTelegramLinkUseCase,
+    GetTelegramPublicUseCase,
     OwnerActionStore,
     LinkCodeStore,
   ],

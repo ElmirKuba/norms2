@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
+import { TelegramPublicApiService } from '../services/telegram-public-api.service';
 import { AuthApiService } from '../services/auth-api.service';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ModalService } from '../../../shared/modals/modal.service';
@@ -39,12 +40,21 @@ const FIELD_MESSAGES: Readonly<Record<FieldName, Readonly<Record<string, string>
 })
 export class RegisterComponent {
   private readonly _api = inject(AuthApiService);
+  private readonly _telegramPublicApi = inject(TelegramPublicApiService);
   private readonly _flags = inject(FeatureFlagsStore);
   private readonly _modal = inject(ModalService);
   private readonly _router = inject(Router);
   private readonly _route = inject(ActivatedRoute);
 
   /** Текущий шаг. */
+  /**
+   * Ссылка на бота для тех, у кого кода нет.
+   *
+   * Грузится молча и без блокировки: не ответила — на экране просто не будет строки про заявку,
+   * а регистрация по коду работает как работала.
+   */
+  protected readonly botUrl = signal<string | null>(null);
+
   protected readonly step = signal<'code' | 'form'>(this._flags.flags().freeRegistration ? 'form' : 'code');
   /** Состояние проверки кода. */
   protected readonly codeState = signal<CodeState>('idle');
@@ -85,6 +95,12 @@ export class RegisterComponent {
     if (code !== null && code !== '') {
       this.codeControl.setValue(code);
     }
+    // Ссылка на бота — для тех, у кого кода нет. Ошибку глушим: без строки про заявку экран
+    // работает, а с падающим запросом на публичной странице — нет.
+    this._telegramPublicApi.view().subscribe({
+      next: (view) => this.botUrl.set(view.botUrl === '' ? null : view.botUrl),
+      error: () => this.botUrl.set(null),
+    });
   }
 
   /** Текст ошибки поля (только после касания и при невалидности). */

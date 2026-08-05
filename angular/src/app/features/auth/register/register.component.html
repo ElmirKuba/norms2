@@ -13,6 +13,12 @@
     @if (codeState() === 'checking') {
       <p class="status">Проверяем код…</p>
     }
+    @if (botUrl(); as link) {
+      <p class="alt">
+        Нет кода? <a [href]="link" target="_blank" rel="noopener">Оставьте заявку боту</a> — владелец
+        посмотрит и ответит.
+      </p>
+    }
     <p class="alt">Уже свой? <a routerLink="/login">Войти</a></p>
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()">
@@ -46,6 +52,12 @@
 
       <app-button type="submit" [block]="true" [loading]="submitting()">Создать аккаунт</app-button>
     </form>
+    @if (botUrl(); as link) {
+      <p class="alt">
+        Нет кода? <a [href]="link" target="_blank" rel="noopener">Оставьте заявку боту</a> — владелец
+        посмотрит и ответит.
+      </p>
+    }
     <p class="alt">Уже свой? <a routerLink="/login">Войти</a></p>
   }
 </section>

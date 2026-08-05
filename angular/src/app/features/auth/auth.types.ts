@@ -73,3 +73,11 @@ export interface BannedDetail {
   bannerAlias: string;
   reason: string;
 }
+
+/** Публичные строки Telegram-области (ответ `GET /telegram/public`). */
+export interface TelegramPublicView {
+  /** Имя бота без `@` или пустая строка. */
+  botUsername: string;
+  /** Ссылка на бота или пустая строка, если бот не настроен. */
+  botUrl: string;
+}

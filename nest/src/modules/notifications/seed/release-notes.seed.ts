@@ -117,4 +117,10 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     contentFile: 'notifications/release-2.9.0.md',
     publishedAt: new Date('2026-08-04T12:00:00Z'),
   },
+  {
+    key: 'release-2.9.1',
+    title: 'Нормисы 2.9.1 — попасть внутрь стало можно без знакомств',
+    contentFile: 'notifications/release-2.9.1.md',
+    publishedAt: new Date('2026-08-05T12:00:00Z'),
+  },
 ];

@@ -5,6 +5,7 @@ import { TelegramLinkController } from './controllers/telegram-link.controller';
 import { ManageTelegramLinkUseCase } from './use-cases/manage-telegram-link.use-case';
 import { GetTelegramPublicUseCase } from './use-cases/get-telegram-public.use-case';
 import { LinkCodeStore } from './domain-services/link-code.store';
+import { LinkWaitStore } from './domain-services/link-wait.store';
 import { HandleTelegramUpdateUseCase } from './use-cases/handle-telegram-update.use-case';
 import { OwnerActionsUseCase } from './use-cases/owner-actions.use-case';
 import { RequestInvitesUseCase } from './use-cases/request-invites.use-case';
@@ -30,6 +31,7 @@ import { AccessControlModule } from '../auth/access-control.module';
     GetTelegramPublicUseCase,
     OwnerActionStore,
     LinkCodeStore,
+    LinkWaitStore,
   ],
   // Наружу — только публичные строки области, для агрегатора `public-config`.
   exports: [GetTelegramPublicUseCase],

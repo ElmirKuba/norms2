@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TELEGRAM_REPOSITORY } from './adapters/telegram-repository.port';
 import { TelegramRepository } from '../../database/repositories/telegram/telegram.repository';
 import { TELEGRAM_API } from './adapters/telegram-api.port';
+import { BotCommandsInitializer } from './domain-services/bot-commands.initializer';
 import { TelegramApiAdapter } from './adapters/telegram-api.adapter';
 import { TelegramDomainService } from './domain-services/telegram.domain-service';
 import { RequestDraftStore } from './domain-services/request-draft.store';
@@ -18,6 +19,7 @@ import { RequestDraftStore } from './domain-services/request-draft.store';
   providers: [
     { provide: TELEGRAM_REPOSITORY, useClass: TelegramRepository },
     { provide: TELEGRAM_API, useClass: TelegramApiAdapter },
+    BotCommandsInitializer,
     RequestDraftStore,
     TelegramDomainService,
   ],

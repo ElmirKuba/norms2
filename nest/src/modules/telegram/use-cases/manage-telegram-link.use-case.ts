@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
 import { LinkCodeStore } from '../domain-services/link-code.store';
+import { LinkWaitStore } from '../domain-services/link-wait.store';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
@@ -21,20 +22,24 @@ import type { TelegramLinkCodeView } from '../interfaces/telegram-link-code-view
 @Injectable()
 export class ManageTelegramLinkUseCase {
   private readonly _botUsername: string;
+  private readonly _settingsUrl: string;
 
   /**
    * @param _repository Порт репозитория привязок.
    * @param _api Исходящий порт Bot API (ответы на команды `/link` и `/unlink`).
    * @param _codes Одноразовые коды привязки (в памяти процесса).
+   * @param _waiting Ожидание кода после голой команды `/link`.
    * @param configService Конфиг (имя бота для ссылки на экране).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     private readonly _codes: LinkCodeStore,
+    private readonly _waiting: LinkWaitStore,
     configService: ConfigService<Env, true>,
   ) {
     this._botUsername = configService.get('TELEGRAM_BOT_USERNAME', { infer: true }).replace(/^@/, '');
+    this._settingsUrl = `${configService.get('PUBLIC_BASE_URL', { infer: true }).replace(/\/+$/, '')}/app/settings`;
   }
 
   /**
@@ -89,14 +94,23 @@ export class ManageTelegramLinkUseCase {
    * **Код — единственное доказательство, что чат принадлежит владельцу аккаунта.** По логину
    * привязываться нельзя: логины публичны, и тогда любой чат прицепился бы к чужой квоте.
    * @param chatId Чат.
-   * @param codeRaw Что человек написал после команды.
+   * @param codeRaw Что человек написал после команды (пусто — попросим код следующим сообщением).
    * @returns Промис завершения.
    */
   public async linkByCode(chatId: string, codeRaw: string): Promise<void> {
     if (codeRaw === '') {
+      // Просим код и ждём его следующим сообщением: заставлять человека набирать команду с
+      // аргументом — лишний шаг там, где он и так уже сказал, чего хочет.
+      this._waiting.start(chatId);
       await this._api.sendMessage(
         chatId,
-        'Нужен код: <code>/link КОД</code>. Взять его — в личном кабинете, «Настройки → Telegram».',
+        [
+          'Пришли <b>код привязки</b> одним сообщением.',
+          '',
+          `Взять его — в личном кабинете: <a href="${this._settingsUrl}">Настройки → Telegram</a>.`,
+          '',
+          'Передумал — /cancel.',
+        ].join('\n'),
       );
       return;
     }

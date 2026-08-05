@@ -52,4 +52,15 @@ export interface TelegramApiPort {
    * @returns Промис завершения.
    */
   forwardMessage(toChatId: string, fromChatId: string, messageId: number): Promise<void>;
+
+  /**
+   * Задаёт список команд в меню Telegram.
+   *
+   * Держим его в коде, а не в BotFather: там он живёт отдельной жизнью и врёт при первой же
+   * правке обработчика (поймано 05.08.2026 — команду переписали на коды, а подсказка осталась
+   * «/link логин»). Заодно у стейджевого и боевого ботов описания совпадают без ручной сверки.
+   * @param commands Команды без ведущего слэша и их описания.
+   * @returns Промис завершения.
+   */
+  setCommands(commands: { command: string; description: string }[]): Promise<void>;
 }

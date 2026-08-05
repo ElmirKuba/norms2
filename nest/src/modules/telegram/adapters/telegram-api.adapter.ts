@@ -134,6 +134,15 @@ export class TelegramApiAdapter implements TelegramApiPort {
    * @param body Тело.
    * @returns Ответ или null.
    */
+  /**
+   * Задаёт список команд в меню Telegram.
+   * @param commands Команды и описания.
+   * @returns Промис завершения.
+   */
+  public async setCommands(commands: { command: string; description: string }[]): Promise<void> {
+    await this._call('setMyCommands', { commands });
+  }
+
   private async _call(
     method: string,
     body: Record<string, unknown>,

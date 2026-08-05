@@ -3,6 +3,7 @@ import { TelegramDomainService } from '../domain-services/telegram.domain-servic
 import { OwnerActionsUseCase } from './owner-actions.use-case';
 import { RequestInvitesUseCase } from './request-invites.use-case';
 import { ManageTelegramLinkUseCase } from './manage-telegram-link.use-case';
+import { LinkWaitStore } from '../domain-services/link-wait.store';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { GuestOutcome } from '../domain-services/telegram.domain-service';
@@ -31,6 +32,7 @@ export class HandleTelegramUpdateUseCase {
    * @param _ownerActions Сценарий владельца (очередь, решения).
    * @param _requestInvites Просьба о дополнительных приглашениях (нужен аккаунт заявителя).
    * @param _manageLink Привязка чата к аккаунту (`/link КОД`, `/unlink`).
+   * @param _linkWait Ожидание кода после голой команды `/link`.
    * @param _api Исходящий порт Bot API (гашение «часиков» на кнопке).
    */
   public constructor(
@@ -38,6 +40,7 @@ export class HandleTelegramUpdateUseCase {
     private readonly _ownerActions: OwnerActionsUseCase,
     private readonly _requestInvites: RequestInvitesUseCase,
     private readonly _manageLink: ManageTelegramLinkUseCase,
+    private readonly _linkWait: LinkWaitStore,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
   ) {}
 
@@ -97,8 +100,18 @@ export class HandleTelegramUpdateUseCase {
         return;
       }
       if (command === '/unlink') {
+        this._linkWait.forget(chatId);
         await this._manageLink.unlinkByChat(chatId);
         return;
+      }
+      // Ответ на голый `/link`: следующее сообщение и есть код. Проверяется ПОСЛЕ команд —
+      // иначе «/cancel», набранный вместо кода, стал бы кодом.
+      if (!command.startsWith('/') && this._linkWait.take(chatId)) {
+        await this._manageLink.linkByCode(chatId, trimmed);
+        return;
+      }
+      if (command === '/cancel') {
+        this._linkWait.forget(chatId);
       }
     }
     if (!this._telegramDomainService.isOwner(chatId)) {

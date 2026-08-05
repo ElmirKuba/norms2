@@ -39,6 +39,17 @@ export interface TelegramRepositoryPort {
   createRequest(id: string, data: TelegramRequestBase): Promise<TelegramRequestFull>;
 
   /**
+   * Запоминает id сообщения-карточки в личке владельца.
+   *
+   * Отдельным вызовом после создания, а не полем при вставке: `message_id` появляется только
+   * после успешной отправки, а строка нужна раньше — её `id` едет в `callback_data` кнопок.
+   * @param id Заявка.
+   * @param messageId Сообщение в чате владельца.
+   * @returns Промис завершения.
+   */
+  setRequestOwnerMessage(id: string, messageId: number): Promise<void>;
+
+  /**
    * Незакрытая заявка этого чата, если есть.
    * @param chatId Чат заявителя.
    * @returns Заявка или null.

@@ -5,7 +5,23 @@ import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
+import { generateId } from '../../../shared/utility-level/generate-id.util';
+import { RequestDraftStore } from './request-draft.store';
+import { PRIVACY_NOTICE, QUESTIONS, validateAnswer } from './request-dialog.util';
 import type { Env } from '../../../system/config/env.schema';
+
+/**
+ * Экранирует текст под HTML-разметку Telegram.
+ *
+ * Обязательно именно здесь: в карточку владельцу подставляется то, что написал человек, а он
+ * может прислать `<b>` или `&`. Без экранирования Telegram отклонит сообщение целиком —
+ * и заявка просто не дойдёт.
+ * @param text Ответ человека.
+ * @returns Безопасный фрагмент.
+ */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 /** Ответы бота, которые не зависят от шага диалога. */
 const REPLY = {
@@ -60,6 +76,7 @@ export class TelegramDomainService {
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
+    private readonly _drafts: RequestDraftStore,
     configService: ConfigService<Env, true>,
   ) {
     this._ownerChatId = configService.get('TELEGRAM_OWNER_CHAT_ID', { infer: true });
@@ -127,12 +144,150 @@ export class TelegramDomainService {
       );
       return;
     }
-    // TODO: Claude Code: 2026-08-05: /join и /invites — пошаговый диалог заявителя (шаг ·10).
-    if (command === '/join' || command === '/invites') {
-      await this._api.sendMessage(chatId, 'Приёмная заявок ещё настраивается — загляни позже.');
+    if (command === '/cancel') {
+      this._drafts.forget(chatId);
+      await this._api.sendMessage(chatId, 'Заполнение прервано. Захочешь вернуться — /join');
+      return;
+    }
+    if (command === '/join') {
+      await this._startJoin(chatId);
+      return;
+    }
+    // TODO: Claude Code: 2026-08-05: /invites — заявка на дополнительные приглашения (шаг ·13).
+    if (command === '/invites') {
+      await this._api.sendMessage(chatId, 'Заявки на приглашения ещё настраиваются — загляни позже.');
+      return;
+    }
+
+    // Не команда: возможно, это ответ на вопрос анкеты. Проверяем ПОСЛЕ команд, чтобы «/cancel»
+    // посреди диалога оставался командой, а не ответом на вопрос «зачем тебе Нормисы».
+    const draft = this._drafts.get(chatId);
+    if (draft !== null) {
+      await this._continueDraft(chatId, text);
       return;
     }
     await this._api.sendMessage(chatId, REPLY.unknown);
+  }
+
+  /**
+   * Начинает анкету, если у чата нет незакрытой заявки.
+   * @param chatId Чат.
+   * @returns Промис завершения.
+   */
+  private async _startJoin(chatId: string): Promise<void> {
+    const pending = await this._repository.findPendingByChat(chatId);
+    if (pending !== null) {
+      await this._api.sendMessage(
+        chatId,
+        'У тебя уже есть заявка на рассмотрении. Я напишу, как только будет решение.',
+      );
+      return;
+    }
+    this._drafts.start(chatId);
+    await this._api.sendMessage(chatId, PRIVACY_NOTICE);
+    await this._api.sendMessage(chatId, QUESTIONS.name);
+  }
+
+  /**
+   * Принимает ответ на текущий вопрос анкеты.
+   * @param chatId Чат.
+   * @param text Ответ.
+   * @returns Промис завершения.
+   */
+  private async _continueDraft(chatId: string, text: string): Promise<void> {
+    const draft = this._drafts.get(chatId);
+    if (draft === null) {
+      return;
+    }
+    const check = validateAnswer(draft.step, text);
+    if (!check.ok) {
+      await this._api.sendMessage(chatId, check.error);
+      return;
+    }
+    const updated = this._drafts.advance(chatId, check.value);
+    if (updated === null) {
+      return;
+    }
+    if (!this._drafts.isComplete(updated)) {
+      await this._api.sendMessage(chatId, QUESTIONS[updated.step]);
+      return;
+    }
+    // Последний шаг записан — отправляем владельцу и забываем черновик.
+    await this._submit(chatId, updated.answers);
+  }
+
+  /**
+   * Создаёт заявку и отправляет карточку владельцу.
+   *
+   * **Порядок именно такой:** сначала строка в БД (чтобы у кнопок был `id`), потом сообщение
+   * владельцу. Если отправка не удалась, заявка помечается протухшей — иначе человек ждал бы
+   * решения по заявке, которой владелец никогда не видел.
+   * @param chatId Чат заявителя.
+   * @param answers Собранные ответы.
+   * @returns Промис завершения.
+   */
+  private async _submit(chatId: string, answers: Record<string, string | undefined>): Promise<void> {
+    const id = generateId();
+    try {
+      await this._repository.createRequest(id, {
+        chatId,
+        type: 'join',
+        status: 'pending',
+        accountId: null,
+        inviteCodeId: null,
+        ownerMessageId: null,
+        decisionReason: null,
+        decidedAt: null,
+      });
+    } catch {
+      // Сюда попадаем, если уникальный индекс «одна pending на чат» отклонил вставку:
+      // человек успел отправить две анкеты подряд.
+      this._drafts.forget(chatId);
+      await this._api.sendMessage(chatId, 'Похоже, заявка от тебя уже есть. Дождись решения.');
+      return;
+    }
+
+    const card = [
+      '<b>Новая заявка на вступление</b>',
+      '',
+      `Имя: ${escapeHtml(answers['name'] ?? '—')}`,
+      `Возраст: ${escapeHtml(answers['age'] ?? '—')}`,
+      `Пол: ${escapeHtml(answers['gender'] ?? '—')}`,
+      '',
+      `Зачем: ${escapeHtml(answers['why'] ?? '—')}`,
+    ].join('\n');
+
+    const messageId =
+      this._ownerChatId === ''
+        ? null
+        : await this._api.sendMessage(this._ownerChatId, card, [
+            [
+              { text: '✅ Выдать код', callbackData: `ok:${id}` },
+              { text: '✖️ Отказать', callbackData: `no:${id}` },
+            ],
+          ]);
+
+    this._drafts.forget(chatId);
+
+    if (messageId === null) {
+      await this._repository.decideIfPending(id, {
+        status: 'expired',
+        decisionReason: 'Не доставлено владельцу',
+        inviteCodeId: null,
+      });
+      this._logger.warn(`Заявка ${id} не доставлена владельцу — помечена протухшей.`);
+      await this._api.sendMessage(
+        chatId,
+        'Не получилось отправить заявку — попробуй ещё раз чуть позже: /join',
+      );
+      return;
+    }
+
+    await this._repository.setRequestOwnerMessage(id, messageId);
+    await this._api.sendMessage(
+      chatId,
+      'Заявка отправлена. Владелец посмотрит и я напишу сюда с решением.',
+    );
   }
 
   /**

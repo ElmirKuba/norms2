@@ -55,6 +55,19 @@ export class TelegramRepository implements TelegramRepositoryPort {
   }
 
   /**
+   * Запоминает id сообщения-карточки в личке владельца.
+   * @param id Заявка.
+   * @param messageId Сообщение.
+   * @returns Промис завершения.
+   */
+  public async setRequestOwnerMessage(id: string, messageId: number): Promise<void> {
+    await this._db
+      .update(telegramRequests)
+      .set({ ownerMessageId: messageId })
+      .where(eq(telegramRequests.id, id));
+  }
+
+  /**
    * Незакрытая заявка этого чата.
    * @param chatId Чат заявителя.
    * @returns Заявка или null.

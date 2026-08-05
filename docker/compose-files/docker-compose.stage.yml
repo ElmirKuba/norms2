@@ -1,0 +1,99 @@
+# Стейдж-окружение «Нормисов» — второй стек НА ТОЙ ЖЕ машине, что прод (docs/deployment.md §4a).
+#
+# **Почему на одной машине, хотя изоляция — это хорошо.** Первый стейдж стоял отдельным сервером,
+# и выяснилось, что до Telegram он не достукивается ни в одну сторону: блокировка точечная, по
+# IP-маршруту, и у соседнего сервера того же провайдера её нет (ADR-0064, «Риск, вскрывшийся при
+# проверке»). Вебхук требует, чтобы Telegram дошёл ДО нас, а этот адрес выбираем не мы. Значит
+# стейдж обязан жить там, где маршрут рабочий, — рядом с продом.
+#
+# **Своего Traefik здесь нет.** Порты 80/443 уже заняты прод-прокси; стейдж роутится тем же
+# Traefik по домену — маршруты в docker/traefik/dynamic/stage-routes.yml, они подхватываются
+# на лету (--providers.file.watch), прод при этом не перезапускается.
+#
+# Запуск (из /home/norms2_stage, у него свой .env):  make stage-up
+name: norms2_stage
+
+services:
+  # ── PostgreSQL стейджа: отдельный контейнер, отдельный том, своя сеть ──
+  postgres:
+    container_name: norms2_postgres_stage
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${PROJECT_ROOT}/docker/volumes/pg_data_stage:/var/lib/postgresql/data
+      - ${PROJECT_ROOT}/docker/sql-files/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # ТОЛЬКО стейджевая сеть: база стейджа не должна быть видна из прод-сети.
+    networks:
+      - norms2_stage-net
+
+  migrate:
+    container_name: norms2_migrate_stage
+    image: norms2_nest_stage
+    command: ['node', 'dist/migrate.js']
+    restart: 'no'
+    env_file:
+      - ${PROJECT_ROOT}/.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: norms2_postgres_stage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - norms2_stage-net
+
+  nest:
+    container_name: norms2_nest_stage
+    image: norms2_nest_stage
+    build:
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/nest-backend/Dockerfile.production
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}
+    restart: unless-stopped
+    env_file:
+      - ${PROJECT_ROOT}/.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: norms2_postgres_stage
+    volumes:
+      - ${PROJECT_ROOT}/docker/volumes/content:/app/content:rw
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Две сети: своя (до своей БД) и прод-сеть — но ТОЛЬКО чтобы Traefik мог достучаться.
+    # Обратная сторона видна и принята: из этого контейнера технически достижим
+    # norms2_postgres_prod. Защита тут не сетевая, а в `.env`: у стейджа свои DB_*.
+    networks:
+      - norms2_stage-net
+      - norms2_prod-net
+
+  angular:
+    container_name: norms2_angular_stage
+    build:
+      context: ${PROJECT_ROOT}
+      dockerfile: docker/dockerfiles/angular-frontend/Dockerfile.production
+    restart: unless-stopped
+    depends_on:
+      - nest
+    networks:
+      - norms2_prod-net
+
+networks:
+  norms2_stage-net:
+    name: norms2_stage-net
+  # Прод-сеть создаётся прод-стеком; стейдж к ней присоединяется, а не создаёт.
+  norms2_prod-net:
+    name: norms2_prod-net
+    external: true

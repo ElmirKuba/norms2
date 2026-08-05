@@ -19,8 +19,11 @@ export GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 
 DEV_COMPOSE  := docker compose --env-file .env -f docker/compose-files/docker-compose.dev.yml
 PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.prod.yml
+# Стейдж — второй стек на той же машине, из отдельной папки со своим .env
+# (/home/norms2_stage). Своего Traefik у него нет: роутит прод-прокси по домену.
+STAGE_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.stage.yml
 
-.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio audit-fields prod-build prod-migrate prod-up prod-down prod-config env-cleanup
+.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio audit-fields prod-build prod-migrate prod-up prod-down prod-config stage-build stage-up stage-down stage-logs env-cleanup
 
 help: ## Показать список команд
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -71,6 +74,18 @@ prod-up: ## Поднять prod (миграции прогоняются гей�
 
 prod-down: ## Остановить prod
 	$(PROD_COMPOSE) down
+
+stage-build: ## Собрать stage-образы (второй стек на прод-машине)
+	$(STAGE_COMPOSE) build
+
+stage-up: ## Поднять stage (миграции гейтом migrate перед nest)
+	$(STAGE_COMPOSE) up -d
+
+stage-down: ## Остановить stage
+	$(STAGE_COMPOSE) down
+
+stage-logs: ## Логи stage-бэкенда
+	$(STAGE_COMPOSE) logs -f nest
 
 prod-config: ## Проверить prod-compose
 	$(PROD_COMPOSE) config

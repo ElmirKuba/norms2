@@ -1,0 +1,45 @@
+# Маршруты СТЕЙДЖА для прод-Traefik (docs/deployment.md §4a).
+#
+# Стейдж живёт на той же машине и за тем же прокси: порты 80/443 одни на сервер. Разделение —
+# по домену: `stage.нормисы.рф` → контейнеры `*_stage`, всё остальное → прод.
+#
+# **Приоритет 20/21 выше прод-роутеров (10/1) намеренно.** Прод-правила намеренно не трогаем:
+# они матчат любой хост, и добавь мы туда `Host(...)`, любая опечатка уронила бы боевой сайт.
+# Вместо этого стейдж перехватывает свой домен более высоким приоритетом — правки прод-маршрутов
+# не требуется вовсе.
+#
+# **Сертификат запрашивается на уровне роутера**, а не в статической команде Traefik: файл
+# подхватывается на лету (`--providers.file.watch=true`), то есть стейдж добавляется **без
+# перезапуска прод-прокси**. Домен в punycode — ACME работает с ним, а не с кириллицей.
+#
+# Если стейдж-контейнеров нет (обычная машина без второго стека), эти роутеры просто отдают 502
+# на `stage.*` — на прод это не влияет.
+http:
+  routers:
+    norms2-stage-api:
+      rule: "Host(`stage.xn--h1ahceki4e.xn--p1ai`) && (PathPrefix(`/api`) || PathPrefix(`/content`))"
+      priority: 21
+      entryPoints: ['websecure']
+      service: norms2-stage-api
+      tls:
+        certResolver: le
+        domains:
+          - main: 'stage.xn--h1ahceki4e.xn--p1ai'
+    norms2-stage-web:
+      rule: "Host(`stage.xn--h1ahceki4e.xn--p1ai`)"
+      priority: 20
+      entryPoints: ['websecure']
+      service: norms2-stage-web
+      tls:
+        certResolver: le
+        domains:
+          - main: 'stage.xn--h1ahceki4e.xn--p1ai'
+  services:
+    norms2-stage-api:
+      loadBalancer:
+        servers:
+          - url: 'http://norms2_nest_stage:3000'
+    norms2-stage-web:
+      loadBalancer:
+        servers:
+          - url: 'http://norms2_angular_stage:80'

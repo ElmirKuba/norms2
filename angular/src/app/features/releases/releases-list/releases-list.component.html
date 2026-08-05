@@ -2,8 +2,11 @@
   <header class="releases__hero">
     <h1>Релизы</h1>
     <p class="releases__lead">
-      Что менялось в «Нормисах» и почему. Каждый выпуск объявляется в
-      <a href="https://t.me/norms2" target="_blank" rel="noopener">канале</a>, подробности — здесь.
+      Что менялось в «Нормисах» и почему.
+      @if (channelUrl(); as channel) {
+        Каждый выпуск объявляется в
+        <a [href]="channel" target="_blank" rel="noopener">канале</a>, подробности — здесь.
+      }
     </p>
   </header>
 

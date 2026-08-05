@@ -5,7 +5,7 @@ import type { PublicConfig } from '../interfaces/public-config.interface';
 /** Пока конфигурация не загружена — самый осторожный дефолт: invite-only и бота нет. */
 const FALLBACK: PublicConfig = {
   features: { freeRegistration: false },
-  telegram: { botUsername: '', botUrl: '' },
+  telegram: { botUsername: '', botUrl: '', channelUrl: '' },
 };
 
 /**
@@ -28,6 +28,12 @@ export class FeatureFlagsStore {
   /** Ссылка на бота или null, если он не настроен. */
   public readonly botUrl = computed<string | null>(() => {
     const url = this._config().telegram.botUrl;
+    return url === '' ? null : url;
+  });
+
+  /** Ссылка на канал или null, если он не настроен. */
+  public readonly channelUrl = computed<string | null>(() => {
+    const url = this._config().telegram.channelUrl;
     return url === '' ? null : url;
   });
 

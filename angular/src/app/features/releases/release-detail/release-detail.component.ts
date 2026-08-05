@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import { renderMarkdown, stripLeadingHeading } from '../../notifications/md-render.util';
+import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ReleasesApiService } from '../services/releases-api.service';
 import type { ReleaseView } from '../releases.types';
 
@@ -27,6 +28,12 @@ import type { ReleaseView } from '../releases.types';
 export class ReleaseDetailComponent {
   private readonly _route = inject(ActivatedRoute);
   private readonly _api = inject(ReleasesApiService);
+  private readonly _config = inject(FeatureFlagsStore);
+
+  /** Ссылка на канал-витрину или null, если он на этом стенде не настроен. */
+  protected readonly channelUrl = this._config.channelUrl;
+  /** Ссылка на бота или null. */
+  protected readonly botUrl = this._config.botUrl;
 
   /** Ключ ноты из маршрута (`/releases/:key`). */
   protected readonly key = this._route.snapshot.paramMap.get('key') ?? '';

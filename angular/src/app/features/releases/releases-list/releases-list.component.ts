@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
+import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ReleasesApiService } from '../services/releases-api.service';
 import type { ReleaseView } from '../releases.types';
 
@@ -21,6 +22,10 @@ import type { ReleaseView } from '../releases.types';
 })
 export class ReleasesListComponent {
   private readonly _api = inject(ReleasesApiService);
+  private readonly _config = inject(FeatureFlagsStore);
+
+  /** Ссылка на канал-витрину или null, если он на этом стенде не настроен. */
+  protected readonly channelUrl = this._config.channelUrl;
 
   /** Загруженные релизы (новые сверху). */
   protected readonly releases = signal<ReleaseView[]>([]);

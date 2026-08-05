@@ -6,6 +6,8 @@ export interface TelegramPublicView {
   botUsername: string;
   /** Ссылка на бота или пустая строка, если бот не настроен. */
   botUrl: string;
+  /** Ссылка на канал-витрину или пустая строка. */
+  channelUrl: string;
 }
 
 /**

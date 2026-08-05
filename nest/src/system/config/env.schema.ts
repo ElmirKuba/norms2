@@ -66,6 +66,9 @@ export const envSchema = z.object({
   TELEGRAM_OWNER_CHAT_ID: z.string().default(''),
   // Юзернейм бота для строки «нет приглашения? заявка боту» в посте; пусто — строки не будет.
   TELEGRAM_BOT_USERNAME: z.string().default(''),
+  // Ссылка на канал-витрину. Отдельно от `TELEGRAM_CHANNEL_ID`: там идентификатор для отправки
+  // (`-100…` или `@имя`), а здесь адрес для человека. Пусто — ссылки на канал не показываем.
+  TELEGRAM_CHANNEL_URL: z.string().default(''),
   // Ссылка на бота целиком. Отдельно от юзернейма намеренно: адрес не всегда `t.me/<имя>` —
   // бывает deeplink с параметром или другой хост. Пусто — соберём из юзернейма.
   TELEGRAM_BOT_URL: z.string().default(''),

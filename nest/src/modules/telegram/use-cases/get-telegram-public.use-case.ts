@@ -24,7 +24,8 @@ export class GetTelegramPublicUseCase {
     // параметром или другой хост. Не задана — собираем из имени; нет и имени — бот на этом
     // стенде не настроен, и экран честно скажет об этом вместо битой ссылки.
     const botUrl = configured !== '' ? configured : botUsername === '' ? '' : `https://t.me/${botUsername}`;
-    this._view = { botUsername, botUrl };
+    const channelUrl = configService.get('TELEGRAM_CHANNEL_URL', { infer: true }).trim();
+    this._view = { botUsername, botUrl, channelUrl };
   }
 
   /**

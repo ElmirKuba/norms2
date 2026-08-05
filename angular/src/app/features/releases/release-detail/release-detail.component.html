@@ -21,13 +21,21 @@
       <div class="md" [innerHTML]="content"></div>
     }
 
-    <footer class="release-page__foot">
-      <p>
-        Новые выпуски объявляются в
-        <a href="https://t.me/norms2" target="_blank" rel="noopener">канале «Нормисы»</a>.
-        Нет приглашения — оставьте заявку
-        <a href="https://t.me/norms2_bot" target="_blank" rel="noopener">боту</a>.
-      </p>
-    </footer>
+    <!-- Адреса берём из публичной конфигурации: на стейдже бот и канал СВОИ, а зашитые
+         t.me/norms2 уводили тестового человека на боевые. -->
+    @if (channelUrl() || botUrl()) {
+      <footer class="release-page__foot">
+        <p>
+          @if (channelUrl(); as channel) {
+            Новые выпуски объявляются в
+            <a [href]="channel" target="_blank" rel="noopener">канале «Нормисы»</a>.
+          }
+          @if (botUrl(); as bot) {
+            Нет приглашения — оставьте заявку
+            <a [href]="bot" target="_blank" rel="noopener">боту</a>.
+          }
+        </p>
+      </footer>
+    }
   }
 </article>

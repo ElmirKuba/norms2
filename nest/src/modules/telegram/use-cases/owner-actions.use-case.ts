@@ -298,19 +298,19 @@ export class OwnerActionsUseCase {
     }
 
     // Квота и код — в одной транзакции: списалось, но код не создался — откатываем оба.
-    let code: string;
+    let created: { code: string; id: string };
     try {
-      code = await this._transactionRunner.run(async (tx) => {
+      created = await this._transactionRunner.run(async (tx) => {
         const consumed = await this._accountDomainService.consumeInviteQuota(link.accountId, tx);
         if (!consumed) {
           throw new Error('QUOTA');
         }
-        const created = await this._inviteDomainService.createCode(
+        const inviteCode = await this._inviteDomainService.createCode(
           link.accountId,
           reason ?? DEFAULT_REASON,
           tx,
         );
-        return created.code;
+        return { code: inviteCode.code, id: inviteCode.id };
       });
     } catch (error) {
       const quotaSpent = error instanceof Error && error.message === 'QUOTA';
@@ -324,22 +324,24 @@ export class OwnerActionsUseCase {
 
     // Заявка закрывается ПОСЛЕ выдачи: если код не создался, она осталась бы pending —
     // это лучше, чем закрытая заявка без кода.
+    // Ссылка на код — не украшение: по ней бот узнаёт, что человек зарегистрировался именно по
+    // этой заявке, и спрашивает у него согласие на уведомления (·15). Без неё связь теряется.
     const closed = await this._repository.decideIfPending(requestId, {
       status: 'approved',
       decisionReason: reason,
-      inviteCodeId: null,
+      inviteCodeId: created.id,
       grantedAmount: null,
     });
     if (!closed) {
       // Кто-то закрыл её параллельно (кнопка под сообщением и очередь — два входа).
-      this._logger.warn(`Заявка ${requestId} закрыта параллельно; код ${code} уже выдан.`);
+      this._logger.warn(`Заявка ${requestId} закрыта параллельно; код ${created.code} уже выдан.`);
     }
 
     // Ссылка ведёт на страницу «Тебя пригласили!», а не сразу на форму: человек сначала
     // видит, куда его позвали и почему, и только потом регистрируется. Код в ссылке
     // подставится сам. Адрес берётся из конфига — на стейдже он другой, и зашитый
     // «нормисы.рф» отправлял бы тестового человека на боевой сайт.
-    const inviteLink = `${this._baseUrl}/invite?code=${encodeURIComponent(code)}`;
+    const inviteLink = `${this._baseUrl}/invite?code=${encodeURIComponent(created.code)}`;
     await this._api.sendMessage(
       request.chatId,
       [
@@ -347,10 +349,10 @@ export class OwnerActionsUseCase {
         '',
         `Твоя ссылка-приглашение: ${escapeHtml(inviteLink)}`,
         '',
-        `Если ссылка не открылась — код можно ввести вручную: <code>${escapeHtml(code)}</code>`,
+        `Если ссылка не открылась — код можно ввести вручную: <code>${escapeHtml(created.code)}</code>`,
       ].join('\n'),
     );
-    await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(code)}</code>`, [
+    await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(created.code)}</code>`, [
       [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
     ]);
   }

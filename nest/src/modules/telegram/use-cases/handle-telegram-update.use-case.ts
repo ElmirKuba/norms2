@@ -180,6 +180,11 @@ export class HandleTelegramUpdateUseCase {
       await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
       return;
     }
+    // Согласие на уведомления — кнопка не владельца, а любого человека (·15).
+    if (prefix === 'nt') {
+      await this._telegramDomainService.setNotificationsConsent(chatId, payload === '1');
+      return;
+    }
     // Номинал начисления зашит в сам префикс кнопки (`g1` / `g3` / `g5`): в `callback_data`
     // остаётся 12 символов сверх идентификатора заявки, отдельного поля туда не положить.
     if (isOwner && GRANT_PREFIXES.has(prefix)) {

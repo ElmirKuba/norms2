@@ -97,6 +97,20 @@ export class TelegramRepository implements TelegramRepositoryPort {
   }
 
   /**
+   * Заявка, по которой выдан код приглашения.
+   * @param inviteCodeId Идентификатор кода.
+   * @returns Заявка или null.
+   */
+  public async findRequestByInviteCode(inviteCodeId: string): Promise<TelegramRequestFull | null> {
+    const rows = await this._db
+      .select()
+      .from(telegramRequests)
+      .where(eq(telegramRequests.inviteCodeId, inviteCodeId))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  /**
    * Очередь заявок по статусу, новые сверху.
    * @param status Статус.
    * @param limit Сколько.

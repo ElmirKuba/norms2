@@ -67,6 +67,16 @@ export interface TelegramRepositoryPort {
   findRequestById(id: string): Promise<TelegramRequestFull | null>;
 
   /**
+   * Заявка, по которой выдан этот код приглашения.
+   *
+   * Нужна, чтобы после регистрации спросить человека про уведомления (·15): только заявка знает
+   * чат, в который пришёл код.
+   * @param inviteCodeId Идентификатор кода.
+   * @returns Заявка или null (код выдан не через бота).
+   */
+  findRequestByInviteCode(inviteCodeId: string): Promise<TelegramRequestFull | null>;
+
+  /**
    * Очередь заявок для владельца, новые сверху.
    * @param status Какие показывать.
    * @param limit Сколько.

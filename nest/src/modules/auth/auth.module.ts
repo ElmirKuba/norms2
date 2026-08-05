@@ -3,6 +3,7 @@ import { AccountModule } from '../account/account.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { InvitesModule } from '../invites/invites.module';
 import { BanCoreModule } from '../bans/ban-core.module';
+import { TelegramCoreModule } from '../telegram/telegram-core.module';
 import { NotificationCoreModule } from '../notifications/notification-core.module';
 import { AccessControlModule } from './access-control.module';
 import { AuthController } from './controllers/auth.controller';
@@ -31,6 +32,10 @@ import { ReactivateAccountUseCase } from './use-cases/reactivate-account.use-cas
     InvitesModule,
     BanCoreModule,
     NotificationCoreModule,
+    // Ядро Telegram-области (без вебхука и сценариев): регистрация по коду из заявки
+    // спрашивает у человека согласие на уведомления (·15). Кросс-домен вниз, к
+    // domain-service — на use-case чужой области auth не ходит.
+    TelegramCoreModule,
   ],
   controllers: [AuthController, FeatureFlagsController],
   providers: [

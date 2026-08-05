@@ -188,6 +188,80 @@ export class TelegramDomainService {
   }
 
   /**
+   * Спрашивает согласие на уведомления у того, кто только что зарегистрировался по коду из
+   * заявки (·15).
+   *
+   * **Спрашиваем явно и отдельно.** Человек писал боту, чтобы попасть внутрь, а не чтобы
+   * получать сообщения; молча превратить одно согласие в другое нельзя
+   * ([ADR-0064 §12](../../../../docs/decisions/0064-telegram-release-channel.md)).
+   *
+   * Заодно создаётся сама привязка: цепочка «заявка из этого чата → выданный в него код →
+   * регистрация по нему» уже доказывает, что чат принадлежит человеку, и заставлять его
+   * переписывать код из ЛК было бы бессмысленной формальностью. Привязка создаётся с
+   * `notifications_allowed = false` — согласие включит только кнопка.
+   *
+   * **Чат передаётся снаружи, а не ищется по коду.** Погашение кода при регистрации удаляет его
+   * строку, а ссылка на неё в заявке обнуляется (`ON DELETE SET NULL`), — искать задним числом
+   * уже нечего (поймано живым прогоном 05.08.2026).
+   * @param chatId Чат заявителя, найденный до регистрации.
+   * @param accountId Созданный аккаунт.
+   * @returns Промис завершения.
+   */
+  public async askNotificationsConsent(chatId: string, accountId: string): Promise<void> {
+    const existing = await this._repository.findLinkByChat(chatId);
+    if (existing === null && (await this._repository.findLinkByAccount(accountId)) === null) {
+      await this._repository.createLink(generateId(), accountId, chatId);
+    }
+    await this._api.sendMessage(
+      chatId,
+      [
+        '🎉 <b>Ты в «Нормисах».</b>',
+        '',
+        'Оставить эту переписку для уведомлений? Тогда я смогу написать сюда о важном — например, о новом релизе.',
+        '',
+        'Откажешься — ничего не потеряешь: заявки и приглашения работают и без этого.',
+      ].join('\n'),
+      [
+        [
+          { text: '✅ Да, можно писать', callbackData: 'nt:1' },
+          { text: '✖️ Нет, спасибо', callbackData: 'nt:0' },
+        ],
+      ],
+    );
+  }
+
+  /**
+   * Чат заявки, по которой был выдан этот код (до его погашения).
+   * @param inviteCodeId Идентификатор кода.
+   * @returns Чат или null, если код выдан не через бота.
+   */
+  public async findRequestChatByInviteCode(inviteCodeId: string): Promise<string | null> {
+    const request = await this._repository.findRequestByInviteCode(inviteCodeId);
+    return request?.chatId ?? null;
+  }
+
+  /**
+   * Записывает ответ на вопрос об уведомлениях.
+   * @param chatId Чат.
+   * @param allowed Разрешил ли писать.
+   * @returns Промис завершения.
+   */
+  public async setNotificationsConsent(chatId: string, allowed: boolean): Promise<void> {
+    const link = await this._repository.findLinkByChat(chatId);
+    if (link === null) {
+      await this._api.sendMessage(chatId, 'Этот чат не привязан к аккаунту — записывать согласие не к чему.');
+      return;
+    }
+    await this._repository.setNotificationsAllowed(chatId, allowed);
+    await this._api.sendMessage(
+      chatId,
+      allowed
+        ? 'Договорились — буду писать только о важном. Передумаешь: /unlink отвяжет чат целиком.'
+        : 'Понял, писать не буду. Заявки и приглашения работают по-прежнему.',
+    );
+  }
+
+  /**
    * Показывает гостевое меню.
    * @param chatId Чат.
    * @returns Промис завершения.

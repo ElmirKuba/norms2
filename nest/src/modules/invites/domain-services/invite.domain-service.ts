@@ -137,6 +137,26 @@ export class InviteDomainService {
   }
 
   /**
+   * Идентификатор действующего кода по его значению.
+   *
+   * Нужен тем, кому важно **до** погашения узнать, откуда код: при регистрации строка кода
+   * удаляется, и все ссылки на неё обнуляются (`ON DELETE SET NULL`) — спросить задним числом
+   * уже не у кого.
+   * @param rawCode Сырой код.
+   * @returns Идентификатор или null, если код недействителен.
+   */
+  public async findActiveCodeId(rawCode: string): Promise<string | null> {
+    let normalized: string;
+    try {
+      normalized = InviteCodeValue.create(rawCode).value;
+    } catch {
+      return null;
+    }
+    const code = await this._inviteRepository.findActiveCodeByValue(normalized);
+    return code?.id ?? null;
+  }
+
+  /**
    * Список приглашённых данным аккаунтом (с login/alias из accounts).
    * @param inviterId Идентификатор пригласившего.
    * @returns Проекции приглашённых.

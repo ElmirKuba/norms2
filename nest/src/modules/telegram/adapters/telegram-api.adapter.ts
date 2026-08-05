@@ -16,6 +16,15 @@ const SEND_ATTEMPTS = 4;
 const RETRY_DELAY_MS = 700;
 
 /**
+ * Предел на одну попытку.
+ *
+ * Без него `fetch` ждёт зависшее соединение неприлично долго, и повторы не спасают — они просто
+ * не наступают. При мерцающем маршруте (70% успеха на замере 05.08.2026) быстрый провал и
+ * повтор надёжнее, чем одна терпеливая попытка.
+ */
+const ATTEMPT_TIMEOUT_MS = 8000;
+
+/**
  * Пауза.
  * @param ms Миллисекунды.
  * @returns Промис, который разрешится через указанное время.
@@ -135,6 +144,7 @@ export class TelegramApiAdapter implements TelegramApiPort {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
         });
         const payload = (await response.json()) as TelegramApiResponse;
         if (payload.ok) {

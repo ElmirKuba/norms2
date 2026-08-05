@@ -141,6 +141,9 @@ export class TelegramReleaseBroadcastAdapter implements ReleaseBroadcastPort {
     const response = await fetch(`https://api.telegram.org/bot${this._token}/${method}`, {
       method: 'POST',
       body: form,
+      // Тот же предел, что у диалогового адаптера: зависшее соединение блокирует старт
+      // приложения, ведь сид объявляет релизы при загрузке.
+      signal: AbortSignal.timeout(20000),
     });
     const payload = (await response.json()) as TelegramResponse;
     if (payload.ok) {

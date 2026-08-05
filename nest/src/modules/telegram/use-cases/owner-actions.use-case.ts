@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { InviteDomainService } from '../../invites/domain-services/invite.domain-service';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
@@ -12,6 +13,7 @@ import type { TelegramRepositoryPort } from '../adapters/telegram-repository.por
 import type { TransactionRunnerPort } from '../../../shared/transactions/transaction-runner.port';
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
 import type { OwnerActionKind } from '../domain-services/owner-action.store';
+import type { Env } from '../../../system/config/env.schema';
 
 /** Возврат в меню — есть на каждом экране: без него любой список тупик. */
 const MENU_BUTTON = { text: '🏠 Меню', callbackData: 'menu' };
@@ -39,6 +41,7 @@ const SKIP_REASON = '-';
 @Injectable()
 export class OwnerActionsUseCase {
   private readonly _logger = new Logger('TelegramOwner');
+  private readonly _baseUrl: string;
 
   /**
    * @param _repository Порт репозитория заявок.
@@ -47,6 +50,7 @@ export class OwnerActionsUseCase {
    * @param _accountDomainService Domain-service аккаунтов (квота, поиск по логину).
    * @param _inviteDomainService Domain-service приглашений (создание кода).
    * @param _transactionRunner Раннер транзакций.
+   * @param configService Конфиг (публичный адрес для ссылки-приглашения).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
@@ -55,7 +59,10 @@ export class OwnerActionsUseCase {
     private readonly _accountDomainService: AccountDomainService,
     private readonly _inviteDomainService: InviteDomainService,
     @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
-  ) {}
+    configService: ConfigService<Env, true>,
+  ) {
+    this._baseUrl = configService.get('PUBLIC_BASE_URL', { infer: true }).replace(/\/+$/, '');
+  }
 
   /**
    * Показывает меню владельца — **объединённое**: разбор заявок плюс то, что доступно гостю.
@@ -319,14 +326,19 @@ export class OwnerActionsUseCase {
       this._logger.warn(`Заявка ${requestId} закрыта параллельно; код ${code} уже выдан.`);
     }
 
+    // Ссылка ведёт на страницу «Тебя пригласили!», а не сразу на форму: человек сначала
+    // видит, куда его позвали и почему, и только потом регистрируется. Код в ссылке
+    // подставится сам. Адрес берётся из конфига — на стейдже он другой, и зашитый
+    // «нормисы.рф» отправлял бы тестового человека на боевой сайт.
+    const inviteLink = `${this._baseUrl}/invite?code=${encodeURIComponent(code)}`;
     await this._api.sendMessage(
       request.chatId,
       [
         '🎟 <b>Заявка одобрена</b>',
         '',
-        `Твой код приглашения: <code>${escapeHtml(code)}</code>`,
+        `Твоя ссылка-приглашение: ${escapeHtml(inviteLink)}`,
         '',
-        'Регистрация: https://нормисы.рф/register — код подставится, останется придумать логин и пароль.',
+        `Если ссылка не открылась — код можно ввести вручную: <code>${escapeHtml(code)}</code>`,
       ].join('\n'),
     );
     await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(code)}</code>`, [

@@ -43,6 +43,10 @@ export class HandleTelegramUpdateUseCase {
 
     const callback = update.callback_query;
     if (callback !== undefined) {
+      const chatType = callback.message?.chat.type;
+      if (chatType !== undefined && chatType !== 'private') {
+        return;
+      }
       const chatId = callback.message?.chat.id;
       // Гасим «часики» сразу: без ответа Telegram крутит их 30 секунд, и человек решает,
       // что бот завис. Делаем это ДО работы, которая может занять время.
@@ -55,6 +59,12 @@ export class HandleTelegramUpdateUseCase {
 
     const message = update.message;
     if (message === undefined) {
+      return;
+    }
+    // Отвечаем ТОЛЬКО в личке. В группе бот получает служебные апдейты — «сменили фото»,
+    // «добавили участника», — у них нет текста, и диалоговая ветка отвечала на каждый
+    // «мне нужен текст». Поймано 05.08.2026, когда бота добавили в общий чат проекта.
+    if (message.chat.type !== undefined && message.chat.type !== 'private') {
       return;
     }
     await this._routeMessage(String(message.chat.id), message.text);

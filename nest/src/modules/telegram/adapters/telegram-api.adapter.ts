@@ -3,12 +3,35 @@ import { ConfigService } from '@nestjs/config';
 import type { TelegramApiPort, TelegramButton } from './telegram-api.port';
 import type { Env } from '../../../system/config/env.schema';
 
+/**
+ * Сколько раз пробуем при сетевом сбое.
+ *
+ * Не «на всякий случай»: маршрут до Telegram с РФ-хостинга **мерцает** — замер 05.08.2026 дал
+ * 5 успешных попыток из 10 подряд. Без повторов терялось каждое второе сообщение, и терялось
+ * молча: предупреждение про личные данные не дошло до человека, а следующий вопрос дошёл.
+ */
+const SEND_ATTEMPTS = 4;
+
+/** Пауза между попытками (мс), растёт линейно. */
+const RETRY_DELAY_MS = 700;
+
+/**
+ * Пауза.
+ * @param ms Миллисекунды.
+ * @returns Промис, который разрешится через указанное время.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((done) => setTimeout(done, ms));
+}
+
 /** Что нам нужно от ответа Bot API. */
 interface TelegramApiResponse {
   /** Успех. */
   ok: boolean;
   /** Описание ошибки. */
   description?: string;
+  /** Параметры ошибки — нас интересует только просьба подождать. */
+  parameters?: { retry_after?: number };
   /** Результат (для sendMessage — сообщение). */
   result?: { message_id?: number };
 }
@@ -106,21 +129,34 @@ export class TelegramApiAdapter implements TelegramApiPort {
     method: string,
     body: Record<string, unknown>,
   ): Promise<TelegramApiResponse | null> {
-    try {
-      const response = await fetch(`https://api.telegram.org/bot${this._token}/${method}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const payload = (await response.json()) as TelegramApiResponse;
-      if (!payload.ok) {
-        this._logger.warn(`${method} отклонён: ${payload.description ?? 'без описания'}`);
-        return null;
+    for (let attempt = 1; attempt <= SEND_ATTEMPTS; attempt += 1) {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${this._token}/${method}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const payload = (await response.json()) as TelegramApiResponse;
+        if (payload.ok) {
+          return payload;
+        }
+        // Telegram ОТВЕТИЛ отказом — повтор не поможет: разметка битая, бот не админ,
+        // чат не найден. Единственное исключение — просьба подождать.
+        const retryAfter = payload.parameters?.retry_after;
+        if (retryAfter === undefined) {
+          this._logger.warn(`${method} отклонён: ${payload.description ?? 'без описания'}`);
+          return null;
+        }
+        await delay((retryAfter + 1) * 1000);
+      } catch (error) {
+        // Сюда попадаем при сетевом сбое — то самое мерцание маршрута. Пробуем ещё.
+        if (attempt === SEND_ATTEMPTS) {
+          this._logger.warn(`${method} не отправлен за ${String(attempt)} попыток: ${String(error)}`);
+          return null;
+        }
+        await delay(RETRY_DELAY_MS * attempt);
       }
-      return payload;
-    } catch (error) {
-      this._logger.warn(`${method} не отправлен: ${String(error)}`);
-      return null;
     }
+    return null;
   }
 }

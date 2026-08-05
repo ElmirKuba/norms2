@@ -44,11 +44,15 @@ export class NotificationSeedService implements OnApplicationBootstrap {
 
     for (const note of RELEASE_NOTES) {
       try {
-        // Несогласованную запись лучше не сеять вовсе: 'md' без файла роняет копирование, а
-        // 'page' с файлом оставляет мусор в content/, который потом убирать с прод-тома руками.
-        const violation = validateReleaseNote(note);
-        if (violation !== null) {
-          this._logger.error(`Сид релиз-ноты пропущен — ${violation}`);
+        // Поломку данных не сеем вовсе ('md' без файла роняет копирование, 'page' с файлом
+        // оставляет мусор в content/). Нарушение соглашения о формате — только говорим вслух:
+        // номер версии выбирает человек, машина следит лишь за осознанностью выбора.
+        const check = validateReleaseNote(note);
+        if (check.warning !== null) {
+          this._logger.warn(check.warning);
+        }
+        if (check.error !== null) {
+          this._logger.error(`Сид релиз-ноты пропущен — ${check.error}`);
           continue;
         }
         const format = note.contentFormat ?? 'md';

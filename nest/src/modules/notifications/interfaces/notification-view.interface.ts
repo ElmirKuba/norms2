@@ -1,4 +1,4 @@
-import type { NotificationKind } from './notification-pure.interface';
+import type { NotificationContentFormat, NotificationKind } from './notification-pure.interface';
 
 /**
  * NotificationView — строка списка уведомлений (`GET /notifications`). Без
@@ -15,6 +15,12 @@ export interface NotificationView {
   body: string | null;
   /** Путь к .md относительно content/ или null. */
   contentFile: string | null;
+  /**
+   * Чем является содержимое (2.9.2·4). Колокольчик по этому полю выбирает способ открытия:
+   * `md` — модалкой, как сейчас; `page` — переходом на лендинг в новой вкладке. Втискивать
+   * страницу с прокруткой в модалку бессмысленно.
+   */
+  contentFormat: NotificationContentFormat;
   /** Когда создано (момент записи строки). */
   createdAt: Date;
   /**

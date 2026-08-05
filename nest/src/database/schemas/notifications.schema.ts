@@ -4,7 +4,10 @@ import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type { NotificationFull } from '../../modules/notifications/interfaces/notification-full.interface';
-import type { NotificationKind } from '../../modules/notifications/interfaces/notification-pure.interface';
+import type {
+  NotificationContentFormat,
+  NotificationKind,
+} from '../../modules/notifications/interfaces/notification-pure.interface';
 
 /**
  * notifications — уведомления (колонки 1:1 с NotificationFull). `account_id` NULL =
@@ -24,6 +27,13 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
     title: varchar('title', { length: 200 }).notNull(),
     body: text('body'),
     contentFile: varchar('content_file', { length: 255 }),
+    // Чем является содержимое (2.9.2·4): 'md' — файл с текстом, 'page' — страница фронта
+    // (лендинг релиза; файла нет, бэк её не хранит). Default 'md' — чтобы существующие ноты
+    // и все будущие патчи получали текстовый формат без единой правки сидера.
+    contentFormat: varchar('content_format', { length: 8 })
+      .$type<NotificationContentFormat>()
+      .notNull()
+      .default('md'),
     key: varchar('key', { length: 128 }),
     // Отметка о вещании во внешний канал (2.9.1): null — ещё не объявляли.
     broadcastedAt: timestamp('broadcasted_at', { withTimezone: true }),
@@ -38,5 +48,6 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
     index('notifications_created_at_idx').on(table.createdAt),
     uniqueIndex('notifications_key_unique').on(table.key),
     check('notifications_kind_check', sql`${table.kind} in ('release', 'system', 'personal')`),
+    check('notifications_content_format_check', sql`${table.contentFormat} in ('md', 'page')`),
   ],
 );

@@ -138,7 +138,11 @@ Body: `{ login, password }`.
 
 **`broadcasted_at` (2.9.1)** — отметка о публикации ноты во внешний канал (Telegram): `null` = ещё не объявляли. Поле служебное, наружу в контрактах не отдаётся; нужно потому, что сидер релизов отрабатывает при каждом старте бэка, и без отметки канал получал бы все ноты заново на каждый деплой.
 
-- `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, createdAt, publishedAt: Date|null, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
+**`content_format` (2.9.2·4)** — чем является содержимое ноты: `'md'` (текст в файле, рендерится мини-рендером и открывается модалкой) или `'page'` (**страница фронта** — лендинг релиза; файла нет, бэк её не хранит и не отдаёт, только сообщает формат — подбирает страницу фронт по `key`). Колонка `not null default 'md'` + `check`, поэтому все ноты до 2.9.2 и все будущие патчи получают текстовый формат без единой правки. Почему колонка, а не расширение в `content_file`: у страницы файла нет вовсе, и «вывод по расширению» требовал бы хранить фиктивный путь вроде `page:2.9.2` — тип, закодированный в поле для пути, читается потом как баг.
+
+**Правило выбора формата (реш. Elmir 05.08.2026): патч `*.*.N` — всегда `md`.** Лендинг заслуживает то, о чём есть что рассказать снаружи; иначе каждый мелкий фикс превращается в работу дизайнера. Правило проверяется на старте (`validateReleaseNote`), а не держится в памяти.
+
+- `GET /notifications` (auth) → `NotificationView[]` = `[{ id, kind: 'release'|'system'|'personal', title, body: string|null, contentFile: string|null, contentFormat: 'md'|'page', createdAt, publishedAt: Date|null, read: boolean }]`. Мои (broadcast + персональные мне), новые сверху, лимит 50.
 - `GET /notifications/unread-count` (auth) → `{ count: number }`. Для бейджа колокольчика.
 - `POST /notifications/:id/read` (auth) → 204. Идемпотентно; чужое персональное (адресовано не мне) → no-op (без утечки, без read-строки).
 - `POST /notifications/read-all` (auth) → 204. Отмечает все мои непрочитанные.
@@ -149,7 +153,7 @@ Body: `{ login, password }`.
 
 **Без авторизации — намеренно.** Текст релиз-ноты и так публичен: `.md` раздаётся из `content/` без токена. Закрыт был только API центра уведомлений, потому что он адресный; у витрины адресности нет. Сюда ведёт ссылка из поста в Telegram-канале: пост несёт тезисы, полный текст — здесь.
 
-- `GET /releases` → `ReleaseView[]` = `[{ key, title, body: string|null, contentFile: string|null, createdAt, publishedAt: Date|null }]`. Только `kind='release'`, новые сверху, лимит 100.
+- `GET /releases` → `ReleaseView[]` = `[{ key, title, body: string|null, contentFile: string|null, contentFormat: 'md'|'page', createdAt, publishedAt: Date|null }]`. Только `kind='release'`, новые сверху, лимит 100.
 - `GET /releases/:key` → `ReleaseView`; нет такой релизной ноты → **404**.
 
 **Чем `ReleaseView` отличается от `NotificationView` и почему это не косметика:**

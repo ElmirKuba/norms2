@@ -288,6 +288,13 @@
       "when": 1785920708580,
       "tag": "0040_wet_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1785954085093,
+      "tag": "0041_round_power_pack",
+      "breakpoints": true
     }
   ]
 }

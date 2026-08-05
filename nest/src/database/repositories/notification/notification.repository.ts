@@ -56,6 +56,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         title: notifications.title,
         body: notifications.body,
         contentFile: notifications.contentFile,
+        contentFormat: notifications.contentFormat,
         createdAt: notifications.createdAt,
         publishedAt: notifications.publishedAt,
         read: sql<boolean>`${notificationReads.id} is not null`,
@@ -228,6 +229,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         title: notifications.title,
         body: notifications.body,
         contentFile: notifications.contentFile,
+        contentFormat: notifications.contentFormat,
         createdAt: notifications.createdAt,
         publishedAt: notifications.publishedAt,
       })
@@ -249,6 +251,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         title: notifications.title,
         body: notifications.body,
         contentFile: notifications.contentFile,
+        contentFormat: notifications.contentFormat,
         createdAt: notifications.createdAt,
         publishedAt: notifications.publishedAt,
       })

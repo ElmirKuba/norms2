@@ -8,7 +8,7 @@ import { RELEASE_BROADCAST } from '../adapters/release-broadcast.port';
 import type { ReleaseBroadcastPort } from '../adapters/release-broadcast.port';
 import type { NotificationRepositoryPort } from '../adapters/notification-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
-import { RELEASE_NOTES } from './release-notes.seed';
+import { RELEASE_NOTES, validateReleaseNote } from './release-notes.seed';
 import type { Env } from '../../../system/config/env.schema';
 
 /** Папка с авторскими seed-файлами в образе/репо (рядом с рантаймом, cwd-relative). */
@@ -44,7 +44,18 @@ export class NotificationSeedService implements OnApplicationBootstrap {
 
     for (const note of RELEASE_NOTES) {
       try {
-        this._ensureFile(seedDir, contentDir, note.contentFile);
+        // Несогласованную запись лучше не сеять вовсе: 'md' без файла роняет копирование, а
+        // 'page' с файлом оставляет мусор в content/, который потом убирать с прод-тома руками.
+        const violation = validateReleaseNote(note);
+        if (violation !== null) {
+          this._logger.error(`Сид релиз-ноты пропущен — ${violation}`);
+          continue;
+        }
+        const format = note.contentFormat ?? 'md';
+        // У страницы файла нет: контент это компонент фронта, бэк хранит только формат и ключ.
+        if (note.contentFile !== null) {
+          this._ensureFile(seedDir, contentDir, note.contentFile);
+        }
         const id = generateId();
         const created = await this._notificationRepository.createIfAbsentByKey(id, {
           kind: 'release',
@@ -52,6 +63,7 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           title: note.title,
           body: null,
           contentFile: note.contentFile,
+          contentFormat: format,
           key: note.key,
           // Новая нота ещё не объявлена наружу — этим займётся вещатель ниже.
           broadcastedAt: null,
@@ -79,10 +91,15 @@ export class NotificationSeedService implements OnApplicationBootstrap {
    * @param id Идентификатор ноты.
    * @param title Заголовок.
    * @param key Ключ ноты.
-   * @param contentFile Путь к `.md`.
+   * @param contentFile Путь к `.md` или null у ноты-страницы.
    * @returns Промис завершения.
    */
-  private async _announce(id: string, title: string, key: string, contentFile: string): Promise<void> {
+  private async _announce(
+    id: string,
+    title: string,
+    key: string,
+    contentFile: string | null,
+  ): Promise<void> {
     try {
       const delivered = await this._broadcast.announce({ key, title, contentFile });
       if (delivered) {

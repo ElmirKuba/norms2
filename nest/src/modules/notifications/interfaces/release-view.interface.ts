@@ -1,3 +1,5 @@
+import type { NotificationContentFormat } from './notification-pure.interface';
+
 /**
  * ReleaseView — строка публичной витрины релизов (`GET /releases`, `GET /releases/:key`).
  *
@@ -16,8 +18,13 @@ export interface ReleaseView {
   title: string;
   /** Короткий текст или null (у релизных нот обычно null — текст в `.md`). */
   body: string | null;
-  /** Путь к `.md` относительно `content/` или null. */
+  /** Путь к `.md` относительно `content/` или null (у страницы файла нет). */
   contentFile: string | null;
+  /**
+   * Чем является нота: текстом `.md` или страницей фронта (2.9.2·4). Витрина по этому полю
+   * решает, рендерить текст или открывать лендинг; ссылка при этом одна и та же.
+   */
+  contentFormat: NotificationContentFormat;
   /** Когда строка записана в базу (не дата выпуска). */
   createdAt: Date;
   /** Дата выпуска (2.9.1·15). Null не ожидается у релизов, но поле общее со схемой. */

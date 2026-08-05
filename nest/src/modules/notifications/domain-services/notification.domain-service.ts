@@ -154,6 +154,8 @@ export class NotificationDomainService {
       title: 'Новый участник',
       body: `По вашему коду присоединился @${joinedLogin}`,
       contentFile: null,
+      // Персональное уведомление — короткий текст в body; страницами они не бывают.
+      contentFormat: 'md',
       key: null,
       // У персонального уведомления дата создания и есть дата события.
       publishedAt: null,
@@ -183,6 +185,8 @@ export class NotificationDomainService {
       title,
       body,
       contentFile: null,
+      // Персональное уведомление — короткий текст в body; страницами они не бывают.
+      contentFormat: 'md',
       key: null,
       // У персонального уведомления дата создания и есть дата события.
       publishedAt: null,

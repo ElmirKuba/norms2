@@ -1,3 +1,5 @@
+import type { NotificationContentFormat } from '../interfaces/notification-pure.interface';
+
 /**
  * Описание одной релиз-ноты для сида (F7). `contentFile` — путь и в репозиторном
  * `seed-content/`, и в раздаваемом `content/` (откуда бэк отдаёт `.md`).
@@ -19,8 +21,17 @@ export interface ReleaseNoteSeed {
   key: string;
   /** Заголовок (в БД и в шапке модалки). */
   title: string;
-  /** Путь к `.md` относительно `content/` (и `seed-content/`). */
-  contentFile: string;
+  /** Путь к `.md` относительно `content/` (и `seed-content/`). У страницы — null. */
+  contentFile: string | null;
+  /**
+   * Формат содержимого (2.9.2·4); опущен — значит `md`.
+   *
+   * **Правило выбора (реш. Elmir 05.08.2026): патч `*.*.N` — всегда `md`.** Страницу заслуживает
+   * то, о чём есть что рассказать снаружи, а «поправили сортировку» рассказывать некому. Иначе
+   * каждый мелкий фикс превращался бы в работу дизайнера, и лендинг обесценился бы от частоты.
+   * Правило не на память: {@link assertReleaseNoteFormats} проверяет его на старте.
+   */
+  contentFormat?: NotificationContentFormat;
   /**
    * Дата **выпуска** (2.9.1·15). Взята из git: коммит, которым нота впервые появилась в
    * репозитории. Это факт, а не догадка, и он не зависит от того, когда база засеяна.
@@ -124,3 +135,34 @@ export const RELEASE_NOTES: readonly ReleaseNoteSeed[] = [
     publishedAt: new Date('2026-08-05T12:00:00Z'),
   },
 ];
+
+/** Ключ релиза вида `release-2.9.1` — из него достаётся номер патча. */
+const RELEASE_KEY_PATTERN = /^release-(\d+)\.(\d+)\.(\d+)$/;
+
+/**
+ * Проверяет одну запись сида на согласованность формата и содержимого (2.9.2·4).
+ *
+ * Проверяются три вещи, и каждая ловилась бы иначе только глазами:
+ * 1. **`md` без файла** — сидер полез бы копировать `undefined` и упал на ровном месте;
+ * 2. **`page` с файлом** — файл скопировался бы в `content/` и остался там мусором навсегда
+ *    (удалять его потом придётся руками с прод-тома, ровно как в 2.7.3);
+ * 3. **лендинг на патче** — нарушение правила «патч `*.*.N` — всегда `md`». Это не поломка
+ *    данных, а размывание смысла: лендинг ценен редкостью.
+ *
+ * @param note Запись сида.
+ * @returns Текст нарушения или null, если запись согласована.
+ */
+export function validateReleaseNote(note: ReleaseNoteSeed): string | null {
+  const format = note.contentFormat ?? 'md';
+  if (format === 'md' && note.contentFile === null) {
+    return `'${note.key}': формат md, но contentFile не задан — нечего копировать и нечего показывать`;
+  }
+  if (format === 'page' && note.contentFile !== null) {
+    return `'${note.key}': формат page, но задан contentFile — файл уедет в content/ и осядет там мусором`;
+  }
+  const patch = RELEASE_KEY_PATTERN.exec(note.key)?.[3];
+  if (format === 'page' && patch !== undefined && patch !== '0') {
+    return `'${note.key}': лендинг на патче. Правило (Elmir 05.08.2026): патч *.*.N — всегда md`;
+  }
+  return null;
+}

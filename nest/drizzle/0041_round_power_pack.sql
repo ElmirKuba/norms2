@@ -1,0 +1,2 @@
+ALTER TABLE "notifications" ADD COLUMN "content_format" varchar(8) DEFAULT 'md' NOT NULL;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_content_format_check" CHECK ("notifications"."content_format" in ('md', 'page'));

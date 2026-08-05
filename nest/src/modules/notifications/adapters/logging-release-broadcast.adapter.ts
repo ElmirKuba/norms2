@@ -23,7 +23,7 @@ export class LoggingReleaseBroadcastAdapter implements ReleaseBroadcastPort {
    */
   public announce(announcement: ReleaseAnnouncement): Promise<boolean> {
     this._logger.log(
-      `Объявил бы релиз: «${announcement.title}» (${announcement.key}, ${announcement.contentFile})`,
+      `Объявил бы релиз: «${announcement.title}» (${announcement.key}, ${announcement.contentFile ?? 'страница'})`,
     );
     return Promise.resolve(true);
   }

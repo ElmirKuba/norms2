@@ -68,7 +68,11 @@ export class TelegramReleaseBroadcastAdapter implements ReleaseBroadcastPort {
       return false;
     }
     try {
-      const markdown = await readFile(join(this._contentDir, announcement.contentFile), 'utf8');
+      // Нота-страница: файла нет, тезисы собирать не из чего — остаются заголовок и ссылка.
+      const markdown =
+        announcement.contentFile === null
+          ? ''
+          : await readFile(join(this._contentDir, announcement.contentFile), 'utf8');
       const caption = buildReleaseCaption({
         title: announcement.title,
         markdown,

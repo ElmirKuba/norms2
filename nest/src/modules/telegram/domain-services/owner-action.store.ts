@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
 /** Что владелец собирается сделать с заявкой. */
-export type OwnerActionKind = 'approve' | 'reject';
+export type OwnerActionKind = 'approve' | 'reject' | 'grant';
 
 /** Ожидание причины к уже выбранному действию. */
 export interface PendingOwnerAction {
-  /** Одобрить или отказать. */
+  /** Выдать код, начислить приглашения или отказать. */
   kind: OwnerActionKind;
   /** По какой заявке. */
   requestId: string;
+  /** Сколько приглашений начислить (только у `grant`; иначе 0). */
+  amount: number;
   /** Когда нажата кнопка. */
   startedAt: number;
 }
@@ -37,9 +39,10 @@ export class OwnerActionStore {
    * @param chatId Чат владельца.
    * @param kind Действие.
    * @param requestId Заявка.
+   * @param amount Сколько приглашений начислить (только у `grant`).
    */
-  public start(chatId: string, kind: OwnerActionKind, requestId: string): void {
-    this._pending.set(chatId, { kind, requestId, startedAt: Date.now() });
+  public start(chatId: string, kind: OwnerActionKind, requestId: string, amount = 0): void {
+    this._pending.set(chatId, { kind, requestId, amount, startedAt: Date.now() });
   }
 
   /**

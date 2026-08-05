@@ -41,6 +41,9 @@ export const telegramRequests = defineTableWithSchema<TelegramRequestFull>()(
     ownerMessageId: integer('owner_message_id'),
     // Причина решения: у одобрения станет подписью к приглашению, у отказа уйдёт человеку.
     decisionReason: text('decision_reason'),
+    // Сколько приглашений начислено по `more_invites`. Квота в аккаунте — общая сумма, и по ней
+    // уже не сказать, что дали именно по этой просьбе; без числа история решений неполна.
+    grantedAmount: integer('granted_amount'),
     decidedAt: timestamp('decided_at', { withTimezone: true }),
     ...timestamps(),
   },
@@ -60,6 +63,11 @@ export const telegramRequests = defineTableWithSchema<TelegramRequestFull>()(
     ),
     // `more_invites` без аккаунта бессмысленна (некому начислять), `join` с аккаунтом —
     // противоречие (человек ещё не зарегистрирован). Проверяем в БД, а не только в домене.
+    // Начисление бывает только положительным: «выдал ноль» — это отказ, у него свой статус.
+    check(
+      'telegram_requests_granted_amount_check',
+      sql`${table.grantedAmount} is null or ${table.grantedAmount} > 0`,
+    ),
     check(
       'telegram_requests_account_by_type_check',
       sql`(${table.type} = 'more_invites' and ${table.accountId} is not null)

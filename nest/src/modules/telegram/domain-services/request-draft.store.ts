@@ -1,10 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 /** Шаги анкеты по порядку. */
-export type DraftStep = 'name' | 'age' | 'gender' | 'why';
+export type DraftStep = 'name' | 'age' | 'gender' | 'why' | 'purpose';
 
-/** Порядок шагов — единственный источник истины о том, что идёт за чем. */
-export const DRAFT_STEPS: readonly DraftStep[] = ['name', 'age', 'gender', 'why'];
+/** Что человек просит. */
+export type DraftKind = 'join' | 'more_invites';
+
+/**
+ * Порядок шагов по типу заявки — единственный источник истины о том, что идёт за чем.
+ *
+ * У просьбы о приглашениях **один вопрос, а не четыре**: человек уже внутри, его имя и возраст
+ * владелец знает по аккаунту. Спрашивать их заново — собирать личные данные без повода.
+ */
+export const DRAFT_STEPS: Record<DraftKind, readonly DraftStep[]> = {
+  join: ['name', 'age', 'gender', 'why'],
+  more_invites: ['purpose'],
+};
 
 /** Сколько живёт недособранный черновик. */
 const TTL_MS = 30 * 60 * 1000;
@@ -14,6 +25,8 @@ const SWEEP_MS = 5 * 60 * 1000;
 
 /** Недособранная заявка. */
 export interface RequestDraft {
+  /** Что человек просит — от этого зависит набор вопросов. */
+  kind: DraftKind;
   /** Текущий шаг. */
   step: DraftStep;
   /** Уже собранные ответы по шагам. */
@@ -51,10 +64,12 @@ export class RequestDraftStore {
   /**
    * Начинает новый черновик, затирая прежний.
    * @param chatId Чат.
+   * @param kind Тип заявки (определяет набор вопросов).
    * @returns Созданный черновик.
    */
-  public start(chatId: string): RequestDraft {
-    const draft: RequestDraft = { step: 'name', answers: {}, touchedAt: Date.now() };
+  public start(chatId: string, kind: DraftKind): RequestDraft {
+    const first = DRAFT_STEPS[kind][0] ?? 'why';
+    const draft: RequestDraft = { kind, step: first, answers: {}, touchedAt: Date.now() };
     this._drafts.set(chatId, draft);
     return draft;
   }
@@ -88,7 +103,8 @@ export class RequestDraftStore {
       return null;
     }
     draft.answers[draft.step] = answer;
-    const next = DRAFT_STEPS[DRAFT_STEPS.indexOf(draft.step) + 1];
+    const steps = DRAFT_STEPS[draft.kind];
+    const next = steps[steps.indexOf(draft.step) + 1];
     if (next !== undefined) {
       draft.step = next;
     }
@@ -102,7 +118,7 @@ export class RequestDraftStore {
    * @returns Признак готовности.
    */
   public isComplete(draft: RequestDraft): boolean {
-    return DRAFT_STEPS.every((step) => draft.answers[step] !== undefined);
+    return DRAFT_STEPS[draft.kind].every((step) => draft.answers[step] !== undefined);
   }
 
   /**

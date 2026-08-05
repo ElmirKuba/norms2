@@ -163,16 +163,26 @@ export class AccountRepository implements AccountRepositoryPort {
   }
 
   /**
-   * Атомарно возвращает 1 в квоту (отзыв кода).
+   * Атомарно прибавляет `amount` к квоте (возврат при отзыве кода, начисление по заявке).
+   *
+   * Прибавление считает **база**, а не приложение: читать значение и писать сумму значило бы
+   * терять параллельное начисление между чтением и записью.
    * @param id Идентификатор.
-   * @param tx Опц. транзакция (атомарность с отзывом кода).
-   * @returns Промис завершения.
+   * @param amount Сколько прибавить.
+   * @param tx Опц. транзакция (атомарность с отзывом кода или закрытием заявки).
+   * @returns Новое значение квоты или null, если аккаунта нет.
    */
-  public async incrementInvitesRemaining(id: string, tx?: Transaction): Promise<void> {
-    await this._exec(tx)
+  public async addInvitesRemaining(
+    id: string,
+    amount: number,
+    tx?: Transaction,
+  ): Promise<number | null> {
+    const rows = await this._exec(tx)
       .update(accounts)
-      .set({ invitesRemaining: sql`${accounts.invitesRemaining} + 1` })
-      .where(eq(accounts.id, id));
+      .set({ invitesRemaining: sql`${accounts.invitesRemaining} + ${amount}` })
+      .where(eq(accounts.id, id))
+      .returning({ invitesRemaining: accounts.invitesRemaining });
+    return rows[0]?.invitesRemaining ?? null;
   }
 
   /**

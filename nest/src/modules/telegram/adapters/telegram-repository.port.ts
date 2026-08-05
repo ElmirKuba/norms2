@@ -1,3 +1,4 @@
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { TelegramLinkFull } from '../interfaces/telegram-link-full.interface';
 import type { TelegramRequestBase } from '../interfaces/telegram-request-base.interface';
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
@@ -14,6 +15,8 @@ export interface TelegramRequestDecision {
   decisionReason: string | null;
   /** Выданный код приглашения или null. */
   inviteCodeId: string | null;
+  /** Сколько приглашений начислено (`more_invites`) или null. */
+  grantedAmount: number | null;
 }
 
 /**
@@ -91,9 +94,15 @@ export interface TelegramRepositoryPort {
    * спасает — между чтением и записью успевает пройти второй апрув, и человек получит два кода.
    * @param id Заявка.
    * @param decision Чем закончилась.
+   * @param tx Опц. транзакция — начисление приглашений (·13) должно быть атомарно с закрытием:
+   * иначе бывает «квота выдана, а заявка осталась открытой» и второе нажатие удваивает выдачу.
    * @returns `true`, если закрыли именно этим вызовом; `false` — заявка уже была закрыта.
    */
-  decideIfPending(id: string, decision: TelegramRequestDecision): Promise<boolean>;
+  decideIfPending(
+    id: string,
+    decision: TelegramRequestDecision,
+    tx?: Transaction,
+  ): Promise<boolean>;
 
   /**
    * Помечает протухшими незакрытые заявки старше срока.

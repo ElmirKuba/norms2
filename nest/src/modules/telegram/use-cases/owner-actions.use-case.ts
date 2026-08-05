@@ -6,7 +6,11 @@ import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
 import { TRANSACTION_RUNNER } from '../../../shared/transactions/transaction-runner.port';
 import { OwnerActionStore } from '../domain-services/owner-action.store';
-import { escapeHtml } from '../domain-services/telegram.domain-service';
+import {
+  decisionButtons,
+  escapeHtml,
+  grantButtons,
+} from '../domain-services/telegram.domain-service';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
@@ -197,11 +201,13 @@ export class OwnerActionsUseCase {
       ]);
       return;
     }
+    // У просьбы о приглашениях свои кнопки: там не код, а номинал начисления.
+    const actions =
+      request.type === 'more_invites'
+        ? grantButtons(request.id)
+        : decisionButtons(request.id);
     await this._api.sendMessage(chatId, 'Что делаем с этой заявкой?', [
-      [
-        { text: '✅ Выдать код', callbackData: `ok:${request.id}` },
-        { text: '✖️ Отказать', callbackData: `no:${request.id}` },
-      ],
+      ...actions,
       [{ text: '◀️ К списку', callbackData: 'q:0' }, MENU_BUTTON],
     ]);
   }
@@ -219,7 +225,7 @@ export class OwnerActionsUseCase {
       await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
       return;
     }
-    this._pending.start(chatId, kind, requestId);
+    this._pending.start(chatId, kind, requestId, 0);
     const hint =
       kind === 'approve'
         ? [
@@ -233,6 +239,38 @@ export class OwnerActionsUseCase {
             `Прочерк <code>${SKIP_REASON}</code> — отправлю без объяснения.`,
           ].join('\n');
     await this._api.sendMessage(chatId, hint, [[{ text: '◀️ Отмена', callbackData: 'cancel' }]]);
+  }
+
+  /**
+   * Запоминает выбранный номинал и просит подпись к начислению.
+   *
+   * Причина спрашивается и здесь — ради истории решений: квота в аккаунте станет просто числом,
+   * и через месяц по нему не вспомнить, за что дали. Прочерк по-прежнему допустим.
+   * @param chatId Чат владельца.
+   * @param amount Сколько приглашений начислить.
+   * @param requestId Заявка.
+   * @returns Промис завершения.
+   */
+  public async askGrantReason(chatId: string, amount: number, requestId: string): Promise<void> {
+    const request = await this._repository.findRequestById(requestId);
+    if (request === null || request.status !== 'pending') {
+      await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
+      return;
+    }
+    if (request.type !== 'more_invites') {
+      await this._api.sendMessage(chatId, 'Это заявка на вступление — по ней выдаётся код.');
+      return;
+    }
+    this._pending.start(chatId, 'grant', requestId, amount);
+    await this._api.sendMessage(
+      chatId,
+      [
+        `Начисляю <b>+${String(amount)}</b>. Напиши, за что — я передам это человеку.`,
+        '',
+        `Прочерк <code>${SKIP_REASON}</code> — начислю без объяснения.`,
+      ].join('\n'),
+      [[{ text: '◀️ Отмена', callbackData: 'cancel' }]],
+    );
   }
 
   /**
@@ -261,6 +299,8 @@ export class OwnerActionsUseCase {
     const reason = text.trim() === SKIP_REASON ? null : text.trim();
     if (action.kind === 'approve') {
       await this._approve(chatId, action.requestId, reason);
+    } else if (action.kind === 'grant') {
+      await this._grant(chatId, action.requestId, action.amount, reason);
     } else {
       await this._reject(chatId, action.requestId, reason);
     }
@@ -320,6 +360,7 @@ export class OwnerActionsUseCase {
       status: 'approved',
       decisionReason: reason,
       inviteCodeId: null,
+      grantedAmount: null,
     });
     if (!closed) {
       // Кто-то закрыл её параллельно (кнопка под сообщением и очередь — два входа).
@@ -347,6 +388,84 @@ export class OwnerActionsUseCase {
   }
 
   /**
+   * Начисляет приглашения по просьбе (·13).
+   *
+   * **Закрытие заявки идёт первым и в той же транзакции.** Обратный порядок («начислил, потом
+   * закрыл») при двух нажатиях подряд начисляет дважды: второй заход застаёт заявку ещё
+   * открытой. Здесь второй заход не проходит вовсе — `decideIfPending` вернёт `false`, и
+   * транзакция откатится, не тронув квоту.
+   * @param chatId Чат владельца.
+   * @param requestId Заявка.
+   * @param amount Сколько начислить.
+   * @param reason Подпись к начислению или null.
+   * @returns Промис завершения.
+   */
+  private async _grant(
+    chatId: string,
+    requestId: string,
+    amount: number,
+    reason: string | null,
+  ): Promise<void> {
+    const request = await this._repository.findRequestById(requestId);
+    if (request === null || request.status !== 'pending') {
+      await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
+      return;
+    }
+    const accountId = request.accountId;
+    if (accountId === null) {
+      // Схема такого не допускает (`check` на пару «тип ↔ аккаунт»), но начисление «никому» —
+      // ровно тот случай, где молчаливое падение дороже проверки.
+      await this._api.sendMessage(chatId, 'У заявки нет аккаунта — начислять некому.');
+      return;
+    }
+
+    let remaining: number;
+    try {
+      remaining = await this._transactionRunner.run(async (tx) => {
+        const closed = await this._repository.decideIfPending(
+          requestId,
+          {
+            status: 'approved',
+            decisionReason: reason,
+            inviteCodeId: null,
+            grantedAmount: amount,
+          },
+          tx,
+        );
+        if (!closed) {
+          throw new Error('CLOSED');
+        }
+        const updated = await this._accountDomainService.grantInviteQuota(accountId, amount, tx);
+        if (updated === null) {
+          throw new Error('NO_ACCOUNT');
+        }
+        return updated;
+      });
+    } catch (error) {
+      const closed = error instanceof Error && error.message === 'CLOSED';
+      await this._api.sendMessage(
+        chatId,
+        closed ? 'Эта заявка уже закрыта.' : 'Не получилось начислить — аккаунт недоступен.',
+      );
+      this._logger.warn(`Начисление по заявке ${requestId} не прошло: ${String(error)}`);
+      return;
+    }
+
+    await this._api.sendMessage(
+      request.chatId,
+      [
+        `➕ <b>Начислено приглашений: +${String(amount)}</b>`,
+        '',
+        `Теперь у тебя их ${String(remaining)}. Выдать приглашение можно в личном кабинете.`,
+        ...(reason === null ? [] : ['', `От владельца: ${escapeHtml(reason)}`]),
+      ].join('\n'),
+    );
+    await this._api.sendMessage(chatId, `Начислено +${String(amount)}.`, [
+      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
+    ]);
+  }
+
+  /**
    * Отказывает по заявке.
    * @param chatId Чат владельца.
    * @param requestId Заявка.
@@ -363,6 +482,7 @@ export class OwnerActionsUseCase {
       status: 'rejected',
       decisionReason: reason,
       inviteCodeId: null,
+      grantedAmount: null,
     });
     if (!closed) {
       await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
@@ -426,9 +546,12 @@ export class OwnerActionsUseCase {
    * @returns Текст.
    */
   private _renderClosed(request: TelegramRequestFull): string {
+    // У просьбы о приглашениях «одобрена» без числа бессмысленна: через месяц не вспомнить,
+    // сколько именно выдал.
+    const granted = request.grantedAmount === null ? '' : ` (+${String(request.grantedAmount)})`;
     const what =
       request.status === 'approved'
-        ? 'Одобрена'
+        ? `Одобрена${granted}`
         : request.status === 'rejected'
           ? 'Отклонена'
           : 'Протухла';

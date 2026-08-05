@@ -1,9 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TelegramDomainService } from '../domain-services/telegram.domain-service';
 import { OwnerActionsUseCase } from './owner-actions.use-case';
+import { RequestInvitesUseCase } from './request-invites.use-case';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
+import type { GuestOutcome } from '../domain-services/telegram.domain-service';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
+
+/** Префиксы кнопок начисления: номинал прямо в префиксе (`g3` = «+3»). */
+const GRANT_PREFIXES = new Set(['g1', 'g3', 'g5']);
 
 /**
  * Маршрутизатор апдейтов (2.9.1·9, расширен в ·11–·12).
@@ -23,11 +28,13 @@ export class HandleTelegramUpdateUseCase {
   /**
    * @param _telegramDomainService Гостевая часть (меню, анкета).
    * @param _ownerActions Сценарий владельца (очередь, решения).
+   * @param _requestInvites Просьба о дополнительных приглашениях (нужен аккаунт заявителя).
    * @param _api Исходящий порт Bot API (гашение «часиков» на кнопке).
    */
   public constructor(
     private readonly _telegramDomainService: TelegramDomainService,
     private readonly _ownerActions: OwnerActionsUseCase,
+    private readonly _requestInvites: RequestInvitesUseCase,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
   ) {}
 
@@ -78,7 +85,7 @@ export class HandleTelegramUpdateUseCase {
    */
   private async _routeMessage(chatId: string, text: string | undefined): Promise<void> {
     if (!this._telegramDomainService.isOwner(chatId)) {
-      await this._telegramDomainService.handleGuestMessage(chatId, text);
+      await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
       return;
     }
     if (text === undefined) {
@@ -102,7 +109,26 @@ export class HandleTelegramUpdateUseCase {
       return;
     }
     // Владелец — тоже человек: если он проходит анкету, отдаём гостевой сценарий.
-    await this._telegramDomainService.handleGuestMessage(chatId, text);
+    await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
+  }
+
+  /**
+   * Доводит исход гостевого диалога, если для него нужен чужой домен.
+   *
+   * Domain-service не ходит в `account` сам (правила зависимостей), поэтому просьба о
+   * приглашениях возвращается сюда — и дальше её ведёт use-case.
+   * @param chatId Чат.
+   * @param outcome Чем закончился разбор.
+   * @returns Промис завершения.
+   */
+  private async _finish(chatId: string, outcome: GuestOutcome): Promise<void> {
+    if (outcome.type === 'invitesRequested') {
+      await this._requestInvites.start(chatId);
+      return;
+    }
+    if (outcome.type === 'invitesReady') {
+      await this._requestInvites.submit(chatId, outcome.purpose);
+    }
   }
 
   /**
@@ -141,6 +167,12 @@ export class HandleTelegramUpdateUseCase {
       await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
       return;
     }
-    await this._telegramDomainService.handleGuestCallback(chatId, data);
+    // Номинал начисления зашит в сам префикс кнопки (`g1` / `g3` / `g5`): в `callback_data`
+    // остаётся 12 символов сверх идентификатора заявки, отдельного поля туда не положить.
+    if (isOwner && GRANT_PREFIXES.has(prefix)) {
+      await this._ownerActions.askGrantReason(chatId, Number(prefix.slice(1)), payload);
+      return;
+    }
+    await this._finish(chatId, await this._telegramDomainService.handleGuestCallback(chatId, data));
   }
 }

@@ -3,6 +3,7 @@ import { TelegramCoreModule } from './telegram-core.module';
 import { TelegramWebhookController } from './controllers/telegram-webhook.controller';
 import { HandleTelegramUpdateUseCase } from './use-cases/handle-telegram-update.use-case';
 import { OwnerActionsUseCase } from './use-cases/owner-actions.use-case';
+import { RequestInvitesUseCase } from './use-cases/request-invites.use-case';
 import { OwnerActionStore } from './domain-services/owner-action.store';
 import { AccountModule } from '../account/account.module';
 import { InvitesModule } from '../invites/invites.module';
@@ -14,6 +15,11 @@ import { InvitesModule } from '../invites/invites.module';
 @Module({
   imports: [TelegramCoreModule, AccountModule, InvitesModule],
   controllers: [TelegramWebhookController],
-  providers: [HandleTelegramUpdateUseCase, OwnerActionsUseCase, OwnerActionStore],
+  providers: [
+    HandleTelegramUpdateUseCase,
+    OwnerActionsUseCase,
+    RequestInvitesUseCase,
+    OwnerActionStore,
+  ],
 })
 export class TelegramModule {}

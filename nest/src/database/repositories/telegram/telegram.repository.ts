@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, lt } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
-import type { DrizzleDatabase } from '../../client/database.constants';
+import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import { telegramRequests } from '../../schemas/telegram-requests.schema';
 import { telegramLinks } from '../../schemas/telegram-links.schema';
 import { telegramUpdates } from '../../schemas/telegram-updates.schema';
@@ -135,10 +136,14 @@ export class TelegramRepository implements TelegramRepositoryPort {
    * @param decision Решение.
    * @returns `true`, если закрыли именно сейчас.
    */
-  public async decideIfPending(id: string, decision: TelegramRequestDecision): Promise<boolean> {
+  public async decideIfPending(
+    id: string,
+    decision: TelegramRequestDecision,
+    tx?: Transaction,
+  ): Promise<boolean> {
     // Условие `status = 'pending'` в самом UPDATE: решение приходит и с кнопки под сообщением,
     // и из списка очереди, поэтому «прочитали → проверили → записали» пропускает второй апрув.
-    const rows = await this._db
+    const rows = await this._exec(tx)
       .update(telegramRequests)
       .set({ ...decision, decidedAt: new Date() })
       .where(and(eq(telegramRequests.id, id), eq(telegramRequests.status, 'pending')))
@@ -227,5 +232,14 @@ export class TelegramRepository implements TelegramRepositoryPort {
    */
   public async deleteLinkByChat(chatId: string): Promise<void> {
     await this._db.delete(telegramLinks).where(eq(telegramLinks.chatId, chatId));
+  }
+
+  /**
+   * Разрешает исполнителя: переданная транзакция или дефолтный инстанс БД.
+   * @param tx Опц. опаковая транзакция.
+   * @returns DrizzleExecutor.
+   */
+  private _exec(tx?: Transaction): DrizzleExecutor {
+    return tx === undefined ? this._db : (tx as unknown as DrizzleExecutor);
   }
 }

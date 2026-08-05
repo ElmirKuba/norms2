@@ -1,0 +1,2 @@
+ALTER TABLE "telegram_requests" ADD COLUMN "granted_amount" integer;--> statement-breakpoint
+ALTER TABLE "telegram_requests" ADD CONSTRAINT "telegram_requests_granted_amount_check" CHECK ("telegram_requests"."granted_amount" is null or "telegram_requests"."granted_amount" > 0);

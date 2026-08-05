@@ -14,6 +14,8 @@ export interface TelegramRequestBase extends TelegramRequestPure {
   accountId: string | null;
   /** Выданный по заявке код приглашения (у одобренных `join`) или null. */
   inviteCodeId: string | null;
+  /** Сколько приглашений начислено (у одобренных `more_invites`) или null. */
+  grantedAmount: number | null;
   /** Когда владелец закрыл заявку, или null у `pending`. */
   decidedAt: Date | null;
 }

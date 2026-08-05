@@ -216,7 +216,26 @@ export class AccountDomainService {
    * @returns Промис завершения.
    */
   public async returnInviteQuota(accountId: string, tx?: Transaction): Promise<void> {
-    await this._accountRepository.incrementInvitesRemaining(accountId, tx);
+    await this._accountRepository.addInvitesRemaining(accountId, 1, tx);
+  }
+
+  /**
+   * Начисляет аккаунту дополнительные приглашения (решение владельца по заявке, 2.9.1·13).
+   *
+   * Отличается от `returnInviteQuota` не числом, а смыслом: там квота **возвращается** своему
+   * хозяину при отзыве кода, здесь **выдаётся сверх** положенного. Разные поводы — разные имена,
+   * иначе в логике не отличить возврат от подарка.
+   * @param accountId Идентификатор аккаунта.
+   * @param amount Сколько выдать.
+   * @param tx Опц. транзакция (атомарность с закрытием заявки).
+   * @returns Новое значение квоты или null, если аккаунта нет.
+   */
+  public async grantInviteQuota(
+    accountId: string,
+    amount: number,
+    tx?: Transaction,
+  ): Promise<number | null> {
+    return this._accountRepository.addInvitesRemaining(accountId, amount, tx);
   }
 
   /**

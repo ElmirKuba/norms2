@@ -64,12 +64,14 @@ export interface AccountRepositoryPort {
   decrementInvitesRemaining(id: string, tx?: Transaction): Promise<boolean>;
 
   /**
-   * Атомарно возвращает 1 в квоту инвайтов (отзыв кода).
+   * Атомарно прибавляет `amount` к квоте инвайтов (возврат при отзыве кода, начисление по
+   * заявке из Telegram).
    * @param id Идентификатор аккаунта.
-   * @param tx Опц. транзакция (атомарность с отзывом кода, revoke-invite).
-   * @returns Промис завершения.
+   * @param amount Сколько прибавить.
+   * @param tx Опц. транзакция (атомарность с отзывом кода или закрытием заявки).
+   * @returns Новое значение квоты или null, если аккаунта нет.
    */
-  incrementInvitesRemaining(id: string, tx?: Transaction): Promise<void>;
+  addInvitesRemaining(id: string, amount: number, tx?: Transaction): Promise<number | null>;
 
   /**
    * Считает активных (не удалённых) пользователей — для overview (F4).

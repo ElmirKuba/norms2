@@ -39,6 +39,14 @@
           <div class="tglink__code">
             <span class="tglink__code-value">{{ issued }}</span>
             <span class="hint">действует {{ codeMinutes() }} мин, одноразовый</span>
+            <div class="tglink__code-actions">
+              <app-button type="button" variant="ghost" (click)="copy('code')">
+                {{ copied() === 'code' ? '✓ Скопировано' : 'Копировать код' }}
+              </app-button>
+              <app-button type="button" variant="ghost" (click)="copy('command')">
+                {{ copied() === 'command' ? '✓ Скопировано' : 'Копировать команду' }}
+              </app-button>
+            </div>
           </div>
           <ol class="tglink__steps">
             <li>
@@ -48,7 +56,7 @@
                 Откройте чат с нашим ботом.
               }
             </li>
-            <li>Отправьте ему <code>/link {{ issued }}</code></li>
+            <li>Отправьте ему <code>/link {{ issued }}</code> — кнопка «Копировать команду» кладёт её в буфер целиком.</li>
             <li>Бот ответит, что чат привязан — обновите эту страницу.</li>
           </ol>
         } @else {

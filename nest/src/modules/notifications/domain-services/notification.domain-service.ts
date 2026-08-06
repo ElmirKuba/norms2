@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY } from '../adapters/notification-repository.port';
+import { RELEASE_REPOSITORY } from '../adapters/release-repository.port';
 import type { NotificationRepositoryPort } from '../adapters/notification-repository.port';
+import type { ReleaseRepositoryPort } from '../adapters/release-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type { NotificationView } from '../interfaces/notification-view.interface';
 import type { ReleaseView } from '../interfaces/release-view.interface';
@@ -65,6 +67,7 @@ export class NotificationDomainService {
    */
   public constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly _notificationRepository: NotificationRepositoryPort,
+    @Inject(RELEASE_REPOSITORY) private readonly _releaseRepository: ReleaseRepositoryPort,
   ) {}
 
   /**
@@ -82,7 +85,7 @@ export class NotificationDomainService {
    * @returns Проекции витрины.
    */
   public async listReleases(): Promise<ReleaseView[]> {
-    const releases = await this._notificationRepository.listReleases();
+    const releases = await this._releaseRepository.listPublic();
     // База уже отсортировала по дате выпуска; здесь разводим только совпавшие дни.
     return [...releases].sort((left, right) => {
       const leftDate = (left.publishedAt ?? left.createdAt).getTime();
@@ -98,7 +101,7 @@ export class NotificationDomainService {
    * @returns Проекция или null, если такой релизной ноты нет.
    */
   public async findReleaseByKey(key: string): Promise<ReleaseView | null> {
-    return this._notificationRepository.findReleaseByKey(key);
+    return this._releaseRepository.findByKey(key);
   }
 
   /**

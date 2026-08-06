@@ -4,9 +4,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { OnApplicationBootstrap } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY } from '../adapters/notification-repository.port';
+import { RELEASE_REPOSITORY } from '../adapters/release-repository.port';
 import { RELEASE_BROADCAST } from '../adapters/release-broadcast.port';
 import type { ReleaseBroadcastPort } from '../adapters/release-broadcast.port';
 import type { NotificationRepositoryPort } from '../adapters/notification-repository.port';
+import type { ReleaseRepositoryPort } from '../adapters/release-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RELEASE_NOTES, validateReleaseNote } from './release-notes.seed';
 import type { Env } from '../../../system/config/env.schema';
@@ -27,12 +29,14 @@ export class NotificationSeedService implements OnApplicationBootstrap {
   private readonly _logger = new Logger(NotificationSeedService.name);
 
   /**
-   * @param _notificationRepository Порт репозитория уведомлений.
+   * @param _notificationRepository Порт репозитория доставки.
+   * @param _releaseRepository Порт репозитория публикаций (ADR-0065).
    * @param _broadcast Порт вещания релизов наружу (2.9.1).
    * @param _configService Конфиг (CONTENT_DIR).
    */
   public constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly _notificationRepository: NotificationRepositoryPort,
+    @Inject(RELEASE_REPOSITORY) private readonly _releaseRepository: ReleaseRepositoryPort,
     @Inject(RELEASE_BROADCAST) private readonly _broadcast: ReleaseBroadcastPort,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
@@ -60,8 +64,22 @@ export class NotificationSeedService implements OnApplicationBootstrap {
         if (note.contentFile !== null) {
           this._ensureFile(seedDir, contentDir, note.contentFile);
         }
-        const id = generateId();
-        const created = await this._notificationRepository.createIfAbsentByKey(id, {
+        // Сначала ПУБЛИКАЦИЯ (ADR-0065): она первична и существует независимо от того, кому и
+        // когда её доставили. Идентификатор нужен дальше, чтобы связать с ней доставку.
+        const release = await this._releaseRepository.createIfAbsentByKey(generateId(), {
+          key: note.key,
+          title: note.title,
+          contentFile: note.contentFile,
+          contentFormat: format,
+          publishedAt: note.publishedAt,
+          // Новая публикация ещё не объявлена наружу — этим займётся вещатель ниже.
+          broadcastedAt: null,
+        });
+
+        // Затем ДОСТАВКА всем (broadcast). Заголовок и файл здесь дублируются со старыми
+        // колонками намеренно: до contract-миграции на проде может работать прежний код,
+        // который читает их напрямую.
+        await this._notificationRepository.createIfAbsentByKey(generateId(), {
           kind: 'release',
           accountId: null,
           title: note.title,
@@ -69,21 +87,20 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           contentFile: note.contentFile,
           contentFormat: format,
           key: note.key,
-          // Заполнится на шаге 2, когда сидер переедет на таблицу releases.
-          releaseId: null,
-          // Новая нота ещё не объявлена наружу — этим займётся вещатель ниже.
+          releaseId: release.id,
           broadcastedAt: null,
           publishedAt: note.publishedAt,
         });
+
         // Объявляем ТОЛЬКО что созданное. Накопленная история (десять старых нот) ждёт явной
         // команды владельца: иначе первый же запуск с подключённым ботом высыпал бы в канал
         // все релизы разом (2.9.1·3).
-        if (created) {
-          await this._announce(id, note.title, note.key, note.contentFile);
+        if (release.created) {
+          await this._announce(release.id, note.title, note.key, note.contentFile);
         } else {
-          // Нота уже была: вставка её не тронула, а дату выпуска проставить надо — иначе
+          // Публикация уже была: вставка её не тронула, а дату выпуска проставить надо — иначе
           // на всех существующих базах поле осталось бы пустым (2.9.1·15).
-          await this._notificationRepository.setPublishedAtIfAbsent(note.key, note.publishedAt);
+          await this._releaseRepository.setPublishedAtIfAbsent(note.key, note.publishedAt);
         }
       } catch (error) {
         this._logger.warn(`Сид релиз-ноты '${note.key}' пропущен: ${String(error)}`);
@@ -94,7 +111,7 @@ export class NotificationSeedService implements OnApplicationBootstrap {
   /**
    * Объявляет свежесозданную ноту во внешний канал и ставит отметку. Best-effort: нота уже в
    * колокольчике, несостоявшийся пост её не отменяет.
-   * @param id Идентификатор ноты.
+   * @param id Идентификатор публикации.
    * @param title Заголовок.
    * @param key Ключ ноты.
    * @param contentFile Путь к `.md` или null у ноты-страницы.
@@ -109,7 +126,7 @@ export class NotificationSeedService implements OnApplicationBootstrap {
     try {
       const delivered = await this._broadcast.announce({ key, title, contentFile });
       if (delivered) {
-        await this._notificationRepository.markBroadcasted(id);
+        await this._releaseRepository.markBroadcasted(id);
       }
     } catch (error) {
       this._logger.warn(`Релиз '${key}' не объявлен наружу: ${String(error)}`);

@@ -4,17 +4,14 @@ import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { notifications } from '../../schemas/notifications.schema';
 import { notificationReads } from '../../schemas/notification-reads.schema';
+import { releases } from '../../schemas/releases.schema';
 import type { NotificationRepositoryPort, NotificationReadInsert } from '../../../modules/notifications/adapters/notification-repository.port';
 import type { NotificationBase } from '../../../modules/notifications/interfaces/notification-base.interface';
 import type { NotificationFull } from '../../../modules/notifications/interfaces/notification-full.interface';
 import type { NotificationView } from '../../../modules/notifications/interfaces/notification-view.interface';
-import type { ReleaseView } from '../../../modules/notifications/interfaces/release-view.interface';
 
 /** Лимит выдачи списка (центр показывает последние). */
 const LIST_LIMIT = 50;
-
-/** Лимит публичной витрины релизов: релизов за всю жизнь проекта меньше сотни. */
-const RELEASES_LIMIT = 100;
 
 /**
  * Drizzle-реализация порта уведомлений. «Мои» — broadcast (`account_id IS NULL`)
@@ -53,15 +50,20 @@ export class NotificationRepository implements NotificationRepositoryPort {
       .select({
         id: notifications.id,
         kind: notifications.kind,
-        title: notifications.title,
+        // Заголовок, файл, формат и дата выпуска — свойства ПУБЛИКАЦИИ (ADR-0065), поэтому
+        // берутся из releases. coalesce нужен на два случая сразу: персональные уведомления
+        // публикации не имеют вовсе, а на проде между накатом миграции и стартом этого кода
+        // строки ещё могут жить со старыми колонками.
+        title: sql<string>`coalesce(${releases.title}, ${notifications.title})`,
         body: notifications.body,
-        contentFile: notifications.contentFile,
-        contentFormat: notifications.contentFormat,
+        contentFile: sql<string | null>`coalesce(${releases.contentFile}, ${notifications.contentFile})`,
+        contentFormat: sql<'md' | 'page'>`coalesce(${releases.contentFormat}, ${notifications.contentFormat})`,
         createdAt: notifications.createdAt,
-        publishedAt: notifications.publishedAt,
+        publishedAt: sql<Date | null>`coalesce(${releases.publishedAt}, ${notifications.publishedAt})`,
         read: sql<boolean>`${notificationReads.id} is not null`,
       })
       .from(notifications)
+      .leftJoin(releases, eq(releases.id, notifications.releaseId))
       .leftJoin(
         notificationReads,
         and(
@@ -73,7 +75,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
       // По дате ВЫПУСКА, а не записи строки: пересев одной ноты не должен выкидывать её
       // наверх колокольчика у всех (2.9.1·15). `id` вторым — детерминированный тайбрейк:
       // в uuidv7___unixmillis время зашито в сам ключ.
-      .orderBy(sql`coalesce(${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
+      .orderBy(sql`coalesce(${releases.publishedAt}, ${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
       .limit(LIST_LIMIT);
   }
 
@@ -185,91 +187,5 @@ export class NotificationRepository implements NotificationRepositoryPort {
       .onConflictDoNothing({ target: notifications.key })
       .returning({ id: notifications.id });
     return rows.length > 0;
-  }
-
-  /**
-   * Помечает ноту объявленной во внешний канал.
-   * @param id Идентификатор ноты.
-   * @returns Промис завершения.
-   */
-  public async markBroadcasted(id: string): Promise<void> {
-    await this._db
-      .update(notifications)
-      .set({ broadcastedAt: new Date() })
-      .where(eq(notifications.id, id));
-  }
-
-  /**
-   * Проставляет дату выпуска, если её ещё нет (досев уже засеянных баз).
-   * @param key Ключ ноты.
-   * @param publishedAt Дата выпуска.
-   * @returns Промис завершения.
-   */
-  public async setPublishedAtIfAbsent(key: string, publishedAt: Date): Promise<void> {
-    await this._db
-      .update(notifications)
-      .set({ publishedAt })
-      .where(and(eq(notifications.key, key), isNull(notifications.publishedAt)));
-  }
-
-  /**
-   * Релизные ноты для публичной витрины, новые сверху.
-   * `notification_reads` не джойнится вовсе — витрина открыта без авторизации,
-   * прочтения остаются приватной механикой ЛК (ADR-0064 §5).
-   *
-   * `key` в схеме nullable (у персональных уведомлений его нет), поэтому в выборку
-   * берутся только ноты с ключом: без этого условия каст `sql<string>` обещал бы
-   * строку, а отдавал `null` — и витрина построила бы ссылку `/releases/null`.
-   * @returns Проекции витрины.
-   */
-  public async listReleases(): Promise<ReleaseView[]> {
-    return this._db
-      .select({
-        key: sql<string>`${notifications.key}`,
-        title: notifications.title,
-        body: notifications.body,
-        contentFile: notifications.contentFile,
-        contentFormat: notifications.contentFormat,
-        createdAt: notifications.createdAt,
-        publishedAt: notifications.publishedAt,
-      })
-      .from(notifications)
-      .where(and(eq(notifications.kind, 'release'), isNotNull(notifications.key)))
-      .orderBy(sql`coalesce(${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
-      .limit(RELEASES_LIMIT);
-  }
-
-  /**
-   * Одна релизная нота по публичному ключу.
-   * @param key Ключ (`release-2.9.0`).
-   * @returns Проекция или null.
-   */
-  public async findReleaseByKey(key: string): Promise<ReleaseView | null> {
-    const rows = await this._db
-      .select({
-        key: sql<string>`${notifications.key}`,
-        title: notifications.title,
-        body: notifications.body,
-        contentFile: notifications.contentFile,
-        contentFormat: notifications.contentFormat,
-        createdAt: notifications.createdAt,
-        publishedAt: notifications.publishedAt,
-      })
-      .from(notifications)
-      .where(and(eq(notifications.kind, 'release'), eq(notifications.key, key)))
-      .limit(1);
-    return rows[0] ?? null;
-  }
-
-  /**
-   * Релизные ноты без отметки о вещании, старые → новые.
-   * @returns Ноты в хронологическом порядке.
-   */
-  public async listUnbroadcastedReleases(): Promise<NotificationFull[]> {
-    return this._db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.kind, 'release'), isNull(notifications.broadcastedAt)))
-      .orderBy(asc(notifications.createdAt));
   }
 }

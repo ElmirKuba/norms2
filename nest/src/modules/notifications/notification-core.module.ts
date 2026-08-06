@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY } from './adapters/notification-repository.port';
+import { RELEASE_REPOSITORY } from './adapters/release-repository.port';
 import { RELEASE_BROADCAST } from './adapters/release-broadcast.port';
 import { LoggingReleaseBroadcastAdapter } from './adapters/logging-release-broadcast.adapter';
 import { TelegramReleaseBroadcastAdapter } from './adapters/telegram-release-broadcast.adapter';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../system/config/env.schema';
 import { NotificationRepository } from '../../database/repositories/notification/notification.repository';
+import { ReleaseRepository } from '../../database/repositories/release/release.repository';
 import { NotificationDomainService } from './domain-services/notification.domain-service';
 import { NotificationSeedService } from './seed/notification-seed.service';
 
@@ -19,6 +21,8 @@ import { NotificationSeedService } from './seed/notification-seed.service';
 @Module({
   providers: [
     { provide: NOTIFICATION_REPOSITORY, useClass: NotificationRepository },
+    // Публикации — свой репозиторий (ADR-0065): витрина не должна ходить через доставку.
+    { provide: RELEASE_REPOSITORY, useClass: ReleaseRepository },
     // Вещание релизов наружу (2.9.1): пока логирующая заглушка. Появится Telegram-адаптер —
     // меняется ровно эта строка, остальной код о смене не узнает.
     // Реализация выбирается ПО НАЛИЧИЮ ТОКЕНА, а не флагом: пустой `TELEGRAM_BOT_TOKEN` —

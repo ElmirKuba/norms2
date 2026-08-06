@@ -7,6 +7,7 @@ export * from './bans.schema';
 export * from './sessions.schema';
 export * from './session-token-history.schema';
 export * from './notifications.schema';
+export * from './releases.schema';
 export * from './notification-reads.schema';
 export * from './accent-settings.schema';
 export * from './accent-domains.schema';

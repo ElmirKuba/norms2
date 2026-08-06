@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, index, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
+import { releases } from './releases.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
 import type { NotificationFull } from '../../modules/notifications/interfaces/notification-full.interface';
@@ -35,6 +36,10 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
       .notNull()
       .default('md'),
     key: varchar('key', { length: 128 }),
+    // Ссылка на публикацию (ADR-0065). Каскад — то, ради чего разделение и делалось:
+    // удалили релиз → ушли и доставки, и отметки о прочтении, одной командой вместо
+    // согласования трёх таблиц и прод-тома вручную.
+    releaseId: fkColumn('release_id').references(() => releases.id, { onDelete: 'cascade' }),
     // Отметка о вещании во внешний канал (2.9.1): null — ещё не объявляли.
     broadcastedAt: timestamp('broadcasted_at', { withTimezone: true }),
     // Дата ВЫПУСКА (2.9.1·15), а не записи строки. `created_at` — это момент, когда сидер
@@ -45,6 +50,7 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
   },
   (table) => [
     index('notifications_account_id_idx').on(table.accountId),
+    index('notifications_release_id_idx').on(table.releaseId),
     index('notifications_created_at_idx').on(table.createdAt),
     uniqueIndex('notifications_key_unique').on(table.key),
     check('notifications_kind_check', sql`${table.kind} in ('release', 'system', 'personal')`),

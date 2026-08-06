@@ -69,6 +69,8 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           contentFile: note.contentFile,
           contentFormat: format,
           key: note.key,
+          // Заполнится на шаге 2, когда сидер переедет на таблицу releases.
+          releaseId: null,
           // Новая нота ещё не объявлена наружу — этим займётся вещатель ниже.
           broadcastedAt: null,
           publishedAt: note.publishedAt,

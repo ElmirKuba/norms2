@@ -295,6 +295,13 @@
       "when": 1785954085093,
       "tag": "0041_round_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1786020979818,
+      "tag": "0042_cultured_absorbing_man",
+      "breakpoints": true
     }
   ]
 }

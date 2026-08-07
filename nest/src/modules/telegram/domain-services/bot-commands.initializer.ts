@@ -14,7 +14,10 @@ import type { Env } from '../../../system/config/env.schema';
  * совпадают без ручной сверки.
  */
 const COMMANDS: { command: string; description: string }[] = [
-  { command: 'start', description: 'Меню' },
+  // У /start и /menu было одинаковое описание «Меню» — в списке Telegram это две строки,
+  // различающиеся только командой, и читается как ошибка. /start — первая команда в жизни
+  // чата, она про вход, а не про меню (замечено Elmir 05.08.2026).
+  { command: 'start', description: 'Начать' },
   { command: 'menu', description: 'Меню' },
   { command: 'link', description: 'Привязать аккаунт кодом из личного кабинета' },
   { command: 'unlink', description: 'Отвязать этот чат от аккаунта' },

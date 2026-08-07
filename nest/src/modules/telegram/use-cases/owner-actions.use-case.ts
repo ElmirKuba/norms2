@@ -17,6 +17,7 @@ import type { TransactionRunnerPort } from '../../../shared/transactions/transac
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
 import type { OwnerActionKind } from '../domain-services/owner-action.store';
 import type { Env } from '../../../system/config/env.schema';
+import { toHumanUrl } from '../../../shared/utility-level/human-url.util';
 
 /** Возврат в меню — есть на каждом экране: без него любой список тупик. */
 const MENU_BUTTON = { text: '🏠 Меню', callbackData: 'menu' };
@@ -64,7 +65,7 @@ export class OwnerActionsUseCase {
     @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
     configService: ConfigService<Env, true>,
   ) {
-    this._baseUrl = configService.get('PUBLIC_BASE_URL', { infer: true }).replace(/\/+$/, '');
+    this._baseUrl = toHumanUrl(configService.get('PUBLIC_BASE_URL', { infer: true })).replace(/\/+$/, '');
   }
 
   /**

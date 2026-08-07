@@ -10,6 +10,7 @@ import type { TelegramRepositoryPort } from '../adapters/telegram-repository.por
 import type { Env } from '../../../system/config/env.schema';
 import type { TelegramLinkStatus } from '../interfaces/telegram-link-status.interface';
 import type { TelegramLinkCodeView } from '../interfaces/telegram-link-code-view.interface';
+import { toHumanUrl } from '../../../shared/utility-level/human-url.util';
 
 /**
  * Управление привязкой Telegram из личного кабинета (2.9.1·14).
@@ -39,7 +40,7 @@ export class ManageTelegramLinkUseCase {
     configService: ConfigService<Env, true>,
   ) {
     this._botUsername = configService.get('TELEGRAM_BOT_USERNAME', { infer: true }).replace(/^@/, '');
-    this._settingsUrl = `${configService.get('PUBLIC_BASE_URL', { infer: true }).replace(/\/+$/, '')}/app/settings`;
+    this._settingsUrl = `${toHumanUrl(configService.get('PUBLIC_BASE_URL', { infer: true })).replace(/\/+$/, '')}/app/settings`;
   }
 
   /**

@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import type { ReleaseAnnouncement, ReleaseBroadcastPort } from './release-broadcast.port';
 import { buildReleaseCaption } from './release-post.util';
 import type { Env } from '../../../system/config/env.schema';
+import { toHumanUrl } from '../../../shared/utility-level/human-url.util';
 
 /** Папка с превью релизов внутри `seed-content/` (едет в образ вместе с нотами). */
 const PREVIEW_DIR = 'seed-content/notifications/previews';
@@ -52,7 +53,7 @@ export class TelegramReleaseBroadcastAdapter implements ReleaseBroadcastPort {
   public constructor(configService: ConfigService<Env, true>) {
     this._token = configService.get('TELEGRAM_BOT_TOKEN', { infer: true });
     this._chatId = configService.get('TELEGRAM_CHANNEL_ID', { infer: true });
-    this._baseUrl = configService.get('PUBLIC_BASE_URL', { infer: true }).replace(/\/+$/, '');
+    this._baseUrl = toHumanUrl(configService.get('PUBLIC_BASE_URL', { infer: true })).replace(/\/+$/, '');
     this._botUsername = configService.get('TELEGRAM_BOT_USERNAME', { infer: true });
     this._contentDir = resolve(configService.get('CONTENT_DIR', { infer: true }));
   }

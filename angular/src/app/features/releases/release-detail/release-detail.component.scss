@@ -1,45 +1,56 @@
-// Портал-лендинг: самодостаточный документ на весь экран. `fixed; inset: 0` накрывает
-// чрому приложения (шапку/подвал) и обходит любые поля контент-колонки — лендинг
-// становится всем экраном. Внутренний документ скроллится сам (его window слушает свою
-// прокрутку — то, чего не было у Angular-компонентов, где «коты» стояли).
-.portal-frame {
+// Портал-лендинг на весь экран: `fixed; inset: 0` накрывает чрому приложения и обходит
+// поля контент-колонки. Колонка flex: тонкая полоса возврата сверху + iframe на остаток.
+// Так лендинг занимает почти весь экран, но его собственный верхний бар (лого,
+// переключатель темы) ничем не перекрыт. Внутренний документ скроллится сам — его window
+// слушает свою прокрутку, чего не было у Angular-компонентов, где «коты» стояли.
+.portal {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  border: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
   // Фон лендинга (тёмная база полигона), чтобы до загрузки не мигало белым.
   background: #14120f;
-  z-index: 1000;
 }
 
-// Возврат к списку — плашкой поверх лендинга, тоже fixed, выше самого портала.
-.portal-back {
-  position: fixed;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 1001;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
-  backdrop-filter: blur(6px);
-  color: var(--color-text);
+.portal__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.portal__back {
+  color: var(--color-text-muted);
   font-size: var(--fs-sm);
   text-decoration: none;
 
   &:hover,
   &:focus-visible {
     color: var(--color-accent);
-    border-color: var(--color-accent);
   }
 }
 
+.portal__frame {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+}
+
+// Обычная нота (md/загрузка/ошибка) — читаемая колонка, а не край-в-край. Колонку держит
+// сама статья, не полагаясь на родителя: раньше ширину задавал layout через `:has(.release-landing)`,
+// а он умер (лендинг в iframe). Портал сюда не попадает — он в отдельной ветке и `fixed`.
 .release-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
   text-align: left;
 }
 

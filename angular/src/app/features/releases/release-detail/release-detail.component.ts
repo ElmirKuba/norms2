@@ -29,6 +29,10 @@ import type { ReleaseView } from '../releases.types';
  */
 @Component({
   selector: 'app-release-detail',
+  // Хост-класс `is-portal` — сигнал layout'у, каким быть: портал-лендинг занимает экран
+  // целиком, обычная нота живёт в читаемой колонке. Раньше layout подсматривал `.release-landing`
+  // в DOM через `:has`, но лендинг переехал в iframe — этого класса в DOM приложения больше нет.
+  host: { '[class.is-portal]': 'portal() !== null' },
   imports: [DatePipe, RouterLink, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './release-detail.component.html',

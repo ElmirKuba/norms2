@@ -1,15 +1,20 @@
 @if (portal(); as src) {
   <!-- Портал-лендинг: самодостаточный HTML в отдельном документе (iframe). Свой window,
        свой скролл, своя изоляция — то, чего не было у Angular-компонентов, где «коты
-       не ехали». Чрома приложения (заголовок, футер) не показываем: лендинг сам себе
-       обложка, поверх — только возврат к списку. -->
-  <a class="portal-back" routerLink="/releases">← Все релизы</a>
-  <iframe
-    class="portal-frame"
-    [src]="src"
-    title="Лендинг релиза"
-    referrerpolicy="no-referrer"
-  ></iframe>
+       не ехали». Чрому приложения не показываем; возврат к списку — тонкой полосой НАД
+       iframe, а не плашкой поверх: у лендинга свой верхний бар (лого, переключатель темы),
+       и наложение перекрывало его лого. -->
+  <div class="portal">
+    <div class="portal__bar">
+      <a class="portal__back" routerLink="/releases">← Все релизы</a>
+    </div>
+    <iframe
+      class="portal__frame"
+      [src]="src"
+      title="Лендинг релиза"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  </div>
 } @else {
   <article class="release-page">
     <a class="release-page__back" routerLink="/releases">← Все релизы</a>

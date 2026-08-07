@@ -11245,6 +11245,3028 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "BYHzZ",
+      "x": 880,
+      "y": 8100,
+      "name": "Мобилка — Дашборд (блок «Сейчас»)",
+      "clip": true,
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "j6A8O",
+          "name": "Вкладки (скроллятся)",
+          "clip": true,
+          "width": "fill_container",
+          "stroke": "$border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 12,
+          "padding": [
+            12,
+            16,
+            0,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "e8C93h",
+              "name": "Вкладка Дашборд",
+              "stroke": "$accent",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jcYHH",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "Дашборд",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xHLk6",
+              "name": "Вкладка Статистика",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "D8EH6",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Статистика",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "tm2mS",
+              "name": "Вкладка Цели",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "begRA",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Цели",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "j70hDp",
+              "name": "Вкладка Привычки",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CUr2N",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Привычки",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "n30Qtt",
+          "name": "Контент",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "XSJxe",
+              "name": "Плитка — Сейчас",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.13,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "h5iQe",
+                  "name": "Метка",
+                  "fill": "$text-muted",
+                  "content": "СЕЙЧАС",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "text",
+                  "id": "RiR10",
+                  "name": "Заголовок",
+                  "fill": "$text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Отжимания — 10 раз",
+                  "lineHeight": 1.2,
+                  "fontFamily": "$font",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "qVM1j",
+                  "name": "Подсказка",
+                  "fill": "$text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Одно дело. Не список — просто начни с него.",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "fm2HU",
+                  "name": "Кнопки",
+                  "gap": 8,
+                  "padding": [
+                    4,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "whNEQ",
+                      "name": "Кнопка Открыть",
+                      "height": 44,
+                      "fill": "$accent",
+                      "cornerRadius": 10,
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "LmIiV",
+                          "name": "Текст",
+                          "fill": "$on-accent",
+                          "content": "Открыть",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "B1o0DQ",
+                      "name": "Кнопка Все задачи",
+                      "height": 44,
+                      "cornerRadius": 10,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bZ8E5",
+                          "name": "Текст",
+                          "fill": "$text",
+                          "content": "Все задачи",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oY97i",
+              "name": "Строка — свежее достижение",
+              "width": "fill_container",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "opacity": 0.1,
+                "rotation": 210,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "$accent",
+                    "position": 0
+                  },
+                  {
+                    "color": "$bg",
+                    "position": 0.7
+                  }
+                ]
+              },
+              "cornerRadius": 10,
+              "stroke": "$accent-deep",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 4,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "LwJGu",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "● Новое достижение: Планка выросла · Отжимания 8 → 10",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kFULT",
+                  "name": "Ссылка",
+                  "fill": "$accent",
+                  "content": "посмотреть →",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "O4qWW",
+              "name": "Плитка — Задачи сегодня",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.05,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "x0Aau",
+                  "name": "Кикер",
+                  "fill": "$text-muted",
+                  "content": "ЗАДАЧИ СЕГОДНЯ",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "O55v1",
+                  "name": "Строка KPI",
+                  "gap": 8,
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "BYono",
+                      "name": "Значение",
+                      "fill": "$text",
+                      "content": "67%",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$font",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "GkEmN",
+                      "name": "Примечание",
+                      "fill": "$text-muted",
+                      "content": "2 из 3",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XjjDO",
+                  "name": "Полоса",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 6,
+                  "fill": "$surface-2",
+                  "cornerRadius": 6,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "sxZI4",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Заполнение",
+                      "fill": "$accent",
+                      "width": 207,
+                      "height": 6
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "keKkn",
+                  "name": "Список",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": [
+                    4,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "w2Y4z",
+                      "name": "Строка",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "GJDOQ",
+                          "name": "Точка",
+                          "fill": "$success",
+                          "width": 8,
+                          "height": 8
+                        },
+                        {
+                          "type": "text",
+                          "id": "rnaXP",
+                          "name": "Название",
+                          "fill": "$text-muted",
+                          "content": "Английский — 20 минут",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wsT1k",
+                      "name": "Строка",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "i3uph",
+                          "name": "Точка",
+                          "fill": "$success",
+                          "width": 8,
+                          "height": 8
+                        },
+                        {
+                          "type": "text",
+                          "id": "J12iKu",
+                          "name": "Название",
+                          "fill": "$text-muted",
+                          "content": "Прогулка — 30 минут",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "B098s",
+                      "name": "Строка",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "uBkC9",
+                          "name": "Точка",
+                          "fill": "$border",
+                          "width": 8,
+                          "height": 8
+                        },
+                        {
+                          "type": "text",
+                          "id": "SXHT0",
+                          "name": "Название",
+                          "fill": "$text",
+                          "content": "Отжимания — 10 раз",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "b2yFgi",
+                  "name": "Ссылка",
+                  "fill": "$accent",
+                  "content": "Все задачи на сегодня →",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "M6WFf",
+              "name": "Плитка — Держусь",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.05,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZsqRU",
+                  "name": "Кикер",
+                  "fill": "$text-muted",
+                  "content": "ДЕРЖУСЬ",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "vDRFK",
+                  "name": "Строка KPI",
+                  "gap": 8,
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S5C2T",
+                      "name": "Значение",
+                      "fill": "$text",
+                      "content": "21",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$font",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kepYA",
+                      "name": "Единица",
+                      "fill": "$text-muted",
+                      "content": "день без срыва",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "z6zBIK",
+                  "name": "Ссылка",
+                  "fill": "$text-muted",
+                  "content": "«Без сахара после шести» →",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "zauhK",
+              "name": "Плитка — Постоянство",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.08,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Oapbw",
+                  "name": "Кикер",
+                  "fill": "$text-muted",
+                  "content": "ПОСТОЯНСТВО",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "R7OX6k",
+                  "name": "Строка KPI",
+                  "gap": 8,
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "buRLi",
+                      "name": "Значение",
+                      "fill": "$text",
+                      "content": "37",
+                      "lineHeight": 1.1,
+                      "fontFamily": "$font",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "POfkD",
+                      "name": "Единица",
+                      "fill": "$text-muted",
+                      "content": "дней с действием",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "FPFF4",
+                  "name": "Ссылка",
+                  "fill": "$text-muted",
+                  "content": "5 из последних 7 →",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "y8ov5",
+              "name": "Строка — препятствия",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Накрыло? Отметить, что помешало →",
+              "fontFamily": "$font",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "mzxWp",
+      "x": 1350,
+      "y": 8100,
+      "name": "Мобилка — «Столкнулся» (модалка)",
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "padding": [
+        40,
+        12
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ghjlF",
+          "name": "Модалка",
+          "width": 366,
+          "fill": "$surface",
+          "cornerRadius": 16,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000004D",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          },
+          "layout": "vertical",
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "pyybe",
+              "name": "Каркас dlg",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Cpx6a",
+                  "name": "Шапка",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    12,
+                    12,
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DGyxa",
+                      "name": "Заголовок",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "«Листаю ленту вместо дела» — что делаем?",
+                      "lineHeight": 1.2,
+                      "fontFamily": "$font",
+                      "fontSize": 24,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GMyHf",
+                  "name": "Тело",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "U84yfm",
+                      "name": "Список ответов",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "j5Po6w",
+                          "name": "Ответ",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            8,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "BDwcM",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "⏱ Отжаться 10 раз",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "O1IOF",
+                              "name": "Действенность",
+                              "fill": "$text-muted",
+                              "content": "помогало 7 из 9",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vjaxH",
+                          "name": "Ответ",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            8,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lCM84",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Налить воды и выйти на 5 минут",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YOkZ4",
+                              "name": "Действенность",
+                              "fill": "$text-muted",
+                              "content": "помогало 4 из 6",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CC6DH",
+                          "name": "Ответ",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "padding": [
+                            8,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XxtU4",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "Написать, чего именно избегаю",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "hZdRd",
+                      "name": "Ссылка заметки",
+                      "fill": "$text-muted",
+                      "content": "+ заметка",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oe9iu",
+                  "name": "Подвал",
+                  "width": "fill_container",
+                  "stroke": "$border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "gap": 12,
+                  "padding": [
+                    8,
+                    12,
+                    12,
+                    12
+                  ],
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "X8XSi",
+                      "name": "Кнопка Отмена",
+                      "height": 44,
+                      "cornerRadius": 10,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AAzsg",
+                          "name": "Текст",
+                          "fill": "$text",
+                          "content": "Отмена",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a7tRlp",
+                      "name": "Кнопка Просто отметить",
+                      "height": 44,
+                      "cornerRadius": 10,
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KdWWZ",
+                          "name": "Текст",
+                          "fill": "$text",
+                          "content": "Просто отметить",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "hA5FX",
+      "x": 1820,
+      "y": 8100,
+      "name": "Мобилка — «Держусь» (кольцо и рекорд)",
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "S0crh6",
+          "name": "Вкладки (скроллятся)",
+          "clip": true,
+          "width": "fill_container",
+          "stroke": "$border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 12,
+          "padding": [
+            12,
+            16,
+            0,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "N4029",
+              "name": "Вкладка Держусь",
+              "stroke": "$accent",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "HnEBN",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "Держусь",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dHXKu",
+              "name": "Вкладка Микро-победы",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "PvihA",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Микро-победы",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mNuW0",
+              "name": "Вкладка Препятствия",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CgqkD",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Препятствия",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "T9Bde8",
+          "name": "Контент",
+          "width": "fill_container",
+          "layout": "vertical",
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "M3wmA",
+              "name": "Назад",
+              "fill": "$text-muted",
+              "content": "← К списку",
+              "fontFamily": "$font",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "a7MmDl",
+              "name": "Шапка",
+              "width": "fill_container",
+              "gap": 12,
+              "padding": [
+                12,
+                0,
+                0,
+                0
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "l6Ngap",
+                  "name": "Заголовок",
+                  "fill": "$text",
+                  "content": "Без сахара после шести",
+                  "lineHeight": 1.2,
+                  "fontFamily": "$font",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "X9Ys9i",
+              "name": "Кольцо (обёртка)",
+              "width": "fill_container",
+              "padding": [
+                24,
+                0,
+                12,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "i56aQ",
+                  "name": "Кольцо",
+                  "width": 132,
+                  "height": 132,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "XtPsl",
+                      "x": 3,
+                      "y": 3,
+                      "name": "Дорожка",
+                      "innerRadius": 0.841,
+                      "fill": "$border",
+                      "width": 126,
+                      "height": 126
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "sHCCf",
+                      "x": 3,
+                      "y": 3,
+                      "name": "Дуга прогресса",
+                      "innerRadius": 0.841,
+                      "startAngle": 90,
+                      "sweepAngle": -252,
+                      "fill": "$accent",
+                      "width": 126,
+                      "height": 126
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ybrDt",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Центр",
+                      "width": 132,
+                      "height": 132,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n7XG8",
+                          "name": "Дни",
+                          "fill": "$accent",
+                          "content": "21",
+                          "lineHeight": 1,
+                          "fontFamily": "$font",
+                          "fontSize": 38,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "nS62d",
+                          "name": "Подпись",
+                          "fill": "$text-muted",
+                          "content": "день",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F2pSF",
+              "name": "Часы",
+              "width": "fill_container",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "czWCE",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "07:42:19",
+                  "fontFamily": "$font",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "esHY7",
+              "name": "Цель",
+              "width": "fill_container",
+              "padding": [
+                4,
+                0,
+                0,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "DiD1I",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "🎯 цель: месяц · до 5 сентября",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "QDGtu",
+              "name": "Мета",
+              "width": "fill_container",
+              "gap": 16,
+              "padding": [
+                8,
+                0,
+                16,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "OYS3w",
+                  "name": "Рекорд",
+                  "fill": "$text",
+                  "content": "🏆 рекорд: 90 дней",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "G3mJw",
+                  "name": "Попытка",
+                  "fill": "$text",
+                  "content": "попытка №3",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AJxsP",
+              "name": "Действия",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                0,
+                0,
+                24,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "VNqYK",
+                  "name": "Кнопка 🔄 Рецидив",
+                  "height": 44,
+                  "cornerRadius": 10,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xUifK",
+                      "name": "Текст",
+                      "fill": "$text",
+                      "content": "🔄 Рецидив",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R0peUQ",
+                  "name": "Кнопка 🗓 Перенести в будущее",
+                  "height": 44,
+                  "cornerRadius": 10,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "o5Qolm",
+                      "name": "Текст",
+                      "fill": "$text",
+                      "content": "🗓 Перенести в будущее",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Y3zdgK",
+              "name": "История",
+              "width": "fill_container",
+              "stroke": "$border",
+              "strokeWidth": {
+                "top": 1
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": [
+                16,
+                0,
+                0,
+                0
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "V47R7e",
+                  "name": "Заголовок",
+                  "fill": "$text",
+                  "content": "История",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "j8KOs",
+                  "name": "Карточка события",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#0000004D",
+                    "offset": {
+                      "x": 0,
+                      "y": 2
+                    },
+                    "blur": 8
+                  },
+                  "layout": "vertical",
+                  "gap": 2,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zhFBE",
+                      "name": "Событие",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "🔄 Рецидив · продержался 90 дней",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "pvc8i",
+                      "name": "Дата",
+                      "fill": "$text-muted",
+                      "content": "5 июля, 23:14",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iVwTR",
+                      "name": "Триггер",
+                      "fill": "$text-muted",
+                      "content": "триггер: вечер пятницы",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "xKpRH",
+      "x": 2290,
+      "y": 8100,
+      "name": "Мобилка — Привычки · Сегодня (минимум на плохой день)",
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "iVnQN",
+          "name": "Вкладки (скроллятся)",
+          "clip": true,
+          "width": "fill_container",
+          "stroke": "$border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 12,
+          "padding": [
+            12,
+            16,
+            0,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "xGyZr",
+              "name": "Вкладка Привычки",
+              "stroke": "$accent",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "d3InL",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "Привычки",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fj6V5",
+              "name": "Вкладка Держусь",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "YTq5k",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Держусь",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rJJP8",
+              "name": "Вкладка Микро-победы",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KpEPa",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Микро-победы",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "B7VzZ9",
+          "name": "Контент",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Bow03",
+              "name": "Шапка",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "VcNSA",
+                  "name": "Заголовок",
+                  "fill": "$text",
+                  "content": "Привычки",
+                  "fontFamily": "$font",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "d9xot",
+                  "name": "Кнопка +",
+                  "height": 44,
+                  "fill": "$accent",
+                  "cornerRadius": 10,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RFoVl",
+                      "name": "Текст",
+                      "fill": "$on-accent",
+                      "content": "+",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YgJMX",
+              "name": "Полоса «зачем»",
+              "width": "fill_container",
+              "fill": "$surface-2",
+              "cornerRadius": 10,
+              "stroke": "$accent",
+              "strokeWidth": {
+                "left": 3
+              },
+              "gap": 12,
+              "padding": [
+                12,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jCurz",
+                  "name": "Иконка",
+                  "fill": "$text",
+                  "content": "🪜",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$font",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "YDFJC",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Не идеально, а постоянно. Маленькие регулярные шаги; лесенка бережёт от выгорания — в трудный день делаешь минимум, и серия цела.",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "k9LiKH",
+              "name": "Вкладки списка",
+              "width": "fill_container",
+              "stroke": "$border",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ZACAH",
+                  "name": "Вкладка Сегодня",
+                  "stroke": "$accent",
+                  "strokeWidth": {
+                    "bottom": 2
+                  },
+                  "padding": [
+                    8,
+                    4
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Rhvm8",
+                      "name": "Текст",
+                      "fill": "$text",
+                      "content": "Сегодня",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Yxnlf",
+                  "name": "Вкладка Шаблоны",
+                  "stroke": "$bg",
+                  "strokeWidth": {
+                    "bottom": 2
+                  },
+                  "padding": [
+                    8,
+                    4
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qr5Ms",
+                      "name": "Текст",
+                      "fill": "$text-muted",
+                      "content": "Шаблоны",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "g7LIL",
+              "name": "Прогресс дня",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "WGYw0",
+                  "name": "Сделано",
+                  "fill": "$text-muted",
+                  "content": "Сегодня сделано: 67%",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Yfjs8",
+                  "name": "Серия",
+                  "fill": "$text-muted",
+                  "content": "🔥 серия — скоро",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "CoC4f",
+              "name": "Список задач",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "OCRHS",
+                  "name": "Задача Английский — 20 минут",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#0000004D",
+                    "offset": {
+                      "x": 0,
+                      "y": 2
+                    },
+                    "blur": 8
+                  },
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "F7unNf",
+                      "name": "Название",
+                      "fill": "$text-muted",
+                      "content": "Английский — 20 минут",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "MoicK",
+                      "name": "Мета",
+                      "fill": "$text-muted",
+                      "content": "По времени · надо: 20, сделано: 20",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GvwqV",
+                      "name": "Действия",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "padding": [
+                        4,
+                        0,
+                        0,
+                        0
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Okw13",
+                          "name": "Статус",
+                          "fill": "$accent",
+                          "content": "✓ Сделано",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vv3ut",
+                          "name": "Кнопка Отменить",
+                          "height": 44,
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "oA7nZ",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "content": "Отменить",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "coYJv",
+                  "name": "Задача Отжимания",
+                  "width": "fill_container",
+                  "fill": "$surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#0000004D",
+                    "offset": {
+                      "x": 0,
+                      "y": 2
+                    },
+                    "blur": 8
+                  },
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p0Us15",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Отжимания",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "c0Dd8q",
+                      "name": "Мета",
+                      "fill": "$text-muted",
+                      "content": "Счётная · надо: 10",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JwsiJ",
+                      "name": "Действия",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "padding": [
+                        4,
+                        0,
+                        0,
+                        0
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lBG07",
+                          "name": "Статус",
+                          "fill": "$text-muted",
+                          "content": "Ожидает",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gxRlf",
+                          "name": "Поле значения",
+                          "width": 64,
+                          "height": 44,
+                          "fill": "$surface-2",
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xulNr",
+                              "name": "Значение",
+                              "fill": "$text",
+                              "content": "10",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XXRPS",
+                          "name": "Кнопка Отметить",
+                          "height": 44,
+                          "fill": "$accent",
+                          "cornerRadius": 10,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZNpWe",
+                              "name": "Текст",
+                              "fill": "$on-accent",
+                              "content": "Отметить",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HAPYu",
+                      "name": "Действия (перенос)",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "justifyContent": "end",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "QyW7k",
+                          "name": "Кнопка → Завтра",
+                          "height": 44,
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "srweN",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "content": "→ Завтра",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PUmUZ",
+                      "name": "Минимум на плохой день",
+                      "width": "fill_container",
+                      "padding": [
+                        8,
+                        0,
+                        0,
+                        0
+                      ],
+                      "justifyContent": "end",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "A7dM1",
+                          "name": "Кнопка 🌙 Минимум сегодня: 1 отжимание",
+                          "width": "fill_container",
+                          "height": 44,
+                          "cornerRadius": 10,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QqXEz",
+                              "name": "Текст",
+                              "fill": "$text",
+                              "content": "🌙 Минимум сегодня: 1 отжимание",
+                              "fontFamily": "$font",
+                              "fontSize": 16,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "NI31D",
+      "x": 2760,
+      "y": 8100,
+      "name": "Мобилка — Статистика (постоянство и достижения)",
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "siddl",
+          "name": "Вкладки (скроллятся)",
+          "clip": true,
+          "width": "fill_container",
+          "stroke": "$border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 12,
+          "padding": [
+            12,
+            16,
+            0,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "HszBb",
+              "name": "Вкладка Дашборд",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FhWgF",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Дашборд",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "FbAvk",
+              "name": "Вкладка Статистика",
+              "stroke": "$accent",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Tdrqu",
+                  "name": "Текст",
+                  "fill": "$text",
+                  "content": "Статистика",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UnIL2",
+              "name": "Вкладка Цели",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "kCMG6",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Цели",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XuccW",
+              "name": "Вкладка Привычки",
+              "stroke": "$bg",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "padding": [
+                8,
+                4
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gwFlJ",
+                  "name": "Текст",
+                  "fill": "$text-muted",
+                  "content": "Привычки",
+                  "fontFamily": "$font",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "t1Wlbi",
+          "name": "Контент",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "HMWU8",
+              "name": "Плитка — Постоянство",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.13,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dE3bw",
+                  "name": "Кикер",
+                  "fill": "$text-muted",
+                  "content": "ПОСТОЯНСТВО",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "tjMai",
+                  "name": "Число",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "padding": [
+                    8,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xwLun",
+                      "name": "Значение",
+                      "fill": "$text",
+                      "content": "37",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 44,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PkH0Q",
+                      "name": "Единица",
+                      "fill": "$text-muted",
+                      "content": "ДНЕЙ С ДЕЙСТВИЕМ",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MxChG",
+                  "name": "Неделя точками",
+                  "gap": 6,
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "JHYWL",
+                      "name": "День с действием",
+                      "fill": "$accent",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "bogUy",
+                      "name": "День с действием",
+                      "fill": "$accent",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "Bk8ol",
+                      "name": "День без отметки",
+                      "fill": "$bg",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent-deep",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "Vrv94",
+                      "name": "День с действием",
+                      "fill": "$accent",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "minJV",
+                      "name": "День с действием",
+                      "fill": "$accent",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "dvSR4",
+                      "name": "День без отметки",
+                      "fill": "$bg",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent-deep",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "y8DUfa",
+                      "name": "День с действием",
+                      "fill": "$accent",
+                      "width": 10,
+                      "height": 10,
+                      "stroke": "$accent",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "XC4hK",
+                      "name": "Подпись",
+                      "fill": "$text-muted",
+                      "content": "5 из 7",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "B0ubx",
+                  "name": "Возвращения",
+                  "width": "fill_container",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hh6rw",
+                      "name": "Текст",
+                      "fill": "$text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Возвращался после долгого перерыва: 3 раза. Это и есть главное умение.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WY6dK",
+              "name": "Плитка — Достижения",
+              "width": "fill_container",
+              "fill": [
+                "$surface",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.09,
+                  "rotation": 210,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "$accent",
+                      "position": 0
+                    },
+                    {
+                      "color": "$surface",
+                      "position": 0.6
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000004D",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 8
+              },
+              "layout": "vertical",
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lF5DQ",
+                  "name": "Кикер",
+                  "fill": "$text-muted",
+                  "content": "ДОСТИЖЕНИЯ",
+                  "fontFamily": "$font",
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "RSUt7",
+                  "name": "Число",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "padding": [
+                    8,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VNxyS",
+                      "name": "Значение",
+                      "fill": "$text",
+                      "content": "4",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 44,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gtbdx",
+                      "name": "Единица",
+                      "fill": "$text-muted",
+                      "content": "ИЗ 5 ПОЛУЧЕНО",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "O0zdW",
+                  "name": "Полоса (обёртка)",
+                  "width": "fill_container",
+                  "padding": [
+                    12,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "hRqwv",
+                      "name": "Полоса",
+                      "clip": true,
+                      "width": "fill_container",
+                      "height": 6,
+                      "fill": "$accent-mid",
+                      "cornerRadius": 3,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "id": "a08aB",
+                          "x": 0,
+                          "y": 0,
+                          "name": "Заполнение",
+                          "fill": "$accent",
+                          "width": 243,
+                          "height": 6
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bVbHk",
+              "name": "Сетка достижений",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "TRv8J",
+                  "name": "Достижение Планка выросла",
+                  "width": "fill_container",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "opacity": 0.11,
+                    "rotation": 210,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "$accent",
+                        "position": 0
+                      },
+                      {
+                        "color": "$bg",
+                        "position": 0.65
+                      }
+                    ]
+                  },
+                  "cornerRadius": 10,
+                  "stroke": "$accent-deep",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RqaCC",
+                      "name": "Маркер",
+                      "fill": "$accent",
+                      "content": "●",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qSuQe",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Планка выросла",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ClMwe",
+                      "name": "Описание",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Привычка подняла планку — стало чуть сложнее, и ты справился.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "T55hV9",
+                      "name": "Когда",
+                      "fill": "$text-muted",
+                      "content": "7 августа · Отжимания 8 → 10",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sjOzj",
+                  "name": "Достижение Первый шаг",
+                  "width": "fill_container",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "opacity": 0.11,
+                    "rotation": 210,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "$accent",
+                        "position": 0
+                      },
+                      {
+                        "color": "$bg",
+                        "position": 0.65
+                      }
+                    ]
+                  },
+                  "cornerRadius": 10,
+                  "stroke": "$accent-deep",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nmeBK",
+                      "name": "Маркер",
+                      "fill": "$accent",
+                      "content": "●",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q7XGx",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Первый шаг",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zMk15",
+                      "name": "Описание",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Первая отметка в разделе.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A1HgP",
+                      "name": "Когда",
+                      "fill": "$text-muted",
+                      "content": "12 июня",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "keXNq",
+                  "name": "Достижение Первая микро-победа",
+                  "width": "fill_container",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "opacity": 0.11,
+                    "rotation": 210,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "$accent",
+                        "position": 0
+                      },
+                      {
+                        "color": "$bg",
+                        "position": 0.65
+                      }
+                    ]
+                  },
+                  "cornerRadius": 10,
+                  "stroke": "$accent-deep",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ZJuRI",
+                      "name": "Маркер",
+                      "fill": "$accent",
+                      "content": "●",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rytBp",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Первая микро-победа",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VgvfH",
+                      "name": "Описание",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Сделал микро-победу — маленькое действие вместо ничего.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dq88J",
+                      "name": "Когда",
+                      "fill": "$text-muted",
+                      "content": "14 июня",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nF5Zn",
+                  "name": "Достижение Первая цель",
+                  "width": "fill_container",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "opacity": 0.11,
+                    "rotation": 210,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "$accent",
+                        "position": 0
+                      },
+                      {
+                        "color": "$bg",
+                        "position": 0.65
+                      }
+                    ]
+                  },
+                  "cornerRadius": 10,
+                  "stroke": "$accent-deep",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "N9UajL",
+                      "name": "Маркер",
+                      "fill": "$accent",
+                      "content": "●",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hcLlr",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Первая цель",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "HzVOR",
+                      "name": "Описание",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Поставил цель и назвал, ради чего она.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "bgkw2",
+                      "name": "Когда",
+                      "fill": "$text-muted",
+                      "content": "18 июня",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XQioL",
+                  "name": "Достижение (впереди) Плохой день не пропал",
+                  "opacity": 0.72,
+                  "width": "fill_container",
+                  "cornerRadius": 10,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wra9L",
+                      "name": "Маркер",
+                      "fill": "$text-muted",
+                      "content": "○",
+                      "lineHeight": 1,
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A6GTJ",
+                      "name": "Название",
+                      "fill": "$text",
+                      "content": "Плохой день не пропал",
+                      "fontFamily": "$font",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rXBEO",
+                      "name": "Описание",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Сделай микро-победу в день, когда задач не было.",
+                      "fontFamily": "$font",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

@@ -1,269 +1,198 @@
 // Лендинг обновления 2.0 — страница-нота формата `page` (2.9.2·4).
 //
-// Перенесён из полигона `~/coding/landing-lab/5`, где приём обкатывался на пародийной теме.
-// При переносе изменилось три вещи, и все — не косметика:
-//   1. цвета взяты из токенов приложения (`_tokens.scss`), своей палитры у страницы нет;
-//   2. шапка и переключатель темы убраны — они уже есть в приложении;
-//   3. `overflow-x: clip` живёт на корне компонента, а не на `body`: страница вставляется
-//      в чужой документ и не имеет права трогать его прокрутку.
+// Инкапсуляция снята намеренно (`ViewEncapsulation.None`), потому что страница разбита на два
+// компонента ради бюджета стилей, а правила родителя иначе не долетают до разметки дочернего.
+// Чтобы это не текло на всё приложение, ВСЕ правила лежат под `.release-landing` — области
+// вне лендинга они не касаются.
 //
-// Грабля, стоившая вечера, повторяется тут дословно: `overflow: hidden` у любого предка
-// убивает `position: sticky` внутри — залипающий блок молча уезжает, оставляя пустоту.
+// Грабля переноса, стоившая итерации: `.js .rise` искал предка ВНУТРИ компонента, а класс
+// вешается на хост — анимации появления просто не работали.
 
-// Подвал страницы: у лендинга он был документным, здесь — часть компонента.
-.page-foot {
-  padding: 40px clamp(20px, 5vw, 64px);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 14px;
-}
-.disclaimer { max-width: 62ch; margin: 0 auto; text-align: center; }
-
-:host {
+.release-landing {
   display: block;
   overflow-x: clip;
   color: var(--color-text);
   --font-display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --font-body: inherit;
   --accent-soft: color-mix(in srgb, var(--color-accent) 14%, transparent);
-}
 
 
-  html { scroll-behavior: smooth; }
-
-  /* Подсветка за курсором — как в папке 4. Лежит поверх фонов, но мягко и
-     без перехвата кликов; на светлой теме гасим, иначе получается грязь. */
-  :host-context(.theme-light) .spot { opacity: 1; }
-
-  /* Точки-индикаторы слайдов презентации. */
-  .deck__dots {
-    position: absolute; right: clamp(16px, 3vw, 40px); top: 50%; translate: 0 -50%;
-    display: grid; gap: 14px; z-index: 3;
+  // Подвал страницы: у лендинга он был документным, здесь — часть компонента.
+  .page-foot {
+    padding: 40px clamp(20px, 5vw, 64px);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 14px;
   }
-  .deck__dots button {
-    width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
-    background: var(--color-border); transition: background .25s ease, scale .25s ease;
-  }
-  .deck__dots button:hover { background: var(--color-text-muted); }
-  .deck__dots button[aria-current="true"] { background: var(--color-accent); scale: 1.35; }
-
-  /* ── каркас ── */
-
-  /* Каждый блок занимает экран целиком: смена фона должна совпадать с границей
-     вьюпорта, иначе в один кадр попадают два блока и стык читается как ошибка. */
-  section {
-    padding: 80px clamp(20px, 5vw, 64px);
-    min-height: 100vh; display: grid; align-content: center;
-  }
-  .wrap { max-width: 980px; margin: 0 auto; }
-  .wide { max-width: 1440px; margin: 0 auto; }
-
-  .eyebrow {
-    font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--color-accent); margin: 0 0 24px; font-weight: 600;
-  }
-  h1 {
-    font-family: var(--font-display); font-size: clamp(40px, 7.2vw, 84px); line-height: 1.03;
-    letter-spacing: -.03em; font-weight: 600; margin: 0 0 24px; max-width: 15ch;
-  }
-  h1 em { font-style: italic; color: var(--color-accent); }
-  h2 {
-    font-family: var(--font-display); font-size: clamp(30px, 4vw, 52px); line-height: 1.1;
-    letter-spacing: -.02em; font-weight: 600; margin: 0 0 20px; max-width: 20ch;
-  }
-  .lead { font-size: clamp(19px, 1.7vw, 26px); line-height: 1.36; color: var(--color-text-muted); max-width: 34ch; margin: 0 0 32px; }
-  p { max-width: 62ch; }
-
-  .cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
-    padding: 13px 24px; border-radius: 999px; font-size: 15px; font-weight: 600;
-    background: var(--color-accent); color: var(--color-on-accent); border: 1px solid transparent;
-    transition: transform .15s ease;
-  }
-  .btn:active { transform: scale(.95); }
-  .btn--ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
-
-  .stats { display: flex; gap: clamp(28px, 5vw, 72px); flex-wrap: wrap; }
-  .stat b { display: block; font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; letter-spacing: -.02em; }
-  .stat span { font-size: 14px; color: var(--color-text-muted); letter-spacing: -.224px; }
-
-  /* тёмная плитка — разделитель через смену фона, без зазора */
-  .tile-dark { background: var(--color-surface); color: var(--color-text); }
-  .tile-dark h2 { color: var(--color-text); }
-  .tile-dark p, .tile-dark .lead { color: var(--color-text-muted); }
-  .tile-alt { background: var(--color-surface-2); }
-
-  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 48px; }
-  .card { border: 1px solid var(--color-border); border-radius: 18px; padding: 32px; background: var(--color-bg); }
-  .tile-dark .card { background: var(--color-surface-2); border-color: #2c2822; }
-  @media (max-width: 860px) { .card--doom { grid-template-columns: 1fr; } }
-
-  .card h3 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; }
-  .price { font-family: var(--font-display); font-size: 40px; font-weight: 600; color: var(--color-accent); margin: 0 0 16px; }
-  .price small { font-family: var(--font-body); font-size: 14px; color: var(--color-text-muted); font-weight: 400; }
-  .card ul { list-style: none; padding: 0; margin: 0; }
-  .card li { padding: 9px 0 9px 26px; position: relative; color: var(--color-text-muted); font-size: 15px; border-top: 1px solid var(--color-border); }
-  .card li:first-child { border-top: 0; }
-  .card li::before { content: "—"; position: absolute; left: 0; color: var(--color-accent); }
-  .tile-dark .card li { color: var(--color-text-muted); border-color: #2c2822; }
-
-  .steps { counter-reset: s; display: grid; gap: 0; margin-top: 48px; }
-  .step { display: grid; grid-template-columns: 84px 1fr; gap: 28px; padding: 32px 0; border-top: 1px solid var(--color-border); align-items: start; }
-  .step::before {
-    counter-increment: s; content: counter(s, decimal-leading-zero);
-    font-family: var(--font-display); font-size: 40px; color: var(--color-accent); line-height: 1;
-  }
-  .step h3 { font-family: var(--font-display); font-size: 26px; margin: 0 0 6px; font-weight: 600; }
-  .step p { margin: 0; color: var(--color-text-muted); }
-
-  .quote { font-family: var(--font-display); font-size: clamp(24px, 3vw, 40px); line-height: 1.25; letter-spacing: -.02em; margin: 0 0 20px; max-width: 24ch; }
-  .who { font-size: 14px; color: var(--color-text-muted); }
-
-  .final { text-align: center; }
-  .final h2 { margin-left: auto; margin-right: auto; }
-  .final .lead { margin-left: auto; margin-right: auto; }
-  .final .cta { justify-content: center; margin-bottom: 0; }
-
-  footer { padding: 40px clamp(20px, 5vw, 64px); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 14px; }
   .disclaimer { max-width: 62ch; margin: 0 auto; text-align: center; }
-  @supports (animation-timeline: scroll()) {
-  }
+
+
+
+    html { scroll-behavior: smooth; }
+
+    /* Подсветка за курсором — как в папке 4. Лежит поверх фонов, но мягко и
+       без перехвата кликов; на светлой теме гасим, иначе получается грязь. */
+    :host-context(.theme-light) .spot { opacity: 1; }
+
+    /* Точки-индикаторы слайдов презентации. */
+    .deck__dots {
+      position: absolute; right: clamp(16px, 3vw, 40px); top: 50%; translate: 0 -50%;
+      display: grid; gap: 14px; z-index: 3;
+    }
+    .deck__dots button {
+      width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+      background: var(--color-border); transition: background .25s ease, scale .25s ease;
+    }
+    .deck__dots button:hover { background: var(--color-text-muted); }
+    .deck__dots button[aria-current="true"] { background: var(--color-accent); scale: 1.35; }
+
+    /* ── каркас ── */
+
+    /* Каждый блок занимает экран целиком: смена фона должна совпадать с границей
+       вьюпорта, иначе в один кадр попадают два блока и стык читается как ошибка. */
+    section {
+      padding: 80px clamp(20px, 5vw, 64px);
+      min-height: 100vh; display: grid; align-content: center;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .wide { max-width: 1440px; margin: 0 auto; }
+
+    .eyebrow {
+      font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--color-accent); margin: 0 0 24px; font-weight: 600;
+    }
+    h1 {
+      font-family: var(--font-display); font-size: clamp(40px, 7.2vw, 84px); line-height: 1.03;
+      letter-spacing: -.03em; font-weight: 600; margin: 0 0 24px; max-width: 15ch;
+    }
+    h1 em { font-style: italic; color: var(--color-accent); }
+    h2 {
+      font-family: var(--font-display); font-size: clamp(30px, 4vw, 52px); line-height: 1.1;
+      letter-spacing: -.02em; font-weight: 600; margin: 0 0 20px; max-width: 20ch;
+    }
+    .lead { font-size: clamp(19px, 1.7vw, 26px); line-height: 1.36; color: var(--color-text-muted); max-width: 34ch; margin: 0 0 32px; }
+    p { max-width: 62ch; }
+
+    .cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+      padding: 13px 24px; border-radius: 999px; font-size: 15px; font-weight: 600;
+      background: var(--color-accent); color: var(--color-on-accent); border: 1px solid transparent;
+      transition: transform .15s ease;
+    }
+    .btn:active { transform: scale(.95); }
+    .btn--ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+
+    .stats { display: flex; gap: clamp(28px, 5vw, 72px); flex-wrap: wrap; }
+    .stat b { display: block; font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; letter-spacing: -.02em; }
+    .stat span { font-size: 14px; color: var(--color-text-muted); letter-spacing: -.224px; }
+
+    /* тёмная плитка — разделитель через смену фона, без зазора */
+    .tile-dark { background: var(--color-surface); color: var(--color-text); }
+    .tile-dark h2 { color: var(--color-text); }
+    .tile-dark p, .tile-dark .lead { color: var(--color-text-muted); }
+    .tile-alt { background: var(--color-surface-2); }
+
+    .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 48px; }
+    .card { border: 1px solid var(--color-border); border-radius: 18px; padding: 32px; background: var(--color-bg); }
+    .tile-dark .card { background: var(--color-surface-2); border-color: #2c2822; }
+    @media (max-width: 860px) { .card--doom { grid-template-columns: 1fr; } }
+
+    .card h3 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; }
+    .price { font-family: var(--font-display); font-size: 40px; font-weight: 600; color: var(--color-accent); margin: 0 0 16px; }
+    .price small { font-family: var(--font-body); font-size: 14px; color: var(--color-text-muted); font-weight: 400; }
+    .card ul { list-style: none; padding: 0; margin: 0; }
+    .card li { padding: 9px 0 9px 26px; position: relative; color: var(--color-text-muted); font-size: 15px; border-top: 1px solid var(--color-border); }
+    .card li:first-child { border-top: 0; }
+    .card li::before { content: "—"; position: absolute; left: 0; color: var(--color-accent); }
+    .tile-dark .card li { color: var(--color-text-muted); border-color: #2c2822; }
+
+    .steps { counter-reset: s; display: grid; gap: 0; margin-top: 48px; }
+    .step { display: grid; grid-template-columns: 84px 1fr; gap: 28px; padding: 32px 0; border-top: 1px solid var(--color-border); align-items: start; }
+    .step::before {
+      counter-increment: s; content: counter(s, decimal-leading-zero);
+      font-family: var(--font-display); font-size: 40px; color: var(--color-accent); line-height: 1;
+    }
+    .step h3 { font-family: var(--font-display); font-size: 26px; margin: 0 0 6px; font-weight: 600; }
+    .step p { margin: 0; color: var(--color-text-muted); }
+
+    .quote { font-family: var(--font-display); font-size: clamp(24px, 3vw, 40px); line-height: 1.25; letter-spacing: -.02em; margin: 0 0 20px; max-width: 24ch; }
+    .who { font-size: 14px; color: var(--color-text-muted); }
+
+    .final { text-align: center; }
+    .final h2 { margin-left: auto; margin-right: auto; }
+    .final .lead { margin-left: auto; margin-right: auto; }
+    .final .cta { justify-content: center; margin-bottom: 0; }
+
+    footer { padding: 40px clamp(20px, 5vw, 64px); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 14px; }
+    .disclaimer { max-width: 62ch; margin: 0 auto; text-align: center; }
+    @supports (animation-timeline: scroll()) {
+    }
   
   
 
-  /* ── питомцы: у каждой секции свой, едет ЗА содержимым ──────────────
-     Ключевое правило (из разобранного промпта): объект НИКОГДА не перекрывает
-     текст. Поэтому z-index у питомца 0, а у содержимого 1, и траектории проходят
-     по свободным полям секции. Движение привязано к прогрессу прокрутки секции:
-     питомец въезжает, проезжает и уходит ровно за то время, что секция на экране. */
-  section { position: relative; overflow: hidden; }
-  section > .wrap, section > .wide { position: relative; z-index: 1; }
+    /* ── питомцы: у каждой секции свой, едет ЗА содержимым ──────────────
+       Ключевое правило (из разобранного промпта): объект НИКОГДА не перекрывает
+       текст. Поэтому z-index у питомца 0, а у содержимого 1, и траектории проходят
+       по свободным полям секции. Движение привязано к прогрессу прокрутки секции:
+       питомец въезжает, проезжает и уходит ровно за то время, что секция на экране. */
+    section { position: relative; overflow: hidden; }
+    section > .wrap, section > .wide { position: relative; z-index: 1; }
 
-  /* Питомцы: прогресс секции считает JS и кладёт в --p (0..1). Никаких
-     scroll-таймлайнов — работает в любом браузере и проверяемо. */
-  .pet {
-    position: absolute; pointer-events: none;
-    width: clamp(110px, 13vw, 200px); aspect-ratio: 160/110;
-    opacity: .9; left: 0; z-index: -1;
-    /* Дорожка справа: текст блоков ограничен по ширине и живёт слева, поэтому
-       питомец ездит по правой половине. Слои и так разведены (z-index -1), но
-       светлый силуэт поверх крупных белых цифр всё равно читается как каша —
-       развели ещё и по площади. */
-    translate: calc((var(--p, .3) * 62 + 46) * 1vw) 0;
-    rotate: calc((var(--p, .3) - .5) * 6deg);
-  }
-  .pet svg { width: 100%; height: 100%; display: block; }
-  /* Питомец обязан оставаться ВНУТРИ своего блока: у самого края он читается как
-     объект на стыке — рядом уже виден фон следующей секции, и принадлежность
-     теряется. Отступ от границы больше, чем высота самого питомца. */
-  .pet--low  { bottom: 15%; }
-  .pet--mid  { top: 44%; }
-  .pet--high { top: 15%; }
-  /* Встречная дорожка — по левому краю, ниже колонки текста. */
-  .pet--back { translate: calc((44 - var(--p, .3) * 58) * 1vw) 0; }
-  .pet--back svg { scale: -1 1; }
-  .pet--faint { opacity: .5; }
-  /* Зона тарифов плотная: за карточками питомец превращается в обрубок колеса,
-     торчащий из щели. Ставим его в пустую полосу справа от заголовка. */
-  .pet--tariff { top: 8%; width: clamp(90px, 9vw, 150px); }
-  /* Блок тарифов и так высокий: три карточки со списками. Растягивать его до
-     полного экрана — значит добавить пустоты сверху и снизу. */
-  #tariffs { min-height: 0; padding-block: clamp(72px, 9vh, 110px); }
+    /* Питомцы: прогресс секции считает JS и кладёт в --p (0..1). Никаких
+       scroll-таймлайнов — работает в любом браузере и проверяемо. */
+    .pet {
+      position: absolute; pointer-events: none;
+      width: clamp(110px, 13vw, 200px); aspect-ratio: 160/110;
+      opacity: .9; left: 0; z-index: -1;
+      /* Дорожка справа: текст блоков ограничен по ширине и живёт слева, поэтому
+         питомец ездит по правой половине. Слои и так разведены (z-index -1), но
+         светлый силуэт поверх крупных белых цифр всё равно читается как каша —
+         развели ещё и по площади. */
+      translate: calc((var(--p, .3) * 62 + 46) * 1vw) 0;
+      rotate: calc((var(--p, .3) - .5) * 6deg);
+    }
+    .pet svg { width: 100%; height: 100%; display: block; }
+    /* Питомец обязан оставаться ВНУТРИ своего блока: у самого края он читается как
+       объект на стыке — рядом уже виден фон следующей секции, и принадлежность
+       теряется. Отступ от границы больше, чем высота самого питомца. */
+    .pet--low  { bottom: 15%; }
+    .pet--mid  { top: 44%; }
+    .pet--high { top: 15%; }
+    /* Встречная дорожка — по левому краю, ниже колонки текста. */
+    .pet--back { translate: calc((44 - var(--p, .3) * 58) * 1vw) 0; }
+    .pet--back svg { scale: -1 1; }
+    .pet--faint { opacity: .5; }
+    /* Зона тарифов плотная: за карточками питомец превращается в обрубок колеса,
+       торчащий из щели. Ставим его в пустую полосу справа от заголовка. */
+    .pet--tariff { top: 8%; width: clamp(90px, 9vw, 150px); }
+    /* Блок тарифов и так высокий: три карточки со списками. Растягивать его до
+       полного экрана — значит добавить пустоты сверху и снизу. */
+    #tariffs { min-height: 0; padding-block: clamp(72px, 9vh, 110px); }
 
-  /* ── презентация как блок сайта ────────────────────────────────────
-     Тот же опыт, что в папке 4: полновьюпортовый слайд, текст и картинка меняются
-     сторонами, пролёты в разные стороны. Отличие одно: колесо НЕ перехватывается —
-     секция высокая, внутри залипает экран, а слайд выбирается по прогрессу
-     прокрутки. Долистал последний — секция отпускает, страница едет дальше. */
-  /* overflow ОБЯЗАТЕЛЬНО visible: общее правило section { overflow: hidden } делает
-     секцию скролл-контейнером, и `sticky` внутри перестаёт работать — экран не
-     липнет, остаётся 460vh пустоты. Обрезка живёт на сцене, ей и достаточно. */
-  /* Сцена ОБЯЗАНА начинаться с первого пикселя секции. Общее правило
-     section { display: grid; align-content: center } центрировало её по всей высоте
-     520vh — сцена оказывалась на 1707px ниже начала блока, sticky «прилипал» уже
-     после того, как половина секции проехала мимо, и первый слайд человек не видел
-     вовсе. Отсюда «пустота, а потом сразу 02». Задаём и раскладку, и выравнивание. */
-  .deck {
-    padding: 0; height: 520vh; min-height: 0;
-    display: block; align-content: start;
-    position: relative; overflow: visible;
-  }
-  .deck__stage { align-self: start; }
-  .deck__stage {
-    position: sticky; top: 0; height: 100vh; overflow: hidden;
-    background: var(--color-surface-2); display: block;
-  }
-  .dslide {
-    position: absolute; inset: 0; display: grid; align-content: center;
-    padding: 0 clamp(20px, 5vw, 64px);
-    visibility: hidden;
-  }
-  .dslide.is-on { visibility: visible; }
-  .dslide__pair {
-    display: grid; gap: clamp(24px, 4vw, 64px); align-items: center;
-    grid-template-columns: minmax(0, .85fr) minmax(0, 1.6fr);
-    max-width: 1240px; margin: 0 auto; width: 100%;
-  }
-  .dslide--flip .dslide__pair { grid-template-areas: "art copy"; grid-template-columns: minmax(0, 1.6fr) minmax(0, .85fr); }
-  .dslide--flip .dslide__copy { grid-area: copy; }
-  .dslide--flip .dslide__art { grid-area: art; }
+    /* Появление блоков: класс вешает IntersectionObserver. Без него всё видно. */
+    .rise { transition: opacity .7s ease, translate .7s cubic-bezier(.2,.7,.3,1); }
+    .release-landing.js .rise { opacity: 0; translate: 0 36px; }
+    .release-landing.js .rise.is-in { opacity: 1; translate: 0 0; }
 
-  .dslide__copy, .dslide__art {
-    opacity: 0; transition: opacity .5s ease, translate .9s cubic-bezier(.26,.62,.2,1), scale .9s cubic-bezier(.26,.62,.2,1);
-    scale: .97;
-  }
-  .dslide__copy { translate: var(--copy-in) 0; }
-  .dslide__art  { translate: var(--art-in) 0; }
-  .dslide.is-active .dslide__copy, .dslide.is-active .dslide__art { opacity: 1; translate: 0 0; scale: 1; }
-  .dslide.is-active .dslide__copy { transition-delay: .06s; }
-  .dslide.is-active .dslide__art  { transition-delay: .14s; }
-  .dslide.is-past .dslide__copy { translate: var(--copy-out) 0; opacity: 0; }
-  .dslide.is-past .dslide__art  { translate: var(--art-out) 0; opacity: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .pet, .rise, .hint, .deck__stage { animation: none !important; }
+      .rise { opacity: 1; translate: none; }
+      .pet { opacity: .35; }
+      .deck { height: auto; overflow: visible; }
+      .deck__stage { position: static; height: auto; padding: 64px clamp(20px, 5vw, 64px); display: grid; }
+      .dslide { position: static; padding: 0; }
+      .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; scale: 1; }
+    }
+    @media (max-width: 720px) {
+      .pet { display: none; }
+      .step { grid-template-columns: 56px 1fr; gap: 18px; }
+      .deck { height: auto; overflow: visible; }
+      .deck__stage { position: static; height: auto; display: grid; gap: 56px; }
+      .dslide { position: static; padding: 0; }
+      .dslide__pair, .dslide--flip .dslide__pair { grid-template-columns: 1fr; grid-template-areas: none; }
+      .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; }
+    }
 
-  /* Правило обмена местами. Блок ПРИХОДИТ со стороны, противоположной той, где он
-     встанет, и УХОДИТ туда же — то есть текст и картинка каждый раз пролетают друг
-     сквозь друга и меняются местами. Внутри слайда движение симметричное; от слайда
-     к слайду знаки переворачиваются вместе с колонками, а амплитуда своя. */
-
-  /* Текст слева, картинка справа → текст летит справа, картинка слева. */
-  .dslide:nth-child(1) { --copy-in: 58vw;  --copy-out: 58vw;  --art-in: -62vw; --art-out: -62vw; }
-  /* Перевёрнутый: текст справа, картинка слева → знаки обратные. */
-  .dslide:nth-child(2) { --copy-in: -66vw; --copy-out: -66vw; --art-in: 70vw;  --art-out: 70vw; }
-  .dslide:nth-child(3) { --copy-in: 52vw;  --copy-out: 52vw;  --art-in: -74vw; --art-out: -74vw; }
-  .dslide:nth-child(4) { --copy-in: -72vw; --copy-out: -72vw; --art-in: 56vw;  --art-out: 56vw; }
-
-  .dslide__num { font-family: var(--font-display); font-size: 14px; color: var(--color-accent); letter-spacing: .18em; }
-  .dslide h3 { font-family: var(--font-display); font-size: clamp(28px, 3.4vw, 46px); font-weight: 600; margin: 14px 0 12px; letter-spacing: -.02em; }
-  .dslide p { color: var(--color-text-muted); margin: 0; max-width: 44ch; }
-  .dslide__art { border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-bg); aspect-ratio: 16/10; display: grid; place-items: center; padding: 5%; }
-  .dslide__art svg { width: 76%; height: auto; }
-
-  /* Полоска прогресса блока — видно, сколько слайдов осталось. */
-  .deck__bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-border); }
-  .deck__bar i { display: block; height: 100%; width: calc(var(--dp, 0) * 100%); background: var(--color-accent); }
-
-  /* Появление блоков: класс вешает IntersectionObserver. Без него всё видно. */
-  .rise { transition: opacity .7s ease, translate .7s cubic-bezier(.2,.7,.3,1); }
-  .js .rise { opacity: 0; translate: 0 36px; }
-  .js .rise.is-in { opacity: 1; translate: 0 0; }
-
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .pet, .rise, .hint, .deck__stage { animation: none !important; }
-    .rise { opacity: 1; translate: none; }
-    .pet { opacity: .35; }
-    .deck { height: auto; overflow: visible; }
-    .deck__stage { position: static; height: auto; padding: 64px clamp(20px, 5vw, 64px); display: grid; }
-    .dslide { position: static; padding: 0; }
-    .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; scale: 1; }
-  }
-  @media (max-width: 720px) {
-    .pet { display: none; }
-    .step { grid-template-columns: 56px 1fr; gap: 18px; }
-    .deck { height: auto; overflow: visible; }
-    .deck__stage { position: static; height: auto; display: grid; gap: 56px; }
-    .dslide { position: static; padding: 0; }
-    .dslide__pair, .dslide--flip .dslide__pair { grid-template-columns: 1fr; grid-template-areas: none; }
-    .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; }
-  }
+}

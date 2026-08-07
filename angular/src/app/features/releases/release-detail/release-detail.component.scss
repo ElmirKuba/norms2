@@ -1,3 +1,11 @@
+// Нота-страница занимает ВСЮ ширину: лендинг рассчитан на полноэкранные блоки встык, а
+// колонка статьи (max-width + поля) зажимала его в узкую полосу посреди экрана.
+.release-page--full {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .release-page {
   display: flex;
   flex-direction: column;

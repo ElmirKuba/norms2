@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component , ViewEncapsulation } from '@angular/core';
 
 /**
  * Контентные секции лендинга 2.0: сравнение, тарифы, особые случаи, штат, гарантии и вопросы.
@@ -13,6 +13,8 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'app-release-2-0-0-sections',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Правила лежат под `.release-landing`, поэтому глобально ничего не течёт.
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './release-2-0-0-sections.component.html',
   styleUrl: './release-2-0-0-sections.component.scss',
 })

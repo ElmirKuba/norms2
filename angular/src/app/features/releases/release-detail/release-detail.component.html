@@ -1,4 +1,4 @@
-<article class="release-page">
+<article class="release-page" [class.release-page--full]="page() !== null">
   <a class="release-page__back" routerLink="/releases">← Все релизы</a>
 
   @if (loading()) {

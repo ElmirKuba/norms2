@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, inject , ViewEncapsulation } from '@angular/core';
 import { DestroyRef } from '@angular/core';
 import { Release200SectionsComponent } from './release-2-0-0-sections.component';
 
@@ -31,6 +31,8 @@ const SLIDE_HOLD = 0.07;
   selector: 'app-release-2-0-0-page',
   imports: [Release200SectionsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Правила лежат под `.release-landing`, поэтому глобально ничего не течёт.
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './release-2-0-0.page.html',
   styleUrl: './release-2-0-0.page.scss',
 })
@@ -61,7 +63,7 @@ export class Release200Page {
     if (reduce) {
       rises.forEach((el) => el.classList.add('is-in'));
     } else {
-      root.classList.add('js');
+      (root.querySelector('.release-landing') ?? root).classList.add('js');
       const io = new IntersectionObserver(
         (entries) =>
           entries.forEach((entry) => {

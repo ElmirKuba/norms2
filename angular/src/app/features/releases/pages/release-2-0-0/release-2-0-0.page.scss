@@ -1,198 +1,117 @@
 // Лендинг обновления 2.0 — страница-нота формата `page` (2.9.2·4).
 //
-// Инкапсуляция снята намеренно (`ViewEncapsulation.None`), потому что страница разбита на два
-// компонента ради бюджета стилей, а правила родителя иначе не долетают до разметки дочернего.
-// Чтобы это не текло на всё приложение, ВСЕ правила лежат под `.release-landing` — области
-// вне лендинга они не касаются.
+// **Палитра у страницы СВОЯ, и это намеренно.** Лендинг — обложка выпуска: он имеет право
+// выглядеть иначе, чем кабинет. В первой попытке переноса я подменил его цвета токенами
+// приложения, и страница перестала быть собой — Elmir сразу это увидел. Теперь значения
+// приезжают из полигона как есть, только объявлены не на `:root`, а на `.release-landing`.
 //
-// Грабля переноса, стоившая итерации: `.js .rise` искал предка ВНУТРИ компонента, а класс
-// вешается на хост — анимации появления просто не работали.
+// Тема наследуется от приложения: у нас тёмная — база, светлая — `:root.theme-light`; в
+// полигоне было наоборот, поэтому наборы значений переставлены местами.
+//
+// Инкапсуляция снята (`ViewEncapsulation.None`), потому что страница разбита на два компонента
+// ради бюджета стилей, а правила родителя иначе не долетают до дочернего. Течь наружу нечему:
+// все селекторы лежат под `.release-landing`.
 
 .release-landing {
-  display: block;
-  overflow-x: clip;
-  color: var(--color-text);
-  --font-display: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
-  --font-body: inherit;
-  --accent-soft: color-mix(in srgb, var(--color-accent) 14%, transparent);
 
 
-  // Подвал страницы: у лендинга он был документным, здесь — часть компонента.
-  .page-foot {
-    padding: 40px clamp(20px, 5vw, 64px);
-    border-top: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-    font-size: 14px;
+  /* Подсветка за курсором — как в папке 4. Лежит поверх фонов, но мягко и
+     без перехвата кликов; на светлой теме гасим, иначе получается грязь. */
+  :root.theme-dark .spot { opacity: 1; }
+
+  /* Точки-индикаторы слайдов презентации. */
+  .deck__dots {
+    position: absolute; right: clamp(16px, 3vw, 40px); top: 50%; translate: 0 -50%;
+    display: grid; gap: 14px; z-index: 3;
   }
-  .disclaimer { max-width: 62ch; margin: 0 auto; text-align: center; }
+  .deck__dots button {
+    width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    background: var(--line); transition: background .25s ease, scale .25s ease;
+  }
+  .deck__dots button:hover { background: var(--ink-soft); }
+  .deck__dots button[aria-current="true"] { background: var(--accent); scale: 1.35; }
 
+  /* ── каркас ── */
 
+  /* Каждый блок занимает экран целиком: смена фона должна совпадать с границей
+     вьюпорта, иначе в один кадр попадают два блока и стык читается как ошибка. */
+  section {
+    padding: 80px clamp(20px, 5vw, 64px);
+    min-height: 100vh; display: grid; align-content: center;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .wide { max-width: 1440px; margin: 0 auto; }
 
-    html { scroll-behavior: smooth; }
+  .eyebrow {
+    font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 24px; font-weight: 600;
+  }
+  h1 {
+    font-family: var(--serif); font-size: clamp(40px, 7.2vw, 84px); line-height: 1.03;
+    letter-spacing: -.03em; font-weight: 600; margin: 0 0 24px; max-width: 15ch;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  h2 {
+    font-family: var(--serif); font-size: clamp(30px, 4vw, 52px); line-height: 1.1;
+    letter-spacing: -.02em; font-weight: 600; margin: 0 0 20px; max-width: 20ch;
+  }
+  .lead { font-size: clamp(19px, 1.7vw, 26px); line-height: 1.36; color: var(--ink-soft); max-width: 34ch; margin: 0 0 32px; }
+  p { max-width: 62ch; }
 
-    /* Подсветка за курсором — как в папке 4. Лежит поверх фонов, но мягко и
-       без перехвата кликов; на светлой теме гасим, иначе получается грязь. */
-    :host-context(.theme-light) .spot { opacity: 1; }
+  .cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+    padding: 13px 24px; border-radius: 999px; font-size: 15px; font-weight: 600;
+    background: var(--accent); color: var(--accent-ink); border: 1px solid transparent;
+    transition: transform .15s ease;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn--ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 
-    /* Точки-индикаторы слайдов презентации. */
-    .deck__dots {
-      position: absolute; right: clamp(16px, 3vw, 40px); top: 50%; translate: 0 -50%;
-      display: grid; gap: 14px; z-index: 3;
-    }
-    .deck__dots button {
-      width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
-      background: var(--color-border); transition: background .25s ease, scale .25s ease;
-    }
-    .deck__dots button:hover { background: var(--color-text-muted); }
-    .deck__dots button[aria-current="true"] { background: var(--color-accent); scale: 1.35; }
+  .stats { display: flex; gap: clamp(28px, 5vw, 72px); flex-wrap: wrap; }
+  .stat b { display: block; font-family: var(--serif); font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; letter-spacing: -.02em; }
+  .stat span { font-size: 14px; color: var(--ink-soft); letter-spacing: -.224px; }
 
-    /* ── каркас ── */
+  /* тёмная плитка — разделитель через смену фона, без зазора */
+  .tile-dark { background: var(--dark); color: var(--on-dark); }
+  .tile-dark h2 { color: var(--on-dark); }
+  .tile-dark p, .tile-dark .lead { color: var(--on-dark-soft); }
+  .tile-alt { background: var(--bg-alt); }
 
-    /* Каждый блок занимает экран целиком: смена фона должна совпадать с границей
-       вьюпорта, иначе в один кадр попадают два блока и стык читается как ошибка. */
-    section {
-      padding: 80px clamp(20px, 5vw, 64px);
-      min-height: 100vh; display: grid; align-content: center;
-    }
-    .wrap { max-width: 980px; margin: 0 auto; }
-    .wide { max-width: 1440px; margin: 0 auto; }
+  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 48px; }
+  .card { border: 1px solid var(--line); border-radius: 18px; padding: 32px; background: var(--bg); }
+  .tile-dark .card { background: var(--dark-2); border-color: #2c2822; }
+  /* Особый тариф: выделен рамкой акцента, а не размером — иначе сетка поедет. */
+  .card--vip { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); position: relative; }
+  .card__badge {
+    display: inline-block; margin-bottom: 12px; padding: 4px 11px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent); font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  }
+  /* «Дефолт» — во всю ширину под сеткой: он не сравнивается с остальными тарифами,
+     он их отменяет. Выделен фоном и рамкой, а не размером шрифта. */
+  .card--doom {
+    margin-top: 24px; display: grid; gap: clamp(20px, 3vw, 48px);
+    grid-template-columns: minmax(230px, .85fr) minmax(0, 1.7fr); align-items: start;
+    background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+  }
+  /* У «Дефолта» цена — фраза, а не число: 40px её ломают на две строки, и приписка
+     повисает отдельным абзацем. Уменьшаем и уводим пояснение на свою строку. */
+  .card--doom .price {
+    font-size: clamp(26px, 2.6vw, 34px); line-height: 1.12; margin-bottom: 12px;
+  }
+  .card--doom .price small { display: block; margin-top: 6px; font-size: 13px; }
+  .card--doom__note { font-size: 13px; color: var(--ink-soft); margin: 0; }
+  .card--doom li:first-child { border-top: 0; }
 
-    .eyebrow {
-      font-size: 14px; letter-spacing: .18em; text-transform: uppercase;
-      color: var(--color-accent); margin: 0 0 24px; font-weight: 600;
-    }
-    h1 {
-      font-family: var(--font-display); font-size: clamp(40px, 7.2vw, 84px); line-height: 1.03;
-      letter-spacing: -.03em; font-weight: 600; margin: 0 0 24px; max-width: 15ch;
-    }
-    h1 em { font-style: italic; color: var(--color-accent); }
-    h2 {
-      font-family: var(--font-display); font-size: clamp(30px, 4vw, 52px); line-height: 1.1;
-      letter-spacing: -.02em; font-weight: 600; margin: 0 0 20px; max-width: 20ch;
-    }
-    .lead { font-size: clamp(19px, 1.7vw, 26px); line-height: 1.36; color: var(--color-text-muted); max-width: 34ch; margin: 0 0 32px; }
-    p { max-width: 62ch; }
+  /* Особые случаи — плотная сетка коротких кейсов. */
+  .cases { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 40px; }
+  .case { background: var(--bg); padding: 26px 24px; display: grid; gap: 8px; align-content: start; }
+  .case b { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
+  .case span { color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
 
-    .cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
-      padding: 13px 24px; border-radius: 999px; font-size: 15px; font-weight: 600;
-      background: var(--color-accent); color: var(--color-on-accent); border: 1px solid transparent;
-      transition: transform .15s ease;
-    }
-    .btn:active { transform: scale(.95); }
-    .btn--ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+  @media (max-width: 860px) { .card--doom { grid-template-columns: 1fr; } }
 
-    .stats { display: flex; gap: clamp(28px, 5vw, 72px); flex-wrap: wrap; }
-    .stat b { display: block; font-family: var(--font-display); font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; letter-spacing: -.02em; }
-    .stat span { font-size: 14px; color: var(--color-text-muted); letter-spacing: -.224px; }
-
-    /* тёмная плитка — разделитель через смену фона, без зазора */
-    .tile-dark { background: var(--color-surface); color: var(--color-text); }
-    .tile-dark h2 { color: var(--color-text); }
-    .tile-dark p, .tile-dark .lead { color: var(--color-text-muted); }
-    .tile-alt { background: var(--color-surface-2); }
-
-    .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 48px; }
-    .card { border: 1px solid var(--color-border); border-radius: 18px; padding: 32px; background: var(--color-bg); }
-    .tile-dark .card { background: var(--color-surface-2); border-color: #2c2822; }
-    @media (max-width: 860px) { .card--doom { grid-template-columns: 1fr; } }
-
-    .card h3 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -.01em; }
-    .price { font-family: var(--font-display); font-size: 40px; font-weight: 600; color: var(--color-accent); margin: 0 0 16px; }
-    .price small { font-family: var(--font-body); font-size: 14px; color: var(--color-text-muted); font-weight: 400; }
-    .card ul { list-style: none; padding: 0; margin: 0; }
-    .card li { padding: 9px 0 9px 26px; position: relative; color: var(--color-text-muted); font-size: 15px; border-top: 1px solid var(--color-border); }
-    .card li:first-child { border-top: 0; }
-    .card li::before { content: "—"; position: absolute; left: 0; color: var(--color-accent); }
-    .tile-dark .card li { color: var(--color-text-muted); border-color: #2c2822; }
-
-    .steps { counter-reset: s; display: grid; gap: 0; margin-top: 48px; }
-    .step { display: grid; grid-template-columns: 84px 1fr; gap: 28px; padding: 32px 0; border-top: 1px solid var(--color-border); align-items: start; }
-    .step::before {
-      counter-increment: s; content: counter(s, decimal-leading-zero);
-      font-family: var(--font-display); font-size: 40px; color: var(--color-accent); line-height: 1;
-    }
-    .step h3 { font-family: var(--font-display); font-size: 26px; margin: 0 0 6px; font-weight: 600; }
-    .step p { margin: 0; color: var(--color-text-muted); }
-
-    .quote { font-family: var(--font-display); font-size: clamp(24px, 3vw, 40px); line-height: 1.25; letter-spacing: -.02em; margin: 0 0 20px; max-width: 24ch; }
-    .who { font-size: 14px; color: var(--color-text-muted); }
-
-    .final { text-align: center; }
-    .final h2 { margin-left: auto; margin-right: auto; }
-    .final .lead { margin-left: auto; margin-right: auto; }
-    .final .cta { justify-content: center; margin-bottom: 0; }
-
-    footer { padding: 40px clamp(20px, 5vw, 64px); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 14px; }
-    .disclaimer { max-width: 62ch; margin: 0 auto; text-align: center; }
-    @supports (animation-timeline: scroll()) {
-    }
-  
-  
-
-    /* ── питомцы: у каждой секции свой, едет ЗА содержимым ──────────────
-       Ключевое правило (из разобранного промпта): объект НИКОГДА не перекрывает
-       текст. Поэтому z-index у питомца 0, а у содержимого 1, и траектории проходят
-       по свободным полям секции. Движение привязано к прогрессу прокрутки секции:
-       питомец въезжает, проезжает и уходит ровно за то время, что секция на экране. */
-    section { position: relative; overflow: hidden; }
-    section > .wrap, section > .wide { position: relative; z-index: 1; }
-
-    /* Питомцы: прогресс секции считает JS и кладёт в --p (0..1). Никаких
-       scroll-таймлайнов — работает в любом браузере и проверяемо. */
-    .pet {
-      position: absolute; pointer-events: none;
-      width: clamp(110px, 13vw, 200px); aspect-ratio: 160/110;
-      opacity: .9; left: 0; z-index: -1;
-      /* Дорожка справа: текст блоков ограничен по ширине и живёт слева, поэтому
-         питомец ездит по правой половине. Слои и так разведены (z-index -1), но
-         светлый силуэт поверх крупных белых цифр всё равно читается как каша —
-         развели ещё и по площади. */
-      translate: calc((var(--p, .3) * 62 + 46) * 1vw) 0;
-      rotate: calc((var(--p, .3) - .5) * 6deg);
-    }
-    .pet svg { width: 100%; height: 100%; display: block; }
-    /* Питомец обязан оставаться ВНУТРИ своего блока: у самого края он читается как
-       объект на стыке — рядом уже виден фон следующей секции, и принадлежность
-       теряется. Отступ от границы больше, чем высота самого питомца. */
-    .pet--low  { bottom: 15%; }
-    .pet--mid  { top: 44%; }
-    .pet--high { top: 15%; }
-    /* Встречная дорожка — по левому краю, ниже колонки текста. */
-    .pet--back { translate: calc((44 - var(--p, .3) * 58) * 1vw) 0; }
-    .pet--back svg { scale: -1 1; }
-    .pet--faint { opacity: .5; }
-    /* Зона тарифов плотная: за карточками питомец превращается в обрубок колеса,
-       торчащий из щели. Ставим его в пустую полосу справа от заголовка. */
-    .pet--tariff { top: 8%; width: clamp(90px, 9vw, 150px); }
-    /* Блок тарифов и так высокий: три карточки со списками. Растягивать его до
-       полного экрана — значит добавить пустоты сверху и снизу. */
-    #tariffs { min-height: 0; padding-block: clamp(72px, 9vh, 110px); }
-
-    /* Появление блоков: класс вешает IntersectionObserver. Без него всё видно. */
-    .rise { transition: opacity .7s ease, translate .7s cubic-bezier(.2,.7,.3,1); }
-    .release-landing.js .rise { opacity: 0; translate: 0 36px; }
-    .release-landing.js .rise.is-in { opacity: 1; translate: 0 0; }
-
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      .pet, .rise, .hint, .deck__stage { animation: none !important; }
-      .rise { opacity: 1; translate: none; }
-      .pet { opacity: .35; }
-      .deck { height: auto; overflow: visible; }
-      .deck__stage { position: static; height: auto; padding: 64px clamp(20px, 5vw, 64px); display: grid; }
-      .dslide { position: static; padding: 0; }
-      .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; scale: 1; }
-    }
-    @media (max-width: 720px) {
-      .pet { display: none; }
-      .step { grid-template-columns: 56px 1fr; gap: 18px; }
-      .deck { height: auto; overflow: visible; }
-      .deck__stage { position: static; height: auto; display: grid; gap: 56px; }
-      .dslide { position: static; padding: 0; }
-      .dslide__pair, .dslide--flip .dslide__pair { grid-template-columns: 1fr; grid-template-areas: none; }
-      .dslide__copy, .dslide__art { animation: none !important; opacity: 1; translate: none; }
-    }
 
 }

@@ -52,6 +52,13 @@ export class Release200Page implements AfterViewInit {
     this._start();
   }
 
+  public constructor() {
+    // Подстраховка к `ngAfterViewInit`: страница создаётся динамически, и я уже видел, как
+    // хук не срабатывает. Повторный запуск безопасен — обработчики вешаются на свои же
+    // элементы, а расчёт идемпотентен.
+    setTimeout(() => this._start(), 0);
+  }
+
   /** Подписывается на прокрутку и раскладывает движение по секциям. */
   private _start(): void {
     const root = this._host.nativeElement as HTMLElement;

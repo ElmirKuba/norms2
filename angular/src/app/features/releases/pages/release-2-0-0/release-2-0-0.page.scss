@@ -156,4 +156,41 @@
   @media (max-width: 860px) { .card--doom { grid-template-columns: 1fr; } }
 
 
+
+  /* ── движение без JS ─────────────────────────────────────────────────────
+     Питомцы и появление блоков едут на нативных scroll-таймлайнах. Так движение не зависит
+     от того, успел ли отработать хук компонента: страница создаётся динамически через
+     ngComponentOutlet, и на этом я уже обжёгся — коты стояли, потому что JS не запускался.
+     JS остаётся для слайдов презентации (там нужны классы) и как запасной путь.
+
+     Ловушка, о которой нельзя забывать: `fill-mode: both` с НЕподдержанным таймлайном
+     застывает в конечном кадре, поэтому всё лежит внутри `@supports`, а база — статика. */
+  @supports (animation-timeline: view()) {
+    .pet {
+      animation: pet-ride linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+    .pet--back { animation-name: pet-ride-back; }
+
+    .rise {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 35%;
+      opacity: 1;
+    }
+  }
+
+  @keyframes pet-ride {
+    from { translate: 44vw 0; rotate: -3deg; }
+    to   { translate: 108vw 0; rotate: 3deg; }
+  }
+  @keyframes pet-ride-back {
+    from { translate: 44vw 0; rotate: 3deg; }
+    to   { translate: -18vw 0; rotate: -3deg; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; translate: 0 36px; }
+    to   { opacity: 1; translate: 0 0; }
+  }
 }

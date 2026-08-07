@@ -13,6 +13,48 @@
 // все селекторы лежат под `.release-landing`.
 
 .release-landing {
+  // Палитра лендинга — СВОЯ, значения перенесены из полигона `landing-lab/5` один в один.
+  // Лендинг это обложка выпуска: он имеет право выглядеть иначе, чем кабинет. Подмена его
+  // цветов токенами приложения делает другую страницу — проверено, Elmir увидел сразу.
+  // Тёмный набор — база (в приложении тёмная тема по умолчанию), светлый — ниже.
+  --bg: #14120f;
+  --bg-alt: #1c1915;
+  --ink: #f4efe7;
+  --ink-soft: #a29a8c;
+  --accent: #e2714f;
+  --accent-ink: #14120f;
+  --dark: #0b0a08;
+  --dark-2: #14120f;
+  --on-dark: #f4efe7;
+  --on-dark-soft: #a29a8c;
+  --line: #2c2822;
+  --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  display: block;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font: 17px/1.47 var(--sans);
+  letter-spacing: -0.374px;
+}
+
+:root.theme-light .release-landing {
+  --bg: #f7f5f0;
+  --bg-alt: #ece7dd;
+  --ink: #14120f;
+  --ink-soft: #5c564c;
+  --accent: #b3452b;
+  --accent-ink: #fffaf5;
+  --dark: #14120f;
+  --dark-2: #1c1915;
+  --on-dark: #f4efe7;
+  --on-dark-soft: #a29a8c;
+  --line: #ddd6c8;
+}
+
+.release-landing {
+
 
 
   /* Подсветка за курсором — как в папке 4. Лежит поверх фонов, но мягко и

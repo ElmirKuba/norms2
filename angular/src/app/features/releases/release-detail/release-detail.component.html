@@ -1,44 +1,55 @@
-<article class="release-page" [class.release-page--full]="page() !== null">
-  <a class="release-page__back" routerLink="/releases">← Все релизы</a>
+@if (portal(); as src) {
+  <!-- Портал-лендинг: самодостаточный HTML в отдельном документе (iframe). Свой window,
+       свой скролл, своя изоляция — то, чего не было у Angular-компонентов, где «коты
+       не ехали». Чрома приложения (заголовок, футер) не показываем: лендинг сам себе
+       обложка, поверх — только возврат к списку. -->
+  <a class="portal-back" routerLink="/releases">← Все релизы</a>
+  <iframe
+    class="portal-frame"
+    [src]="src"
+    title="Лендинг релиза"
+    referrerpolicy="no-referrer"
+  ></iframe>
+} @else {
+  <article class="release-page">
+    <a class="release-page__back" routerLink="/releases">← Все релизы</a>
 
-  @if (loading()) {
-    <div class="release-page__center"><app-spinner /></div>
-  } @else if (failed()) {
-    <div class="release-page__missing">
-      <h1>Релиз не найден</h1>
-      <p>Возможно, ссылка устарела или в ней опечатка.</p>
-      <a routerLink="/releases">Посмотреть все выпуски</a>
-    </div>
-  } @else if (release(); as item) {
-    <header class="release-page__head">
-      <h1 class="release-page__title">{{ item.title }}</h1>
-      <time class="release-page__date" [attr.datetime]="item.publishedAt ?? item.createdAt">
-        {{ (item.publishedAt ?? item.createdAt) | date: 'dd.MM.yyyy' }}
-      </time>
-    </header>
+    @if (loading()) {
+      <div class="release-page__center"><app-spinner /></div>
+    } @else if (failed()) {
+      <div class="release-page__missing">
+        <h1>Релиз не найден</h1>
+        <p>Возможно, ссылка устарела или в ней опечатка.</p>
+        <a routerLink="/releases">Посмотреть все выпуски</a>
+      </div>
+    } @else if (release(); as item) {
+      <header class="release-page__head">
+        <h1 class="release-page__title">{{ item.title }}</h1>
+        <time class="release-page__date" [attr.datetime]="item.publishedAt ?? item.createdAt">
+          {{ (item.publishedAt ?? item.createdAt) | date: 'dd.MM.yyyy' }}
+        </time>
+      </header>
 
-    @if (page(); as pageComponent) {
-      <!-- Лендинг релиза: собственный компонент вместо мини-рендера markdown (2.9.2·4). -->
-      <ng-container *ngComponentOutlet="pageComponent" />
-    } @else if (html(); as content) {
-      <div class="md" [innerHTML]="content"></div>
+      @if (html(); as content) {
+        <div class="md" [innerHTML]="content"></div>
+      }
+
+      <!-- Адреса берём из публичной конфигурации: на стейдже бот и канал СВОИ, а зашитые
+           t.me/norms2 уводили тестового человека на боевые. -->
+      @if (channelUrl() || botUrl()) {
+        <footer class="release-page__foot">
+          <p>
+            @if (channelUrl(); as channel) {
+              Новые выпуски объявляются в
+              <a [href]="channel" target="_blank" rel="noopener">канале «Нормисы»</a>.
+            }
+            @if (botUrl(); as bot) {
+              Нет приглашения — оставьте заявку
+              <a [href]="bot" target="_blank" rel="noopener">боту</a>.
+            }
+          </p>
+        </footer>
+      }
     }
-
-    <!-- Адреса берём из публичной конфигурации: на стейдже бот и канал СВОИ, а зашитые
-         t.me/norms2 уводили тестового человека на боевые. -->
-    @if (channelUrl() || botUrl()) {
-      <footer class="release-page__foot">
-        <p>
-          @if (channelUrl(); as channel) {
-            Новые выпуски объявляются в
-            <a [href]="channel" target="_blank" rel="noopener">канале «Нормисы»</a>.
-          }
-          @if (botUrl(); as bot) {
-            Нет приглашения — оставьте заявку
-            <a [href]="bot" target="_blank" rel="noopener">боту</a>.
-          }
-        </p>
-      </footer>
-    }
-  }
-</article>
+  </article>
+}

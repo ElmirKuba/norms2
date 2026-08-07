@@ -1,13 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { NgComponentOutlet } from '@angular/common';
-import type { Type } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+import type { SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import { renderMarkdown, stripLeadingHeading } from '../../notifications/md-render.util';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ReleasesApiService } from '../services/releases-api.service';
-import { loadReleasePage } from '../release-pages.registry';
+import { releasePortalUrl } from '../release-pages.registry';
 import type { ReleaseView } from '../releases.types';
 
 /**
@@ -19,11 +19,17 @@ import type { ReleaseView } from '../releases.types';
  * Стили именно глобальные, а не компонентные — элементы из `[innerHTML]` не получают
  * атрибут инкапсуляции Angular, и правила компонента до них не долетают.
  *
+ * **Формат `page` — это портал-лендинг в iframe** (2.9.2·4, переведён на портал 2026-08-07):
+ * самодостаточный HTML из `public/releases/<key>.html`, загружаемый в отдельный документ.
+ * Внутри Angular тот же лендинг ломался (коллизии глобальных стилей, тайминг `ngComponentOutlet`,
+ * прокрутка не того окна); в изолированном документе он работает как есть. Подробнее — в
+ * [`release-pages.registry.ts`](../release-pages.registry.ts).
+ *
  * Прочитанным ничего не отмечается: витрина открыта анонимно.
  */
 @Component({
   selector: 'app-release-detail',
-  imports: [DatePipe, RouterLink, SpinnerComponent, NgComponentOutlet],
+  imports: [DatePipe, RouterLink, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './release-detail.component.html',
   styleUrl: './release-detail.component.scss',
@@ -32,6 +38,7 @@ export class ReleaseDetailComponent {
   private readonly _route = inject(ActivatedRoute);
   private readonly _api = inject(ReleasesApiService);
   private readonly _config = inject(FeatureFlagsStore);
+  private readonly _sanitizer = inject(DomSanitizer);
 
   /** Ссылка на канал-витрину или null, если он на этом стенде не настроен. */
   protected readonly channelUrl = this._config.channelUrl;
@@ -49,8 +56,8 @@ export class ReleaseDetailComponent {
   protected readonly loading = signal(true);
   /** Ноты нет или не загрузилась. */
   protected readonly failed = signal(false);
-  /** Компонент страницы-лендинга, если нота в формате `page` и страница собрана. */
-  protected readonly page = signal<Type<unknown> | null>(null);
+  /** Адрес портала-лендинга, если нота в формате `page` и файл для ключа есть. */
+  protected readonly portal = signal<SafeResourceUrl | null>(null);
 
   public constructor() {
     this._load(this.key);
@@ -60,9 +67,9 @@ export class ReleaseDetailComponent {
     this._api.byKey(key).subscribe({
       next: (release) => {
         this.release.set(release);
-        // Формат решает, чем наполнять страницу: текстом или компонентом (2.9.2·4).
+        // Формат решает, чем наполнять страницу: текстом или порталом-лендингом (2.9.2·4).
         if (release.contentFormat === 'page') {
-          void this._loadPage(release.key);
+          this._loadPortal(release.key);
           return;
         }
         if (release.contentFile !== null && release.contentFile !== '') {
@@ -80,22 +87,22 @@ export class ReleaseDetailComponent {
   }
 
   /**
-   * Подгружает страницу-лендинг из реестра.
+   * Готовит адрес портала-лендинга из реестра.
    *
-   * Страницы может не быть — например, база пришла со стейджа, где нота уже помечена `page`, а
-   * фронт ещё старый. Тогда показываем заголовок и ссылку на канал вместо белого экрана: нота
-   * существует, просто её оформление сюда не доехало.
+   * Портала может не быть — например, база пришла со стейджа, где нота уже помечена `page`, а
+   * файл на этот фронт ещё не доехал. Тогда показываем «не найдено» вместо белого экрана.
+   *
+   * `bypassSecurityTrustResourceUrl` — потому что путь наш, статический и из кода (реестр), а не
+   * из пользовательского ввода; Angular иначе блокирует `[src]` у iframe как небезопасный.
    */
-  private async _loadPage(key: string): Promise<void> {
-    try {
-      const component = await loadReleasePage(key);
-      this.page.set(component);
-      this.failed.set(component === null);
-    } catch {
+  private _loadPortal(key: string): void {
+    const url = releasePortalUrl(key);
+    if (url === null) {
       this.failed.set(true);
-    } finally {
-      this.loading.set(false);
+    } else {
+      this.portal.set(this._sanitizer.bypassSecurityTrustResourceUrl(url));
     }
+    this.loading.set(false);
   }
 
   private _loadContent(contentFile: string): void {

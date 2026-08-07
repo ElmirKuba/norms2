@@ -1,42 +1,40 @@
-import type { Type } from '@angular/core';
-
 /**
- * Реестр страниц-лендингов релизов (2.9.2·4).
+ * Реестр порталов-лендингов релизов (2.9.2·4; переведён с Angular-компонентов на портал 2026-08-07).
  *
- * **Зачем реестр, а не маршрут на каждую страницу.** Публичный адрес у релиза один и тот же —
- * `/releases/:key`, независимо от формата: ссылка из поста в канале, из колокольчика и из витрины
- * ведёт в одно место. Формат приходит с бэка (`contentFormat`), и если это `page`, деталь релиза
- * подставляет сюда компонент вместо мини-рендера markdown.
+ * **Почему портал (iframe), а не Angular-компонент.** Лендинг — самодостаточный документ со
+ * своими стилями, скриптом и прокруткой. Внутри Angular он ломался: `ViewEncapsulation.None`
+ * сталкивал глобальные стили двух компонентов (один `.pet` перекрывал другой), `ngComponentOutlet`
+ * сбивал тайминг хуков, а прокрутку слушало не то окно — «коты не ехали». В отдельном документе
+ * всё это исчезает: свой `window`, свой скролл, своя изоляция. Тот же лендинг, что не двигался как
+ * набор компонентов, в портале работает как есть.
  *
- * **Ключ — тот же `key`, что в базе** (`release-2.9.2`). Совпадение обязательное: по нему
- * страница и находится.
+ * `<iframe>` — актуальный элемент (устарели `<frame>`/`<frameset>`, а экспериментальный `<portal>`
+ * Chrome свернул). Для встраивания самодостаточного документа iframe — верный инструмент.
  *
- * **Загрузка ленивая.** Лендинг тяжёлый — эффекты, крупная вёрстка, — и он не должен попадать в
- * бандл тем, кто читает текстовые ноты. Пока страниц нет, реестр пуст, и это рабочее состояние:
- * бэк не отдаёт `page` ни для одной ноты (правило «патч — по умолчанию md»).
+ * **Где лежат файлы.** `angular/public/releases/<key>.html` — отдаются статикой в корень сайта
+ * (`/releases/<key>.html`). Источник правды по вёрстке — полигон `~/coding/landing-lab/<N>`;
+ * сюда кладётся его собранный `index.html`. Изменился полигон — перекопировать файл.
  *
  * @example
  * ```ts
- * export const RELEASE_PAGES: ReleasePages = {
- *   'release-2.9.2': () => import('./pages/release-2-9-2/release-2-9-2.page').then((m) => m.Release292Page),
+ * export const RELEASE_PORTALS: ReleasePortals = {
+ *   'release-2.0.0': '/releases/release-2.0.0.html',
  * };
  * ```
  */
-export type ReleasePages = Record<string, () => Promise<Type<unknown>>>;
+export type ReleasePortals = Record<string, string>;
 
-/** Страницы релизов по ключу. */
-export const RELEASE_PAGES: ReleasePages = {
-  'release-2.0.0': () =>
-    import('./pages/release-2-0-0/release-2-0-0.page').then((m) => m.Release200Page),
+/** Пути к порталам-лендингам по ключу ноты (внутри `public/`). */
+export const RELEASE_PORTALS: ReleasePortals = {
+  'release-2.0.0': '/releases/release-2.0.0.html',
 };
 
 /**
- * Находит страницу релиза по ключу.
+ * Находит путь к порталу релиза по ключу.
  *
- * @param key Ключ ноты (`release-2.9.2`).
- * @returns Компонент страницы или null, если её нет в реестре.
+ * @param key Ключ ноты (`release-2.0.0`).
+ * @returns Путь к статическому HTML или null, если портала для ключа нет.
  */
-export async function loadReleasePage(key: string): Promise<Type<unknown> | null> {
-  const load = RELEASE_PAGES[key];
-  return load === undefined ? null : await load();
+export function releasePortalUrl(key: string): string | null {
+  return RELEASE_PORTALS[key] ?? null;
 }

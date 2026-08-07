@@ -1,9 +1,38 @@
-// Нота-страница занимает ВСЮ ширину: лендинг рассчитан на полноэкранные блоки встык, а
-// колонка статьи (max-width + поля) зажимала его в узкую полосу посреди экрана.
-.release-page--full {
-  max-width: none;
-  padding-left: 0;
-  padding-right: 0;
+// Портал-лендинг: самодостаточный документ на весь экран. `fixed; inset: 0` накрывает
+// чрому приложения (шапку/подвал) и обходит любые поля контент-колонки — лендинг
+// становится всем экраном. Внутренний документ скроллится сам (его window слушает свою
+// прокрутку — то, чего не было у Angular-компонентов, где «коты» стояли).
+.portal-frame {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  // Фон лендинга (тёмная база полигона), чтобы до загрузки не мигало белым.
+  background: #14120f;
+  z-index: 1000;
+}
+
+// Возврат к списку — плашкой поверх лендинга, тоже fixed, выше самого портала.
+.portal-back {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1001;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
 }
 
 .release-page {

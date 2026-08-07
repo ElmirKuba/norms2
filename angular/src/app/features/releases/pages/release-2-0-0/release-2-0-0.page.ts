@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, inject , ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
+import type { AfterViewInit } from '@angular/core';
 import { DestroyRef } from '@angular/core';
 import { Release200SectionsComponent } from './release-2-0-0-sections.component';
 
@@ -36,13 +37,19 @@ const SLIDE_HOLD = 0.07;
   templateUrl: './release-2-0-0.page.html',
   styleUrl: './release-2-0-0.page.scss',
 })
-export class Release200Page {
+export class Release200Page implements AfterViewInit {
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly _destroyRef = inject(DestroyRef);
 
-  public constructor() {
-    // Считаем после первой отрисовки: до неё у секций нет размеров, и прогресс вышел бы нулевым.
-    afterNextRender(() => this._start());
+  /**
+   * Запускает механику после отрисовки.
+   *
+   * `ngAfterViewInit`, а не `afterNextRender`: страница создаётся динамически через
+   * `ngComponentOutlet`, и полагаться на фазы первого рендера приложения тут нельзя — коты
+   * стояли на месте именно поэтому.
+   */
+  public ngAfterViewInit(): void {
+    this._start();
   }
 
   /** Подписывается на прокрутку и раскладывает движение по секциям. */
@@ -127,6 +134,10 @@ export class Release200Page {
 
     addEventListener('scroll', onScroll, { passive: true });
     addEventListener('resize', onScroll);
+    // Первые расчёты — следующими кадрами: до отрисовки у секций нет размеров, и прогресс
+    // вышел бы нулевым, а коты стояли бы на месте.
+    requestAnimationFrame(paint);
+    setTimeout(paint, 120);
     this._destroyRef.onDestroy(() => {
       removeEventListener('scroll', onScroll);
       removeEventListener('resize', onScroll);

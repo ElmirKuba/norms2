@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import type { SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import { renderMarkdown, stripLeadingHeading } from '../../notifications/md-render.util';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
+import { ThemeStore } from '../../../core/theme/theme-store.service';
 import { ReleasesApiService } from '../services/releases-api.service';
 import { releasePortalUrl } from '../release-pages.registry';
 import type { ReleaseView } from '../releases.types';
@@ -43,6 +45,10 @@ export class ReleaseDetailComponent {
   private readonly _api = inject(ReleasesApiService);
   private readonly _config = inject(FeatureFlagsStore);
   private readonly _sanitizer = inject(DomSanitizer);
+  private readonly _theme = inject(ThemeStore);
+
+  /** Окно портала — через него уходит смена темы. */
+  private readonly _frame = viewChild<ElementRef<HTMLIFrameElement>>('frame');
 
   /** Ссылка на канал-витрину или null, если он на этом стенде не настроен. */
   protected readonly channelUrl = this._config.channelUrl;
@@ -65,6 +71,19 @@ export class ReleaseDetailComponent {
 
   public constructor() {
     this._load(this.key);
+
+    // Тема приложения — источник истины и для портала: у лендинга свой переключатель, и без
+    // связи получалось два спорящих управления. Начальную тему портал получает параметром
+    // `?theme=` (см. `_loadPortal`), а дальнейшие переключения — сообщением: менять `?theme=`
+    // в `src` пришлось бы перезагрузкой iframe, а это сброс прокрутки на середине страницы.
+    effect(() => {
+      const mode = this._theme.mode();
+      const frame = this._frame();
+      frame?.nativeElement.contentWindow?.postMessage(
+        { type: 'norms2:theme', mode },
+        location.origin,
+      );
+    });
   }
 
   private _load(key: string): void {
@@ -104,7 +123,10 @@ export class ReleaseDetailComponent {
     if (url === null) {
       this.failed.set(true);
     } else {
-      this.portal.set(this._sanitizer.bypassSecurityTrustResourceUrl(url));
+      // Тема — сразу в адресе: иначе лендинг успевает моргнуть своей темой до того, как
+      // приедет сообщение. Дальнейшие переключения идут сообщением (см. конструктор).
+      const withTheme = `${url}?theme=${this._theme.mode()}`;
+      this.portal.set(this._sanitizer.bypassSecurityTrustResourceUrl(withTheme));
     }
     this.loading.set(false);
   }

@@ -825,13 +825,39 @@
   root.classList.add('js');
 
   // ── тема ──────────────────────────────────────────────────────────
+  // Страница живёт в двух режимах: сама по себе (полигон, прямая ссылка) и порталом
+  // внутри «Нормисов» (iframe на /releases/:key). Встроенной темой командует приложение,
+  // иначе у человека два переключателя, которые спорят друг с другом.
   const btn = document.getElementById('theme'), KEY = 'lab5.theme';
+  const embedded = window.self !== window.top;
   const apply = (m) => { root.classList.toggle('theme-dark', m === 'dark'); btn.textContent = m === 'dark' ? 'Светлая' : 'Тёмная'; };
-  apply(localStorage.getItem(KEY) ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  btn.addEventListener('click', () => {
-    const next = root.classList.contains('theme-dark') ? 'light' : 'dark';
-    apply(next); localStorage.setItem(KEY, next);
-  });
+
+  // Начальная тема: встроенной приходит параметром (?theme=), отдельной — свой выбор,
+  // а если выбора не было — системная.
+  const fromUrl = new URLSearchParams(location.search).get('theme');
+  apply(
+    fromUrl === 'dark' || fromUrl === 'light'
+      ? fromUrl
+      : localStorage.getItem(KEY) ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  );
+
+  if (embedded) {
+    // Свой переключатель прячем: тема приходит снаружи, и спорить с ней нечем.
+    btn.hidden = true;
+    // Живое переключение без перезагрузки: менять ?theme= в src пришлось бы перезагрузкой
+    // iframe, а это сброс прокрутки на середине страницы.
+    addEventListener('message', (e) => {
+      // Слушаем только своё окно-родителя: сообщения от кого угодно тему менять не должны.
+      if (e.source !== window.parent) return;
+      const mode = e.data && e.data.type === 'norms2:theme' ? e.data.mode : null;
+      if (mode === 'dark' || mode === 'light') apply(mode);
+    });
+  } else {
+    btn.addEventListener('click', () => {
+      const next = root.classList.contains('theme-dark') ? 'light' : 'dark';
+      apply(next); localStorage.setItem(KEY, next);
+    });
+  }
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 

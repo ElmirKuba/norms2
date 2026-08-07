@@ -24,8 +24,11 @@ import type { Type } from '@angular/core';
  */
 export type ReleasePages = Record<string, () => Promise<Type<unknown>>>;
 
-/** Страницы релизов по ключу. Пусто, пока лендинг 2.9.2 не собран (·5). */
-export const RELEASE_PAGES: ReleasePages = {};
+/** Страницы релизов по ключу. */
+export const RELEASE_PAGES: ReleasePages = {
+  'release-2.0.0': () =>
+    import('./pages/release-2-0-0/release-2-0-0.page').then((m) => m.Release200Page),
+};
 
 /**
  * Находит страницу релиза по ключу.

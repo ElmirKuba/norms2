@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, afterNextRender, inject } from '@angular/core';
 import { DestroyRef } from '@angular/core';
+import { Release200SectionsComponent } from './release-2-0-0-sections.component';
 
 /** Ширина макета экрана-«скриншота» внутри слайда — по ней считается масштаб. */
 const SHOT_WIDTH = 1280;
@@ -28,6 +29,7 @@ const SLIDE_HOLD = 0.07;
  */
 @Component({
   selector: 'app-release-2-0-0-page',
+  imports: [Release200SectionsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './release-2-0-0.page.html',
   styleUrl: './release-2-0-0.page.scss',

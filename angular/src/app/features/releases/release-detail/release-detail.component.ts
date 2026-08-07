@@ -5,6 +5,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import type { SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
+import { ThemeToggleComponent } from '../../../shared/ui/theme-toggle/theme-toggle.component';
 import { renderMarkdown, stripLeadingHeading } from '../../notifications/md-render.util';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ThemeStore } from '../../../core/theme/theme-store.service';
@@ -35,7 +36,7 @@ import type { ReleaseView } from '../releases.types';
   // целиком, обычная нота живёт в читаемой колонке. Раньше layout подсматривал `.release-landing`
   // в DOM через `:has`, но лендинг переехал в iframe — этого класса в DOM приложения больше нет.
   host: { '[class.is-portal]': 'portal() !== null' },
-  imports: [DatePipe, RouterLink, SpinnerComponent],
+  imports: [DatePipe, RouterLink, SpinnerComponent, ThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './release-detail.component.html',
   styleUrl: './release-detail.component.scss',

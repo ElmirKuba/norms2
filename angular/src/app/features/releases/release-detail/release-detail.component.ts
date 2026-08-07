@@ -1,10 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
+import type { Type } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import { renderMarkdown, stripLeadingHeading } from '../../notifications/md-render.util';
 import { FeatureFlagsStore } from '../../../core/feature-flags/feature-flags-store.service';
 import { ReleasesApiService } from '../services/releases-api.service';
+import { loadReleasePage } from '../release-pages.registry';
 import type { ReleaseView } from '../releases.types';
 
 /**
@@ -20,7 +23,7 @@ import type { ReleaseView } from '../releases.types';
  */
 @Component({
   selector: 'app-release-detail',
-  imports: [DatePipe, RouterLink, SpinnerComponent],
+  imports: [DatePipe, RouterLink, SpinnerComponent, NgComponentOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './release-detail.component.html',
   styleUrl: './release-detail.component.scss',
@@ -46,6 +49,8 @@ export class ReleaseDetailComponent {
   protected readonly loading = signal(true);
   /** Ноты нет или не загрузилась. */
   protected readonly failed = signal(false);
+  /** Компонент страницы-лендинга, если нота в формате `page` и страница собрана. */
+  protected readonly page = signal<Type<unknown> | null>(null);
 
   public constructor() {
     this._load(this.key);
@@ -55,6 +60,11 @@ export class ReleaseDetailComponent {
     this._api.byKey(key).subscribe({
       next: (release) => {
         this.release.set(release);
+        // Формат решает, чем наполнять страницу: текстом или компонентом (2.9.2·4).
+        if (release.contentFormat === 'page') {
+          void this._loadPage(release.key);
+          return;
+        }
         if (release.contentFile !== null && release.contentFile !== '') {
           this._loadContent(release.contentFile);
         } else {
@@ -67,6 +77,25 @@ export class ReleaseDetailComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  /**
+   * Подгружает страницу-лендинг из реестра.
+   *
+   * Страницы может не быть — например, база пришла со стейджа, где нота уже помечена `page`, а
+   * фронт ещё старый. Тогда показываем заголовок и ссылку на канал вместо белого экрана: нота
+   * существует, просто её оформление сюда не доехало.
+   */
+  private async _loadPage(key: string): Promise<void> {
+    try {
+      const component = await loadReleasePage(key);
+      this.page.set(component);
+      this.failed.set(component === null);
+    } catch {
+      this.failed.set(true);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private _loadContent(contentFile: string): void {

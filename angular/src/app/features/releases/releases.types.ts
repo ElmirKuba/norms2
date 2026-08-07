@@ -1,3 +1,6 @@
+/** Формат содержимого ноты: текст `.md` или страница фронта (2.9.2·4). */
+export type ReleaseContentFormat = 'md' | 'page';
+
 /**
  * Строка публичной витрины релизов (`GET /api/v1/releases`).
  *
@@ -12,8 +15,15 @@ export interface ReleaseView {
   title: string;
   /** Короткий текст или null. */
   body: string | null;
-  /** Путь к `.md` относительно `content/` или null. */
+  /** Путь к `.md` относительно `content/` или null (у ноты-страницы файла нет). */
   contentFile: string | null;
+  /**
+   * Чем является содержимое (2.9.2·4): текстом `.md` или **страницей фронта**.
+   *
+   * `page` — это лендинг релиза: бэк его не хранит и не отдаёт, он лишь сообщает формат, а
+   * саму страницу подбирает фронт по `key` в [`release-pages.registry.ts`](./release-pages.registry.ts).
+   */
+  contentFormat: ReleaseContentFormat;
   /** Когда нота появилась (ISO-строка с бэка). */
   createdAt: string;
   /**

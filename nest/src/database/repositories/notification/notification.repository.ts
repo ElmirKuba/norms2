@@ -58,6 +58,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
         body: notifications.body,
         contentFile: sql<string | null>`coalesce(${releases.contentFile}, ${notifications.contentFile})`,
         contentFormat: sql<'md' | 'page'>`coalesce(${releases.contentFormat}, ${notifications.contentFormat})`,
+        releaseKey: releases.key,
         createdAt: notifications.createdAt,
         publishedAt: sql<Date | null>`coalesce(${releases.publishedAt}, ${notifications.publishedAt})`,
         read: sql<boolean>`${notificationReads.id} is not null`,

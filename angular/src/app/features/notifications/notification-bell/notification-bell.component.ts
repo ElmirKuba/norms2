@@ -54,6 +54,15 @@ export class NotificationBellComponent {
    */
   protected select(notification: NotificationView): void {
     this.store.markRead(notification.id);
+
+    // Лендинг релиза (2.9.2·4) открывается ОТДЕЛЬНОЙ ВКЛАДКОЙ, а не модалкой: страница
+    // рассчитана на весь экран и прокрутку, в окне 720px она разваливается (реш. Elmir
+    // 05.08.2026). Панель при этом остаётся открытой — человек возвращается на ту же строку.
+    if (notification.contentFormat === 'page' && notification.releaseKey !== null) {
+      window.open(`/releases/${notification.releaseKey}`, '_blank', 'noopener');
+      return;
+    }
+
     this.activeId.set(notification.id);
     // Подсветка держится ровно пока открыта модалка: панель осталась под ней, и без отметки
     // не видно, какую из строк сейчас читаешь.

@@ -4747,18 +4747,20 @@ p { margin: 18px 0 0; max-width: 62ch; }
      контейнер коэффициентом, иначе на телефоне они вылезут за край и
      утащат горизонтальную прокрутку всей страницы. */
   const fit = () => {
-    document.querySelectorAll('[data-shot]').forEach((box) => {
+    const scale = (sel, base, prop) => document.querySelectorAll(sel).forEach((box) => {
+      const w = box.clientWidth;
+      // Скрытый элемент (например, задний экран коллажа спрятан на узком экране)
+      // отдаёт ширину 0. Считать по нему нельзя — получится масштаб 0, и когда
+      // элемент станет видимым, он останется схлопнутым. Пропускаем; пересчёт
+      // придёт по resize, когда ширина появится.
+      if (!w) return;
       const inner = box.firstElementChild;
-      const k = box.clientWidth / 1280;
-      inner.style.setProperty('--k', k.toFixed(4));
+      const k = w / base;
+      inner.style.setProperty(prop, k.toFixed(4));
       box.style.height = Math.round(inner.scrollHeight * k) + 'px';
     });
-    document.querySelectorAll('[data-phone]').forEach((box) => {
-      const inner = box.firstElementChild;
-      const k = box.clientWidth / 390;
-      inner.style.setProperty('--kp', k.toFixed(4));
-      box.style.height = Math.round(inner.scrollHeight * k) + 'px';
-    });
+    scale('[data-shot]', 1280, '--k');
+    scale('[data-phone]', 390, '--kp');
   };
   fit();
   addEventListener('resize', fit);
@@ -4768,13 +4770,22 @@ p { margin: 18px 0 0; max-width: 62ch; }
 
   /* ── появление блоков ─────────────────────────────────────────────── */
   const rises = [...document.querySelectorAll('.rise')];
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    rises.forEach((el) => el.classList.add('is-in'));
+  const revealAll = () => rises.forEach((el) => el.classList.add('is-in'));
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+    revealAll();
   } else {
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
     }), { threshold: 0.08 });
     rises.forEach((el) => io.observe(el));
+
+    /* СТРАХОВКА, а не украшение. Содержимое скрыто через opacity: 0 и живёт
+       только тем, что наблюдатель его откроет. Если он почему-то не сработает,
+       человек увидит ПУСТУЮ страницу — ровно тот класс отказа, что уже стоил
+       этому проекту пяти заходов. Поэтому через две секунды показываем всё
+       безусловно: анимация — приятность, читаемость — обязательство. */
+    setTimeout(revealAll, 2000);
   }
 })();
 </script>

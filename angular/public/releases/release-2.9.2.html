@@ -179,7 +179,9 @@ p { margin: 18px 0 0; max-width: 62ch; }
 .shot {
   position: relative; width: 100%; min-width: 0; overflow: hidden;
   box-shadow: 0 22px 50px rgba(0,0,0,.34);
-  transition: transform .5s cubic-bezier(.2,.7,.3,1);
+  /* Наклон задан свойством `rotate`, а не `transform`, — и переход должен быть по нему же,
+     иначе выпрямление при наведении происходит скачком. */
+  transition: rotate .5s cubic-bezier(.2,.7,.3,1);
   border-radius: 12px; border: 1px solid var(--color-border);
   background: var(--color-bg);
   /* Снимок — картинка, а не текст: не выделяется и не тащится. */
@@ -188,6 +190,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
 .shot__inner { width: 1280px; transform-origin: 0 0; transform: scale(var(--k, 1)); }
 /* Шрифт в экспорте зашит (Inter — в списке заезженных). Перебиваем на системный. */
 .shot__inner * { font-family: var(--font-body) !important; }
+/* Макет, который сам себе карта (модалка: у неё уже есть скругление и тень), рамкой не
+   обносим — иначе карта в карте, а вокруг мёртвое поле. Реш. Elmir 10.08.2026. */
+.shot--bare {
+  border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible;
+}
 
 /* ═══ ТЕЛЕФОНЫ ЛЕСЕНКОЙ (финал блока 3) ═════════════════════════════════ */
 .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: clamp(16px, 3vw, 34px); margin-top: clamp(40px, 6vh, 72px); align-items: start; }
@@ -786,10 +793,491 @@ p { margin: 18px 0 0; max-width: 62ch; }
     </div>
   </div>
 </div></div></div>
-      <div class="shot collage__front" data-shot><div class="shot__inner"><div style="height: 1184px; position: relative; width: 1280px">
+      <div class="shot collage__front" data-shot><div class="shot__inner">
   <div
     data-pencil-name="Экран — Акцент · Дашборд (блок «Сейчас»)"
-    style="align-items: flex-start; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: flex-start; left: 0px; overflow: hidden; position: absolute; top: 528px; width: 1280px"
+    style="align-items: flex-start; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: flex-start; overflow: hidden; width: 1280px"
+  >
+    <div
+      data-pencil-name="Вкладки раздела"
+      style="align-items: flex-start; border-color: var(--color-border); border-style: solid; border-width: 0px 0px 1px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 12px; height: 46.5px; justify-content: flex-start; margin: 0px 0px -0.5px 0px; padding: 12px 24px 0px 24px; width: 1280px"
+    >
+      <div
+        data-pencil-name="Вкладка Дашборд"
+        style="align-items: flex-start; border-color: var(--color-accent); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 82px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Дашборд
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Статистика"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 98px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Статистика
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Цели"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 48px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Цели
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Привычки"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 88px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Привычки
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Держусь"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 80px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Держусь
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Микро-победы"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 127px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Микро-победы
+        </div>
+      </div>
+      <div
+        data-pencil-name="Вкладка Препятствия"
+        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 109px"
+      >
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Препятствия
+        </div>
+      </div>
+    </div>
+    <div
+      data-pencil-name="Контент дашборда"
+      style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; padding: 16px 24px; width: 100%"
+    >
+      <div
+        data-pencil-name="Плитка — Сейчас (герой)"
+        style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(104.352deg, var(--color-accent)21 24.333%, var(--color-surface)21 60.267%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
+      >
+        <div
+          data-pencil-name="Метка"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          СЕЙЧАС
+        </div>
+        <div
+          data-pencil-name="Заголовок"
+          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 24px; font-style: normal; font-weight: 700; letter-spacing: 0px; line-height: 29px; text-align: left; white-space: nowrap"
+        >
+          Отжимания — 10 раз
+        </div>
+        <div
+          data-pencil-name="Подсказка"
+          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Одно дело. Не список — просто начни с него.
+        </div>
+        <div
+          data-pencil-name="Кнопки"
+          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: fit-content"
+        >
+          <div
+            data-pencil-name="Кнопка Открыть"
+            style="align-items: center; background-color: var(--color-accent); border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 44px; justify-content: center; padding: 0px 16px; width: fit-content"
+          >
+            <div
+              data-pencil-name="Текст"
+              style="box-sizing: border-box; color: var(--color-on-accent); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+            >
+              Открыть
+            </div>
+          </div>
+          <div
+            data-pencil-name="Кнопка Все задачи"
+            style="align-items: center; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 44px; justify-content: center; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 0px 16px; width: fit-content"
+          >
+            <div
+              data-pencil-name="Текст"
+              style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+            >
+              Все задачи
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        data-pencil-name="Строка — свежее достижение"
+        style="align-items: center; background-image: linear-gradient(93.459deg, var(--color-accent)1a 24.961%, var(--color-bg)1a 60.015%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-bg)); padding: 12px; width: 100%"
+      >
+        <div
+          data-pencil-name="Маркер"
+          style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          ●
+        </div>
+        <div
+          data-pencil-name="Текст"
+          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          Новое достижение: Планка выросла · Отжимания 8 → 10
+        </div>
+        <div
+          data-pencil-name="Распорка"
+          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
+        ></div>
+        <div
+          data-pencil-name="Ссылка"
+          style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+        >
+          посмотреть →
+        </div>
+      </div>
+      <div
+        data-pencil-name="Средний ряд"
+        style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; width: 100%"
+      >
+        <div
+          data-pencil-name="Плитка — Задачи сегодня"
+          style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(129.269deg, var(--color-accent)0d 19.904%, var(--color-surface)0d 53.01%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: 287px; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
+        >
+          <div
+            data-pencil-name="Кикер"
+            style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            ЗАДАЧИ СЕГОДНЯ
+          </div>
+          <div
+            data-pencil-name="Строка KPI"
+            style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
+          >
+            <div
+              data-pencil-name="Значение"
+              style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
+            >
+              67%
+            </div>
+            <div
+              data-pencil-name="Примечание"
+              style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+            >
+              2 из 3
+            </div>
+          </div>
+          <div
+            data-pencil-name="Полоса"
+            style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 100%"
+          >
+            <div
+              data-pencil-name="Заполнение"
+              style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 374px"
+            ></div>
+          </div>
+          <div
+            data-pencil-name="Список"
+            style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 4px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: 100%"
+          >
+            <div
+              data-pencil-name="Строка"
+              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+            >
+              <div
+                data-pencil-name="Точка"
+                style="background-color: var(--color-success); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
+              ></div>
+              <div
+                data-pencil-name="Название"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                Английский — 20 минут
+              </div>
+            </div>
+            <div
+              data-pencil-name="Строка"
+              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+            >
+              <div
+                data-pencil-name="Точка"
+                style="background-color: var(--color-success); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
+              ></div>
+              <div
+                data-pencil-name="Название"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                Прогулка — 30 минут
+              </div>
+            </div>
+            <div
+              data-pencil-name="Строка"
+              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+            >
+              <div
+                data-pencil-name="Точка"
+                style="background-color: var(--color-border); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
+              ></div>
+              <div
+                data-pencil-name="Название"
+                style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                Отжимания — 10 раз
+              </div>
+            </div>
+          </div>
+          <div
+            data-pencil-name="Ссылка"
+            style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            Все задачи на сегодня →
+          </div>
+        </div>
+        <div
+          data-pencil-name="Правая колонка"
+          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 16px; height: fit-content; justify-content: flex-start"
+        >
+          <div
+            data-pencil-name="Плитка — Цели"
+            style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(111.603deg, var(--color-accent)0d 23.481%, var(--color-surface)0d 52.652%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
+          >
+            <div
+              data-pencil-name="Кикер"
+              style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+            >
+              ЦЕЛИ
+            </div>
+            <div
+              data-pencil-name="Список"
+              style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 4px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: 100%"
+            >
+              <div
+                data-pencil-name="Строка"
+                style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+              >
+                <div
+                  data-pencil-name="Название"
+                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  ⭐ Пробежать 10 км без остановки
+                </div>
+                <div
+                  data-pencil-name="Распорка"
+                  style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
+                ></div>
+                <div
+                  data-pencil-name="Полоса"
+                  style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 180px"
+                >
+                  <div
+                    data-pencil-name="Заполнение"
+                    style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 72px"
+                  ></div>
+                </div>
+                <div
+                  data-pencil-name="Процент"
+                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  40%
+                </div>
+              </div>
+              <div
+                data-pencil-name="Строка"
+                style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+              >
+                <div
+                  data-pencil-name="Название"
+                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  Прочитать 12 книг за год
+                </div>
+                <div
+                  data-pencil-name="Распорка"
+                  style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
+                ></div>
+                <div
+                  data-pencil-name="Полоса"
+                  style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 180px"
+                >
+                  <div
+                    data-pencil-name="Заполнение"
+                    style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 104px"
+                  ></div>
+                </div>
+                <div
+                  data-pencil-name="Процент"
+                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  58%
+                </div>
+              </div>
+            </div>
+            <div
+              data-pencil-name="Ссылка"
+              style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+            >
+              Все цели →
+            </div>
+          </div>
+          <div
+            data-pencil-name="Нижний ряд"
+            style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; width: 100%"
+          >
+            <div
+              data-pencil-name="Плитка — Держусь"
+              style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(127.683deg, var(--color-accent)0d 20.311%, var(--color-surface)0d 52.969%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
+            >
+              <div
+                data-pencil-name="Кикер"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                ДЕРЖУСЬ
+              </div>
+              <div
+                data-pencil-name="Строка KPI"
+                style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
+              >
+                <div
+                  data-pencil-name="Значение"
+                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
+                >
+                  21
+                </div>
+                <div
+                  data-pencil-name="Единица"
+                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  день без срыва
+                </div>
+              </div>
+              <div
+                data-pencil-name="Текст"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                «Без сахара после шести» →
+              </div>
+            </div>
+            <div
+              data-pencil-name="Плитка — Постоянство"
+              style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(127.683deg, var(--color-accent)0d 20.311%, var(--color-surface)0d 52.969%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
+            >
+              <div
+                data-pencil-name="Кикер"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                ПОСТОЯНСТВО
+              </div>
+              <div
+                data-pencil-name="Строка KPI"
+                style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
+              >
+                <div
+                  data-pencil-name="Значение"
+                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
+                >
+                  37
+                </div>
+                <div
+                  data-pencil-name="Единица"
+                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+                >
+                  дней с действием
+                </div>
+              </div>
+              <div
+                data-pencil-name="Текст"
+                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+              >
+                5 из последних 7 →
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        data-pencil-name="Строка — препятствия"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Накрыло? Отметить, что помешало →
+      </div>
+    </div>
+  </div>
+</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2. ПРОБЛЕМА — типографический разворот, без единой картинки ═══ -->
+<section class="tile-alt">
+  <div class="wrap narrow rise">
+    <p class="eyebrow">почему предыдущие не сработали</p>
+    <h2>Трекер выталкивает ровно тогда, когда нужнее всего.</h2>
+    <p>Он прекрасно работает, пока всё идёт хорошо. А потом что-то срывается: серия обнуляется, возвращаться к нулю после сорока дней стыдно — и приложение удаляется.</p>
+    <p>Второе: «я прокрастинатор», «я себя гноблю», «я залипаю в ленте» — это описания характера. С характером ничего нельзя сделать.</p>
+    <p>Третье: когда накрывает, придумывать решение нечем. Силы нужны именно в ту минуту, когда их нет.</p>
+  </div>
+</section>
+
+
+<!-- ═══ ОБЕЩАНИЕ: вычитание, а не сложение (блок 3 сценария) ═══ -->
+<section>
+  <div class="wrap narrow rise">
+    <p class="eyebrow">на чём это держится</p>
+    <h2>Отказываться от лишнего ради важного. Не успевать больше.</h2>
+    <ul class="nope">
+      <li><b>память</b><span>Голова — для мыслей, а не для хранения списков. План живёт в системе, она подсказывает, что делать сейчас.</span></li>
+      <li><b>план</b><span>Вы задаёте его в ясном состоянии. Система мягко ведёт по нему и никогда не винит за пропуск.</span></li>
+      <li><b>срыв</b><span>Это данные, а не провал. Продукт помогает вернуться, а не наказывает.</span></li>
+      <li><b>рост</b><span>Без надрыва: планка сама отступает, когда тяжело.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══ 3. ВЕСЬ «АКЦЕНТ» ЦЕЛИКОМ ═══ -->
+<section id="accent">
+  <div class="wrap">
+    <div class="narrow rise">
+      <p class="eyebrow">что внутри</p>
+      <h2>Одиннадцать выпусков рос внутри закрытого кабинета. Снаружи его не видел никто.</h2>
+      <p class="lead">Это первый раз, когда «Акцент» показан целиком.</p>
+    </div>
+
+    <div class="pair rise" style="margin-top: clamp(48px, 7vh, 88px)">
+      <div class="pair__text">
+        <p class="eyebrow">день</p>
+        <h3>Сверху всегда одно дело.</h3>
+        <p>Не перечень из восемнадцати задач, от которого хочется закрыть вкладку. Одна задача и одна кнопка. Дел не выдумываем: если на сегодня ничего не запланировано, так и написано.</p>
+        <p class="pair__note">Пустые блоки не рисуются вовсе — экран не изображает наполненность.</p>
+      </div>
+      <div class="pair__shot"><div class="shot" data-shot><div class="shot__inner">
+  <div
+    data-pencil-name="Экран — Акцент · Дашборд (блок «Сейчас»)"
+    style="align-items: flex-start; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: flex-start; overflow: hidden; width: 1280px"
   >
     <div
       data-pencil-name="Вкладки раздела"
@@ -1221,487 +1709,6 @@ p { margin: 18px 0 0; max-width: 62ch; }
     </div>
   </div>
 </div></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ 2. ПРОБЛЕМА — типографический разворот, без единой картинки ═══ -->
-<section class="tile-alt">
-  <div class="wrap narrow rise">
-    <p class="eyebrow">почему предыдущие не сработали</p>
-    <h2>Трекер выталкивает ровно тогда, когда нужнее всего.</h2>
-    <p>Он прекрасно работает, пока всё идёт хорошо. А потом что-то срывается: серия обнуляется, возвращаться к нулю после сорока дней стыдно — и приложение удаляется.</p>
-    <p>Второе: «я прокрастинатор», «я себя гноблю», «я залипаю в ленте» — это описания характера. С характером ничего нельзя сделать.</p>
-    <p>Третье: когда накрывает, придумывать решение нечем. Силы нужны именно в ту минуту, когда их нет.</p>
-  </div>
-</section>
-
-
-<!-- ═══ ОБЕЩАНИЕ: вычитание, а не сложение (блок 3 сценария) ═══ -->
-<section>
-  <div class="wrap narrow rise">
-    <p class="eyebrow">на чём это держится</p>
-    <h2>Отказываться от лишнего ради важного. Не успевать больше.</h2>
-    <ul class="nope">
-      <li><b>память</b><span>Голова — для мыслей, а не для хранения списков. План живёт в системе, она подсказывает, что делать сейчас.</span></li>
-      <li><b>план</b><span>Вы задаёте его в ясном состоянии. Система мягко ведёт по нему и никогда не винит за пропуск.</span></li>
-      <li><b>срыв</b><span>Это данные, а не провал. Продукт помогает вернуться, а не наказывает.</span></li>
-      <li><b>рост</b><span>Без надрыва: планка сама отступает, когда тяжело.</span></li>
-    </ul>
-  </div>
-</section>
-
-<!-- ═══ 3. ВЕСЬ «АКЦЕНТ» ЦЕЛИКОМ ═══ -->
-<section id="accent">
-  <div class="wrap">
-    <div class="narrow rise">
-      <p class="eyebrow">что внутри</p>
-      <h2>Одиннадцать выпусков рос внутри закрытого кабинета. Снаружи его не видел никто.</h2>
-      <p class="lead">Это первый раз, когда «Акцент» показан целиком.</p>
-    </div>
-
-    <div class="pair rise" style="margin-top: clamp(48px, 7vh, 88px)">
-      <div class="pair__text">
-        <p class="eyebrow">день</p>
-        <h3>Сверху всегда одно дело.</h3>
-        <p>Не перечень из восемнадцати задач, от которого хочется закрыть вкладку. Одна задача и одна кнопка. Дел не выдумываем: если на сегодня ничего не запланировано, так и написано.</p>
-        <p class="pair__note">Пустые блоки не рисуются вовсе — экран не изображает наполненность.</p>
-      </div>
-      <div class="pair__shot"><div class="shot" data-shot><div class="shot__inner"><div style="height: 1184px; position: relative; width: 1280px">
-  <div
-    data-pencil-name="Экран — Акцент · Дашборд (блок «Сейчас»)"
-    style="align-items: flex-start; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: flex-start; left: 0px; overflow: hidden; position: absolute; top: 528px; width: 1280px"
-  >
-    <div
-      data-pencil-name="Вкладки раздела"
-      style="align-items: flex-start; border-color: var(--color-border); border-style: solid; border-width: 0px 0px 1px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 12px; height: 46.5px; justify-content: flex-start; margin: 0px 0px -0.5px 0px; padding: 12px 24px 0px 24px; width: 1280px"
-    >
-      <div
-        data-pencil-name="Вкладка Дашборд"
-        style="align-items: flex-start; border-color: var(--color-accent); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 82px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Дашборд
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Статистика"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 98px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Статистика
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Цели"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 48px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Цели
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Привычки"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 88px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Привычки
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Держусь"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 80px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Держусь
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Микро-победы"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 127px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Микро-победы
-        </div>
-      </div>
-      <div
-        data-pencil-name="Вкладка Препятствия"
-        style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 109px"
-      >
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Препятствия
-        </div>
-      </div>
-    </div>
-    <div
-      data-pencil-name="Контент дашборда"
-      style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; padding: 16px 24px; width: 100%"
-    >
-      <div
-        data-pencil-name="Плитка — Сейчас (герой)"
-        style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(104.352deg, var(--color-accent)21 24.333%, var(--color-surface)21 60.267%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
-      >
-        <div
-          data-pencil-name="Метка"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          СЕЙЧАС
-        </div>
-        <div
-          data-pencil-name="Заголовок"
-          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 24px; font-style: normal; font-weight: 700; letter-spacing: 0px; line-height: 29px; text-align: left; white-space: nowrap"
-        >
-          Отжимания — 10 раз
-        </div>
-        <div
-          data-pencil-name="Подсказка"
-          style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Одно дело. Не список — просто начни с него.
-        </div>
-        <div
-          data-pencil-name="Кнопки"
-          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: fit-content"
-        >
-          <div
-            data-pencil-name="Кнопка Открыть"
-            style="align-items: center; background-color: var(--color-accent); border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 44px; justify-content: center; padding: 0px 16px; width: fit-content"
-          >
-            <div
-              data-pencil-name="Текст"
-              style="box-sizing: border-box; color: var(--color-on-accent); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-            >
-              Открыть
-            </div>
-          </div>
-          <div
-            data-pencil-name="Кнопка Все задачи"
-            style="align-items: center; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 44px; justify-content: center; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 0px 16px; width: fit-content"
-          >
-            <div
-              data-pencil-name="Текст"
-              style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-            >
-              Все задачи
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        data-pencil-name="Строка — свежее достижение"
-        style="align-items: center; background-image: linear-gradient(93.459deg, var(--color-accent)1a 24.961%, var(--color-bg)1a 60.015%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-bg)); padding: 12px; width: 100%"
-      >
-        <div
-          data-pencil-name="Маркер"
-          style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          ●
-        </div>
-        <div
-          data-pencil-name="Текст"
-          style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          Новое достижение: Планка выросла · Отжимания 8 → 10
-        </div>
-        <div
-          data-pencil-name="Распорка"
-          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
-        ></div>
-        <div
-          data-pencil-name="Ссылка"
-          style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-        >
-          посмотреть →
-        </div>
-      </div>
-      <div
-        data-pencil-name="Средний ряд"
-        style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; width: 100%"
-      >
-        <div
-          data-pencil-name="Плитка — Задачи сегодня"
-          style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(129.269deg, var(--color-accent)0d 19.904%, var(--color-surface)0d 53.01%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: 287px; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
-        >
-          <div
-            data-pencil-name="Кикер"
-            style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
-          >
-            ЗАДАЧИ СЕГОДНЯ
-          </div>
-          <div
-            data-pencil-name="Строка KPI"
-            style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
-          >
-            <div
-              data-pencil-name="Значение"
-              style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
-            >
-              67%
-            </div>
-            <div
-              data-pencil-name="Примечание"
-              style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-            >
-              2 из 3
-            </div>
-          </div>
-          <div
-            data-pencil-name="Полоса"
-            style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 100%"
-          >
-            <div
-              data-pencil-name="Заполнение"
-              style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 374px"
-            ></div>
-          </div>
-          <div
-            data-pencil-name="Список"
-            style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 4px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: 100%"
-          >
-            <div
-              data-pencil-name="Строка"
-              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
-            >
-              <div
-                data-pencil-name="Точка"
-                style="background-color: var(--color-success); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
-              ></div>
-              <div
-                data-pencil-name="Название"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                Английский — 20 минут
-              </div>
-            </div>
-            <div
-              data-pencil-name="Строка"
-              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
-            >
-              <div
-                data-pencil-name="Точка"
-                style="background-color: var(--color-success); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
-              ></div>
-              <div
-                data-pencil-name="Название"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                Прогулка — 30 минут
-              </div>
-            </div>
-            <div
-              data-pencil-name="Строка"
-              style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
-            >
-              <div
-                data-pencil-name="Точка"
-                style="background-color: var(--color-border); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; height: 8px; width: 8px"
-              ></div>
-              <div
-                data-pencil-name="Название"
-                style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                Отжимания — 10 раз
-              </div>
-            </div>
-          </div>
-          <div
-            data-pencil-name="Ссылка"
-            style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-          >
-            Все задачи на сегодня →
-          </div>
-        </div>
-        <div
-          data-pencil-name="Правая колонка"
-          style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 16px; height: fit-content; justify-content: flex-start"
-        >
-          <div
-            data-pencil-name="Плитка — Цели"
-            style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(111.603deg, var(--color-accent)0d 23.481%, var(--color-surface)0d 52.652%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
-          >
-            <div
-              data-pencil-name="Кикер"
-              style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
-            >
-              ЦЕЛИ
-            </div>
-            <div
-              data-pencil-name="Список"
-              style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 4px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: 100%"
-            >
-              <div
-                data-pencil-name="Строка"
-                style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
-              >
-                <div
-                  data-pencil-name="Название"
-                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  ⭐ Пробежать 10 км без остановки
-                </div>
-                <div
-                  data-pencil-name="Распорка"
-                  style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
-                ></div>
-                <div
-                  data-pencil-name="Полоса"
-                  style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 180px"
-                >
-                  <div
-                    data-pencil-name="Заполнение"
-                    style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 72px"
-                  ></div>
-                </div>
-                <div
-                  data-pencil-name="Процент"
-                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  40%
-                </div>
-              </div>
-              <div
-                data-pencil-name="Строка"
-                style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
-              >
-                <div
-                  data-pencil-name="Название"
-                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  Прочитать 12 книг за год
-                </div>
-                <div
-                  data-pencil-name="Распорка"
-                  style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex: 1 1 0; gap: 0px; height: 1px; justify-content: flex-start"
-                ></div>
-                <div
-                  data-pencil-name="Полоса"
-                  style="align-items: flex-start; background-color: var(--color-surface-2); border-radius: 6px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 6px; justify-content: flex-start; overflow: hidden; width: 180px"
-                >
-                  <div
-                    data-pencil-name="Заполнение"
-                    style="background-color: var(--color-accent); box-sizing: border-box; flex-shrink: 0; height: 6px; width: 104px"
-                  ></div>
-                </div>
-                <div
-                  data-pencil-name="Процент"
-                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  58%
-                </div>
-              </div>
-            </div>
-            <div
-              data-pencil-name="Ссылка"
-              style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-            >
-              Все цели →
-            </div>
-          </div>
-          <div
-            data-pencil-name="Нижний ряд"
-            style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; width: 100%"
-          >
-            <div
-              data-pencil-name="Плитка — Держусь"
-              style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(127.683deg, var(--color-accent)0d 20.311%, var(--color-surface)0d 52.969%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
-            >
-              <div
-                data-pencil-name="Кикер"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                ДЕРЖУСЬ
-              </div>
-              <div
-                data-pencil-name="Строка KPI"
-                style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
-              >
-                <div
-                  data-pencil-name="Значение"
-                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
-                >
-                  21
-                </div>
-                <div
-                  data-pencil-name="Единица"
-                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  день без срыва
-                </div>
-              </div>
-              <div
-                data-pencil-name="Текст"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                «Без сахара после шести» →
-              </div>
-            </div>
-            <div
-              data-pencil-name="Плитка — Постоянство"
-              style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(127.683deg, var(--color-accent)0d 20.311%, var(--color-surface)0d 52.969%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex: 1 1 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px"
-            >
-              <div
-                data-pencil-name="Кикер"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                ПОСТОЯНСТВО
-              </div>
-              <div
-                data-pencil-name="Строка KPI"
-                style="align-items: flex-end; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: fit-content"
-              >
-                <div
-                  data-pencil-name="Значение"
-                  style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 32px; font-style: normal; font-weight: 700; letter-spacing: -0.64px; line-height: 35px; text-align: left; white-space: nowrap"
-                >
-                  37
-                </div>
-                <div
-                  data-pencil-name="Единица"
-                  style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-                >
-                  дней с действием
-                </div>
-              </div>
-              <div
-                data-pencil-name="Текст"
-                style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-              >
-                5 из последних 7 →
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        data-pencil-name="Строка — препятствия"
-        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
-      >
-        Накрыло? Отметить, что помешало →
-      </div>
-    </div>
-  </div>
-</div></div></div></div>
     </div>
 
     <div class="pair pair--flip rise">
@@ -3165,9 +3172,9 @@ p { margin: 18px 0 0; max-width: 62ch; }
         <p>Помеха перестаёт быть свойством характера и становится объектом: у неё есть имя, повод и заранее написанные ответы. Нажали «Столкнулся» — открывается не анкета, а ваш список. От «меня накрыло» до «я что-то делаю» один тап.</p>
         <p class="pair__note">«Помогало 7 из 9» — по вашей истории, а не по советам из интернета.</p>
       </div>
-      <div class="pair__shot"><div class="shot" data-shot><div class="shot__inner"><div
+      <div class="pair__shot"><div class="shot shot--bare" data-shot><div class="shot__inner"><div
   data-pencil-name="Экран — Акцент · «Столкнулся» (модалка)"
-  style="align-items: center; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: center; overflow: hidden; padding: 80px; width: 640px"
+  style="align-items: center; background-color: transparent; box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: center; padding: 0px; width: 440px"
 >
   <div
     data-pencil-name="Модалка"
@@ -5000,7 +5007,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
      контейнер коэффициентом, иначе на телефоне они вылезут за край и
      утащат горизонтальную прокрутку всей страницы. */
   const fit = () => {
-    const scale = (sel, base, prop) => document.querySelectorAll(sel).forEach((box) => {
+    const scale = (sel, fallback, prop) => document.querySelectorAll(sel).forEach((box) => {
       const w = box.clientWidth;
       // Скрытый элемент (например, задний экран коллажа спрятан на узком экране)
       // отдаёт ширину 0. Считать по нему нельзя — получится масштаб 0, и когда
@@ -5008,7 +5015,15 @@ p { margin: 18px 0 0; max-width: 62ch; }
       // придёт по resize, когда ширина появится.
       if (!w) return;
       const inner = box.firstElementChild;
+      // База берётся у САМОГО макета, а не из константы. Экспорты приезжают разной
+      // ширины (модалка — 440, экран — 1280), и общая константа 1280 оставляла узкому
+      // макету полкарточки пустоты справа. Поймано Elmir 10.08.2026 на «Столкнулся».
+      const art = inner.firstElementChild;
+      const base = (art && art.offsetWidth) || fallback;
       const k = w / base;
+      // Ширину внутренней обёртки равняем по макету: иначе scrollHeight мерился бы по
+      // 1280px из CSS, и узкий макет получал бы лишнюю высоту.
+      inner.style.width = base + 'px';
       inner.style.setProperty(prop, k.toFixed(4));
       box.style.height = Math.round(inner.scrollHeight * k) + 'px';
     });

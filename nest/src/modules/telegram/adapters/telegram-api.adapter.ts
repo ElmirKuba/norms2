@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { TelegramApiPort, TelegramButton } from './telegram-api.port';
 import type { Env } from '../../../system/config/env.schema';
+import {
+  SETTING_TELEGRAM_BOT_PAUSED,
+  SettingsDomainService,
+} from '../../settings/domain-services/settings.domain-service';
 
 /**
  * Сколько раз пробуем при сетевом сбое.
@@ -59,14 +63,17 @@ interface TelegramApiResponse {
 export class TelegramApiAdapter implements TelegramApiPort {
   private readonly _logger = new Logger('TelegramApi');
   private readonly _token: string;
-  private readonly _paused: boolean;
 
   /**
-   * @param configService Конфиг (токен бота и флаг паузы).
+   * @param configService Конфиг (токен бота).
+   * @param _settings Рантайм-настройки: пауза переехала сюда из `.env` (2.9.3·4), чтобы
+   * админка переключала её без перезапуска.
    */
-  public constructor(configService: ConfigService<Env, true>) {
+  public constructor(
+    configService: ConfigService<Env, true>,
+    private readonly _settings: SettingsDomainService,
+  ) {
     this._token = configService.get('TELEGRAM_BOT_TOKEN', { infer: true });
-    this._paused = configService.get('TELEGRAM_BOT_PAUSED', { infer: true });
   }
 
   /**
@@ -152,7 +159,7 @@ export class TelegramApiAdapter implements TelegramApiPort {
     // Пауза (2.9.3). Единственная точка исходящего: заслон здесь закрывает разом ответы
     // человеку, посты в канал и публикацию меню команд — не нужно помнить про каждый вызов.
     // Возвращаем null — ровно то, что вызывающий код уже умеет обрабатывать: «не отправилось».
-    if (this._paused) {
+    if (this._settings.getBoolean(SETTING_TELEGRAM_BOT_PAUSED)) {
       this._logger.log(`Бот на паузе — '${method}' не отправлен.`);
       return null;
     }

@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { HandleTelegramUpdateUseCase } from '../use-cases/handle-telegram-update.use-case';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
 import type { Env } from '../../../system/config/env.schema';
+import {
+  SETTING_TELEGRAM_BOT_PAUSED,
+  SettingsDomainService,
+} from '../../settings/domain-services/settings.domain-service';
 
 /** Заголовок, которым Telegram подтверждает, что апдейт от него. */
 const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
@@ -27,18 +31,18 @@ const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
 export class TelegramWebhookController {
   private readonly _logger = new Logger('TelegramWebhook');
   private readonly _secret: string;
-  private readonly _paused: boolean;
 
   /**
    * @param _handleTelegramUpdateUseCase Обработчик апдейта.
-   * @param configService Конфиг (секрет вебхука и флаг паузы).
+   * @param configService Конфиг (секрет вебхука).
+   * @param _settings Рантайм-настройки: пауза (2.9.3·4).
    */
   public constructor(
     private readonly _handleTelegramUpdateUseCase: HandleTelegramUpdateUseCase,
     configService: ConfigService<Env, true>,
+    private readonly _settings: SettingsDomainService,
   ) {
     this._secret = configService.get('TELEGRAM_WEBHOOK_SECRET', { infer: true });
-    this._paused = configService.get('TELEGRAM_BOT_PAUSED', { infer: true });
   }
 
   /**
@@ -70,7 +74,7 @@ export class TelegramWebhookController {
     // Отвечаем 200 и роняем апдейт. Отказ заставил бы Telegram повторять его сутки, и после
     // снятия паузы всё накопленное приехало бы лавиной. Цена решения принята осознанно:
     // написанное боту во время паузы теряется.
-    if (this._paused) {
+    if (this._settings.getBoolean(SETTING_TELEGRAM_BOT_PAUSED)) {
       this._logger.log('Бот на паузе — апдейт принят и не обработан.');
       return;
     }

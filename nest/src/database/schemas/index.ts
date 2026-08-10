@@ -1,5 +1,6 @@
 // Баррель всех Drizzle-схем (его читают drizzle.config.ts и drizzle(schema)).
 export * from './accounts.schema';
+export * from './app-settings.schema';
 export * from './roles.schema';
 export * from './account-roles.schema';
 export * from './secret-qa.schema';

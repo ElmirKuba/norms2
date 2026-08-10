@@ -27,16 +27,18 @@ const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
 export class TelegramWebhookController {
   private readonly _logger = new Logger('TelegramWebhook');
   private readonly _secret: string;
+  private readonly _paused: boolean;
 
   /**
    * @param _handleTelegramUpdateUseCase Обработчик апдейта.
-   * @param configService Конфиг (секрет вебхука).
+   * @param configService Конфиг (секрет вебхука и флаг паузы).
    */
   public constructor(
     private readonly _handleTelegramUpdateUseCase: HandleTelegramUpdateUseCase,
     configService: ConfigService<Env, true>,
   ) {
     this._secret = configService.get('TELEGRAM_WEBHOOK_SECRET', { infer: true });
+    this._paused = configService.get('TELEGRAM_BOT_PAUSED', { infer: true });
   }
 
   /**
@@ -60,6 +62,17 @@ export class TelegramWebhookController {
       // Логируем факт, но не тело: у попытки подбора нет полезного содержимого.
       this._logger.warn('Апдейт с неверным секретом отклонён.');
       throw new UnauthorizedException();
+    }
+    // Пауза (2.9.3) закрывает и ВХОДЯЩЕЕ, не только ответы: иначе бот молча менял бы
+    // состояние (принимал заявки, начислял приглашения), а человек не получал ни строчки —
+    // это хуже, чем не работать вовсе.
+    //
+    // Отвечаем 200 и роняем апдейт. Отказ заставил бы Telegram повторять его сутки, и после
+    // снятия паузы всё накопленное приехало бы лавиной. Цена решения принята осознанно:
+    // написанное боту во время паузы теряется.
+    if (this._paused) {
+      this._logger.log('Бот на паузе — апдейт принят и не обработан.');
+      return;
     }
     try {
       await this._handleTelegramUpdateUseCase.execute(update);

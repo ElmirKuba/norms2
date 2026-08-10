@@ -37,13 +37,16 @@ export class BotCommandsInitializer implements OnApplicationBootstrap {
 
   /**
    * @param _api Исходящий порт Bot API.
-   * @param configService Конфиг (пустой токен — бота нет, публиковать нечего).
+   * @param configService Конфиг: пустой токен — бота нет, публиковать нечего; пауза (2.9.3) —
+   * бот есть, но временно молчит, и меню трогать не надо.
    */
   public constructor(
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     configService: ConfigService<Env, true>,
   ) {
-    this._enabled = configService.get('TELEGRAM_BOT_TOKEN', { infer: true }) !== '';
+    const configured = configService.get('TELEGRAM_BOT_TOKEN', { infer: true }) !== '';
+    const paused = configService.get('TELEGRAM_BOT_PAUSED', { infer: true });
+    this._enabled = configured && !paused;
   }
 
   /**

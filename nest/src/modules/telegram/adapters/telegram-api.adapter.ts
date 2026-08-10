@@ -59,12 +59,14 @@ interface TelegramApiResponse {
 export class TelegramApiAdapter implements TelegramApiPort {
   private readonly _logger = new Logger('TelegramApi');
   private readonly _token: string;
+  private readonly _paused: boolean;
 
   /**
-   * @param configService Конфиг (токен бота).
+   * @param configService Конфиг (токен бота и флаг паузы).
    */
   public constructor(configService: ConfigService<Env, true>) {
     this._token = configService.get('TELEGRAM_BOT_TOKEN', { infer: true });
+    this._paused = configService.get('TELEGRAM_BOT_PAUSED', { infer: true });
   }
 
   /**
@@ -147,6 +149,13 @@ export class TelegramApiAdapter implements TelegramApiPort {
     method: string,
     body: Record<string, unknown>,
   ): Promise<TelegramApiResponse | null> {
+    // Пауза (2.9.3). Единственная точка исходящего: заслон здесь закрывает разом ответы
+    // человеку, посты в канал и публикацию меню команд — не нужно помнить про каждый вызов.
+    // Возвращаем null — ровно то, что вызывающий код уже умеет обрабатывать: «не отправилось».
+    if (this._paused) {
+      this._logger.log(`Бот на паузе — '${method}' не отправлен.`);
+      return null;
+    }
     for (let attempt = 1; attempt <= SEND_ATTEMPTS; attempt += 1) {
       try {
         const response = await fetch(`https://api.telegram.org/bot${this._token}/${method}`, {

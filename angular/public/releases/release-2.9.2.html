@@ -157,6 +157,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 .pair__text, .pair__shot { min-width: 0; }
 .pair__text h3 { margin-bottom: 4px; }
+/* Чередование наклона — чтобы лента карт не читалась строем. */
+.pair .shot { rotate: -.7deg; }
+.pair--flip .shot { rotate: .7deg; }
+.pair:hover .shot { rotate: 0deg; }
+@media (prefers-reduced-motion: reduce) { .pair .shot, .pair--flip .shot { rotate: none; transition: none; } }
 .pair__note { font: 400 13px/1.6 var(--font-mono); color: var(--color-text-muted); margin-top: 14px; }
 
 /* ── снимок экрана: макет 1280px, вписанный масштабом ────────────────────
@@ -167,8 +172,14 @@ p { margin: 18px 0 0; max-width: 62ch; }
    ВИЗУАЛЬНО, но в раскладке он остаётся 1280 — и колонка грида, у которой минимум равен
    min-content, распирается до этой ширины. Ниже 940px это ломало страницу: заголовки
    уезжали за левый край. Поймано Elmir на ширине 939. */
+/* Экран подаётся КАРТОЙ, а не плоским снимком (реш. Elmir 10.08.2026 по титулу): тень,
+   лёгкий наклон, приподнятость. Карте не обязательно быть читаемой — ей достаточно быть
+   узнаваемой, и это снимает главную проблему узких экранов: там снимок всё равно мелкий,
+   но как карта он выглядит намеренно, а не сломанно. */
 .shot {
   position: relative; width: 100%; min-width: 0; overflow: hidden;
+  box-shadow: 0 22px 50px rgba(0,0,0,.34);
+  transition: transform .5s cubic-bezier(.2,.7,.3,1);
   border-radius: 12px; border: 1px solid var(--color-border);
   background: var(--color-bg);
   /* Снимок — картинка, а не текст: не выделяется и не тащится. */
@@ -1222,6 +1233,21 @@ p { margin: 18px 0 0; max-width: 62ch; }
     <p>Он прекрасно работает, пока всё идёт хорошо. А потом что-то срывается: серия обнуляется, возвращаться к нулю после сорока дней стыдно — и приложение удаляется.</p>
     <p>Второе: «я прокрастинатор», «я себя гноблю», «я залипаю в ленте» — это описания характера. С характером ничего нельзя сделать.</p>
     <p>Третье: когда накрывает, придумывать решение нечем. Силы нужны именно в ту минуту, когда их нет.</p>
+  </div>
+</section>
+
+
+<!-- ═══ ОБЕЩАНИЕ: вычитание, а не сложение (блок 3 сценария) ═══ -->
+<section>
+  <div class="wrap narrow rise">
+    <p class="eyebrow">на чём это держится</p>
+    <h2>Отказываться от лишнего ради важного. Не успевать больше.</h2>
+    <ul class="nope">
+      <li><b>память</b><span>Голова — для мыслей, а не для хранения списков. План живёт в системе, она подсказывает, что делать сейчас.</span></li>
+      <li><b>план</b><span>Вы задаёте его в ясном состоянии. Система мягко ведёт по нему и никогда не винит за пропуск.</span></li>
+      <li><b>срыв</b><span>Это данные, а не провал. Продукт помогает вернуться, а не наказывает.</span></li>
+      <li><b>рост</b><span>Без надрыва: планка сама отступает, когда тяжело.</span></li>
+    </ul>
   </div>
 </section>
 
@@ -3760,6 +3786,213 @@ p { margin: 18px 0 0; max-width: 62ch; }
 </div></div></div></div>
     </div>
 
+
+    <div class="pair pair--flip rise">
+      <div class="pair__text">
+        <p class="eyebrow">первый день</p>
+        <h3>Вместо пустоты — три шага.</h3>
+        <p>Завести привычку, отметить её, поставить цель. Пройденные вычёркиваются, кнопка только у следующего: путь видно целиком, а делать нужно одно. Когда все три пройдены, блок исчезает навсегда.</p>
+      </div>
+      <div class="pair__shot"><div class="shot" data-shot><div class="shot__inner"><div
+  data-pencil-name="Экран — Акцент · Дашборд, первый вход «С чего начать»"
+  style="align-items: flex-start; background-color: var(--color-bg); box-sizing: border-box; display: flex; flex-direction: column; gap: 0px; height: fit-content; justify-content: flex-start; width: 1280px"
+>
+  <div
+    data-pencil-name="Вкладки раздела"
+    style="align-items: flex-start; border-color: var(--color-border); border-style: solid; border-width: 0px 0px 1px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 12px; height: 46.5px; justify-content: flex-start; margin: 0px 0px -0.5px 0px; padding: 12px 24px 0px 24px; width: 1280px"
+  >
+    <div
+      data-pencil-name="Вкладка Дашборд"
+      style="align-items: flex-start; border-color: var(--color-accent); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 82px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Дашборд
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Статистика"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 98px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Статистика
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Цели"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 48px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Цели
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Привычки"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 88px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Привычки
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Держусь"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 80px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Держусь
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Микро-победы"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 127px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Микро-победы
+      </div>
+    </div>
+    <div
+      data-pencil-name="Вкладка Препятствия"
+      style="align-items: flex-start; border-color: var(--color-bg); border-style: solid; border-width: 0px 0px 2px 0px; box-sizing: content-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 34px; justify-content: flex-start; margin: 0px 0px -1px 0px; padding: 8px 4px; width: 109px"
+    >
+      <div
+        data-pencil-name="Текст"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Препятствия
+      </div>
+    </div>
+  </div>
+  <div
+    data-pencil-name="Контент дашборда"
+    style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 16px; height: fit-content; justify-content: flex-start; padding: 16px 24px; width: 100%"
+  >
+    <div
+      data-pencil-name="Плитка — С чего начать"
+      style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(108.283deg, var(--color-accent)0d 23.915%, var(--color-surface)0d 52.608%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
+    >
+      <div
+        data-pencil-name="Заголовок"
+        style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 700; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        С чего начать
+      </div>
+      <div
+        data-pencil-name="Подсказка"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Три шага — и раздел начнёт работать на тебя.
+      </div>
+      <div
+        data-pencil-name="Шаги"
+        style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; padding: 4px 0px 0px 0px; width: 100%"
+      >
+        <div
+          data-pencil-name="Шаг"
+          style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+        >
+          <div
+            data-pencil-name="Отметка"
+            style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            ○
+          </div>
+          <div
+            data-pencil-name="Текст"
+            style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            Заведи привычку — маленькую, которую точно потянешь
+          </div>
+        </div>
+        <div
+          data-pencil-name="Шаг"
+          style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+        >
+          <div
+            data-pencil-name="Отметка"
+            style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            ○
+          </div>
+          <div
+            data-pencil-name="Текст"
+            style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            Отметь её хоть раз — так система начнёт подстраивать планку
+          </div>
+        </div>
+        <div
+          data-pencil-name="Шаг"
+          style="align-items: center; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; width: 100%"
+        >
+          <div
+            data-pencil-name="Отметка"
+            style="box-sizing: border-box; color: var(--color-accent); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            ○
+          </div>
+          <div
+            data-pencil-name="Текст"
+            style="box-sizing: border-box; color: var(--color-text); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            Поставь цель — чтобы шаги вели куда-то
+          </div>
+        </div>
+      </div>
+      <div
+        data-pencil-name="Кнопка активного шага"
+        style="align-items: flex-start; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: fit-content; justify-content: flex-start; padding: 12px 0px 0px 0px; width: fit-content"
+      >
+        <div
+          data-pencil-name="Кнопка"
+          style="align-items: center; background-color: var(--color-accent); border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: row; flex-shrink: 0; gap: 0px; height: 44px; justify-content: center; padding: 0px 16px; width: fit-content"
+        >
+          <div
+            data-pencil-name="Текст"
+            style="box-sizing: border-box; color: var(--color-on-accent); font-family: Inter, system-ui, sans-serif; font-size: 16px; font-style: normal; font-weight: 500; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+          >
+            К привычкам
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      data-pencil-name="Плитка — Сейчас (пусто)"
+      style="align-items: flex-start; background-color: var(--color-surface); background-image: linear-gradient(97.132deg, var(--color-accent)21 24.836%, var(--color-surface)21 60.066%); background-repeat: no-repeat; background-size: 100% 100%; border-radius: 16px; box-shadow: var(--shadow-1); box-sizing: border-box; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; height: fit-content; justify-content: flex-start; outline-offset: -0.5px; outline: 1px solid var(--color-border); padding: 24px; width: 100%"
+    >
+      <div
+        data-pencil-name="Метка"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 13px; font-style: normal; font-weight: 400; letter-spacing: 0.8px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        НА СЕГОДНЯ ВСЁ
+      </div>
+      <div
+        data-pencil-name="Подсказка"
+        style="box-sizing: border-box; color: var(--color-text-muted); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-style: normal; font-weight: 400; letter-spacing: 0px; line-height: normal; text-align: left; white-space: nowrap"
+      >
+        Дел не выдумываем: по расписанию сегодня пусто — и это нормально.
+      </div>
+    </div>
+  </div>
+</div></div></div></div>
+    </div>
+
     <!-- финал блока: телефоны лесенкой — адаптивность показана, а не заявлена -->
     <div class="narrow rise" style="margin-top: clamp(64px, 9vh, 116px)">
       <p class="eyebrow">и всё это в кармане</p>
@@ -4594,6 +4827,21 @@ p { margin: 18px 0 0; max-width: 62ch; }
     <p>Никакой интерфейс, никакая лесенка и никакая статистика не сделают человека другим, если он сам не разберётся, не подумает и не построит себе систему.</p>
     <p>Даже лучший на свете ИИ — пусть уровня Opus 5 и притом бесплатный — не сделает вас лучше, если вы не разберётесь, как с ним говорить, не составите запрос, не придумаете себе систему. Инструмент усиливает того, кто работает. Он не заменяет того, кто не начал.</p>
     <p>Наша роль скромная: <em>убрать лишние поводы бросить</em>. Не обнулять прогресс, не стыдить за пропуск, дать минимум на плохой день. Дальше — сами.</p>
+  </div>
+</section>
+
+
+<!-- ═══ ЧЕСТНОСТЬ ИНТЕРФЕЙСА (блок 9 сценария) ═══ -->
+<section>
+  <div class="wrap narrow rise">
+    <p class="eyebrow">мелочи, по которым видно отношение</p>
+    <h2>Ничего нельзя потерять по случайности.</h2>
+    <ul class="nope">
+      <li><b>ввод</b><span>Сорвалось сохранение — окно остаётся с вашими данными, повтор в один клик. Ничего не приходится набирать заново.</span></li>
+      <li><b>устройства</b><span>Отметили с телефона — вкладка на компьютере догонит сама. Клик по устаревшей карточке не сотрёт результат: сто приседаний не станут молча шестьюдесятью.</span></li>
+      <li><b>передумал</b><span>Перенесли задачу на завтра, а силы вернулись — «↩ вернуть на сегодня». Возвращается только сегодняшний перенос: вчерашние — это уже переписывание прошлого.</span></li>
+      <li><b>отмена</b><span>Отменили отметку — вернулась и планка. Раньше она оставалась подкрученной, и назавтра с вас требовали больше.</span></li>
+    </ul>
   </div>
 </section>
 

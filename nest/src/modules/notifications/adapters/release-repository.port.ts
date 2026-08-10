@@ -59,4 +59,16 @@ export interface ReleaseRepositoryPort {
    * @returns Строки в хронологическом порядке.
    */
   listUnbroadcasted(): Promise<ReleaseFull[]>;
+
+  /**
+   * Удаляет публикацию по ключу (2.9.3·7).
+   *
+   * Каскад по `notifications.release_id` уносит доставку, а оттуда — отметки прочтения
+   * ([ADR-0065](../../../../../docs/decisions/0065-release-vs-notification-split.md)). Одно
+   * действие вместо трёх ручных `delete` в psql, которыми это делалось 09.08.2026.
+   *
+   * @param key Публичный ключ публикации.
+   * @returns Удалённая публикация или `null`, если такой не было.
+   */
+  deleteByKey(key: string): Promise<ReleaseFull | null>;
 }

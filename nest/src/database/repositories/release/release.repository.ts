@@ -136,4 +136,18 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
       .where(isNull(releases.broadcastedAt))
       .orderBy(asc(sql`coalesce(${releases.publishedAt}, ${releases.createdAt})`), asc(releases.id));
   }
+
+  /**
+   * Удаляет публикацию по ключу (2.9.3·7).
+   *
+   * Возвращает удалённую строку, а не признак: вызывающему нужен заголовок для журнала, и
+   * повторный `select` перед `delete` дал бы окно, в котором строка успевает исчезнуть.
+   *
+   * @param key Публичный ключ публикации.
+   * @returns Удалённая публикация или null.
+   */
+  public async deleteByKey(key: string): Promise<ReleaseFull | null> {
+    const [row] = await this._db.delete(releases).where(eq(releases.key, key)).returning();
+    return row ?? null;
+  }
 }

@@ -105,6 +105,24 @@ export class NotificationDomainService {
   }
 
   /**
+   * Удаляет публикацию вместе с доставкой и отметками прочтения (2.9.3·7).
+   *
+   * **Каскад — не побочный эффект, а смысл операции** ([ADR-0065](../../../../docs/decisions/0065-release-vs-notification-split.md)):
+   * удалить публикацию, оставив уведомления, значит оставить в колокольчиках строки, ведущие в
+   * никуда. Три ручных `delete` в psql, которыми это делалось 09.08.2026, схлопываются в один.
+   *
+   * ⚠️ **Пост в Telegram при этом остаётся** — id постов канала нигде не хранятся, удалять их
+   * бот не умеет. Канал чистится руками.
+   *
+   * @param key Публичный ключ публикации.
+   * @returns Заголовок удалённой публикации или null, если такой не было.
+   */
+  public async deleteRelease(key: string): Promise<{ key: string; title: string } | null> {
+    const removed = await this._releaseRepository.deleteByKey(key);
+    return removed === null ? null : { key: removed.key, title: removed.title };
+  }
+
+  /**
    * Число непрочитанных моих уведомлений.
    * @param accountId Смотрящий.
    * @returns Количество.

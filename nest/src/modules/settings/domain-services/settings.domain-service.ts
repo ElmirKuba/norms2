@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { SETTINGS_REPOSITORY } from '../adapters/settings-repository.port';
 import type { SettingsRepositoryPort } from '../adapters/settings-repository.port';
 import type { Env } from '../../../system/config/env.schema';
+import type { SettingDescription } from '../interfaces/setting-description.interface';
+import type { SettingActor } from '../interfaces/setting-actor.interface';
 import {
   AUDIT_ACTIONS,
   AuditDomainService,
@@ -81,6 +83,33 @@ export class SettingsDomainService implements OnApplicationBootstrap {
   }
 
   /**
+   * Описывает все известные настройки: действующее значение и его происхождение (2.9.3·7).
+   *
+   * **`source` — не украшение экрана.** Без него «почему значение такое» не читается: `env`
+   * значит «начальное, строки в базе ещё нет», `db` — «перекрыто админкой». Иначе админ видит
+   * `false` и не понимает, он это выключил или так было всегда.
+   *
+   * Перечень идёт от **зарегистрированных умолчаний**, а не от строк в базе: настройка
+   * существует потому, что её кто-то читает в коде, а не потому, что кто-то её записал.
+   *
+   * @returns Описания настроек, по одному на известный ключ.
+   */
+  public async describeAll(): Promise<SettingDescription[]> {
+    const rows = await this._repository.findAll();
+    const byKey = new Map(rows.map((row) => [row.key.toLowerCase(), row]));
+    return [...this._defaults.entries()].map(([key, fallback]) => {
+      const row = byKey.get(key);
+      return {
+        key,
+        value: row?.value ?? fallback,
+        source: row === undefined ? ('env' as const) : ('db' as const),
+        updatedBy: row?.updatedBy ?? null,
+        updatedAt: row?.updatedAt ?? null,
+      };
+    });
+  }
+
+  /**
    * Читает булеву настройку.
    * @param key Ключ настройки.
    * @returns Значение из базы, иначе умолчание, иначе false.
@@ -94,14 +123,14 @@ export class SettingsDomainService implements OnApplicationBootstrap {
    * Записывает булеву настройку и сразу обновляет кэш.
    * @param key Ключ настройки.
    * @param value Новое значение.
-   * @param updatedBy Аккаунт админа или null.
+   * @param actor Кто меняет: админ или система.
    * @returns Промис завершения.
    */
-  public async setBoolean(key: string, value: boolean, updatedBy: string | null): Promise<void> {
+  public async setBoolean(key: string, value: boolean, actor: SettingActor): Promise<void> {
     const normalized = key.toLowerCase();
     const asText = value ? 'true' : 'false';
     const previous = this.getBoolean(normalized);
-    await this._repository.upsert(normalized, asText, updatedBy);
+    await this._repository.upsert(normalized, asText, actor.accountId);
     this._cache.set(normalized, asText);
     this._logger.log(`Настройка '${normalized}' = ${asText}`);
     // Журнал пишется ПОСЛЕ успешной записи: строка о том, чего не произошло, хуже её отсутствия.
@@ -109,7 +138,11 @@ export class SettingsDomainService implements OnApplicationBootstrap {
     // разные события, и по журналу они должны различаться (2.9.3·6).
     await this._audit.record({
       action: AUDIT_ACTIONS.SETTING_CHANGED,
-      actorAccountId: updatedBy,
+      actorAccountId: actor.accountId,
+      // Логин снимком обязателен: без него человеческое действие выглядит в журнале как
+      // системное — поймано живой проверкой 10.08.2026, когда переключение через админку
+      // записалось от «(система)».
+      actorLogin: actor.login,
       targetType: 'setting',
       targetId: normalized,
       targetLabel: normalized,

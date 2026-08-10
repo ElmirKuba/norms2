@@ -19,6 +19,7 @@ import { TelegramCoreModule } from './modules/telegram/telegram-core.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
 import { PublicConfigModule } from './modules/public-config/public-config.module';
 import { VersionModule } from './modules/version/version.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { AccentModule } from './modules/accent/accent.module';
 import { RateLimitGuard } from './shared/guards/rate-limit.guard';
 
@@ -51,6 +52,7 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
     TelegramModule,
     PublicConfigModule,
     VersionModule,
+    AdminModule,
     AccentModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],

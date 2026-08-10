@@ -283,6 +283,9 @@ p { margin: 18px 0 0; max-width: 62ch; }
 .stage { position: relative; height: calc(var(--slides, 8) * 100vh); }
 .stage__pin {
   position: sticky; top: 0; height: 100vh; overflow: hidden;
+  /* Сцена: камера смотрит сквозь блоки, расставленные по глубине. Без перспективы
+     translateZ в траекториях ничего не даёт, и движение выходит плоским. */
+  perspective: 1400px; perspective-origin: 50% 50%;
   /* Снимок — картинка, а не текст: не выделяется и не тащится. */
   user-select: none; -webkit-user-select: none;
 }
@@ -290,11 +293,12 @@ p { margin: 18px 0 0; max-width: 62ch; }
   position: absolute; inset: 0;
   display: grid; align-content: center;
   padding: clamp(64px, 9vh, 104px) var(--gutter);
-  opacity: 0; visibility: hidden;
-  translate: 0 34px;
-  transition: opacity .55s ease, translate .7s cubic-bezier(.2,.7,.3,1), visibility .55s;
+  transform-style: preserve-3d;
+  /* Сам слайд не гасится: движение несут текст и снимок по своим траекториям.
+     Гасить ещё и слайд целиком значило бы приглушить это движение. */
+  visibility: hidden;
 }
-.stage__slide.is-on { opacity: 1; visibility: visible; translate: 0 0; }
+.stage__slide.is-on, .stage__slide.is-leaving { visibility: visible; }
 .stage__slide > .pair { max-width: var(--wrap); margin: 0 auto; width: 100%; }
 @media (min-width: 1040px) {
   .stage__slide > .pair { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.5fr); }
@@ -302,6 +306,41 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 /* Внутри презентации карточка не наклонена: снимок и так один на весь экран. */
 .stage__slide .shot { rotate: none !important; }
+
+/* Траектории входа и выхода. Значения ставит JS переменными: --ix/--iy/--iz/--ir —
+   откуда прилетает, --ox/--oy/--oz/--or — куда улетает. Они РАЗНЫЕ на каждом
+   слайде (реш. Elmir 10.08.2026: «анимации были скучны, в четвёртом полигоне они
+   разные от слайда к слайду»). Одинаковый обмен местами читается как механика,
+   разные дуги — как режиссура.
+
+   --depth разводит текст и снимок по глубине: камера летит, и ближний блок
+   смещается заметно быстрее — этим и берёт приём. */
+.stage__slide .pair__text { --depth: 90px; }
+.stage__slide .pair__shot { --depth: -60px; }
+/* ⚠️ Состояние ИНВЕРТИРОВАНО намеренно: по умолчанию блок ВИДЕН, а прячется
+   только когда слайд не активен. Обратный порядок (прятать по умолчанию,
+   показывать у `.is-on`) означал бы, что видимость держится на переходе — не
+   пришли кадры, и активный слайд остался прозрачным. Это ровно тот класс
+   отказа «пустая страница», что уже стоил проекту пяти заходов. */
+.stage__slide .pair__text, .stage__slide .pair__shot {
+  opacity: 1;
+  transform: translate3d(0, 0, var(--depth)) rotate(0deg) scale(1);
+  transition: transform 1.15s cubic-bezier(.26, .62, .2, 1), opacity .7s ease;
+}
+.stage__slide:not(.is-on) .pair__text, .stage__slide:not(.is-on) .pair__shot {
+  opacity: 0;
+  transform: translate3d(var(--ix, 0), var(--iy, 0), var(--iz, 0))
+             rotate(var(--ir, 0deg)) scale(var(--is, .96));
+}
+/* Текст трогается первым, снимок догоняет — иначе они едут одной плитой. */
+.stage__slide.is-on .pair__text { transition-delay: .1s; }
+.stage__slide.is-on .pair__shot { transition-delay: .2s; }
+.stage__slide.is-leaving .pair__text, .stage__slide.is-leaving .pair__shot {
+  transform: translate3d(var(--ox, 0), var(--oy, 0), var(--oz, 0))
+             rotate(var(--or, 0deg)) scale(var(--os, .94));
+  opacity: 0;
+  transition-delay: 0s;
+}
 /* Низкий экран (ноутбук 900px и ниже): текст рядом со снимком не помещался и
    молча обрезался прикреплённым экраном. Ужимаем типографику самого блока, а не
    режем содержание. */
@@ -328,16 +367,15 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 .stage__hint.is-gone { opacity: 0; }
 
-/* Блок распрямляется в обычную ленту слайдов друг под другом в двух случаях.
+/* Единственный случай, когда блок распрямляется в обычную ленту слайдов друг под
+   другом: человек отключил движение. Страница обязана оставаться понятной без
+   единого движения (требование скилла landing-page).
 
-   1. **Движение отключено человеком** — страница обязана оставаться понятной без
-      единого движения (требование скилла landing-page).
-   2. **Узкий экран.** На телефоне пара «текст ↔ экран» встаёт в одну колонку, и
-      вместе они выше вьюпорта в полтора-два раза. Прикреплённый экран тогда не
-      показывает слайд, а обрезает его сверху и снизу — поймано Elmir на 15 Pro.
-      Полноэкранная презентация требует широкого экрана; на узком честнее её не
-      делать вовсе, чем делать нечитаемой. */
-@media (prefers-reduced-motion: reduce), (max-width: 900px) {
+   ⚠️ На телефоне презентация ОСТАЁТСЯ. Была попытка выключить её ниже 900px,
+   потому что слайд не помещался, — Elmir поправил: не помещался ровно один
+   слайд, а сам приём нужен именно там, где он смотрит. Вмещение решается
+   масштабом снимка (см. `fit()` в скрипте), а не отказом от блока. */
+@media (prefers-reduced-motion: reduce) {
   .stage { height: auto; }
   .stage__pin { position: static; height: auto; overflow: visible; }
   .stage__slide {
@@ -350,6 +388,15 @@ p { margin: 18px 0 0; max-width: 62ch; }
   .stage__hint { display: none; }
   .stage__nav { right: 8px; gap: 7px; }
   .stage__nav button { width: 7px; height: 7px; }
+  /* Узкий экран: пара идёт в одну колонку, и в один вьюпорт должны влезть
+     заголовок, абзац и снимок. Снимок ужимает `fit()` по высоте, текст —
+     здесь. Приписку под текстом прячем: она поясняющая, а места нет. */
+  .stage__slide { padding: clamp(72px, 11vh, 96px) var(--gutter) clamp(28px, 4vh, 44px); }
+  .stage__slide .pair { gap: 18px; }
+  .stage__slide h3 { font-size: 20px; line-height: 1.22; }
+  .stage__slide .eyebrow { margin-bottom: 10px; }
+  .stage__slide .pair__text p { margin-top: 10px; font-size: 15px; line-height: 1.5; }
+  .stage__slide .pair__note { display: none; }
 }
 
 /* Список тезисов. Класс `.list` стоял в разметке трёх блоков, а стиля под него не было —
@@ -5197,10 +5244,33 @@ p { margin: 18px 0 0; max-width: 62ch; }
       // макету полкарточки пустоты справа. Поймано Elmir 10.08.2026 на «Столкнулся».
       const art = inner.firstElementChild;
       const base = (art && art.offsetWidth) || fallback;
-      const k = w / base;
       // Ширину внутренней обёртки равняем по макету: иначе scrollHeight мерился бы по
       // 1280px из CSS, и узкий макет получал бы лишнюю высоту.
       inner.style.width = base + 'px';
+      let k = w / base;
+
+      /* Внутри презентации снимок ограничен ещё и ПО ВЫСОТЕ. Слайд прикреплён и
+         обрезает всё, что не влезло, — а на телефоне пара «текст ↔ экран» встаёт
+         в одну колонку, и снимок в полную ширину вытесняет заголовок за край
+         (поймано Elmir на 15 Pro: не помещался слайд «Препятствия», где макет
+         модалки узкий — 440 против 1280 — и оттого высокий).
+
+         Потолок задаётся долей экрана: на узком остаётся место тексту, на
+         широком колонки идут рядом и снимку можно больше. Когда упёрлись в
+         высоту, коробка сужается вместе с макетом и центрируется — иначе справа
+         осталось бы мёртвое поле, ровно то, что уже правили сегодня. */
+      const inStage = box.closest('.stage__slide') !== null;
+      if (inStage) {
+        const narrow = innerWidth < 1040;
+        const maxHeight = innerHeight * (narrow ? 0.4 : 0.66);
+        const height = inner.scrollHeight * k;
+        if (height > maxHeight) {
+          k = maxHeight / inner.scrollHeight;
+        }
+        box.style.width = Math.round(base * k) + 'px';
+        box.style.marginInline = 'auto';
+      }
+
       inner.style.setProperty(prop, k.toFixed(4));
       box.style.height = Math.round(inner.scrollHeight * k) + 'px';
     });
@@ -5226,9 +5296,45 @@ p { margin: 18px 0 0; max-width: 62ch; }
     const stageHint = document.getElementById('stage-hint');
     let shown = 0;
 
-    // Те же два условия, что распрямляют блок в CSS. Когда он распрямлён, слайды
+    // То же условие, что распрямляет блок в CSS. Когда он распрямлён, слайды
     // видны все сразу и переключать нечего.
-    const flat = matchMedia('(prefers-reduced-motion: reduce), (max-width: 900px)');
+    const flat = matchMedia('(prefers-reduced-motion: reduce)');
+
+    /* Восемь траекторий, по одной на слайд, все разные — иначе смена читается
+       как механика, а не как режиссура (реш. Elmir 10.08.2026). Формат:
+       [x, y, z, поворот]; `in` — откуда прилетает, `out` — куда улетает. */
+    const TRAJ = [
+      { in: { text: [0, '32vh', 0, 0],           shot: ['42vw', '8vh', -640, 6] },
+        out: { text: ['-70vw', '-14vh', 320, -7], shot: ['66vw', '18vh', 200, 9] } },
+      { in: { text: ['-58vw', '-10vh', -120, -6], shot: ['52vw', '14vh', -520, 5] },
+        out: { text: ['64vw', '-22vh', 260, 8],   shot: ['-70vw', '20vh', 180, -10] } },
+      { in: { text: ['46vw', '-18vh', -260, 7],   shot: ['-54vw', '10vh', -580, -4] },
+        out: { text: ['-24vw', '-64vh', 340, -12], shot: ['-66vw', '-16vh', 120, -6] } },
+      { in: { text: ['-20vw', '46vh', -180, 4],   shot: ['58vw', '-14vh', -640, -7] },
+        out: { text: ['70vw', '10vh', 280, 6],    shot: ['-16vw', '58vh', 240, -9] } },
+      { in: { text: ['54vw', '20vh', -220, -5],   shot: ['-50vw', '-16vh', -560, 8] },
+        out: { text: ['-18vw', '-58vh', 300, 10], shot: ['-72vw', '12vh', 160, -5] } },
+      { in: { text: ['-62vw', '16vh', -140, 6],   shot: ['24vw', '44vh', -600, -6] },
+        out: { text: ['22vw', '62vh', 260, -8],   shot: ['62vw', '-20vh', 220, 7] } },
+      { in: { text: ['0', '-44vh', -300, -3],     shot: ['-46vw', '26vh', -520, 7] },
+        out: { text: ['58vw', '30vh', 240, 9],    shot: ['30vw', '-56vh', 300, -7] } },
+      { in: { text: ['38vw', '38vh', -200, 5],    shot: ['-40vw', '-30vh', -600, -8] },
+        out: { text: ['-56vw', '26vh', 280, -6],  shot: ['48vw', '34vh', 200, 8] } },
+    ];
+
+    stageSlides.forEach((slide, n) => {
+      const t = TRAJ[n % TRAJ.length];
+      for (const part of ['text', 'shot']) {
+        const el = slide.querySelector('.pair__' + part);
+        if (!el) continue;
+        const [ix, iy, iz, ir] = t.in[part];
+        const [ox, oy, oz, or_] = t.out[part];
+        el.style.setProperty('--ix', ix); el.style.setProperty('--iy', iy);
+        el.style.setProperty('--iz', iz + 'px'); el.style.setProperty('--ir', ir + 'deg');
+        el.style.setProperty('--ox', ox); el.style.setProperty('--oy', oy);
+        el.style.setProperty('--oz', oz + 'px'); el.style.setProperty('--or', or_ + 'deg');
+      }
+    });
 
     const pick = () => {
       if (flat.matches) return;
@@ -5240,9 +5346,17 @@ p { margin: 18px 0 0; max-width: 62ch; }
       // а не на промежутки между ними.
       const next = Math.min(stageSlides.length - 1, Math.floor(progress * stageSlides.length));
       if (next === shown) return;
-      stageSlides[shown].classList.remove('is-on');
+      // Уходящий слайд помечается отдельно: пока держится `is-leaving`, текст и
+      // снимок улетают по СВОЕЙ траектории. Без этой пометки они просто гасли бы
+      // на месте, и половина режиссуры пропадала.
+      const leaving = stageSlides[shown];
+      leaving.classList.remove('is-on');
+      leaving.classList.add('is-leaving');
+      clearTimeout(leaving.dataset.timer);
+      leaving.dataset.timer = setTimeout(() => leaving.classList.remove('is-leaving'), 1200);
       stageDots[shown].removeAttribute('aria-current');
       shown = next;
+      stageSlides[shown].classList.remove('is-leaving');
       stageSlides[shown].classList.add('is-on');
       stageDots[shown].setAttribute('aria-current', 'true');
       stageHint.classList.toggle('is-gone', shown > 0);

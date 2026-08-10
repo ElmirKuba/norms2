@@ -7,6 +7,10 @@ import { ROLE_REPOSITORY } from '../adapters/role-repository.port';
 import type { RoleRepositoryPort } from '../adapters/role-repository.port';
 import { ROLE_ADMIN, ROLE_USER, ROLES_SEED } from './roles.seed';
 import type { Env } from '../../../system/config/env.schema';
+import {
+  AUDIT_ACTIONS,
+  AuditDomainService,
+} from '../../audit/domain-services/audit.domain-service';
 
 /**
  * Сид ролей и назначение администраторов (2.9.3·2).
@@ -36,11 +40,13 @@ export class RoleSeedService implements OnApplicationBootstrap {
    * @param _roleRepository Порт репозитория ролей.
    * @param _accountRepository Порт репозитория аккаунтов (поиск по логину).
    * @param _configService Конфиг (`ADMIN_LOGINS`).
+   * @param _audit Журнал действий (2.9.3·6).
    */
   public constructor(
     @Inject(ROLE_REPOSITORY) private readonly _roleRepository: RoleRepositoryPort,
     @Inject(ACCOUNT_REPOSITORY) private readonly _accountRepository: AccountRepositoryPort,
     private readonly _configService: ConfigService<Env, true>,
+    private readonly _audit: AuditDomainService,
   ) {}
 
   /**
@@ -72,6 +78,15 @@ export class RoleSeedService implements OnApplicationBootstrap {
     }
     if (accountIds.length > 0) {
       this._logger.log(`Базовая роль выдана аккаунтам: ${accountIds.length}`);
+      // Одной записью на прогон, а не строкой на аккаунт: это разовая догонялка для тех, кто
+      // зарегистрировался до появления ролей, и двадцать одинаковых строк только забьют журнал.
+      await this._audit.record({
+        action: AUDIT_ACTIONS.ROLE_BACKFILLED,
+        targetType: 'role',
+        targetId: ROLE_USER,
+        targetLabel: ROLE_USER,
+        details: { count: accountIds.length },
+      });
     }
   }
 
@@ -98,6 +113,15 @@ export class RoleSeedService implements OnApplicationBootstrap {
       const granted = await this._roleRepository.grant(account.id, role.id);
       if (granted) {
         this._logger.log(`Роль администратора выдана: '${login}'.`);
+        // Только когда роль ДЕЙСТВИТЕЛЬНО выдана: сид отрабатывает при каждом старте, и без
+        // этой проверки журнал получал бы одну и ту же запись на каждый деплой.
+        await this._audit.record({
+          action: AUDIT_ACTIONS.ROLE_GRANTED,
+          targetType: 'account',
+          targetId: account.id,
+          targetLabel: account.login,
+          details: { role: ROLE_ADMIN, source: 'ADMIN_LOGINS' },
+        });
       }
     }
   }

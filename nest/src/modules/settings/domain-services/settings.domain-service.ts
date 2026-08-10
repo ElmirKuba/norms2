@@ -4,6 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { SETTINGS_REPOSITORY } from '../adapters/settings-repository.port';
 import type { SettingsRepositoryPort } from '../adapters/settings-repository.port';
 import type { Env } from '../../../system/config/env.schema';
+import {
+  AUDIT_ACTIONS,
+  AuditDomainService,
+} from '../../audit/domain-services/audit.domain-service';
 
 /** Ключ настройки «бот на паузе» (2.9.3·4). */
 export const SETTING_TELEGRAM_BOT_PAUSED = 'telegram.bot.paused';
@@ -30,10 +34,13 @@ export class SettingsDomainService implements OnApplicationBootstrap {
 
   /**
    * @param _repository Порт репозитория настроек.
+   * @param configService Конфиг: значения по умолчанию.
+   * @param _audit Журнал действий (2.9.3·6).
    */
   public constructor(
     @Inject(SETTINGS_REPOSITORY) private readonly _repository: SettingsRepositoryPort,
     configService: ConfigService<Env, true>,
+    private readonly _audit: AuditDomainService,
   ) {
     // `.env` — значение по умолчанию; строка в базе его перекрывает (2.9.3·4).
     this.registerDefault(
@@ -93,8 +100,20 @@ export class SettingsDomainService implements OnApplicationBootstrap {
   public async setBoolean(key: string, value: boolean, updatedBy: string | null): Promise<void> {
     const normalized = key.toLowerCase();
     const asText = value ? 'true' : 'false';
+    const previous = this.getBoolean(normalized);
     await this._repository.upsert(normalized, asText, updatedBy);
     this._cache.set(normalized, asText);
     this._logger.log(`Настройка '${normalized}' = ${asText}`);
+    // Журнал пишется ПОСЛЕ успешной записи: строка о том, чего не произошло, хуже её отсутствия.
+    // Прежнее значение — не для красоты: «включил паузу» и «переключил уже включённую» это
+    // разные события, и по журналу они должны различаться (2.9.3·6).
+    await this._audit.record({
+      action: AUDIT_ACTIONS.SETTING_CHANGED,
+      actorAccountId: updatedBy,
+      targetType: 'setting',
+      targetId: normalized,
+      targetLabel: normalized,
+      details: { from: previous ? 'true' : 'false', to: asText },
+    });
   }
 }

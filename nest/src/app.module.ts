@@ -6,6 +6,7 @@ import { SharedModule } from './shared/shared.module';
 import { DatabaseModule } from './database/client/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InvitesModule } from './modules/invites/invites.module';
@@ -34,6 +35,8 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
     LoggingModule,
     SharedModule,
     DatabaseModule,
+    // Журнал раньше настроек: настройки пишут в него, обратной зависимости нет.
+    AuditModule,
     SettingsModule,
     HealthModule,
     AccountModule,

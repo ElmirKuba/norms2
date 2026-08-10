@@ -207,6 +207,14 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 
 /* ═══ 5. ЧЕГО ЗДЕСЬ НЕТ — список отказов ════════════════════════════════ */
+/* Список тезисов. Раньше класс `.list` стоял в разметке, но стиля под него не было —
+   три блока рисовались браузерными точками. Маркер-черта вместо точки: точка спорит с
+   моноширинными метками, которыми набран весь служебный текст страницы. */
+.list { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 14px; max-width: 62ch; }
+.list li { position: relative; padding-left: 22px; color: var(--color-text-muted); font-size: 16px; line-height: 1.6; }
+.list li::before { content: ""; position: absolute; left: 0; top: .72em; width: 10px; height: 1px; background: var(--color-accent); }
+.list b { color: var(--color-text); font-weight: 500; }
+
 .nope { list-style: none; padding: 0; margin: 34px 0 0; display: grid; gap: 2px; }
 .nope li { display: flex; gap: 16px; align-items: baseline; padding: 15px 0; border-top: 1px solid var(--color-border); }
 .nope li:last-child { border-bottom: 1px solid var(--color-border); }
@@ -271,6 +279,121 @@ p { margin: 18px 0 0; max-width: 62ch; }
   .rise, .js .rise { opacity: 1 !important; translate: none !important; transition: none !important; }
   .btn, .tt { transition: none; }
 }
+
+/* ═══ ПРЕЗЕНТАЦИЯ: СЛАЙДЫ ПО КОЛЕСУ ══════════════════════════════════════
+   Реш. Elmir (настаивал многократно, сделано 10.08.2026): страница — не
+   лента, а презентация. Один жест колеса = один экран, каждый блок ровно во
+   весь вьюпорт. Механика перенесена из полигона ~/coding/landing-lab/4.
+
+   Сцена: камера смотрит сквозь стопку слайдов, расставленных по глубине.
+   Прокрутка не двигает блоки вбок — она двигает зрителя вперёд. */
+html, body { height: 100%; }
+body { overflow: hidden; }
+/* Шапка выведена из потока: колода занимает вьюпорт целиком, и sticky-элемент
+   внутри него отъедал бы высоту у каждого слайда. */
+.bar { position: fixed; top: 0; left: 0; right: 0; }
+.deck { position: fixed; inset: 0; perspective: 1500px; transform-style: preserve-3d; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: grid; align-content: center;
+  padding: clamp(88px, 13vh, 132px) var(--gutter) clamp(72px, 10vh, 104px);
+  /* Слайд, который не помещается (длинный список на низком экране), прокручивается
+     внутри себя. Читаемость важнее чистоты жеста. */
+  overflow-y: auto; overscroll-behavior: contain;
+  transform-style: preserve-3d;
+  transform: translateZ(-1500px);
+  opacity: 0; visibility: hidden; filter: blur(6px);
+  transition: transform 1.2s cubic-bezier(.32,.58,.2,1), opacity .8s ease,
+              filter .9s ease, visibility 1.2s;
+}
+.slide.is-active { transform: none; opacity: 1; visibility: visible; filter: none; }
+.slide.is-leaving { visibility: visible; opacity: 0; }
+.slide.is-past { transform: translateZ(900px); opacity: 0; visibility: visible; filter: blur(10px); }
+
+/* Внутри слайда пара «текст ↔ экран» перестроена под полный экран: снимок —
+   главный герой, текст его поясняет. В ленте пропорции были другие. */
+.slide .pair { margin-top: 0 !important; gap: clamp(24px, 3.5vw, 56px); }
+@media (min-width: 1040px) {
+  .slide .pair { grid-template-columns: minmax(260px, .82fr) minmax(0, 1.55fr); }
+  .slide .pair--flip { grid-template-columns: minmax(0, 1.55fr) minmax(260px, .82fr); }
+}
+/* На слайде экран не наклонён: карта была приёмом ленты, здесь снимок и так
+   один на весь экран, а наклон мешал бы читать. */
+.slide .pair .shot, .slide .pair--flip .shot { rotate: none; }
+
+/* Текст и экран прилетают по СВОИМ траекториям (значения ставит JS): одинаковый
+   обмен местами читался бы как механика, разные дуги — как режиссура. */
+.pair__text { --depth: 80px; }
+.pair__shot { --depth: -50px; }
+.slide .pair__text, .slide .pair__shot {
+  opacity: 0;
+  transform: translate3d(var(--ix, 0), var(--iy, 0), var(--iz, 0)) rotate(var(--ir, 0deg));
+  transition: transform 1.1s cubic-bezier(.26,.62,.2,1), opacity .75s ease;
+}
+.slide.is-active .pair__text, .slide.is-active .pair__shot {
+  transform: translate3d(0, 0, var(--depth)) rotate(0deg); opacity: 1;
+}
+.slide.is-active .pair__text { transition-delay: .14s; }
+.slide.is-active .pair__shot { transition-delay: .24s; }
+.slide.is-leaving .pair__text, .slide.is-leaving .pair__shot {
+  transform: translate3d(var(--ox, 0), var(--oy, 0), var(--oz, 0)) rotate(var(--or, 0deg));
+  opacity: 0;
+}
+
+/* ── навигация ──────────────────────────────────────────────────────── */
+.dots {
+  position: fixed; right: clamp(10px, 2vw, 26px); top: 50%; transform: translateY(-50%);
+  display: grid; gap: 10px; z-index: 60;
+}
+.dots button {
+  width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: var(--color-border); transition: background .25s ease, transform .25s ease;
+}
+.dots button[aria-current="true"] { background: var(--color-accent); transform: scale(1.4); }
+.counter {
+  position: fixed; left: var(--gutter); bottom: 20px; z-index: 60;
+  font: 400 12px/1 var(--font-mono); color: var(--color-text-muted);
+}
+.hint {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 10px;
+  font: 400 12px/1 var(--font-mono); color: var(--color-text-muted);
+  transition: opacity .4s ease;
+}
+.hint.is-gone { opacity: 0; pointer-events: none; }
+.wheel { width: 18px; height: 28px; border: 1px solid var(--color-border); border-radius: 10px; position: relative; }
+.wheel::after {
+  content: ""; position: absolute; left: 50%; top: 6px; width: 3px; height: 6px; border-radius: 2px;
+  background: var(--color-accent); transform: translateX(-50%); animation: roll 1.8s ease-in-out infinite;
+}
+@keyframes roll { 0%,100% { top: 6px; opacity: 1 } 50% { top: 15px; opacity: .35 } }
+
+/* Подвал больше не отдельный блок — он ужат в подпись последнего слайда. */
+.slide .foot { padding: 28px 0 0; margin-top: 26px; }
+
+/* Телефоны лесенкой: в ленте ступеньки в 44 и 88 пикселей читались как приём, на
+   слайде они просто не дают трём макетам поместиться по высоте. Уменьшены вдвое,
+   заголовок блока прижат к макетам. */
+.slide .phones { margin-top: clamp(20px, 3vh, 34px); }
+@media (min-width: 760px) {
+  .slide .phone:nth-child(2) { margin-top: 22px; }
+  .slide .phone:nth-child(3) { margin-top: 44px; }
+}
+.slide .narrow[style] { margin-top: 0 !important; }
+
+@media (max-width: 860px) {
+  .hint { display: none; }
+  .dots { gap: 7px; right: 8px; }
+  .dots button { width: 7px; height: 7px; }
+  .slide { padding-top: clamp(76px, 11vh, 104px); align-content: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide, .slide .pair__text, .slide .pair__shot { transition: none; filter: none; transform: none; }
+  .slide.is-past { transform: none; }
+  .wheel::after { animation: none; }
+}
+
 </style>
 </head>
 <body>
@@ -283,8 +406,9 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </span>
 </header>
 
-<!-- ═══ 1. ТИТУЛ ═══ -->
-<section class="hero">
+<!-- Колода: каждый блок — отдельный экран, один жест колеса = один слайд. -->
+<div class="deck" id="deck">
+<section class="slide hero is-active" aria-label="Титул">
   <div class="wrap hero__grid">
     <div>
       <p class="hero__meta">Обновление 2.9.2 · «Акцент» целиком</p>
@@ -1232,8 +1356,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 2. ПРОБЛЕМА — типографический разворот, без единой картинки ═══ -->
-<section class="tile-alt">
+<section class="slide tile-alt" aria-label="Проблема">
   <div class="wrap narrow rise">
     <p class="eyebrow">почему предыдущие не сработали</p>
     <h2>Трекер выталкивает ровно тогда, когда нужнее всего.</h2>
@@ -1243,9 +1366,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-
-<!-- ═══ ОБЕЩАНИЕ: вычитание, а не сложение (блок 3 сценария) ═══ -->
-<section>
+<section class="slide" aria-label="Обещание">
   <div class="wrap narrow rise">
     <p class="eyebrow">на чём это держится</p>
     <h2>Отказываться от лишнего ради важного. Не успевать больше.</h2>
@@ -1258,8 +1379,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 3. ВЕСЬ «АКЦЕНТ» ЦЕЛИКОМ ═══ -->
-<section id="accent">
+<section class="slide" id="accent" aria-label="Что внутри">
   <div class="wrap">
     <div class="narrow rise">
       <p class="eyebrow">что внутри</p>
@@ -1267,6 +1387,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
       <p class="lead">Это первый раз, когда «Акцент» показан целиком.</p>
     </div>
 
+  </div>
+</section>
+
+<section class="slide" aria-label="День">
+  <div class="wrap">
     <div class="pair rise" style="margin-top: clamp(48px, 7vh, 88px)">
       <div class="pair__text">
         <p class="eyebrow">день</p>
@@ -1710,7 +1835,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide" aria-label="Привычки">
+  <div class="wrap">
     <div class="pair pair--flip rise">
       <div class="pair__text">
         <p class="eyebrow">привычки</p>
@@ -2096,7 +2225,25 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide tile-alt" aria-label="Минимум на плохой день">
+  <div class="wrap narrow rise">
+    <p class="eyebrow">минимум на плохой день</p>
+    <h2>«Минимум — не успех и не провал, а „удержался“.»</h2>
+    <p class="lead">Сквозной механизм, он есть и у привычек, и у целей. Раньше это была фраза, которую читаешь. Теперь — кнопка.</p>
+    <ul class="list">
+      <li><b>Тап, таймер, день засчитан частично.</b> На карточке дня так и написано: «Минимум сегодня: 1 отжимание».</li>
+      <li><b>Серия не рвётся, планка не двигается.</b> Минимум не двигает вас ни вверх, ни вниз — он удерживает.</li>
+      <li><b>У целей в процент не идёт — и так задумано.</b> Выйти на улицу это не километры пробежки, подкручивать прогресс было бы враньём. Смысл в другом: не разорвать связь с целью в день, когда сил нет.</li>
+      <li><b>Передумали — ничего не записалось.</b> Отмена таймера не оставляет следа.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" aria-label="Микро-победы">
+  <div class="wrap">
     <div class="pair rise">
       <div class="pair__text">
         <p class="eyebrow">микро-победы</p>
@@ -2500,7 +2647,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide" aria-label="Цели">
+  <div class="wrap">
     <div class="pair pair--flip rise">
       <div class="pair__text">
         <p class="eyebrow">цели</p>
@@ -2863,7 +3014,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide" aria-label="«Держусь»">
+  <div class="wrap">
     <div class="pair rise">
       <div class="pair__text">
         <p class="eyebrow">держусь</p>
@@ -3164,7 +3319,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide" aria-label="Препятствия">
+  <div class="wrap">
     <div class="pair pair--flip rise">
       <div class="pair__text">
         <p class="eyebrow">препятствия</p>
@@ -3287,7 +3446,11 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide" aria-label="Доказательство движения">
+  <div class="wrap">
     <div class="pair rise">
       <div class="pair__text">
         <p class="eyebrow">оно движется?</p>
@@ -3792,8 +3955,25 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide tile-alt" aria-label="Пропуск">
+  <div class="wrap narrow rise">
+    <p class="eyebrow">пропуск</p>
+    <h2>«Пропуск ничего не забирает.»</h2>
+    <p class="lead">Здесь нет классической серии, которая обнуляется. Она эффективна ровно до первого срыва, а потом выталкивает — и приложение удаляется.</p>
+    <ul class="list">
+      <li><b>«37 дней с действием» не падает никогда.</b> Это весь ваш путь, и отнять его пропуском нельзя.</li>
+      <li><b>«5 из последних 7» может опускаться</b> — и восстанавливается само, без просьб и напоминаний.</li>
+      <li><b>Возвращение важнее непрерывности.</b> Повторные возвращения награды не дают, но показываются честно: «возвращался 3 раза».</li>
+      <li><b>Счётчиков позора нет.</b> Дни без отметок — просто «не отмечено».</li>
+    </ul>
+  </div>
+</section>
 
+<section class="slide" aria-label="Первый день">
+  <div class="wrap">
     <div class="pair pair--flip rise">
       <div class="pair__text">
         <p class="eyebrow">первый день</p>
@@ -3999,7 +4179,24 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </div></div></div></div>
     </div>
+  </div>
+</section>
 
+<section class="slide tile-alt" aria-label="Примеры вместо пустоты">
+  <div class="wrap narrow rise">
+    <p class="eyebrow">первый экран любого раздела</p>
+    <h2>Пустой раздел встречает примерами, а не пустотой.</h2>
+    <p class="lead">Приём работает одинаково во всех пяти опорах. У препятствий примеров шестнадцать — по два на вид помехи, с уже написанными ответами.</p>
+    <ul class="list">
+      <li><b>Пример помечен бейджем и не считается вашим</b> — пока вы не нажмёте «Добавить себе» либо не сделаете или не измените его.</li>
+      <li><b>«Очистить примеры» убирает непринятые.</b> Ваше не трогает.</li>
+      <li><b>Набор берёте сами.</b> Пустой экран не должен выглядеть как проваленный, но и навязывать нам нечего.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" aria-label="В кармане">
+  <div class="wrap">
     <!-- финал блока: телефоны лесенкой — адаптивность показана, а не заявлена -->
     <div class="narrow rise" style="margin-top: clamp(64px, 9vh, 116px)">
       <p class="eyebrow">и всё это в кармане</p>
@@ -4826,8 +5023,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 4. ИНСТРУМЕНТ, А НЕ ВОЛШЕБСТВО ═══ -->
-<section class="tile-alt">
+<section class="slide tile-alt" aria-label="Инструмент">
   <div class="wrap narrow rise">
     <p class="eyebrow">честно, до того как вы решите</p>
     <h2>Это инструмент. Делать придётся вам.</h2>
@@ -4837,9 +5033,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-
-<!-- ═══ ЧЕСТНОСТЬ ИНТЕРФЕЙСА (блок 9 сценария) ═══ -->
-<section>
+<section class="slide" aria-label="Честность интерфейса">
   <div class="wrap narrow rise">
     <p class="eyebrow">мелочи, по которым видно отношение</p>
     <h2>Ничего нельзя потерять по случайности.</h2>
@@ -4852,8 +5046,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 5. ЧЕГО ЗДЕСЬ НЕТ ═══ -->
-<section>
+<section class="slide" aria-label="Чего здесь нет">
   <div class="wrap narrow rise">
     <p class="eyebrow">чего здесь нет и не будет</p>
     <h2>Продукт проще описать тем, от чего он отказался.</h2>
@@ -4868,8 +5061,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 6. ЧТО МЫ О ВАС ЗНАЕМ — матовое стекло ═══ -->
-<section class="tile-alt glass-wrap">
+<section class="slide tile-alt glass-wrap" aria-label="Приватность">
   <span class="blob blob--a" aria-hidden="true"></span>
   <span class="blob blob--b" aria-hidden="true"></span>
   <div class="wrap narrow rise">
@@ -4890,8 +5082,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 7. КТО ЭТО ДЕЛАЕТ ═══ -->
-<section>
+<section class="slide" aria-label="Кто за этим стоит">
   <div class="wrap narrow rise">
     <p class="eyebrow">кто за этим стоит</p>
     <h2>Один человек и ИИ, который регулярно ошибается.</h2>
@@ -4907,8 +5098,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 8. БЕСПЛАТНО И ОТКРЫТО ═══ -->
-<section class="tile-alt">
+<section class="slide tile-alt" aria-label="Сколько стоит">
   <div class="wrap narrow rise">
     <p class="eyebrow">сколько стоит</p>
     <h2>Нисколько. И код открыт.</h2>
@@ -4925,8 +5115,20 @@ p { margin: 18px 0 0; max-width: 62ch; }
   </div>
 </section>
 
-<!-- ═══ 9. КАК ПОПАСТЬ ═══ -->
-<section id="enter">
+<section class="slide" aria-label="Кто кого позвал">
+  <div class="wrap narrow rise">
+    <p class="eyebrow">кто кого позвал</p>
+    <h2>«Порядок держат сами свои.»</h2>
+    <p class="lead">Каждый зовёт своих и видит дерево тех, кого привёл. За своё поддерево отвечаете вы — это не фигура речи, а то, как устроена модерация.</p>
+    <ul class="list">
+      <li><b>Приглашение уходит ссылкой.</b> Открывший попадёт на тёплый экран «Вас пригласили!», код подставится сам.</li>
+      <li><b>Заблокировать можно только в пределах своей ветки.</b> Никакой глобальной полиции: кто позвал, тот и отвечает.</li>
+      <li><b>Дерево видно целиком</b> — и вверх, кто позвал вас, и вниз, кого позвали вы.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" id="enter" aria-label="Вход">
   <div class="wrap narrow rise">
     <p class="eyebrow">вход</p>
     <h2>Площадка закрытая. Снаружи не зарегистрироваться.</h2>
@@ -4949,9 +5151,7 @@ p { margin: 18px 0 0; max-width: 62ch; }
     </div>
     <p class="fine">Заявка одна на чат: пока прежняя не закрыта, новую подать нельзя.</p>
   </div>
-</section>
-
-<footer class="foot">
+  <div class="wrap foot">
   <div class="wrap foot__row">
     <small>Нормисы · v2.9.2</small>
     <small><a href="/releases">Все выпуски</a></small>
@@ -4959,7 +5159,14 @@ p { margin: 18px 0 0; max-width: 62ch; }
     <small><a href="/terms">Условия</a></small>
     <small>Открытый код · некоммерческий проект</small>
   </div>
-</footer>
+  </div>
+</section>
+
+</div>
+
+<nav class="dots" id="dots" aria-label="Слайды"></nav>
+<div class="counter"><span id="cur">01</span> / 24</div>
+<div class="hint" id="hint"><span class="wheel"></span> одно движение колеса — следующий экран</div>
 
 <script>
 (() => {
@@ -5036,25 +5243,136 @@ p { margin: 18px 0 0; max-width: 62ch; }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   setTimeout(fit, 300);
 
-  /* ── появление блоков ─────────────────────────────────────────────── */
-  const rises = [...document.querySelectorAll('.rise')];
-  const revealAll = () => rises.forEach((el) => el.classList.add('is-in'));
+  /* ── появление блоков ─────────────────────────────────────────────────
+     В ленте это делал IntersectionObserver по прокрутке. В колоде прокрутки
+     страницы нет вовсе, наблюдателю не за чем следить — поэтому показываем
+     всё сразу, а появление берёт на себя сам слайд.
 
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
-    revealAll();
-  } else {
-    const io = new IntersectionObserver((es) => es.forEach((e) => {
-      if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
-    }), { threshold: 0.08 });
-    rises.forEach((el) => io.observe(el));
+     Строка не декоративная: содержимое скрыто через `opacity: 0`, и если её
+     убрать, человек увидит ПУСТУЮ страницу — ровно тот класс отказа, что уже
+     стоил этому проекту пяти заходов. */
+  document.querySelectorAll('.rise').forEach((el) => el.classList.add('is-in'));
 
-    /* СТРАХОВКА, а не украшение. Содержимое скрыто через opacity: 0 и живёт
-       только тем, что наблюдатель его откроет. Если он почему-то не сработает,
-       человек увидит ПУСТУЮ страницу — ровно тот класс отказа, что уже стоил
-       этому проекту пяти заходов. Поэтому через две секунды показываем всё
-       безусловно: анимация — приятность, читаемость — обязательство. */
-    setTimeout(revealAll, 2000);
+  /* ── колода: один жест колеса = один экран ───────────────────────────
+     Реш. Elmir: страница — презентация, а не лента. Механика перенесена из
+     полигона ~/coding/landing-lab/4 и проверена там же. */
+  const slides = [...document.querySelectorAll('.slide')];
+  const dotsBox = document.getElementById('dots');
+  const curBox = document.getElementById('cur');
+  const hint = document.getElementById('hint');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pad = (n) => String(n + 1).padStart(2, '0');
+  let index = 0;
+  let locked = false;
+
+  slides.forEach((slide, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', slide.getAttribute('aria-label') || `Экран ${i + 1}`);
+    b.addEventListener('click', () => go(i));
+    dotsBox.appendChild(b);
+  });
+  const dots = [...dotsBox.children];
+
+  /* Траектории заложены заранее и различаются от слайда к слайду: одинаковый
+     обмен местами читался бы как механика, разные дуги — как режиссура.
+     Формат: [x, y, z, поворот]. */
+  const TRAJ = [
+    { in: { text: [0, '28vh', 0, 0], shot: ['38vw', '6vh', -600, 5] },
+      out: { text: ['-64vw', '-12vh', 300, -6], shot: ['62vw', '16vh', 190, 8] } },
+    { in: { text: ['-52vw', '-9vh', -110, -5], shot: ['48vw', '13vh', -500, 4] },
+      out: { text: ['58vw', '-20vh', 240, 7], shot: ['-64vw', '18vh', 170, -9] } },
+    { in: { text: ['42vw', '-16vh', -240, 6], shot: ['-50vw', '9vh', -560, -4] },
+      out: { text: ['-22vw', '-58vh', 320, -10], shot: ['-60vw', '-14vh', 110, -5] } },
+    { in: { text: ['-18vw', '42vh', -170, 4], shot: ['54vw', '-13vh', -620, -6] },
+      out: { text: ['64vw', '9vh', 260, 5], shot: ['-14vw', '54vh', 220, -8] } },
+  ];
+
+  slides.forEach((slide, n) => {
+    const t = TRAJ[n % TRAJ.length];
+    for (const part of ['text', 'shot']) {
+      const el = slide.querySelector('.pair__' + part);
+      if (!el) continue;
+      const [ix, iy, iz, ir] = t.in[part];
+      const [ox, oy, oz, or_] = t.out[part];
+      el.style.setProperty('--ix', ix); el.style.setProperty('--iy', iy);
+      el.style.setProperty('--iz', iz + 'px'); el.style.setProperty('--ir', ir + 'deg');
+      el.style.setProperty('--ox', ox); el.style.setProperty('--oy', oy);
+      el.style.setProperty('--oz', oz + 'px'); el.style.setProperty('--or', or_ + 'deg');
+    }
+  });
+
+  function go(next) {
+    const i = Math.max(0, Math.min(slides.length - 1, next));
+    if (i === index) return;
+    const leaving = slides[index];
+    index = i;
+    leaving.classList.remove('is-active');
+    leaving.classList.add('is-leaving');
+    setTimeout(() => leaving.classList.remove('is-leaving'), 1200);
+    slides.forEach((el, n) => {
+      el.classList.toggle('is-active', n === index);
+      el.classList.toggle('is-past', n < index && el !== leaving);
+    });
+    slides[index].scrollTop = 0;
+    dots.forEach((d, n) => d.setAttribute('aria-current', String(n === index)));
+    curBox.textContent = pad(index);
+    if (index > 0) hint.classList.add('is-gone');
   }
+  dots[0].setAttribute('aria-current', 'true');
+
+  /* Замок обязателен: тачпад шлёт десятки событий на один жест, без него
+     пролетело бы сразу до конца колоды. */
+  addEventListener('wheel', (e) => {
+    // Длинный слайд прокручивается внутри себя — колесо отдаём ему, пока он не
+    // дочитан до края. Иначе низ такого слайда недостижим в принципе.
+    const slide = slides[index];
+    const inner = slide.scrollHeight - slide.clientHeight > 4;
+    if (inner) {
+      const atTop = slide.scrollTop <= 0;
+      const atEnd = slide.scrollTop + slide.clientHeight >= slide.scrollHeight - 1;
+      if (!(e.deltaY > 0 ? atEnd : atTop)) return;
+    }
+    e.preventDefault();
+    if (locked || Math.abs(e.deltaY) < 8) return;
+    locked = true;
+    go(index + (e.deltaY > 0 ? 1 : -1));
+    setTimeout(() => { locked = false; }, reduce ? 240 : 1400);
+  }, { passive: false });
+
+  addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(index + 1); }
+    if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(index - 1); }
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End') go(slides.length - 1);
+  });
+
+  let y0 = null;
+  addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+  addEventListener('touchend', (e) => {
+    if (y0 === null) return;
+    const dy = y0 - e.changedTouches[0].clientY;
+    const slide = slides[index];
+    const inner = slide.scrollHeight - slide.clientHeight > 4;
+    const atTop = slide.scrollTop <= 0;
+    const atEnd = slide.scrollTop + slide.clientHeight >= slide.scrollHeight - 1;
+    if (Math.abs(dy) > 50 && (!inner || (dy > 0 ? atEnd : atTop))) {
+      go(index + (dy > 0 ? 1 : -1));
+    }
+    y0 = null;
+  }, { passive: true });
+
+  // Якорные ссылки титула («Как сюда попасть», «Что внутри») в колоде должны
+  // переключать слайд, а не прокручивать несуществующую страницу.
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const target = document.querySelector(a.getAttribute('href'));
+      const slide = target && target.closest('.slide');
+      if (!slide) return;
+      e.preventDefault();
+      go(slides.indexOf(slide));
+    });
+  });
 })();
 </script>
 </body>

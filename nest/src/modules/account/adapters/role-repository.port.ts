@@ -45,4 +45,16 @@ export interface RoleRepositoryPort {
    * @returns Идентификаторы аккаунтов.
    */
   accountsWithoutRole(roleId: string): Promise<string[]>;
+
+  /**
+   * Аккаунты с указанной ролью — по её коду (2.9.3·3а).
+   *
+   * По коду, а не по `id`, потому что зовущему известен именно код (`admin`): иначе каждый
+   * вызывающий сначала искал бы роль, а потом её носителей, и забытая проверка на `null`
+   * молча превращалась бы в «админов нет».
+   *
+   * @param code Код роли, регистр не важен.
+   * @returns Идентификаторы аккаунтов.
+   */
+  accountIdsByRoleCode(code: string): Promise<string[]>;
 }

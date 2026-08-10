@@ -93,6 +93,20 @@ export class RoleRepository implements RoleRepositoryPort {
    * @param roleId Роль, которой не хватает.
    * @returns Идентификаторы аккаунтов.
    */
+  /**
+   * Аккаунты с указанной ролью по её коду (2.9.3·3а).
+   * @param code Код роли, регистр не важен.
+   * @returns Идентификаторы аккаунтов.
+   */
+  public async accountIdsByRoleCode(code: string): Promise<string[]> {
+    const rows = await this._database
+      .select({ id: accountRoles.accountId })
+      .from(accountRoles)
+      .innerJoin(roles, eq(roles.id, accountRoles.roleId))
+      .where(sql`lower(${roles.code}) = ${code.toLowerCase()}`);
+    return rows.map((row) => row.id);
+  }
+
   public async accountsWithoutRole(roleId: string): Promise<string[]> {
     const rows = await this._database
       .select({ id: accounts.id })

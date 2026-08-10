@@ -114,7 +114,7 @@ export class HandleTelegramUpdateUseCase {
         this._linkWait.forget(chatId);
       }
     }
-    if (!this._telegramDomainService.isOwner(chatId)) {
+    if (!(await this._telegramDomainService.isAdmin(chatId))) {
       await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
       return;
     }
@@ -167,29 +167,31 @@ export class HandleTelegramUpdateUseCase {
     if (data === undefined) {
       return;
     }
-    const isOwner = this._telegramDomainService.isOwner(chatId);
+    // Права спрашиваются один раз на апдейт: ниже они проверяются у каждой ветки, а ходить
+    // в базу по разу на ветку незачем. Внутри одного апдейта роль измениться не может.
+    const isAdmin = await this._telegramDomainService.isAdmin(chatId);
     const separator = data.indexOf(':');
     const prefix = separator === -1 ? data : data.slice(0, separator);
     const payload = separator === -1 ? '' : data.slice(separator + 1);
 
     // Кнопки владельца исполняются только из его чата. Для чужих их как бы нет.
-    if (isOwner && (prefix === 'q' || prefix === 'h')) {
+    if (isAdmin && (prefix === 'q' || prefix === 'h')) {
       await this._ownerActions.showQueue(chatId, Number(payload) || 0, prefix === 'h');
       return;
     }
-    if (isOwner && prefix === 'c') {
+    if (isAdmin && prefix === 'c') {
       await this._ownerActions.showCard(chatId, payload);
       return;
     }
-    if (isOwner && prefix === 'menu') {
+    if (isAdmin && prefix === 'menu') {
       await this._ownerActions.sendMenu(chatId);
       return;
     }
-    if (isOwner && prefix === 'cancel') {
+    if (isAdmin && prefix === 'cancel') {
       await this._ownerActions.cancelPending(chatId);
       return;
     }
-    if (isOwner && (prefix === 'ok' || prefix === 'no')) {
+    if (isAdmin && (prefix === 'ok' || prefix === 'no')) {
       await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
       return;
     }
@@ -200,7 +202,7 @@ export class HandleTelegramUpdateUseCase {
     }
     // Номинал начисления зашит в сам префикс кнопки (`g1` / `g3` / `g5`): в `callback_data`
     // остаётся 12 символов сверх идентификатора заявки, отдельного поля туда не положить.
-    if (isOwner && GRANT_PREFIXES.has(prefix)) {
+    if (isAdmin && GRANT_PREFIXES.has(prefix)) {
       await this._ownerActions.askGrantReason(chatId, Number(prefix.slice(1)), payload);
       return;
     }

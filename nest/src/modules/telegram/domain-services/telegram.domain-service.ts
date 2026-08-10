@@ -1,13 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
+import { ADMIN_AUDIENCE } from '../adapters/admin-audience.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
 import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
+import type { AdminAudiencePort } from '../adapters/admin-audience.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RequestDraftStore } from './request-draft.store';
 import { INVITES_NOTICE, PRIVACY_NOTICE, QUESTIONS, validateAnswer } from './request-dialog.util';
-import type { Env } from '../../../system/config/env.schema';
 import type { TelegramRequestType } from '../interfaces/telegram-request-pure.interface';
 
 /**
@@ -141,37 +141,33 @@ const REPLY = {
 @Injectable()
 export class TelegramDomainService {
   private readonly _logger = new Logger('Telegram');
-  private readonly _ownerChatId: string;
 
   /**
    * @param _repository Порт репозитория заявок.
    * @param _api Исходящий порт Bot API.
    * @param _drafts Черновики анкет (в памяти процесса).
-   * @param configService Конфиг (чат владельца).
+   * @param _audience Порт «кто здесь админ» (2.9.3·3а).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     private readonly _drafts: RequestDraftStore,
-    configService: ConfigService<Env, true>,
-  ) {
-    this._ownerChatId = configService.get('TELEGRAM_OWNER_CHAT_ID', { infer: true });
-  }
-
-  /** Чат владельца из конфига (пусто — владелец не настроен). */
-  public get ownerChatId(): string {
-    return this._ownerChatId;
-  }
+    @Inject(ADMIN_AUDIENCE) private readonly _audience: AdminAudiencePort,
+  ) {}
 
   /**
-   * Владелец ли пишет. Проверяется **до разбора команды**: бот умеет выдавать приглашения, и
-   * если сверять автора после разбора, любой, кто дотянется до вебхука, выдаст их себе
+   * Админ ли пишет. Проверяется **до разбора команды**: бот умеет выдавать приглашения, и если
+   * сверять автора после разбора, любой, кто дотянется до вебхука, выдаст их себе
    * ([ADR-0064 §2a](../../../../docs/decisions/0064-telegram-release-channel.md)).
+   *
+   * **Права берутся у аккаунта, а не из конфига** (2.9.3·3а): `TELEGRAM_OWNER_CHAT_ID` убран
+   * совсем — переменная, которая ничего не решает, но выглядит как рычаг, опаснее её отсутствия.
+   *
    * @param chatId Чат.
-   * @returns Признак владельца.
+   * @returns Признак админа.
    */
-  public isOwner(chatId: string): boolean {
-    return this._ownerChatId !== '' && chatId === this._ownerChatId;
+  public async isAdmin(chatId: string): Promise<boolean> {
+    return this._audience.isAdminChat(chatId);
   }
 
   /**
@@ -453,19 +449,29 @@ export class TelegramDomainService {
       return false;
     }
 
-    const messageId =
-      this._ownerChatId === ''
-        ? null
-        : await this._api.sendMessage(this._ownerChatId, cardText, buttons(id));
+    // Карточка уходит ВСЕМ админам, привязавшим Telegram (2.9.3·3а), а не в один чат из
+    // конфига: админов может быть несколько, и заявка не должна зависеть от того, смотрит ли
+    // сейчас в бот конкретный человек. Пустой список — админов с привязкой нет; это штатное
+    // состояние (аварийного люка мы не делали), но заявку тогда некому показать.
+    const adminChatIds = await this._audience.adminChatIds();
+    let messageId: number | null = null;
+    for (const adminChatId of adminChatIds) {
+      const sent = await this._api.sendMessage(adminChatId, cardText, buttons(id));
+      // Запоминается id ПЕРВОЙ удавшейся доставки: колонка одна, и по ней потом правится
+      // карточка после решения. У остальных админов карточка останется в исходном виде —
+      // цена принята, вариант «колонка на каждого админа» не стоит своей сложности при трёх
+      // людях. Записано хвостом.
+      messageId ??= sent;
+    }
 
     if (messageId === null) {
       await this._repository.decideIfPending(id, {
         status: 'expired',
-        decisionReason: 'Не доставлено владельцу',
+        decisionReason: 'Не доставлено администратору',
         inviteCodeId: null,
         grantedAmount: null,
       });
-      this._logger.warn(`Заявка ${id} не доставлена владельцу — помечена протухшей.`);
+      this._logger.warn(`Заявка ${id} не доставлена администратору — помечена протухшей.`);
       await this._api.sendMessage(
         chatId,
         'Не получилось отправить заявку — попробуй ещё раз чуть позже: /start',

@@ -302,6 +302,15 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 /* Внутри презентации карточка не наклонена: снимок и так один на весь экран. */
 .stage__slide .shot { rotate: none !important; }
+/* Низкий экран (ноутбук 900px и ниже): текст рядом со снимком не помещался и
+   молча обрезался прикреплённым экраном. Ужимаем типографику самого блока, а не
+   режем содержание. */
+@media (max-height: 940px) {
+  .stage__slide { padding-block: clamp(56px, 8vh, 88px) clamp(36px, 5vh, 64px); }
+  .stage__slide h3 { font-size: clamp(18px, 1.9vw, 23px); }
+  .stage__slide .pair__text p { margin-top: 12px; font-size: 15.5px; }
+  .stage__slide .pair__note { margin-top: 10px; font-size: 12.5px; }
+}
 
 .stage__nav {
   position: absolute; right: clamp(10px, 2vw, 24px); top: 50%; translate: 0 -50%;
@@ -319,9 +328,16 @@ p { margin: 18px 0 0; max-width: 62ch; }
 }
 .stage__hint.is-gone { opacity: 0; }
 
-/* Без движения страница обязана оставаться понятной (требование скилла
-   landing-page): блок распрямляется в обычную ленту слайдов друг под другом. */
-@media (prefers-reduced-motion: reduce) {
+/* Блок распрямляется в обычную ленту слайдов друг под другом в двух случаях.
+
+   1. **Движение отключено человеком** — страница обязана оставаться понятной без
+      единого движения (требование скилла landing-page).
+   2. **Узкий экран.** На телефоне пара «текст ↔ экран» встаёт в одну колонку, и
+      вместе они выше вьюпорта в полтора-два раза. Прикреплённый экран тогда не
+      показывает слайд, а обрезает его сверху и снизу — поймано Elmir на 15 Pro.
+      Полноэкранная презентация требует широкого экрана; на узком честнее её не
+      делать вовсе, чем делать нечитаемой. */
+@media (prefers-reduced-motion: reduce), (max-width: 900px) {
   .stage { height: auto; }
   .stage__pin { position: static; height: auto; overflow: visible; }
   .stage__slide {
@@ -5104,7 +5120,9 @@ p { margin: 18px 0 0; max-width: 62ch; }
       <p><strong>Гарантий нет ни там, ни там.</strong> Заявку могут отклонить — и это нормально: место маленькое и ламповое, а не сервис с воронкой регистрации. Отказ придёт с причиной, в тот же чат. К сожалению, обещать что-то заранее мы не можем.</p>
     </div>
     <div class="cta">
-      <a class="btn" href="https://t.me/normis_2_0_bot" target="_blank" rel="noopener">Написать боту →</a>
+      <!-- Имя бота — @norms2_bot (E1, id 8644505825). Проверять по плану, а НЕ придумывать:
+           здесь стоял выдуманный `normis_2_0_bot`, и кнопка вела в чужой чат. -->
+      <a class="btn" href="https://t.me/norms2_bot" target="_blank" rel="noopener">Написать боту →</a>
     </div>
     <p class="fine">Заявка одна на чат: пока прежняя не закрыта, новую подать нельзя.</p>
   </div>
@@ -5208,7 +5226,12 @@ p { margin: 18px 0 0; max-width: 62ch; }
     const stageHint = document.getElementById('stage-hint');
     let shown = 0;
 
+    // Те же два условия, что распрямляют блок в CSS. Когда он распрямлён, слайды
+    // видны все сразу и переключать нечего.
+    const flat = matchMedia('(prefers-reduced-motion: reduce), (max-width: 900px)');
+
     const pick = () => {
+      if (flat.matches) return;
       const box = stage.getBoundingClientRect();
       const span = stage.offsetHeight - innerHeight;
       if (span <= 0) return;

@@ -309,6 +309,13 @@
       "when": 1786348212109,
       "tag": "0043_minor_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1786362780641,
+      "tag": "0044_tan_randall",
+      "breakpoints": true
     }
   ]
 }

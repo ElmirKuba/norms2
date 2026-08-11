@@ -50,17 +50,17 @@ export class NotificationRepository implements NotificationRepositoryPort {
       .select({
         id: notifications.id,
         kind: notifications.kind,
-        // Заголовок, файл, формат и дата выпуска — свойства ПУБЛИКАЦИИ (ADR-0065), поэтому
-        // берутся из releases. coalesce нужен на два случая сразу: персональные уведомления
-        // публикации не имеют вовсе, а на проде между накатом миграции и стартом этого кода
-        // строки ещё могут жить со старыми колонками.
+        // Заголовок, файл, формат и дата выпуска — свойства ПУБЛИКАЦИИ (ADR-0065), и после
+        // contract-миграции 2.9.2·0 берутся ТОЛЬКО из releases: дублей в notifications больше
+        // нет. `coalesce` остаётся ровно там, где есть вторая правда, — у заголовка: у
+        // персонального уведомления публикации нет вовсе, и заголовок его собственный.
         title: sql<string>`coalesce(${releases.title}, ${notifications.title})`,
         body: notifications.body,
-        contentFile: sql<string | null>`coalesce(${releases.contentFile}, ${notifications.contentFile})`,
-        contentFormat: sql<'md' | 'page'>`coalesce(${releases.contentFormat}, ${notifications.contentFormat})`,
+        contentFile: releases.contentFile,
+        contentFormat: sql<'md' | 'page'>`coalesce(${releases.contentFormat}, 'md')`,
         releaseKey: releases.key,
         createdAt: notifications.createdAt,
-        publishedAt: sql<Date | null>`coalesce(${releases.publishedAt}, ${notifications.publishedAt})`,
+        publishedAt: releases.publishedAt,
         read: sql<boolean>`${notificationReads.id} is not null`,
       })
       .from(notifications)
@@ -76,7 +76,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
       // По дате ВЫПУСКА, а не записи строки: пересев одной ноты не должен выкидывать её
       // наверх колокольчика у всех (2.9.1·15). `id` вторым — детерминированный тайбрейк:
       // в uuidv7___unixmillis время зашито в сам ключ.
-      .orderBy(sql`coalesce(${releases.publishedAt}, ${notifications.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
+      .orderBy(sql`coalesce(${releases.publishedAt}, ${notifications.createdAt}) desc`, desc(notifications.id))
       .limit(LIST_LIMIT);
   }
 
@@ -185,7 +185,9 @@ export class NotificationRepository implements NotificationRepositoryPort {
     const rows = await this._db
       .insert(notifications)
       .values({ id, ...data })
-      .onConflictDoNothing({ target: notifications.key })
+      // `where` тут — предикат ЧАСТИЧНОГО индекса, без него Postgres не поймёт, на какой
+      // конфликт смотреть (индекс `notifications_release_broadcast_unique` частичный).
+      .onConflictDoNothing({ target: notifications.releaseId, where: sql`${notifications.accountId} is null` })
       .returning({ id: notifications.id });
     return rows.length > 0;
   }

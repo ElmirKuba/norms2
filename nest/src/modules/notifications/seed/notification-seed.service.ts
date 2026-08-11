@@ -76,20 +76,15 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           broadcastedAt: null,
         });
 
-        // Затем ДОСТАВКА всем (broadcast). Заголовок и файл здесь дублируются со старыми
-        // колонками намеренно: до contract-миграции на проде может работать прежний код,
-        // который читает их напрямую.
+        // Затем ДОСТАВКА всем (broadcast). После contract-миграции 2.9.2·0 в ней остаются
+        // только поля самой доставки: содержимое релиза живёт в публикации и дублировать его
+        // больше некуда. Идемпотентность держится на «одна рассылка на публикацию».
         await this._notificationRepository.createIfAbsentByKey(generateId(), {
           kind: 'release',
           accountId: null,
           title: note.title,
           body: null,
-          contentFile: note.contentFile,
-          contentFormat: format,
-          key: note.key,
           releaseId: release.id,
-          broadcastedAt: null,
-          publishedAt: note.publishedAt,
         });
 
         // Объявляем ТОЛЬКО что созданное. Накопленная история (десять старых нот) ждёт явной

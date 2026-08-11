@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { check, index, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { releases } from './releases.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
@@ -27,33 +27,24 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
     accountId: fkColumn('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
     title: varchar('title', { length: 200 }).notNull(),
     body: text('body'),
-    contentFile: varchar('content_file', { length: 255 }),
-    // Чем является содержимое (2.9.2·4): 'md' — файл с текстом, 'page' — страница фронта
-    // (лендинг релиза; файла нет, бэк её не хранит). Default 'md' — чтобы существующие ноты
-    // и все будущие патчи получали текстовый формат без единой правки сидера.
-    contentFormat: varchar('content_format', { length: 8 })
-      .$type<NotificationContentFormat>()
-      .notNull()
-      .default('md'),
-    key: varchar('key', { length: 128 }),
     // Ссылка на публикацию (ADR-0065). Каскад — то, ради чего разделение и делалось:
     // удалили релиз → ушли и доставки, и отметки о прочтении, одной командой вместо
     // согласования трёх таблиц и прод-тома вручную.
     releaseId: fkColumn('release_id').references(() => releases.id, { onDelete: 'cascade' }),
-    // Отметка о вещании во внешний канал (2.9.1): null — ещё не объявляли.
-    broadcastedAt: timestamp('broadcasted_at', { withTimezone: true }),
-    // Дата ВЫПУСКА (2.9.1·15), а не записи строки. `created_at` — это момент, когда сидер
-    // положил ноту в базу: он меняется при пересеве и врёт про возраст релиза. Null у
-    // персональных уведомлений — там дата создания и есть дата события.
-    publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [
     index('notifications_account_id_idx').on(table.accountId),
     index('notifications_release_id_idx').on(table.releaseId),
     index('notifications_created_at_idx').on(table.createdAt),
-    uniqueIndex('notifications_key_unique').on(table.key),
+    // Одна broadcast-доставка на публикацию. Раньше идемпотентность сида держалась на
+    // `notifications.key`, но ключ — свойство публикации и уехал в `releases` (2.9.2·0).
+    // Инвариант тот же, выражен там, где он и живёт: у релиза не может быть двух рассылок.
+    // Частичный (`where account_id is null`) — персональных уведомлений про релиз может быть
+    // сколько угодно, и они этому правилу не подчиняются.
+    uniqueIndex('notifications_release_broadcast_unique')
+      .on(table.releaseId)
+      .where(sql`${table.accountId} is null`),
     check('notifications_kind_check', sql`${table.kind} in ('release', 'system', 'personal')`),
-    check('notifications_content_format_check', sql`${table.contentFormat} in ('md', 'page')`),
   ],
 );

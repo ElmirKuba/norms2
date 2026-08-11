@@ -17,20 +17,19 @@ export type NotificationKind = 'release' | 'system' | 'personal';
 export type NotificationContentFormat = 'md' | 'page';
 
 /**
- * NotificationPure — содержательные поля уведомления (ADR-0033), без id/FK/меток.
- * Контент — ИЛИ короткий `body` (персональные/системные), ИЛИ `contentFile` —
- * путь к `.md` относительно content/ (рич-релизы, раздаётся бэком под /content/),
- * ИЛИ страница фронта (`contentFormat = 'page'`, файла и текста нет вовсе).
+ * NotificationPure — содержательные поля **доставки** (ADR-0033), без id/FK/меток.
+ *
+ * После contract-миграции 2.9.2·0 здесь осталось только то, что принадлежит самой доставке:
+ * вид, заголовок и короткий текст персонального уведомления. Всё про содержимое релиза —
+ * файл, формат, дата выпуска, отметка о вещании — живёт в `releases`
+ * ([ADR-0065](../../../../../docs/decisions/0065-release-vs-notification-split.md)) и берётся
+ * оттуда по `releaseId`.
  */
 export interface NotificationPure {
   /** Вид. */
   kind: NotificationKind;
-  /** Заголовок. */
+  /** Заголовок: у персональных свой, у релизных — берётся из публикации. */
   title: string;
-  /** Короткий текст (inline) или null (если рич-контент в файле). */
+  /** Короткий текст (inline) или null, если контент лежит в публикации. */
   body: string | null;
-  /** Путь к `.md` относительно content/ или null (если контент в `body` или это страница). */
-  contentFile: string | null;
-  /** Чем является содержимое: текстом `.md` или страницей фронта. */
-  contentFormat: NotificationContentFormat;
 }

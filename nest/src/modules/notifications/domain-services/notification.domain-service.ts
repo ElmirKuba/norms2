@@ -174,16 +174,8 @@ export class NotificationDomainService {
       accountId: inviterId,
       title: 'Новый участник',
       body: `По вашему коду присоединился @${joinedLogin}`,
-      contentFile: null,
-      // Персональное уведомление — короткий текст в body; страницами они не бывают.
-      contentFormat: 'md',
-      key: null,
       // Не доставка релиза — публикации за этим уведомлением нет.
       releaseId: null,
-      // У персонального уведомления дата создания и есть дата события.
-      publishedAt: null,
-      // Персональные ноты в канал не вещаются — он публичный.
-      broadcastedAt: null,
     });
   }
 
@@ -207,16 +199,8 @@ export class NotificationDomainService {
       accountId,
       title,
       body,
-      contentFile: null,
-      // Персональное уведомление — короткий текст в body; страницами они не бывают.
-      contentFormat: 'md',
-      key: null,
       // Не доставка релиза — публикации за этим уведомлением нет.
       releaseId: null,
-      // У персонального уведомления дата создания и есть дата события.
-      publishedAt: null,
-      // Персональные ноты в канал не вещаются — он публичный.
-      broadcastedAt: null,
     });
   }
 }

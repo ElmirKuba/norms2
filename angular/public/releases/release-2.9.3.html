@@ -183,13 +183,30 @@ p { margin: 18px 0 0; max-width: 62ch; }
 .btn--ghost:hover { background: transparent; border-color: var(--color-accent); color: var(--color-accent); }
 .fine { font: 400 13px/1.5 var(--font-mono); color: var(--color-text-muted); margin-top: 16px; }
 
-/* Коллаж: два экрана внахлёст, второй сдвинут и утоплен. */
+/* Коллаж: два экрана внахлёст, второй сдвинут и утоплен.
+
+   Раньше второй экран прятался ниже 900px, и при сужении окна титул терял половину
+   картинки — приём исчезал ровно там, где страницу чаще всего и открывают
+   (замечено Elmir 11.08.2026). Теперь оба экрана есть **всегда**, они просто мельче:
+   пара внахлёст читается и на узком, а один экран в одиночку выглядит как случайный
+   скриншот. Порог оставлен только для очень узких телефонов, где второй экран
+   превратился бы в нечитаемую полоску. */
 .collage { position: relative; min-width: 0; }
 .collage .shot { border-radius: 14px; overflow: hidden; border: 1px solid var(--color-border); box-shadow: 0 24px 60px rgba(0,0,0,.32); }
-.collage__back { display: none; }
+/* ⚠️ Селекторы намеренно с `.shot`: правило `.shot` объявлено НИЖЕ по файлу и при равной
+   специфичности перебивало бы и `position`, и `width` коллажа. */
+.collage .shot.collage__back { display: none; }
+@media (min-width: 520px) {
+  .collage .shot.collage__back {
+    display: block; position: absolute; right: -3%; top: -11%;
+    width: 60%; opacity: .5; rotate: 2.5deg;
+  }
+  .collage .shot.collage__front { position: relative; width: 92%; }
+}
+/* На широком возвращаем исходные пропорции: места хватает, и задний экран может
+   быть крупнее и заметнее. */
 @media (min-width: 900px) {
-  .collage__back { display: block; position: absolute; right: -4%; top: -13%; width: 62%; opacity: .55; rotate: 2.5deg; }
-  .collage__front { position: relative; width: 92%; }
+  .collage .shot.collage__back { right: -4%; top: -13%; width: 62%; opacity: .55; }
 }
 
 /* ═══ 3. ПАРА «ТЕКСТ ↔ ЭКРАН» ════════════════════════════════════════════

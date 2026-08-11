@@ -111,10 +111,57 @@ p { margin: 18px 0 0; max-width: 62ch; }
 .lead { font-size: clamp(17px, 2vw, 21px); color: var(--color-text-muted); }
 .tile-alt { background: var(--color-surface); }
 
-/* ── появление при прокрутке ─────────────────────────────────────────── */
-.rise { transition: opacity .7s ease, translate .7s cubic-bezier(.2,.7,.3,1); }
-.js .rise { opacity: 0; translate: 0 26px; }
-.js .rise.is-in { opacity: 1; translate: 0 0; }
+/* ── появление при прокрутке ───────────────────────────────────────────
+   Одинаковый сдвиг на 26px во всех блоках читался как «что-то дёрнулось»
+   (реш. Elmir 10.08.2026: «нужны анимации для всего остального контента»).
+   Теперь у блока есть ХАРАКТЕР входа — `data-rise` раздаёт JS по порядку,
+   чтобы соседние секции не приезжали одинаково. */
+.rise {
+  transition: opacity .75s ease, translate .8s cubic-bezier(.2,.7,.3,1),
+              scale .8s cubic-bezier(.2,.7,.3,1), filter .8s ease;
+}
+.js .rise { opacity: 0; }
+.js .rise[data-rise="up"]    { translate: 0 34px; }
+.js .rise[data-rise="left"]  { translate: -44px 0; }
+.js .rise[data-rise="right"] { translate: 44px 0; }
+.js .rise[data-rise="scale"] { scale: .94; }
+.js .rise[data-rise="blur"]  { translate: 0 22px; filter: blur(10px); }
+.js .rise.is-in { opacity: 1; translate: 0 0; scale: 1; filter: none; }
+
+/* Списки и карточки внутри блока проявляются по одному, а не плитой: взгляд
+   успевает пройти по строкам, и блок читается, а не мелькает. */
+.js .rise .list li,
+.js .rise .nope li,
+.js .rise .oops li,
+.js .rise .step {
+  opacity: 0; translate: 0 16px;
+  transition: opacity .5s ease, translate .55s cubic-bezier(.2,.7,.3,1);
+}
+.js .rise.is-in .list li,
+.js .rise.is-in .nope li,
+.js .rise.is-in .oops li,
+.js .rise.is-in .step { opacity: 1; translate: 0 0; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(1), .js .rise.is-in .step:nth-child(1) { transition-delay: .10s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(2), .js .rise.is-in .step:nth-child(2) { transition-delay: .18s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(3), .js .rise.is-in .step:nth-child(3) { transition-delay: .26s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(4) { transition-delay: .34s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(5) { transition-delay: .42s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(6) { transition-delay: .50s; }
+.js .rise.is-in :is(.list, .nope, .oops) li:nth-child(n+7) { transition-delay: .58s; }
+
+/* Коллаж титула живёт по прокрутке: сдвиг задаёт JS переменной, поэтому
+   движение идёт от положения страницы, а не по таймеру. */
+.collage { will-change: transform; translate: 0 calc(var(--par, 0) * 1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .js .rise .list li, .js .rise .nope li, .js .rise .oops li, .js .rise .step {
+    transition: none;
+  }
+  .js .rise, .js .rise .list li, .js .rise .nope li, .js .rise .oops li, .js .rise .step {
+    opacity: 1; translate: none; scale: none; filter: none;
+  }
+  .collage { translate: none; }
+}
 
 /* ═══ 1. ТИТУЛ ═══════════════════════════════════════════════════════════
    Двухколоночный герой — общее у всех референсов. Слева обещание и одно
@@ -5379,9 +5426,28 @@ p { margin: 18px 0 0; max-width: 62ch; }
     }));
   }
 
-  /* ── появление блоков ─────────────────────────────────────────────── */
+  /* ── появление блоков ───────────────────────────────────────────────
+     Характер входа раздаётся по порядку следования, а не случайно: случай
+     иногда ставит два одинаковых подряд, а именно этого мы и избегаем. */
   const rises = [...document.querySelectorAll('.rise')];
+  const RISE_KINDS = ['up', 'left', 'scale', 'right', 'blur', 'up', 'right', 'scale'];
+  rises.forEach((el, n) => {
+    if (!el.dataset.rise) el.dataset.rise = RISE_KINDS[n % RISE_KINDS.length];
+  });
   const revealAll = () => rises.forEach((el) => el.classList.add('is-in'));
+
+  /* Коллаж титула идёт медленнее страницы. Считаем в том же обработчике
+     прокрутки, что и презентация: один слушатель на страницу, без rAF —
+     кадры не выдаются фоновому iframe (см. выше). */
+  const collage = document.querySelector('.collage');
+  if (collage && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const parallax = () => {
+      const shift = Math.max(-60, Math.min(0, -scrollY * 0.08));
+      collage.style.setProperty('--par', shift.toFixed(1));
+    };
+    addEventListener('scroll', parallax, { passive: true });
+    parallax();
+  }
 
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
     revealAll();

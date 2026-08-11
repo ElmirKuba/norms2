@@ -27,7 +27,7 @@ export type ReleasePortals = Record<string, string>;
 /** Пути к порталам-лендингам по ключу ноты (внутри `public/`). */
 export const RELEASE_PORTALS: ReleasePortals = {
   'release-2.0.0': '/releases/release-2.0.0.html',
-  'release-2.9.2': '/releases/release-2.9.2.html',
+  'release-2.9.3': '/releases/release-2.9.3.html',
 };
 
 /**

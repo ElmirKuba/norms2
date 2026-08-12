@@ -6,6 +6,8 @@ import { accounts } from '../../schemas/accounts.schema';
 import { accountRoles } from '../../schemas/account-roles.schema';
 import { roles } from '../../schemas/roles.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
+import type { DrizzleExecutor } from '../../client/database.constants';
 import type { RoleRepositoryPort } from '../../../modules/account/adapters/role-repository.port';
 import type { RoleFull } from '../../../modules/account/interfaces/role-full.interface';
 
@@ -65,8 +67,8 @@ export class RoleRepository implements RoleRepositoryPort {
    * @param roleId Какую.
    * @returns true, если роль выдана именно сейчас.
    */
-  public async grant(accountId: string, roleId: string): Promise<boolean> {
-    const granted = await this._database
+  public async grant(accountId: string, roleId: string, tx?: Transaction): Promise<boolean> {
+    const granted = await this._exec(tx)
       .insert(accountRoles)
       .values({ id: generateId(), accountId, roleId })
       .onConflictDoNothing()
@@ -122,5 +124,14 @@ export class RoleRepository implements RoleRepositoryPort {
         ),
       );
     return rows.map((row) => row.id);
+  }
+
+  /**
+   * Разрешает исполнителя: переданная транзакция или дефолтный инстанс БД.
+   * @param tx Опц. опаковая транзакция.
+   * @returns DrizzleExecutor.
+   */
+  private _exec(tx?: Transaction): DrizzleExecutor {
+    return tx === undefined ? this._database : (tx as unknown as DrizzleExecutor);
   }
 }

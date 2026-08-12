@@ -1,6 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ACCOUNT_REPOSITORY } from '../adapters/account-repository.port';
+import { ROLE_REPOSITORY } from '../adapters/role-repository.port';
+import type { RoleRepositoryPort } from '../adapters/role-repository.port';
+import { ROLE_USER } from '../seed/roles.seed';
 import type { AccountRepositoryPort } from '../adapters/account-repository.port';
 import type { AccountFull } from '../interfaces/account-full.interface';
 import type { AccountPublicView } from '../interfaces/account-public-view.interface';
@@ -42,6 +45,8 @@ export interface CreateAccountParams {
  */
 @Injectable()
 export class AccountDomainService {
+  private readonly _logger = new Logger(AccountDomainService.name);
+
   /**
    * @param _accountRepository Порт репозитория аккаунтов (DI-токен).
    * @param _hashService Хеш-сервис argon2id.
@@ -49,6 +54,7 @@ export class AccountDomainService {
    */
   public constructor(
     @Inject(ACCOUNT_REPOSITORY) private readonly _accountRepository: AccountRepositoryPort,
+    @Inject(ROLE_REPOSITORY) private readonly _roleRepository: RoleRepositoryPort,
     private readonly _hashService: HashService,
     private readonly _configService: ConfigService<Env, true>,
   ) {}
@@ -76,7 +82,7 @@ export class AccountDomainService {
     const id = generateId();
     const invitesRemaining = this._configService.get('INVITE_DEFAULT_QUOTA', { infer: true });
 
-    return this._accountRepository.create(
+    const account = await this._accountRepository.create(
       id,
       {
         login: login.value,
@@ -90,6 +96,38 @@ export class AccountDomainService {
       },
       tx,
     );
+
+    await this._grantBaseRole(account.id, tx);
+    return account;
+  }
+
+  /**
+   * Выдаёт базовую роль только что созданному аккаунту (2.9.3).
+   *
+   * **Здесь, а не в use-case регистрации.** Аккаунты создаются несколькими путями — свободная
+   * регистрация, регистрация по коду, будущие сценарии, — и роль, выдаваемая вызывающим,
+   * однажды была бы забыта. В доменном сервисе её не может пропустить никто.
+   *
+   * **В той же транзакции**, что и сам аккаунт: аккаунт без роли — это аккаунт без прав, и
+   * появляться порознь они не должны.
+   *
+   * **Отсутствие роли в справочнике не роняет регистрацию.** На пустой базе сид ролей ещё не
+   * отработал; человек в этом случае получит роль догонялкой при ближайшем старте, и это
+   * заметно лучше, чем отказ в регистрации из-за незаполненного справочника.
+   *
+   * @param accountId Кому.
+   * @param tx Транзакция создания аккаунта.
+   * @returns Промис завершения.
+   */
+  private async _grantBaseRole(accountId: string, tx?: Transaction): Promise<void> {
+    const role = await this._roleRepository.findByCode(ROLE_USER);
+    if (role === null) {
+      this._logger.warn(
+        `Базовая роль '${ROLE_USER}' не найдена — аккаунт ${accountId} получит её на старте.`,
+      );
+      return;
+    }
+    await this._roleRepository.grant(accountId, role.id, tx);
   }
 
   /**

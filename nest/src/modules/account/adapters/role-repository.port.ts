@@ -1,3 +1,4 @@
+import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { RoleFull } from '../interfaces/role-full.interface';
 
 /** DI-токен порта репозитория ролей (биндится на реализацию в account.module). */
@@ -26,11 +27,16 @@ export interface RoleRepositoryPort {
 
   /**
    * Выдаёт роль аккаунту; повторная выдача ничего не меняет.
+   *
+   * Принимает транзакцию, потому что базовая роль выдаётся **вместе с созданием аккаунта**:
+   * аккаунт без роли — это аккаунт без прав, и появляться порознь они не должны.
+   *
    * @param accountId Кому.
    * @param roleId Какую.
+   * @param tx Опц. транзакция вызывающего.
    * @returns true, если роль была выдана именно сейчас.
    */
-  grant(accountId: string, roleId: string): Promise<boolean>;
+  grant(accountId: string, roleId: string, tx?: Transaction): Promise<boolean>;
 
   /**
    * Коды ролей аккаунта — то, по чему проверяются права.

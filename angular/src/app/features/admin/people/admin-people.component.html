@@ -1,0 +1,65 @@
+<div class="people">
+  <form class="people__search" (submit)="$event.preventDefault(); search()">
+    <input
+      class="people__input"
+      type="search"
+      name="query"
+      [(ngModel)]="query"
+      placeholder="Логин или псевдоним"
+      aria-label="Поиск по людям"
+    />
+    <app-button type="submit" variant="ghost">Искать</app-button>
+  </form>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (error(); as message) {
+    <app-card>
+      <p class="people__error">{{ message }}</p>
+    </app-card>
+  } @else {
+    @for (person of people(); track person.id) {
+      <app-card>
+        <div class="people__row">
+          <div class="people__who">
+            <b class="people__login">{{ person.login }}</b>
+            <span class="people__alias">{{ person.alias }}</span>
+            <span class="people__roles">
+              @for (role of person.roles; track role) {
+                <span class="people__role" [class.people__role--admin]="role === 'admin'">{{ role }}</span>
+              }
+            </span>
+          </div>
+
+          <div class="people__act">
+            @if (isAdmin(person)) {
+              @if (canRevokeAdmin(person)) {
+                <app-button
+                  variant="danger"
+                  [loading]="busy() === person.id"
+                  (click)="toggleAdmin(person, false)"
+                >Снять админку</app-button>
+              } @else {
+                <span class="people__self">это вы</span>
+              }
+            } @else {
+              <app-button
+                variant="ghost"
+                [loading]="busy() === person.id"
+                (click)="toggleAdmin(person, true)"
+              >Выдать админку</app-button>
+            }
+          </div>
+        </div>
+      </app-card>
+    } @empty {
+      <app-card><p class="people__error">Никого не нашлось.</p></app-card>
+    }
+
+    @if (cursor()) {
+      <app-button variant="ghost" [block]="true" [loading]="loadingMore()" (click)="loadMore()">
+        Показать ещё
+      </app-button>
+    }
+  }
+</div>

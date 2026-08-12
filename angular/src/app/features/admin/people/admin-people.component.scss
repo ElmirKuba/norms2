@@ -1,0 +1,73 @@
+// Список людей: строка «кто — какие роли — что можно сделать».
+.people {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.people__search {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.people__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.people__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.people__who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.people__login {
+  font-weight: 500;
+}
+
+.people__alias {
+  color: var(--color-text-muted);
+}
+
+.people__roles {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.people__role {
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+// Админка — единственная роль, которую стоит замечать глазами.
+.people__role--admin {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.people__self {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.people__error {
+  margin: 0;
+  color: var(--color-text-muted);
+}

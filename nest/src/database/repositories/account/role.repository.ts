@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, notExists, sql } from 'drizzle-orm';
+import { and, desc, eq, notExists, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { accounts } from '../../schemas/accounts.schema';
@@ -10,6 +10,8 @@ import type { Transaction } from '../../../shared/transactions/transaction.inter
 import type { DrizzleExecutor } from '../../client/database.constants';
 import type { RoleRepositoryPort } from '../../../modules/account/adapters/role-repository.port';
 import type { RoleFull } from '../../../modules/account/interfaces/role-full.interface';
+import type { AdminAccountPage } from '../../../modules/admin/interfaces/admin-account-page.interface';
+import type { AdminAccountView } from '../../../modules/admin/interfaces/admin-account-view.interface';
 
 /**
  * Drizzle-реализация порта ролей (2.9.3).
@@ -74,6 +76,108 @@ export class RoleRepository implements RoleRepositoryPort {
       .onConflictDoNothing()
       .returning({ id: accountRoles.id });
     return granted.length > 0;
+  }
+
+  /**
+   * Снимает роль с аккаунта (2.9.3·10).
+   * @param accountId У кого.
+   * @param roleId Какую.
+   * @returns true, если роль была снята именно сейчас.
+   */
+  public async revoke(accountId: string, roleId: string): Promise<boolean> {
+    const removed = await this._database
+      .delete(accountRoles)
+      .where(and(eq(accountRoles.accountId, accountId), eq(accountRoles.roleId, roleId)))
+      .returning({ id: accountRoles.id });
+    return removed.length > 0;
+  }
+
+  /**
+   * Страница людей с ролями (2.9.3·10).
+   *
+   * Роли собираются подзапросом в массив, а не join-ом со схлопыванием на приложении: иначе
+   * лимит страницы считался бы по СТРОКАМ связи, и человек с двумя ролями съедал бы две позиции.
+   *
+   * Порядок — по `id` убыванием: он начинается с uuidv7, то есть монотонен по времени
+   * регистрации, и годится и как сортировка, и как курсор.
+   *
+   * @param params Поиск, размер страницы и курсор.
+   * @returns Строки и курсор следующей страницы.
+   */
+  public async listWithRoles(params: {
+    query: string;
+    limit: number;
+    cursor: string | null;
+  }): Promise<AdminAccountPage> {
+    const { query, limit, cursor } = params;
+    const conditions = [];
+    if (query !== '') {
+      const pattern = `%${query.toLowerCase()}%`;
+      conditions.push(
+        sql`(lower(${accounts.login}) like ${pattern} or lower(${accounts.alias}) like ${pattern})`,
+      );
+    }
+    if (cursor !== null) {
+      conditions.push(sql`${accounts.id} < ${cursor}`);
+    }
+
+    // Просим на одну строку больше запрошенного: наличие «лишней» и есть ответ на вопрос,
+    // существует ли следующая страница. Отдельный count тут был бы вторым запросом ради того,
+    // что и так видно.
+    const rows = await this._database
+      .select(this._adminColumns())
+      .from(accounts)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(accounts.id))
+      .limit(limit + 1);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      items,
+      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+    };
+  }
+
+  /**
+   * Один человек с ролями (2.9.3·10).
+   * @param accountId Кого.
+   * @returns Строка или null.
+   */
+  public async findWithRoles(accountId: string): Promise<AdminAccountView | null> {
+    const [row] = await this._database
+      .select(this._adminColumns())
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+    return row ?? null;
+  }
+
+  /**
+   * Набор колонок проекции админки — общий для страницы и точечного чтения, чтобы две выборки
+   * не разъехались по составу полей.
+   * @returns Описание колонок для select.
+   */
+  private _adminColumns() {
+    // Ссылка на внешнюю колонку — через `sql.raw` с явным именем таблицы. Drizzle рендерит
+    // `${accounts.id}` без квалификатора, и внутри подзапроса `"id"` разрешается в его
+    // собственную область — коррелированный запрос молча превращается в бессмысленный.
+    return {
+      id: accounts.id,
+      login: accounts.login,
+      alias: accounts.alias,
+      registrationSource: accounts.registrationSource,
+      invitesRemaining: accounts.invitesRemaining,
+      deactivatedAt: accounts.deactivatedAt,
+      deletedAt: accounts.deletedAt,
+      createdAt: accounts.createdAt,
+      roles: sql<string[]>`coalesce((
+        select array_agg(lower(r.code) order by lower(r.code))
+          from ${accountRoles} ar
+          join ${roles} r on r.id = ar.role_id
+         where ar.account_id = ${sql.raw('"accounts"."id"')}
+      ), '{}')`,
+    };
   }
 
   /**

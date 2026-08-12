@@ -12,6 +12,8 @@ export const AUDIT_ACTIONS = {
   ROLE_BACKFILLED: 'role.backfilled',
   /** Значение рантайм-настройки изменено. */
   SETTING_CHANGED: 'setting.changed',
+  /** Роль снята с аккаунта. */
+  ROLE_REVOKED: 'role.revoked',
   /** Публикация релиза удалена (каскадом ушли доставка и отметки прочтения). */
   RELEASE_DELETED: 'release.deleted',
 } as const;

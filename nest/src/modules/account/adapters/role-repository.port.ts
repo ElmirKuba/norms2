@@ -1,5 +1,7 @@
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 import type { RoleFull } from '../interfaces/role-full.interface';
+import type { AdminAccountPage } from '../../admin/interfaces/admin-account-page.interface';
+import type { AdminAccountView } from '../../admin/interfaces/admin-account-view.interface';
 
 /** DI-токен порта репозитория ролей (биндится на реализацию в account.module). */
 export const ROLE_REPOSITORY = Symbol('ROLE_REPOSITORY');
@@ -37,6 +39,37 @@ export interface RoleRepositoryPort {
    * @returns true, если роль была выдана именно сейчас.
    */
   grant(accountId: string, roleId: string, tx?: Transaction): Promise<boolean>;
+
+  /**
+   * Снимает роль с аккаунта (2.9.3·10).
+   *
+   * Идемпотентно: снимать нечего — не ошибка. Возвращает признак «сняли именно сейчас», чтобы
+   * вызывающий понимал, писать ли событие в журнал.
+   *
+   * @param accountId У кого.
+   * @param roleId Какую.
+   * @returns true, если роль была снята именно сейчас.
+   */
+  revoke(accountId: string, roleId: string): Promise<boolean>;
+
+  /**
+   * Один человек с ролями — для ответа после смены прав (2.9.3·10).
+   * @param accountId Кого.
+   * @returns Строка или null.
+   */
+  findWithRoles(accountId: string): Promise<AdminAccountView | null>;
+
+  /**
+   * Страница людей с их ролями — для админки (2.9.3·10).
+   *
+   * @param params Поиск по подстроке логина/псевдонима, размер страницы и курсор.
+   * @returns Строки и курсор следующей страницы.
+   */
+  listWithRoles(params: {
+    query: string;
+    limit: number;
+    cursor: string | null;
+  }): Promise<AdminAccountPage>;
 
   /**
    * Коды ролей аккаунта — то, по чему проверяются права.

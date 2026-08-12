@@ -3,10 +3,12 @@ import { AccessControlModule } from '../auth/access-control.module';
 import { AccountModule } from '../account/account.module';
 import { NotificationCoreModule } from '../notifications/notification-core.module';
 import { AdminSettingsController } from './controllers/admin-settings.controller';
+import { AdminAccountsController } from './controllers/admin-accounts.controller';
 import { AdminReleasesController } from './controllers/admin-releases.controller';
 import { ListSettingsUseCase } from './use-cases/list-settings.use-case';
 import { UpdateSettingUseCase } from './use-cases/update-setting.use-case';
 import { DeleteReleaseUseCase } from './use-cases/delete-release.use-case';
+import { ManageRolesUseCase } from './use-cases/manage-roles.use-case';
 
 /**
  * Техническая админка (2.9.3·7) — все ручки под `/api/v1/admin/*`.
@@ -22,7 +24,7 @@ import { DeleteReleaseUseCase } from './use-cases/delete-release.use-case';
  */
 @Module({
   imports: [AccessControlModule, AccountModule, NotificationCoreModule],
-  controllers: [AdminSettingsController, AdminReleasesController],
-  providers: [ListSettingsUseCase, UpdateSettingUseCase, DeleteReleaseUseCase],
+  controllers: [AdminSettingsController, AdminReleasesController, AdminAccountsController],
+  providers: [ListSettingsUseCase, UpdateSettingUseCase, DeleteReleaseUseCase, ManageRolesUseCase],
 })
 export class AdminModule {}

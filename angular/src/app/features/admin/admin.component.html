@@ -1,0 +1,14 @@
+<section class="admin">
+  <header class="admin__head">
+    <h1 class="admin__title">Админка</h1>
+    <p class="admin__hint">
+      Техническая. Нужна, чтобы не заходить на сервер по ssh ради переключения флага.
+    </p>
+  </header>
+
+  <nav class="admin__tabs" aria-label="Разделы админки">
+    <a class="admin__tab" routerLink="settings" routerLinkActive="admin__tab--on">Настройки</a>
+  </nav>
+
+  <router-outlet />
+</section>

@@ -57,8 +57,7 @@ export class RegisterAccountUseCase {
       : await this._registerByInvite(input);
 
     // Секрет наружу не отдаём.
-    const { passwordHash: _passwordHash, ...read } = account;
-    return read;
+    return this._accountDomainService.toRead(account);
   }
 
   /**

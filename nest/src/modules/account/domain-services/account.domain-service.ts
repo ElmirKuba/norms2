@@ -7,6 +7,7 @@ import { ROLE_USER } from '../seed/roles.seed';
 import type { AccountRepositoryPort } from '../adapters/account-repository.port';
 import type { AccountFull } from '../interfaces/account-full.interface';
 import type { AccountPublicView } from '../interfaces/account-public-view.interface';
+import type { AccountRead } from '../interfaces/account-read.interface';
 import type { Login } from '../value-objects/login.vo';
 import type { Alias } from '../value-objects/alias.vo';
 import type { Password } from '../value-objects/password.vo';
@@ -128,6 +129,23 @@ export class AccountDomainService {
       return;
     }
     await this._roleRepository.grant(accountId, role.id, tx);
+  }
+
+  /**
+   * Собирает проекцию профиля: снимает секрет и добавляет коды ролей (2.9.3·8).
+   *
+   * Одно место на все пять точек, где профиль уходит наружу, — иначе «а роли-то добавить»
+   * однажды забудут в одной из них, и фронт получит аккаунт без ролей ровно там, где их ждал.
+   *
+   * ⚠️ Роли здесь — **подсказка интерфейсу**, а не право. Настоящая проверка на бэке
+   * (`RolesGuard`, отказ 404): спрятанная кнопка защитой не является.
+   *
+   * @param account Полная строка аккаунта.
+   * @returns Профиль без секрета, с ролями.
+   */
+  public async toRead(account: AccountFull): Promise<AccountRead> {
+    const { passwordHash: _passwordHash, ...read } = account;
+    return { ...read, roles: await this._roleRepository.codesOf(account.id) };
   }
 
   /**

@@ -18,6 +18,7 @@ import { AuthGuard } from '../../auth/guards/auth.guard';
 import { AvatarInvalidError } from '../../../shared/errors/avatar-invalid.error';
 import { updateAliasSchema } from '../dtos/update-alias.dto';
 import type { UpdateAliasDto } from '../dtos/update-alias.dto';
+import { GetMyProfileUseCase } from '../use-cases/get-my-profile.use-case';
 import { GetProfileByLoginUseCase } from '../use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from '../use-cases/update-alias.use-case';
 import { DeactivateMyAccountUseCase } from '../use-cases/deactivate-my-account.use-case';
@@ -41,6 +42,7 @@ export class ProfileController {
    * @param _updateAliasUseCase Смена псевдонима.
    */
   public constructor(
+    private readonly _getMyProfileUseCase: GetMyProfileUseCase,
     private readonly _getProfileByLoginUseCase: GetProfileByLoginUseCase,
     private readonly _updateAliasUseCase: UpdateAliasUseCase,
     private readonly _deactivateMyAccountUseCase: DeactivateMyAccountUseCase,
@@ -56,9 +58,8 @@ export class ProfileController {
    */
   @Get('me')
   @UseGuards(AuthGuard)
-  public getMe(@Req() request: AuthenticatedRequest): AccountRead {
-    const { passwordHash: _passwordHash, ...read } = request.account;
-    return read;
+  public async getMe(@Req() request: AuthenticatedRequest): Promise<AccountRead> {
+    return this._getMyProfileUseCase.execute(request.account);
   }
 
   /**

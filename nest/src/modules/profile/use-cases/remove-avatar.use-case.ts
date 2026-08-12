@@ -30,7 +30,6 @@ export class RemoveAvatarUseCase {
     if (currentAvatar !== null) {
       await this._avatarStorage.delete(currentAvatar);
     }
-    const { passwordHash: _passwordHash, ...read } = updated;
-    return read;
+    return this._accountDomainService.toRead(updated);
   }
 }

@@ -19,6 +19,9 @@ export const shellRoutes: Routes = [
       { path: 'accent', loadChildren: () => import('../accent/accent.routes').then((m) => m.accentRoutes) },
       { path: 'sessions', loadComponent: () => import('../sessions/sessions.component').then((m) => m.SessionsComponent) },
       { path: 'settings', loadComponent: () => import('../settings/settings.component').then((m) => m.SettingsComponent) },
+      // Техническая админка (2.9.3·8). Свой guard внутри маршрутов раздела: он про показ,
+      // а не про защиту — данные охраняет бэк, отдавая 404 без роли.
+      { path: 'admin', loadChildren: () => import('../admin/admin.routes').then((m) => m.adminRoutes) },
       { path: '**', loadComponent: () => import('../not-found/not-found.component').then((m) => m.NotFoundComponent) },
     ],
   },

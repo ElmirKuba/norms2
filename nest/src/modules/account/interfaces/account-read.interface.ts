@@ -3,5 +3,12 @@ import type { AccountFull } from './account-full.interface';
 /**
  * AccountRead — что отдаём наружу: полная строка БЕЗ секретов (ADR-0033).
  * Производное через Omit — поля не переобъявляются. `passwordHash` не уходит в DTO.
+ *
+ * **`roles` добавлены в 2.9.3·8** — фронту нужно знать, показывать ли пункт «Админка».
+ * ⚠️ Это подсказка интерфейсу, а НЕ право: настоящая проверка живёт на бэке (`RolesGuard`,
+ * отказ 404). Спрятанная кнопка защитой не является, и путать эти две вещи нельзя.
  */
-export type AccountRead = Omit<AccountFull, 'passwordHash'>;
+export type AccountRead = Omit<AccountFull, 'passwordHash'> & {
+  /** Коды ролей аккаунта в нижнем регистре (`user`, `admin`). */
+  roles: string[];
+};

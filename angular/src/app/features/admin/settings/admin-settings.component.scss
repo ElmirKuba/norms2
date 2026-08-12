@@ -1,0 +1,71 @@
+// Настройки админки: список карточек «что это — чему равно — откуда взялось».
+.admin-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.admin-settings__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.admin-settings__name {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-md);
+}
+
+.admin-settings__state {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.admin-settings__key {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.admin-settings__origin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-end;
+}
+
+.admin-settings__badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+}
+
+// Значение из окружения — не событие, поэтому и метка приглушённая.
+.admin-settings__badge--env {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.admin-settings__when {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.admin-settings__error {
+  margin: 0 0 var(--space-2);
+  color: var(--color-danger, var(--color-text));
+}
+
+.admin-settings__retry {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text);
+  cursor: pointer;
+}

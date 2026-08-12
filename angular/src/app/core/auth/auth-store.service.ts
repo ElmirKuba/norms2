@@ -19,6 +19,14 @@ export class AuthStore {
   public readonly isAuthenticated = computed(() => this._accessToken() !== null);
 
   /**
+   * Есть ли у текущего аккаунта роль администратора (2.9.3·8).
+   *
+   * ⚠️ Только для показа пункта меню и раздела. Данные это не защищает — их защищает бэк
+   * (`RolesGuard`, отказ 404). Поэтому здесь не «можно ли», а «показывать ли».
+   */
+  public readonly isAdmin = computed(() => this._account()?.roles.includes('admin') === true);
+
+  /**
    * Устанавливает сессию после login/реактивации.
    * @param account Аккаунт.
    * @param accessToken Access-JWT.

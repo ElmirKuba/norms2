@@ -5,6 +5,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { ProfileController } from './controllers/profile.controller';
 import { AVATAR_STORAGE } from './adapters/avatar-storage.port';
 import { AvatarDiskStorage } from '../../system/storage/avatar-disk.storage';
+import { GetMyProfileUseCase } from './use-cases/get-my-profile.use-case';
 import { GetProfileByLoginUseCase } from './use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from './use-cases/update-alias.use-case';
 import { DeactivateMyAccountUseCase } from './use-cases/deactivate-my-account.use-case';
@@ -23,6 +24,7 @@ import { RemoveAvatarUseCase } from './use-cases/remove-avatar.use-case';
   controllers: [ProfileController],
   providers: [
     { provide: AVATAR_STORAGE, useClass: AvatarDiskStorage },
+    GetMyProfileUseCase,
     GetProfileByLoginUseCase,
     UpdateAliasUseCase,
     DeactivateMyAccountUseCase,

@@ -1,0 +1,37 @@
+@if (loading()) {
+  <app-spinner />
+} @else if (error(); as message) {
+  <app-card>
+    <p class="admin-settings__error">{{ message }}</p>
+    <button type="button" class="admin-settings__retry" (click)="reload()">Попробовать снова</button>
+  </app-card>
+} @else {
+  <div class="admin-settings">
+    @for (setting of settings(); track setting.key) {
+      <app-card>
+        <div class="admin-settings__row">
+          <div>
+            <h2 class="admin-settings__name">{{ title(setting.key) }}</h2>
+            <p class="admin-settings__state">Сейчас: {{ state(setting) }}</p>
+            <p class="admin-settings__key">{{ setting.key }}</p>
+          </div>
+          <div class="admin-settings__origin">
+            @if (setting.source === 'db') {
+              <span class="admin-settings__badge">переключено в админке</span>
+              @if (setting.updatedAt) {
+                <span class="admin-settings__when">{{ setting.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</span>
+              }
+            } @else {
+              <span class="admin-settings__badge admin-settings__badge--env">значение из окружения</span>
+              <span class="admin-settings__when">никто не менял</span>
+            }
+          </div>
+        </div>
+      </app-card>
+    } @empty {
+      <app-card>
+        <p class="admin-settings__state">Настраивать пока нечего.</p>
+      </app-card>
+    }
+  </div>
+}

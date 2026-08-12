@@ -31,6 +31,11 @@
           <div class="menu" role="menu">
             <a routerLink="profile" (click)="closeMenu()">Профиль</a>
             <a routerLink="settings" (click)="closeMenu()">Настройки</a>
+            <!-- Пункт видят только админы (2.9.3·8). Это про показ, а не про доступ: без роли
+                 бэк отдаёт 404 на весь /admin, и правка разметки этого не обходит. -->
+            @if (authStore.isAdmin()) {
+              <a routerLink="admin" (click)="closeMenu()">Админка</a>
+            }
             <button type="button" (click)="logout()">Выйти</button>
             <div class="menu__sep" role="separator"></div>
             <a routerLink="/about" target="_blank" rel="noopener" (click)="closeMenu()">О проекте</a>

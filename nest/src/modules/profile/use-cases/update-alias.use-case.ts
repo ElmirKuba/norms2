@@ -23,7 +23,6 @@ export class UpdateAliasUseCase {
    */
   public async execute(accountId: string, aliasRaw: string): Promise<AccountRead> {
     const updated = await this._accountDomainService.updateAlias(accountId, Alias.create(aliasRaw));
-    const { passwordHash: _passwordHash, ...read } = updated;
-    return read;
+    return this._accountDomainService.toRead(updated);
   }
 }

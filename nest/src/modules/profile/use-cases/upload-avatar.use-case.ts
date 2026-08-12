@@ -70,7 +70,6 @@ export class UploadAvatarUseCase {
       await this._avatarStorage.delete(currentAvatar);
     }
 
-    const { passwordHash: _passwordHash, ...read } = updated;
-    return read;
+    return this._accountDomainService.toRead(updated);
   }
 }

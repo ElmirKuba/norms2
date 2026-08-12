@@ -15,6 +15,13 @@
             <p class="admin-settings__state">Сейчас: {{ state(setting) }}</p>
             <p class="admin-settings__key">{{ setting.key }}</p>
           </div>
+          <div class="admin-settings__actions">
+            <app-button
+              [variant]="setting.value === 'true' ? 'accent' : 'ghost'"
+              [loading]="saving() === setting.key"
+              (click)="toggle(setting)"
+            >{{ actionLabel(setting) }}</app-button>
+          </div>
           <div class="admin-settings__origin">
             @if (setting.source === 'db') {
               <span class="admin-settings__badge">переключено в админке</span>

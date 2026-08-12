@@ -69,3 +69,8 @@
   color: var(--color-text);
   cursor: pointer;
 }
+
+.admin-settings__actions {
+  display: flex;
+  align-items: center;
+}

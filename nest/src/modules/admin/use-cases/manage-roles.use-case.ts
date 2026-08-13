@@ -63,10 +63,11 @@ export class ManageRolesUseCase {
   public async grant(accountId: string, code: string, actor: RoleActor): Promise<AdminAccountView> {
     const role = await this._requireRole(code);
     const granted = await this._roleRepository.grant(accountId, role.id);
+    const account = await this._requireAccount(accountId);
     if (granted) {
-      await this._writeLog(AUDIT_ACTIONS.ROLE_GRANTED, accountId, role.code, actor);
+      await this._writeLog(AUDIT_ACTIONS.ROLE_GRANTED, account, role.code, actor);
     }
-    return this._requireAccount(accountId);
+    return account;
   }
 
   /**
@@ -90,10 +91,11 @@ export class ManageRolesUseCase {
       throw new LastAdminProtectionError('Снять роль администратора с самого себя нельзя.');
     }
     const revoked = await this._roleRepository.revoke(accountId, role.id);
+    const account = await this._requireAccount(accountId);
     if (revoked) {
-      await this._writeLog(AUDIT_ACTIONS.ROLE_REVOKED, accountId, role.code, actor);
+      await this._writeLog(AUDIT_ACTIONS.ROLE_REVOKED, account, role.code, actor);
     }
-    return this._requireAccount(accountId);
+    return account;
   }
 
   /**
@@ -126,15 +128,21 @@ export class ManageRolesUseCase {
 
   /**
    * Пишет событие смены прав в журнал.
+   *
+   * **Логин цели идёт снимком в `targetLabel`** — как и логин действовавшего. Без него запись
+   * «над кем» читается голым PK: журнал ролей — как раз тот экран, который открывают, чтобы
+   * понять, кому и когда дали права, и join за именем там делать не с чем (аккаунт могли
+   * удалить, ссылка обнулится).
+   *
    * @param action Код действия.
-   * @param accountId Над кем.
+   * @param account Над кем — уже перечитанная строка человека.
    * @param roleCode Какая роль.
    * @param actor Кто действовал.
    * @returns Промис завершения.
    */
   private async _writeLog(
     action: string,
-    accountId: string,
+    account: AdminAccountView,
     roleCode: string,
     actor: RoleActor,
   ): Promise<void> {
@@ -143,7 +151,8 @@ export class ManageRolesUseCase {
       actorAccountId: actor.accountId,
       actorLogin: actor.login,
       targetType: 'account',
-      targetId: accountId,
+      targetId: account.id,
+      targetLabel: account.login,
       details: { role: roleCode.toLowerCase() },
     });
   }

@@ -36,6 +36,15 @@ const TARGETS: Record<string, string> = {
   telegram_request: 'заявка',
 };
 
+/**
+ * Метки целей-заявок: бэк кладёт в `targetLabel` тип заявки машинным кодом — читать «заявка:
+ * more_invites» человеку незачем.
+ */
+const REQUEST_LABELS: Record<string, string> = {
+  join: 'вступление',
+  more_invites: 'приглашения',
+};
+
 /** Ключи подробностей по-русски; незнакомый ключ показывается как есть. */
 const DETAILS: Record<string, string> = {
   role: 'роль',
@@ -154,10 +163,11 @@ export class AdminJournalComponent {
    * @returns Строка вида «аккаунт: audit_probe» или пусто, если цели нет.
    */
   public targetLabel(entry: AdminAuditEntry): string {
-    const what = entry.targetLabel ?? entry.targetId;
-    if (what === null) {
+    const raw = entry.targetLabel ?? entry.targetId;
+    if (raw === null) {
       return '';
     }
+    const what = entry.targetType === 'telegram_request' ? (REQUEST_LABELS[raw] ?? raw) : raw;
     const kind = entry.targetType === null ? null : (TARGETS[entry.targetType] ?? entry.targetType);
     return kind === null ? what : `${kind}: ${what}`;
   }

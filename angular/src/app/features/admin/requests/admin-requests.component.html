@@ -1,0 +1,140 @@
+<div class="requests">
+  <nav class="requests__tabs" aria-label="Статусы заявок">
+    @for (tab of tabs; track tab.status) {
+      <button
+        type="button"
+        class="requests__tab"
+        [class.requests__tab--on]="status() === tab.status"
+        (click)="selectTab(tab.status)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (error(); as message) {
+    <app-card>
+      <p class="requests__muted">{{ message }}</p>
+    </app-card>
+  } @else {
+    @for (request of requests(); track request.id) {
+      <app-card>
+        <div class="requests__head">
+          <b class="requests__what">{{ typeLabel(request) }}</b>
+          <span class="requests__badge" [class.requests__badge--wait]="request.status === 'pending'">
+            {{ statusLabel(request) }}
+          </span>
+          <span class="requests__muted">{{ when(request.createdAt) }}</span>
+        </div>
+
+        <dl class="requests__facts">
+          <div class="requests__fact">
+            <dt>Чат в Telegram</dt>
+            <dd>{{ request.chatId }}</dd>
+          </div>
+          @if (request.accountLogin; as login) {
+            <div class="requests__fact">
+              <dt>Аккаунт</dt>
+              <dd>{{ login }}</dd>
+            </div>
+          }
+          @if (request.status !== 'pending') {
+            <div class="requests__fact">
+              <dt>Решено</dt>
+              <dd>{{ when(request.decidedAt) }}</dd>
+            </div>
+            @if (request.grantedAmount !== null) {
+              <div class="requests__fact">
+                <dt>Начислено</dt>
+                <dd>+{{ request.grantedAmount }}</dd>
+              </div>
+            }
+            <div class="requests__fact">
+              <dt>Причина</dt>
+              <dd>{{ request.decisionReason ?? 'без объяснения' }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (request.status === 'pending') {
+          <p class="requests__note">
+            Текста заявки здесь нет — он не хранится. Прочитать анкету можно только в переписке
+            бота: пришлите ему <code>/start</code> и откройте эту заявку в списке.
+          </p>
+
+          <label class="requests__label" [attr.for]="'reason-' + request.id">
+            {{
+              request.type === 'join'
+                ? 'Подпись к приглашению — останется в дереве навсегда'
+                : 'За что начисляем — человек это прочитает'
+            }}
+          </label>
+          <textarea
+            #reason
+            class="requests__reason"
+            [id]="'reason-' + request.id"
+            rows="2"
+            placeholder="Можно оставить пустым"
+            [value]="reasonOf(request.id)"
+            (input)="setReason(request.id, reason.value)"
+          ></textarea>
+
+          <div class="requests__act">
+            @if (request.type === 'join') {
+              <app-button [loading]="busy() === request.id" (click)="approve(request)">
+                Выдать код
+              </app-button>
+            } @else {
+              @for (amount of amounts; track amount) {
+                <app-button
+                  variant="ghost"
+                  [loading]="busy() === request.id"
+                  (click)="grant(request, amount)"
+                >
+                  +{{ amount }}
+                </app-button>
+              }
+            }
+            <app-button variant="danger" [loading]="busy() === request.id" (click)="reject(request)">
+              Отказать
+            </app-button>
+          </div>
+        }
+
+        @if (outcomeOf(request.id); as outcome) {
+          <div class="requests__outcome" [class.requests__outcome--silent]="!outcome.notified">
+            @if (outcome.inviteCode; as code) {
+              <p class="requests__code">Код: <b>{{ code }}</b></p>
+            }
+            @if (outcome.notified) {
+              <p class="requests__muted">Ответ отправлен человеку в Telegram.</p>
+            } @else {
+              <p class="requests__silent">
+                ⚠️ Человеку <b>не доставлено</b> — бот на паузе или его заблокировали. Решение
+                записано, но заявитель о нём не знает: передайте другим способом.
+              </p>
+            }
+          </div>
+        }
+      </app-card>
+    } @empty {
+      <app-card>
+        <p class="requests__muted">
+          @if (status() === 'pending') {
+            Ожидающих заявок нет.
+          } @else {
+            Здесь пока пусто.
+          }
+        </p>
+      </app-card>
+    }
+
+    @if (hasMore()) {
+      <app-button variant="ghost" [block]="true" [loading]="loadingMore()" (click)="loadMore()">
+        Показать ещё
+      </app-button>
+    }
+  }
+</div>

@@ -213,7 +213,8 @@ Body: `{ login, password }`.
 - `POST /admin/accounts/:id/roles` (admin) Body `{ code }` → 200 `AdminAccountView`. Идемпотентно:
   повтор ничего не меняет и не считается ошибкой.
 - `DELETE /admin/accounts/:id/roles/:code` (admin) → 200 `AdminAccountView`.
-  - ⛔ **Снять `admin` с самого себя нельзя** → 409 `LAST_ADMIN_PROTECTION`. Это не забота о
+  - ⛔ **Снять `admin` с самого себя нельзя** → 409 `LAST_ADMIN_PROTECTION` (код доходит до
+    клиента с 13.08.2026 — до этого фильтр обезличивал его в `CONFLICT`, см. ·11). Это не забота о
     самолюбии: аварийного люка в продукте нет осознанно ([·3а](./impl-phase2-plan.md)), и админ,
     разжаловавший себя, чинится только руками в базе. Запрет на себя заодно **гарантирует, что
     хотя бы один админ останется всегда** — последнему просто некого разжаловать, кроме себя.
@@ -243,12 +244,31 @@ Body: `{ login, password }`.
 
 ### Заявки из Telegram
 
-- `GET /admin/telegram/requests?status=pending|approved|rejected` (admin) → `AdminTelegramRequestView[]`
-  = `[{ id, type, status, chatId, accountId: string|null, login: string|null, grantedAmount: number|null, decisionReason: string|null, createdAt, decidedAt: Date|null }]`.
-- `POST /admin/telegram/requests/:id/approve` (admin) Body `{ grantedAmount, reason? }` → 200 `{ request: AdminTelegramRequestView, notified: boolean }`.
-- `POST /admin/telegram/requests/:id/reject` (admin) Body `{ reason }` → 200 такой же формы.
+✅ **Реализовано (·11).**
+
+- `GET /admin/telegram/requests?status=pending|approved|rejected|expired&limit=&offset=` (admin)
+  → `{ items: AdminTelegramRequestView[], total: number }`, где `AdminTelegramRequestView` =
+  `{ id, type, status, chatId, accountId: string|null, accountLogin: string|null, inviteCodeId: string|null, grantedAmount: number|null, decisionReason: string|null, decidedAt: Date|null, createdAt }`.
+  Незнакомый `status` трактуется как `pending`, `limit` ограничен 50 — параметры из адресной
+  строки не должны уметь ронять запрос.
+  **Пагинация по сдвигу, а не курсором** (в отличие от людей): заявки закрываются, а не
+  досыпаются сверху, и «съезда» строк, ради которого нужен курсор, тут не бывает.
+- `POST /admin/telegram/requests/:id/approve` (admin) Body `{ reason?, amount? }` → 201
+  `{ request: AdminTelegramRequestView, notified: boolean, inviteCode: string|null }`.
+  Без `amount` — одобрение заявки на вступление (выдаётся код с квоты решающего); с `amount` —
+  начисление приглашений по просьбе. **Допустимы только `1 | 3 | 5`**, иначе 400: это раздача
+  доступа, а лишний ноль в свободном поле вводится в спешке незаметно (те же три номинала, что у
+  кнопок бота).
+- `POST /admin/telegram/requests/:id/reject` (admin) Body `{ reason? }` → 201 такой же формы.
+- Отказы: 404 `NOT_FOUND`, 409 `ALREADY_CLOSED` / `QUOTA_EXHAUSTED` / `NO_ACCOUNT`,
+  400 `WRONG_TYPE`. **409, а не 400,** потому что запрос корректен — не позволяет состояние мира:
+  на экране это разные советы («исправь и повтори» против «обнови список»).
   - **Зовут тот же use-case, что и бот**, а не свою копию логики. Иначе два пути решения заявки
     разъедутся в мелочах (текст ответа, пересчёт квоты, закрытие очереди), и разойдутся они молча.
+    Ради этого ядро решения принимает **аккаунт решающего**, а не `chatId`: у админки чата нет,
+    а квота списывается с конкретного человека.
+  - **`inviteCode` возвращается прямым текстом** — именно потому, что `notified` бывает `false`:
+    код, который никому не дошёл, админ обязан увидеть, иначе передать его нечем.
   - **`notified: false` — штатный ответ, а не ошибка.** Бот на паузе (или без токена) — решение
     всё равно записывается, человек просто не получает сообщения. Обратный вариант (запретить
     решать, пока бот молчит) делает паузу тормозом всей работы, а заявка от этого не исчезает.

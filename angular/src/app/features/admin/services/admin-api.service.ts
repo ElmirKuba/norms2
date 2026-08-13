@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
-import type { AdminAccount, AdminAccountPage, AdminSetting } from '../admin.types';
+import type {
+  AdminAccount,
+  AdminAccountPage,
+  AdminRequestDecision,
+  AdminRequestStatus,
+  AdminSetting,
+  AdminTelegramRequestPage,
+} from '../admin.types';
 
 /**
  * API-сервис технической админки (`/api/v1/admin/*`, 2.9.3).
@@ -72,6 +79,59 @@ export class AdminApiService {
   public revokeRole(accountId: string, code: string): Observable<AdminAccount> {
     return this._http.delete<AdminAccount>(
       `${API_PREFIX}/admin/accounts/${accountId}/roles/${encodeURIComponent(code)}`,
+    );
+  }
+
+  /**
+   * Страница заявок из Telegram (2.9.3·11).
+   * @param status Какие показывать.
+   * @param offset Сдвиг — пагинация здесь по сдвигу, а не по курсору: заявки закрываются,
+   * а не досыпаются сверху, и «съезда» строк, ради которого нужен курсор, тут не бывает.
+   * @param limit Размер страницы.
+   * @returns Поток страницы.
+   */
+  public listRequests(
+    status: AdminRequestStatus,
+    offset: number,
+    limit: number,
+  ): Observable<AdminTelegramRequestPage> {
+    return this._http.get<AdminTelegramRequestPage>(`${API_PREFIX}/admin/telegram/requests`, {
+      params: { status, offset: String(offset), limit: String(limit) },
+    });
+  }
+
+  /**
+   * Одобряет заявку: у вступления выдаётся код, у просьбы о приглашениях — номинал.
+   * @param id Заявка.
+   * @param reason Подпись/причина или пусто.
+   * @param amount Номинал начисления (только для просьбы о приглашениях).
+   * @returns Поток итога решения.
+   */
+  public approveRequest(
+    id: string,
+    reason: string,
+    amount?: number,
+  ): Observable<AdminRequestDecision> {
+    const body: { reason: string; amount?: number } = { reason };
+    if (amount !== undefined) {
+      body.amount = amount;
+    }
+    return this._http.post<AdminRequestDecision>(
+      `${API_PREFIX}/admin/telegram/requests/${id}/approve`,
+      body,
+    );
+  }
+
+  /**
+   * Отказывает по заявке. Причина уходит человеку дословно.
+   * @param id Заявка.
+   * @param reason Причина или пусто.
+   * @returns Поток итога решения.
+   */
+  public rejectRequest(id: string, reason: string): Observable<AdminRequestDecision> {
+    return this._http.post<AdminRequestDecision>(
+      `${API_PREFIX}/admin/telegram/requests/${id}/reject`,
+      { reason },
     );
   }
 }

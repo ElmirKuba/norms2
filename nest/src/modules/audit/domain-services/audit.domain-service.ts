@@ -76,10 +76,16 @@ export class AuditDomainService {
 
   /**
    * Читает последние записи журнала, новые сверху.
+   *
+   * **Незнакомый код действия в фильтре — пустая лента, а не ошибка.** Коды в записях остаются
+   * навсегда, а справочник `AUDIT_ACTIONS` живёт вместе с кодом: действие могут переименовать
+   * или убрать. Отбивать такой фильтр значило бы запрещать читать собственный журнал.
+   *
    * @param limit Сколько записей вернуть (по умолчанию 100).
+   * @param action Код действия для фильтра или `null` — тогда все подряд.
    * @returns Строки журнала.
    */
-  public async recent(limit: number = 100): Promise<AuditEntryFull[]> {
-    return this._repository.findRecent(limit);
+  public async recent(limit: number = 100, action: string | null = null): Promise<AuditEntryFull[]> {
+    return this._repository.findRecent(limit, action);
   }
 }

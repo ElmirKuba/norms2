@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { adminAuditLog } from '../../schemas/admin-audit-log.schema';
@@ -41,12 +41,14 @@ export class AuditRepository implements AuditRepositoryPort {
    * `id` начинается с uuidv7, поэтому монотонен по времени создания.
    *
    * @param limit Сколько записей вернуть.
+   * @param action Код действия для фильтра или `null` — тогда все подряд.
    * @returns Строки журнала.
    */
-  public async findRecent(limit: number): Promise<AuditEntryFull[]> {
+  public async findRecent(limit: number, action: string | null): Promise<AuditEntryFull[]> {
     return this._database
       .select()
       .from(adminAuditLog)
+      .where(action === null ? undefined : eq(adminAuditLog.action, action))
       .orderBy(desc(adminAuditLog.createdAt), desc(adminAuditLog.id))
       .limit(limit);
   }

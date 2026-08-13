@@ -1,0 +1,109 @@
+// Журнал действий: лента «кто, что, когда, над кем». Только чтение — кнопок правки тут нет.
+.journal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.journal__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.journal__label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.journal__select {
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+
+.journal__note {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.journal__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journal__item {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+
+  &:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.journal__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+}
+
+.journal__actor {
+  font-weight: 500;
+}
+
+// Системное действие — не «пусто», а другой род актёра: показываем иначе, но не тише текста.
+.journal__actor--system {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.journal__what {
+  font-size: var(--fs-sm);
+}
+
+.journal__target {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+// Время уезжает вправо: читают ленту по «кто и что», а не по датам.
+.journal__when {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.journal__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.journal__detail {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+
+  b {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+}
+
+.journal__muted {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}

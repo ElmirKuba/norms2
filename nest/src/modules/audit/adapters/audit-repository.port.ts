@@ -24,7 +24,8 @@ export interface AuditRepositoryPort {
   /**
    * Читает последние записи, новые сверху.
    * @param limit Сколько записей вернуть.
+   * @param action Код действия для фильтра или `null` — тогда все подряд.
    * @returns Строки журнала.
    */
-  findRecent(limit: number): Promise<AuditEntryFull[]>;
+  findRecent(limit: number, action: string | null): Promise<AuditEntryFull[]>;
 }

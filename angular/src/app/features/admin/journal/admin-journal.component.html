@@ -1,0 +1,79 @@
+<div class="journal">
+  <div class="journal__top">
+    <label class="journal__label" for="journal-action">Действие</label>
+    <select
+      #filter
+      class="journal__select"
+      id="journal-action"
+      [value]="action() ?? ''"
+      (change)="selectAction(filter.value)"
+    >
+      <option value="">Все действия</option>
+      @for (option of actionOptions; track option.code) {
+        <option [value]="option.code">{{ option.label }}</option>
+      }
+    </select>
+    <app-button variant="ghost" (click)="reload()">Обновить</app-button>
+  </div>
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (error(); as message) {
+    <app-card>
+      <p class="journal__muted">{{ message }}</p>
+    </app-card>
+  } @else {
+    <app-card>
+      <p class="journal__note">
+        Журнал только пополняется: записи нельзя ни исправить, ни удалить — такой ручки нет ни на
+        экране, ни на сервере. <b>«Система»</b> в графе «кто» — это не пробел, а действие самого
+        продукта: роли при старте выдаёт сид, и это тоже изменение прав.
+      </p>
+
+      <ol class="journal__list">
+        @for (entry of entries(); track entry.id) {
+          <li class="journal__item">
+            <div class="journal__line">
+              <b
+                class="journal__actor"
+                [class.journal__actor--system]="entry.actorLogin === null"
+                >{{ actorOf(entry) }}</b
+              >
+              <span class="journal__what">{{ actionLabel(entry) }}</span>
+              @if (targetLabel(entry); as target) {
+                <span class="journal__target">{{ target }}</span>
+              }
+              <span class="journal__when">{{ when(entry.createdAt) }}</span>
+            </div>
+
+            @if (detailsOf(entry); as details) {
+              @if (details.length > 0) {
+                <div class="journal__details">
+                  @for (detail of details; track detail.label) {
+                    <span class="journal__detail">
+                      {{ detail.label }}: <b>{{ detail.value }}</b>
+                    </span>
+                  }
+                </div>
+              }
+            }
+          </li>
+        } @empty {
+          <li class="journal__item">
+            <p class="journal__muted">
+              @if (action() === null) {
+                Журнал пуст — административных действий ещё не было.
+              } @else {
+                Таких действий в журнале нет.
+              }
+            </p>
+          </li>
+        }
+      </ol>
+    </app-card>
+
+    @if (maybeMore()) {
+      <app-button variant="ghost" [block]="true" (click)="showMore()">Показать больше</app-button>
+    }
+  }
+</div>

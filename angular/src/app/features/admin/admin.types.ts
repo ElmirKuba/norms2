@@ -174,6 +174,31 @@ export interface AdminRelease {
   createdAt: string;
 }
 
+/**
+ * Строка журнала действий (2.9.3·14).
+ *
+ * **`actorLogin: null` означает «система», а не «неизвестно»:** сид выдаёт роли при старте, и это
+ * тоже изменение прав. Показывать такую строку прочерком значило бы врать про происхождение.
+ */
+export interface AdminAuditEntry {
+  /** PK записи. */
+  id: string;
+  /** Когда действие произошло (ISO). */
+  createdAt: string;
+  /** Логин действовавшего или null — действовала система. */
+  actorLogin: string | null;
+  /** Машинный код действия. */
+  action: string;
+  /** Над чем действовали: `account`, `setting`, `release`, `telegram_request`. */
+  targetType: string | null;
+  /** Идентификатор цели. */
+  targetId: string | null;
+  /** Человекочитаемый снимок цели. */
+  targetLabel: string | null;
+  /** Подробности действия или null. */
+  details: Record<string, unknown> | null;
+}
+
 /** Итог вещания: отметка и признак доставки. */
 export interface AdminBroadcastResult {
   /** Дата вещания или null, если пост не ушёл. */

@@ -4,6 +4,7 @@ import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
   AdminAccount,
+  AdminAuditEntry,
   AdminBroadcastResult,
   AdminRelease,
   AdminReleaseFormat,
@@ -161,6 +162,23 @@ export class AdminApiService {
     return this._http.get<AdminTelegramRequestPage>(`${API_PREFIX}/admin/telegram/requests`, {
       params: { status, offset: String(offset), limit: String(limit) },
     });
+  }
+
+  /**
+   * Журнал действий администратора, новые сверху (2.9.3·14).
+   *
+   * Только чтение — ручек правки и удаления нет и не будет: журнал, умеющий править себя, ничего
+   * не доказывает.
+   * @param action Код действия для фильтра или null — тогда все подряд.
+   * @param limit Сколько записей показать.
+   * @returns Поток строк журнала.
+   */
+  public listAuditLog(action: string | null, limit: number): Observable<AdminAuditEntry[]> {
+    const params: Record<string, string> = { limit: String(limit) };
+    if (action !== null) {
+      params['action'] = action;
+    }
+    return this._http.get<AdminAuditEntry[]>(`${API_PREFIX}/admin/audit-log`, { params });
   }
 
   /**

@@ -33,6 +33,11 @@ export const adminRoutes: Routes = [
           import('./people/admin-people.component').then((m) => m.AdminPeopleComponent),
       },
       {
+        path: 'journal',
+        loadComponent: () =>
+          import('./journal/admin-journal.component').then((m) => m.AdminJournalComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./settings/admin-settings.component').then((m) => m.AdminSettingsComponent),

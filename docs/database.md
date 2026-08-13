@@ -1,4 +1,4 @@
-# database.md — схема БД фазы 1
+# database.md — схема БД
 
 > Источник истины по **физической схеме**. Описывает «что есть», без истории решений. «Почему так» — в [`decisions/`](./decisions/README.md) (ссылки по тексту).
 > Реализация: PostgreSQL + **Drizzle** с **явными миграциями** (drizzle-kit; auto-push в проде запрещён) — [ADR-0030](./decisions/0030-stack-revision-drizzle-5layer-npm.md). Слой `repositories` инкапсулирует ORM — бизнес-слои про неё не знают. Схема таблиц ниже от ORM не зависит.
@@ -8,10 +8,61 @@
 - **PK `id`** — `varchar(52)`, формат `uuidv7___unixmillis` (пример `019e7488-0147-7305-9b95-a553f2d00c8e___1780071500548`). Генерация — util `generateId()` на бэке/фронте. Все FK — тоже `varchar(52)`. ([ADR-0016](./decisions/0016-primary-key-format.md))
 - **Имена** — `snake_case` для таблиц и колонок; Drizzle-схемы (`database/schemas`) маппят на camelCase в коде.
 - **Таймстампы** — `created_at` и `updated_at` (`timestamptz not null`) на **каждой** таблице; `updated_at` автообновляется. ([ADR-0011](./decisions/0011-accounts-table-merge-rename.md))
-- **Soft-delete** — аккаунты физически не удаляются; FK на `accounts` — `ON DELETE RESTRICT` (удаления строки не происходит). ([ADR-0017](./decisions/0017-account-soft-delete.md))
+- **Мягкое удаление — свойство слоя 5, а не отдельных таблиц** ([ADR-0068](./decisions/0068-deletion-belongs-to-storage.md), 2.9.3·16): колонка `deleted_at` (`timestamptz`, nullable) есть **у всех 33 таблиц**, её навешивает хелпер `defineTableWithSchema`, поэтому в доменные интерфейсы она не попадает. Домен зовёт `delete()` и искренне считает, что удалил.
+- **`ON DELETE CASCADE` в базе нет ни одного** (2.9.3·17). Каскад свой: рекурсивный обход по карте владения [`database/core/deletion-graph.ts`](../nest/src/database/core/deletion-graph.ts), снизу вверх, каждый узел по своему режиму, одной меткой времени, в одной транзакции. FK остались ради целостности (`no action` — 25, `set null` — 8, `restrict` — 8).
+- **Аккаунты физически не удаляются** ([ADR-0017](./decisions/0017-account-soft-delete.md)); FK фазы 1 на `accounts` — `restrict`.
 - **Хеши** — `password_hash` (пароль 3–64, [ADR-0032](./decisions/0032-phase1-refinements.md)), `answer_hash`, `token_hash` хранят argon2id-хеши (плейнтекст приходит по TLS, хешируется на бэке). ([ADR-0009](./decisions/0009-server-side-hashing.md))
 
-## Таблицы (6)
+## Таблицы: полный список (33)
+
+> Колонки — источник истины в [`nest/src/database/schemas/`](../nest/src/database/schemas); здесь карта: что за таблица и зачем. Детальные разборы шести таблиц фазы 1 — ниже.
+
+| Область | Таблица | Зачем | Удаление |
+|---|---|---|---|
+| **Вход** | `accounts` | аккаунт: логин, хеш, псевдоним, TZ, квота приглашений | мягкое (`deleted_at` ведёт домен, ADR-0017) |
+| | `secret_qa` | вопросы восстановления, ответы — argon2id | **физическое** (хеши старых ответов копить незачем) |
+| | `sessions` | refresh-токены и устройства | не удаляются — `revoked_at` |
+| | `session_token_history` | архив ротированных хешей, детект реплея | не удаляются |
+| | `invitations` | ребро дерева «кто кого привёл» | не удаляются |
+| | `invite_codes` | живые коды приглашений | **физическое** (код — секрет, занимает unique) |
+| | `bans` | баны; снятие = `active=false` | не удаляются |
+| **Права** | `roles` | справочник ролей | не удаляются |
+| | `account_roles` | кому какая роль выдана | **физическое** (след — в журнале) |
+| | `app_settings` | рантайм-настройки | не удаляются |
+| | `admin_audit_log` | журнал действий администратора | append-only, удаления нет и не будет |
+| **Выпуск** | `releases` | публикация релиза, видна без аккаунта | мягкое |
+| | `notifications` | доставка (`account_id=null` — всем) | мягкое |
+| | `notification_reads` | наличие строки = прочитано | не удаляются |
+| **Telegram** | `telegram_links` | привязка чат↔аккаунт | **физическое** (отвязка обязана стирать) |
+| | `telegram_requests` | карточки заявок и решений | мягкое |
+| | `telegram_updates` | дедуп апдейтов | **физическое** (иначе растёт вечно) |
+| **Акцент: общее** | `accent_settings` | пауза и состояние раздела, 1:1 с аккаунтом | не удаляются |
+| | `accent_domains`, `accent_attributes` | справочники сфер и атрибутов (сид) | не удаляются |
+| **Привычки** | `habits` | шаблон: лесенка, RRULE, атрибуты | мягкое |
+| | `tasks` | задачи дня из шаблонов | **физическое** (материализация, а не данные человека) |
+| **Микро-победы** | `micro_wins` | карточки микро-побед | мягкое |
+| | `micro_win_logs` | факты выполнения, 1 в день | не удаляются |
+| **Цели** | `goals` | цели, self-FK на подцели | мягкое |
+| | `goal_entries` | замеры прогресса (append-only) | мягкое |
+| | `milestones` | вехи целей | мягкое |
+| **Держусь** | `anti_habits` | воздержание, timer-модель | мягкое |
+| | `anti_habit_events` | таймлайн: срыв, перенос, план, веха | не удаляются |
+| **Препятствия** | `obstacles` | препятствия, две оси классификации | мягкое |
+| | `counterplays` | заготовленные ответы | мягкое |
+| | `obstacle_encounters` | журнал столкновений | не удаляются |
+| **Награды** | `user_achievements` | выданные достижения, отзыва нет | не удаляются |
+
+## Связи: 41 внешний ключ
+
+**Центр — `accounts`:** на него смотрит 21 таблица. Поведение при удалении разное и осознанное: `restrict` у фазы 1 (аккаунт физически не удаляется), `no action` у остального (каскад делает слой 5), `set null` у следов, которые обязаны пережить человека — `admin_audit_log.actor_account_id`, `app_settings.updated_by`.
+
+**Деревья владения** (кто уходит вместе с родителем — по карте слоя 5, не по DDL): `goals → goal_entries, milestones, goals(подцели)`; `habits → tasks`; `micro_wins → micro_win_logs`; `obstacles → counterplays, obstacle_encounters`; `anti_habits → anti_habit_events`; `notifications → notification_reads`; `releases → notifications`; `sessions → session_token_history`; `accounts → 14 таблиц`.
+
+**Слабые ссылки (`set null`)** — «указывает, но не владеет»: `counterplays.linked_micro_win_id`, `goals.fallback_micro_win_id`, `habits.min_version_micro_win_id`, `anti_habit_events.obstacle_id`, `obstacle_encounters.counterplay_id`, `telegram_requests.invite_code_id`. ⚠️ При **мягком** удалении цели они не обнуляются: читатель обязан спрашивать живость сам ([ADR-0068](./decisions/0068-deletion-belongs-to-storage.md)).
+
+**Мягкие ссылки без FK** (живут договорённостью): `habits.goal_id`, `tasks.goal_id`, `tasks.postponed_from_task_id`, `goal_entries.source_task_id`, `domain_key` в четырёх таблицах → `accent_domains.key`, `habits.attributes` → `accent_attributes.key`, `micro_wins.category`.
+
+## Таблицы фазы 1 подробно (6)
 > security_logs убрана ([ADR-0032](./decisions/0032-phase1-refinements.md)): логи безопасности в фазе 1 не ведём.
 
 ### 1. `accounts` — аккаунт (идентичность + вход + квота)

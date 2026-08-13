@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
-import { InviteDomainService } from '../../invites/domain-services/invite.domain-service';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
-import { TRANSACTION_RUNNER } from '../../../shared/transactions/transaction-runner.port';
 import { OwnerActionStore } from '../domain-services/owner-action.store';
+import { ReviewRequestsUseCase } from './review-requests.use-case';
+import { RequestDecisionError } from '../../../shared/errors/request-decision.error';
+import type { RequestDecisionFailure } from '../../../shared/errors/request-decision.error';
 import {
   decisionButtons,
   escapeHtml,
@@ -13,11 +13,9 @@ import {
 } from '../domain-services/telegram.domain-service';
 import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
-import type { TransactionRunnerPort } from '../../../shared/transactions/transaction-runner.port';
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
 import type { OwnerActionKind } from '../domain-services/owner-action.store';
-import type { Env } from '../../../system/config/env.schema';
-import { toHumanUrl } from '../../../shared/utility-level/human-url.util';
+import type { RequestActor } from '../interfaces/request-actor.interface';
 
 /** Возврат в меню — есть на каждом экране: без него любой список тупик. */
 const MENU_BUTTON = { text: '🏠 Меню', callbackData: 'menu' };
@@ -45,28 +43,21 @@ const SKIP_REASON = '-';
 @Injectable()
 export class OwnerActionsUseCase {
   private readonly _logger = new Logger('TelegramOwner');
-  private readonly _baseUrl: string;
 
   /**
    * @param _repository Порт репозитория заявок.
    * @param _api Исходящий порт Bot API.
    * @param _pending Незавершённые действия владельца (ждём причину).
-   * @param _accountDomainService Domain-service аккаунтов (квота, аккаунт по идентификатору).
-   * @param _inviteDomainService Domain-service приглашений (создание кода).
-   * @param _transactionRunner Раннер транзакций.
-   * @param configService Конфиг (публичный адрес для ссылки-приглашения).
+   * @param _accountDomainService Domain-service аккаунтов (аккаунт по идентификатору).
+   * @param _review Ядро разбора заявок — **общее с админкой** (2.9.3·11).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     private readonly _pending: OwnerActionStore,
     private readonly _accountDomainService: AccountDomainService,
-    private readonly _inviteDomainService: InviteDomainService,
-    @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
-    configService: ConfigService<Env, true>,
-  ) {
-    this._baseUrl = toHumanUrl(configService.get('PUBLIC_BASE_URL', { infer: true })).replace(/\/+$/, '');
-  }
+    private readonly _review: ReviewRequestsUseCase,
+  ) {}
 
   /**
    * Показывает меню владельца — **объединённое**: разбор заявок плюс то, что доступно гостю.
@@ -278,93 +269,35 @@ export class OwnerActionsUseCase {
 
   /**
    * Одобряет заявку: списывает квоту, создаёт код, шлёт его человеку.
+   *
+   * Вся механика — в общем с админкой ядре (`ReviewRequestsUseCase`); здесь остаётся ровно то,
+   * что относится к боту: чей это аккаунт и как отчитаться владельцу в чат.
    * @param chatId Чат владельца.
    * @param requestId Заявка.
    * @param reason Подпись к приглашению или null.
    * @returns Промис завершения.
    */
   private async _approve(chatId: string, requestId: string, reason: string | null): Promise<void> {
-    const request = await this._repository.findRequestById(requestId);
-    if (request === null || request.status !== 'pending') {
-      await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
+    const actor = await this._resolveActor(chatId);
+    if (actor === null) {
       return;
     }
-    const link = await this._repository.findLinkByChat(chatId);
-    if (link === null) {
-      await this._api.sendMessage(
-        chatId,
-        'Сначала привяжи аккаунт — от него будет выдан код: <code>/link мой_логин</code>',
-      );
-      return;
-    }
-
-    // Квота и код — в одной транзакции: списалось, но код не создался — откатываем оба.
-    let created: { code: string; id: string };
     try {
-      created = await this._transactionRunner.run(async (tx) => {
-        const consumed = await this._accountDomainService.consumeInviteQuota(link.accountId, tx);
-        if (!consumed) {
-          throw new Error('QUOTA');
-        }
-        const inviteCode = await this._inviteDomainService.createCode(
-          link.accountId,
-          reason ?? DEFAULT_REASON,
-          tx,
-        );
-        return { code: inviteCode.code, id: inviteCode.id };
-      });
-    } catch (error) {
-      const quotaSpent = error instanceof Error && error.message === 'QUOTA';
-      await this._api.sendMessage(
+      const outcome = await this._review.approve(requestId, actor, reason);
+      const code = escapeHtml(outcome.inviteCode ?? '');
+      await this._reply(
         chatId,
-        quotaSpent ? 'Квота приглашений исчерпана — код не выдан.' : 'Не получилось создать код.',
+        outcome.notified
+          ? `Код выдан и отправлен: <code>${code}</code>`
+          : `Код выдан: <code>${code}</code>\n\n⚠️ Человеку он <b>не доставлен</b> — бот молчит или его заблокировали. Код придётся передать другим способом.`,
       );
-      this._logger.warn(`Одобрение заявки ${requestId} не прошло: ${String(error)}`);
-      return;
+    } catch (error) {
+      await this._reportFailure(chatId, requestId, error);
     }
-
-    // Заявка закрывается ПОСЛЕ выдачи: если код не создался, она осталась бы pending —
-    // это лучше, чем закрытая заявка без кода.
-    // Ссылка на код — не украшение: по ней бот узнаёт, что человек зарегистрировался именно по
-    // этой заявке, и спрашивает у него согласие на уведомления (·15). Без неё связь теряется.
-    const closed = await this._repository.decideIfPending(requestId, {
-      status: 'approved',
-      decisionReason: reason,
-      inviteCodeId: created.id,
-      grantedAmount: null,
-    });
-    if (!closed) {
-      // Кто-то закрыл её параллельно (кнопка под сообщением и очередь — два входа).
-      this._logger.warn(`Заявка ${requestId} закрыта параллельно; код ${created.code} уже выдан.`);
-    }
-
-    // Ссылка ведёт на страницу «Тебя пригласили!», а не сразу на форму: человек сначала
-    // видит, куда его позвали и почему, и только потом регистрируется. Код в ссылке
-    // подставится сам. Адрес берётся из конфига — на стейдже он другой, и зашитый
-    // «нормисы.рф» отправлял бы тестового человека на боевой сайт.
-    const inviteLink = `${this._baseUrl}/invite?code=${encodeURIComponent(created.code)}`;
-    await this._api.sendMessage(
-      request.chatId,
-      [
-        '🎟 <b>Заявка одобрена</b>',
-        '',
-        `Твоя ссылка-приглашение: ${escapeHtml(inviteLink)}`,
-        '',
-        `Если ссылка не открылась — код можно ввести вручную: <code>${escapeHtml(created.code)}</code>`,
-      ].join('\n'),
-    );
-    await this._api.sendMessage(chatId, `Код выдан и отправлен: <code>${escapeHtml(created.code)}</code>`, [
-      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
-    ]);
   }
 
   /**
    * Начисляет приглашения по просьбе (·13).
-   *
-   * **Закрытие заявки идёт первым и в той же транзакции.** Обратный порядок («начислил, потом
-   * закрыл») при двух нажатиях подряд начисляет дважды: второй заход застаёт заявку ещё
-   * открытой. Здесь второй заход не проходит вовсе — `decideIfPending` вернёт `false`, и
-   * транзакция откатится, не тронув квоту.
    * @param chatId Чат владельца.
    * @param requestId Заявка.
    * @param amount Сколько начислить.
@@ -377,63 +310,21 @@ export class OwnerActionsUseCase {
     amount: number,
     reason: string | null,
   ): Promise<void> {
-    const request = await this._repository.findRequestById(requestId);
-    if (request === null || request.status !== 'pending') {
-      await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
+    const actor = await this._resolveActor(chatId);
+    if (actor === null) {
       return;
     }
-    const accountId = request.accountId;
-    if (accountId === null) {
-      // Схема такого не допускает (`check` на пару «тип ↔ аккаунт»), но начисление «никому» —
-      // ровно тот случай, где молчаливое падение дороже проверки.
-      await this._api.sendMessage(chatId, 'У заявки нет аккаунта — начислять некому.');
-      return;
-    }
-
-    let remaining: number;
     try {
-      remaining = await this._transactionRunner.run(async (tx) => {
-        const closed = await this._repository.decideIfPending(
-          requestId,
-          {
-            status: 'approved',
-            decisionReason: reason,
-            inviteCodeId: null,
-            grantedAmount: amount,
-          },
-          tx,
-        );
-        if (!closed) {
-          throw new Error('CLOSED');
-        }
-        const updated = await this._accountDomainService.grantInviteQuota(accountId, amount, tx);
-        if (updated === null) {
-          throw new Error('NO_ACCOUNT');
-        }
-        return updated;
-      });
-    } catch (error) {
-      const closed = error instanceof Error && error.message === 'CLOSED';
-      await this._api.sendMessage(
+      const outcome = await this._review.grant(requestId, actor, amount, reason);
+      await this._reply(
         chatId,
-        closed ? 'Эта заявка уже закрыта.' : 'Не получилось начислить — аккаунт недоступен.',
+        outcome.notified
+          ? `Начислено +${String(amount)}.`
+          : `Начислено +${String(amount)}.\n\n⚠️ Человеку сообщение <b>не доставлено</b> — квота у него уже есть, но он об этом не знает.`,
       );
-      this._logger.warn(`Начисление по заявке ${requestId} не прошло: ${String(error)}`);
-      return;
+    } catch (error) {
+      await this._reportFailure(chatId, requestId, error);
     }
-
-    await this._api.sendMessage(
-      request.chatId,
-      [
-        `➕ <b>Начислено приглашений: +${String(amount)}</b>`,
-        '',
-        `Теперь у тебя их ${String(remaining)}. Выдать приглашение можно в личном кабинете.`,
-        ...(reason === null ? [] : ['', `От владельца: ${escapeHtml(reason)}`]),
-      ].join('\n'),
-    );
-    await this._api.sendMessage(chatId, `Начислено +${String(amount)}.`, [
-      [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
-    ]);
   }
 
   /**
@@ -444,28 +335,82 @@ export class OwnerActionsUseCase {
    * @returns Промис завершения.
    */
   private async _reject(chatId: string, requestId: string, reason: string | null): Promise<void> {
-    const request = await this._repository.findRequestById(requestId);
-    if (request === null) {
-      await this._api.sendMessage(chatId, 'Заявка не найдена.');
+    const actor = await this._resolveActor(chatId);
+    if (actor === null) {
       return;
     }
-    const closed = await this._repository.decideIfPending(requestId, {
-      status: 'rejected',
-      decisionReason: reason,
-      inviteCodeId: null,
-      grantedAmount: null,
-    });
-    if (!closed) {
-      await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
+    try {
+      const outcome = await this._review.reject(requestId, actor, reason);
+      await this._reply(
+        chatId,
+        outcome.notified
+          ? 'Отказ отправлен.'
+          : 'Заявка отклонена.\n\n⚠️ Человеку сообщение <b>не доставлено</b> — он об отказе не знает.',
+      );
+    } catch (error) {
+      await this._reportFailure(chatId, requestId, error);
+    }
+  }
+
+  /**
+   * Определяет, от чьего имени решает владелец: чат → привязка → аккаунт.
+   *
+   * Без привязки решать нельзя: квота приглашений списывается с конкретного аккаунта, а подпись
+   * в журнале должна указывать на человека, а не на чат.
+   * @param chatId Чат владельца.
+   * @returns Актёр или null, если привязки нет (сообщение уже отправлено).
+   */
+  private async _resolveActor(chatId: string): Promise<RequestActor | null> {
+    const link = await this._repository.findLinkByChat(chatId);
+    if (link === null) {
+      await this._api.sendMessage(
+        chatId,
+        'Сначала привяжи аккаунт — от него будет выдан код: <code>/link мой_логин</code>',
+      );
+      return null;
+    }
+    const account = await this._accountDomainService.getActiveById(link.accountId).catch(() => null);
+    if (account === null) {
+      await this._api.sendMessage(chatId, 'Привязанный аккаунт недоступен — решить заявку нельзя.');
+      return null;
+    }
+    return { accountId: account.id, login: account.login };
+  }
+
+  /**
+   * Переводит машинный код отказа в реплику владельцу.
+   * @param chatId Чат владельца.
+   * @param requestId Заявка (для лога).
+   * @param error Что произошло.
+   * @returns Промис завершения.
+   */
+  private async _reportFailure(chatId: string, requestId: string, error: unknown): Promise<void> {
+    if (!(error instanceof RequestDecisionError)) {
+      this._logger.error(`Решение по заявке ${requestId} упало: ${String(error)}`);
+      await this._api.sendMessage(chatId, 'Что-то пошло не так — заявка осталась как была.');
       return;
     }
-    await this._api.sendMessage(
-      request.chatId,
-      reason === null
-        ? 'К сожалению, заявка отклонена.'
-        : `К сожалению, заявка отклонена.\n\nПричина: ${escapeHtml(reason)}`,
-    );
-    await this._api.sendMessage(chatId, 'Отказ отправлен.', [
+    // Словарь именно `Record<RequestDecisionFailure, …>`, а не `Record<string, …>`: появится
+    // новый код отказа — компилятор потребует формулировку, а не выдаст заглушку молча.
+    const texts: Record<RequestDecisionFailure, string> = {
+      NOT_FOUND: 'Заявка не найдена.',
+      ALREADY_CLOSED: 'Эта заявка уже закрыта.',
+      QUOTA_EXHAUSTED: 'Квота приглашений исчерпана — код не выдан.',
+      NO_ACCOUNT: 'У заявки нет аккаунта — начислять некому.',
+      WRONG_TYPE: 'Это заявка на вступление — по ней выдаётся код.',
+      CREATE_FAILED: 'Не получилось выполнить решение.',
+    };
+    await this._api.sendMessage(chatId, texts[error.code]);
+  }
+
+  /**
+   * Отчёт владельцу с возвратом к очереди.
+   * @param chatId Чат владельца.
+   * @param text Текст.
+   * @returns Промис завершения.
+   */
+  private async _reply(chatId: string, text: string): Promise<void> {
+    await this._api.sendMessage(chatId, text, [
       [{ text: '📋 К заявкам', callbackData: 'q:0' }, MENU_BUTTON],
     ]);
   }

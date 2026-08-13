@@ -1,4 +1,5 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { ValidationError } from '../../../shared/errors/validation.error';
 import { UpdateSettingUseCase } from './update-setting.use-case';
 import { SETTING_TELEGRAM_BOT_PAUSED } from '../../settings/domain-services/settings.domain-service';
 import type { SettingsDomainService } from '../../settings/domain-services/settings.domain-service';
@@ -53,7 +54,7 @@ describe('UpdateSettingUseCase', () => {
 
     await expect(
       useCase.execute(SETTING_TELEGRAM_BOT_PAUSED, 'да', actor),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(ValidationError);
     expect(calls).toHaveLength(0);
   });
 

@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ValidationError } from '../../../shared/errors/validation.error';
 import { SettingsDomainService } from '../../settings/domain-services/settings.domain-service';
 import { EDITABLE_SETTINGS } from '../settings-registry';
 import type { SettingDescription } from '../../settings/interfaces/setting-description.interface';
@@ -27,7 +28,7 @@ export class UpdateSettingUseCase {
    * @param actor Админ, совершающий изменение.
    * @returns Обновлённое описание настройки.
    * @throws {NotFoundException} Если ключ не из белого списка.
-   * @throws {BadRequestException} Если значение не подходит типу настройки.
+   * @throws {ValidationError} Если значение не подходит типу настройки (400).
    */
   public async execute(
     key: string,
@@ -42,9 +43,9 @@ export class UpdateSettingUseCase {
       throw new NotFoundException();
     }
     if (value !== 'true' && value !== 'false') {
-      throw new BadRequestException({
-        error: { code: 'VALIDATION_FAILED', message: `Настройка '${normalized}' булева` },
-      });
+      // `ValidationError`, а не `BadRequestException` с телом-конвертом: конверт собирает
+      // глобальный фильтр, и машинный код он достаёт только из `DomainError`.
+      throw new ValidationError(`Настройка '${normalized}' булева — ожидается 'true' или 'false'.`);
     }
     await this._settings.setBoolean(normalized, value === 'true', actor);
 

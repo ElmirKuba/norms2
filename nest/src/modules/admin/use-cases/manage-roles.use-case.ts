@@ -1,4 +1,5 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { LastAdminProtectionError } from '../../../shared/errors/last-admin-protection.error';
 import { ROLE_REPOSITORY } from '../../account/adapters/role-repository.port';
 import type { RoleRepositoryPort } from '../../account/adapters/role-repository.port';
 import {
@@ -81,17 +82,12 @@ export class ManageRolesUseCase {
    * @param actor Кто снимает.
    * @returns Обновлённая строка человека.
    * @throws {NotFoundException} Если роли с таким кодом нет.
-   * @throws {ConflictException} При попытке снять `admin` с себя.
+   * @throws {LastAdminProtectionError} При попытке снять `admin` с себя (409).
    */
   public async revoke(accountId: string, code: string, actor: RoleActor): Promise<AdminAccountView> {
     const role = await this._requireRole(code);
     if (role.code.toLowerCase() === ROLE_ADMIN && accountId === actor.accountId) {
-      throw new ConflictException({
-        error: {
-          code: 'LAST_ADMIN_PROTECTION',
-          message: 'Снять роль администратора с самого себя нельзя.',
-        },
-      });
+      throw new LastAdminProtectionError('Снять роль администратора с самого себя нельзя.');
     }
     const revoked = await this._roleRepository.revoke(accountId, role.id);
     if (revoked) {

@@ -8,6 +8,7 @@ import { LinkCodeStore } from './domain-services/link-code.store';
 import { LinkWaitStore } from './domain-services/link-wait.store';
 import { HandleTelegramUpdateUseCase } from './use-cases/handle-telegram-update.use-case';
 import { OwnerActionsUseCase } from './use-cases/owner-actions.use-case';
+import { ReviewRequestsUseCase } from './use-cases/review-requests.use-case';
 import { RequestInvitesUseCase } from './use-cases/request-invites.use-case';
 import { OwnerActionStore } from './domain-services/owner-action.store';
 import { AccountModule } from '../account/account.module';
@@ -26,6 +27,7 @@ import { AccessControlModule } from '../auth/access-control.module';
   providers: [
     HandleTelegramUpdateUseCase,
     OwnerActionsUseCase,
+    ReviewRequestsUseCase,
     RequestInvitesUseCase,
     ManageTelegramLinkUseCase,
     GetTelegramPublicUseCase,
@@ -33,7 +35,9 @@ import { AccessControlModule } from '../auth/access-control.module';
     LinkCodeStore,
     LinkWaitStore,
   ],
-  // Наружу — только публичные строки области, для агрегатора `public-config`.
-  exports: [GetTelegramPublicUseCase],
+  // Наружу — публичные строки области (для агрегатора `public-config`) и **ядро разбора заявок**
+  // (2.9.3·11): админка обязана закрывать заявки ТЕМ ЖЕ кодом, что и бот, иначе два пути
+  // решения разъедутся в мелочах и разойдутся молча. Цикла нет — telegram про admin не знает.
+  exports: [GetTelegramPublicUseCase, ReviewRequestsUseCase],
 })
 export class TelegramModule {}

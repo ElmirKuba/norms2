@@ -16,6 +16,12 @@ export const AUDIT_ACTIONS = {
   ROLE_REVOKED: 'role.revoked',
   /** Публикация релиза удалена (каскадом ушли доставка и отметки прочтения). */
   RELEASE_DELETED: 'release.deleted',
+  /** Заявка на вступление одобрена — выдан код приглашения. */
+  TELEGRAM_REQUEST_APPROVED: 'telegram.request.approved',
+  /** Просьба о приглашениях удовлетворена — начислена квота. */
+  TELEGRAM_REQUEST_GRANTED: 'telegram.request.granted',
+  /** По заявке отказано. */
+  TELEGRAM_REQUEST_REJECTED: 'telegram.request.rejected',
 } as const;
 
 /** Что пишется в журнал: содержательные поля, часть из которых имеет разумное умолчание. */

@@ -138,6 +138,11 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
       .where(
         and(
           eq(antiHabits.accountId, accountId),
+          // Только по ЖИВЫМ анти-привычкам. Без этого условия строка «новое достижение»
+          // продолжала показываться по той, которую человек уже убрал из списка: удаление у нас
+          // мягкое (`is_active = false`, история сохраняется), а вехи в журнале остаются — и
+          // выглядело это как «продукт считает удалённое». Поймано Elmir 12.08.2026.
+          eq(antiHabits.isActive, true),
           eq(antiHabitEvents.type, 'goal_reached'),
           gte(antiHabitEvents.occurredAt, sinceOccurredAt),
         ),

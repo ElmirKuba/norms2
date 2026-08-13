@@ -7,10 +7,14 @@ import { AdminSettingsController } from './controllers/admin-settings.controller
 import { AdminAccountsController } from './controllers/admin-accounts.controller';
 import { AdminReleasesController } from './controllers/admin-releases.controller';
 import { AdminTelegramController } from './controllers/admin-telegram.controller';
+import { AdminStateController } from './controllers/admin-state.controller';
 import { ListSettingsUseCase } from './use-cases/list-settings.use-case';
 import { UpdateSettingUseCase } from './use-cases/update-setting.use-case';
 import { DeleteReleaseUseCase } from './use-cases/delete-release.use-case';
 import { ManageRolesUseCase } from './use-cases/manage-roles.use-case';
+import { GetReleaseStateUseCase } from './use-cases/get-release-state.use-case';
+import { ADMIN_STATE_REPOSITORY } from './adapters/admin-state-repository.port';
+import { AdminStateRepository } from '../../database/repositories/admin/admin-state.repository';
 
 /**
  * Техническая админка (2.9.3·7) — все ручки под `/api/v1/admin/*`.
@@ -37,7 +41,15 @@ import { ManageRolesUseCase } from './use-cases/manage-roles.use-case';
     AdminReleasesController,
     AdminAccountsController,
     AdminTelegramController,
+    AdminStateController,
   ],
-  providers: [ListSettingsUseCase, UpdateSettingUseCase, DeleteReleaseUseCase, ManageRolesUseCase],
+  providers: [
+    { provide: ADMIN_STATE_REPOSITORY, useClass: AdminStateRepository },
+    ListSettingsUseCase,
+    UpdateSettingUseCase,
+    DeleteReleaseUseCase,
+    ManageRolesUseCase,
+    GetReleaseStateUseCase,
+  ],
 })
 export class AdminModule {}

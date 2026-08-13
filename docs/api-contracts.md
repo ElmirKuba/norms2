@@ -295,7 +295,17 @@ Body: `{ login, password }`.
 
 ### Состояние выпуска
 
-- `GET /admin/release-state` (admin) → `{ product, commit, migrations: { applied: number, last: string|null }, counters: { accounts, releases, notifications }, lastRelease: { key, publishedAt, broadcastedAt: Date|null } | null }`.
+✅ **Реализовано (·12).**
+
+- `GET /admin/release-state` (admin) → `{ product, commit, migrations: { applied: number, expected: number, last: string|null, behind: boolean }, counters: { accounts, releases, notifications }, lastRelease: { key, title, publishedAt: Date|null, broadcastedAt: Date|null } | null }`.
+  - **Миграции — пара чисел, а не один тег.** База своих тегов не хранит (в служебной таблице
+    только хеш и время), поэтому `applied` читается из базы, а `expected`/`last` — из журнала
+    drizzle-kit **в образе**. То есть `expected` отражает развёрнутое, а не содержимое
+    репозитория, и это правильный ответ на вопрос «на чём подняли контейнер».
+  - `behind` = `applied < expected` — только опасная сторона: код обращается к колонкам, которых
+    нет. Обратное расхождение читается по самим числам.
+  - `counters.accounts` — **живые аккаунты**: удалённые остаются строками ради целостности дерева
+    приглашений, но «сколько нас» не отражают.
   - Отвечает на вопрос, который сейчас задаётся глазами по каналу: **«последний релиз объявлен?»**
     Ошибки доставки в канал глушатся осознанно ([ADR-0064](./decisions/0064-telegram-release-channel.md)),
     и «посты перестали уходить» видно только по логам — это [открытый хвост](./open-threads.md),

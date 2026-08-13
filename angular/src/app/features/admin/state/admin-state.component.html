@@ -1,0 +1,90 @@
+<div class="state">
+  @if (loading()) {
+    <app-spinner />
+  } @else if (error(); as message) {
+    <app-card>
+      <p class="state__muted">{{ message }}</p>
+    </app-card>
+  } @else if (state(); as info) {
+    <app-card>
+      <h2 class="state__title">Что развёрнуто</h2>
+      <dl class="state__facts">
+        <div class="state__fact">
+          <dt>Версия продукта</dt>
+          <dd>{{ info.product }}</dd>
+        </div>
+        <div class="state__fact">
+          <dt>Коммит</dt>
+          <dd>{{ info.commit === '' ? '—' : info.commit }}</dd>
+        </div>
+        <div class="state__fact">
+          <dt>Миграции</dt>
+          <dd>
+            {{ info.migrations.applied }} из {{ info.migrations.expected }}
+            @if (info.migrations.last; as last) {
+              <span class="state__muted">· {{ last }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+
+      @if (info.migrations.behind) {
+        <p class="state__alarm">
+          ⚠️ <b>База отстала от кода.</b> Приложение обращается к колонкам, которых ещё нет —
+          миграции не накатились при подъёме. Ошибки будут разрозненными и непохожими на причину.
+        </p>
+      }
+    </app-card>
+
+    <app-card>
+      <h2 class="state__title">Последний выпуск</h2>
+      @if (info.lastRelease; as release) {
+        <dl class="state__facts">
+          <div class="state__fact">
+            <dt>Публикация</dt>
+            <dd>{{ release.title }}</dd>
+          </div>
+          <div class="state__fact">
+            <dt>Ключ</dt>
+            <dd>{{ release.key }}</dd>
+          </div>
+          <div class="state__fact">
+            <dt>Выпущен</dt>
+            <dd>{{ when(release.publishedAt) }}</dd>
+          </div>
+        </dl>
+
+        @if (release.broadcastedAt) {
+          <p class="state__ok">Объявлен в канал {{ when(release.broadcastedAt) }}.</p>
+        } @else {
+          <p class="state__alarm">
+            ⚠️ <b>В канал не объявлен.</b> Публикация видна на сайте и в колокольчиках, но поста в
+            Telegram не было. Ошибки доставки в канал гасятся молча — узнать об этом иначе можно
+            только по логам.
+          </p>
+        }
+      } @else {
+        <p class="state__muted">Публикаций пока нет.</p>
+      }
+    </app-card>
+
+    <app-card>
+      <h2 class="state__title">Сколько всего</h2>
+      <dl class="state__facts">
+        <div class="state__fact">
+          <dt>Аккаунты</dt>
+          <dd>{{ info.counters.accounts }}</dd>
+        </div>
+        <div class="state__fact">
+          <dt>Публикации</dt>
+          <dd>{{ info.counters.releases }}</dd>
+        </div>
+        <div class="state__fact">
+          <dt>Уведомления</dt>
+          <dd>{{ info.counters.notifications }}</dd>
+        </div>
+      </dl>
+      <p class="state__muted">Аккаунты — живые: удалённые в счёт не идут.</p>
+    </app-card>
+  }
+</div>

@@ -4,6 +4,7 @@ import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
   AdminAccount,
+  AdminReleaseState,
   AdminAccountPage,
   AdminRequestDecision,
   AdminRequestStatus,
@@ -80,6 +81,14 @@ export class AdminApiService {
     return this._http.delete<AdminAccount>(
       `${API_PREFIX}/admin/accounts/${accountId}/roles/${encodeURIComponent(code)}`,
     );
+  }
+
+  /**
+   * Состояние выпуска: что развёрнуто и всё ли доехало (2.9.3·12).
+   * @returns Поток состояния.
+   */
+  public releaseState(): Observable<AdminReleaseState> {
+    return this._http.get<AdminReleaseState>(`${API_PREFIX}/admin/release-state`);
   }
 
   /**

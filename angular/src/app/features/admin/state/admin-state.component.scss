@@ -1,0 +1,57 @@
+// Состояние выпуска: три карточки фактов, без единого рычага.
+.state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.state__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+
+.state__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.state__fact {
+  display: flex;
+  gap: var(--space-1);
+  align-items: baseline;
+
+  dt {
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--fs-sm);
+  }
+}
+
+// Тревожная строка — единственное, что на этом экране должно ловить взгляд.
+.state__alarm {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-danger, var(--color-accent));
+  border-radius: var(--radius-sm, 8px);
+  font-size: var(--fs-sm);
+}
+
+.state__ok {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.state__muted {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}

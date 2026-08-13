@@ -112,3 +112,41 @@ export interface AdminRequestDecision {
   /** Выданный код приглашения или null. */
   inviteCode: string | null;
 }
+
+/** Состояние миграций: что в базе против того, что лежит в образе. */
+export interface AdminMigrationsState {
+  /** Сколько применено к базе. */
+  applied: number;
+  /** Сколько лежит в образе. */
+  expected: number;
+  /** Тег последней применённой или null. */
+  last: string | null;
+  /** База отстала от кода — код обращается к колонкам, которых нет. */
+  behind: boolean;
+}
+
+/** Последняя публикация и её судьба в канале. */
+export interface AdminLastRelease {
+  /** Публичный ключ. */
+  key: string;
+  /** Заголовок. */
+  title: string;
+  /** Дата выпуска (ISO) или null. */
+  publishedAt: string | null;
+  /** Когда объявлена в канал (ISO) или null — ради этого поля весь экран. */
+  broadcastedAt: string | null;
+}
+
+/** Состояние выпуска (2.9.3·12). */
+export interface AdminReleaseState {
+  /** Версия продукта. */
+  product: string;
+  /** Короткий git-SHA билда или пустая строка. */
+  commit: string;
+  /** Состояние миграций. */
+  migrations: AdminMigrationsState;
+  /** Счётчики продукта. */
+  counters: { accounts: number; releases: number; notifications: number };
+  /** Последняя публикация или null. */
+  lastRelease: AdminLastRelease | null;
+}

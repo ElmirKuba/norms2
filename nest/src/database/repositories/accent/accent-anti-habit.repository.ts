@@ -31,13 +31,36 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
    * @param accountId Идентификатор аккаунта.
    * @returns Список анти-привычек владельца.
    */
-  public async listByAccount(accountId: string): Promise<AntiHabitFull[]> {
+  public async listByAccount(accountId: string, archived = false): Promise<AntiHabitFull[]> {
     return this._db
       .select()
       .from(antiHabits)
-      .where(and(alive(antiHabits), eq(antiHabits.accountId, accountId), eq(antiHabits.isActive, true)))
+      .where(
+        and(
+          alive(antiHabits),
+          eq(antiHabits.accountId, accountId),
+          eq(antiHabits.isActive, !archived),
+        ),
+      )
       // Ручной порядок (ADR-0054), затем created_at, тай-брейкер id (детерминизм при равных position).
       .orderBy(asc(antiHabits.position), asc(antiHabits.createdAt), asc(antiHabits.id));
+  }
+
+  /**
+   * Удаляет анти-привычку владельца вместе с её таймлайном (каскад — наш, ADR-0068).
+   * @param id Идентификатор.
+   * @param accountId Владелец.
+   * @returns true, если было что удалять.
+   */
+  public async delete(id: string, accountId: string): Promise<boolean> {
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        antiHabits,
+        and(alive(antiHabits), eq(antiHabits.id, id), eq(antiHabits.accountId, accountId)),
+      );
+      return removed > 0;
+    });
   }
 
   /**

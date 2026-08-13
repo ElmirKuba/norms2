@@ -59,11 +59,23 @@ export interface AntiHabitAttemptCas {
  */
 export interface AccentAntiHabitRepositoryPort {
   /**
-   * Активные анти-привычки аккаунта (по дате создания, затем id — стабильный порядок).
+   * Анти-привычки аккаунта (по дате создания, затем id — стабильный порядок).
    * @param accountId Идентификатор аккаунта.
+   * @param archived `false` (умолчание) — в работе, `true` — в архиве.
    * @returns Список анти-привычек владельца.
    */
-  listByAccount(accountId: string): Promise<AntiHabitFull[]>;
+  listByAccount(accountId: string, archived?: boolean): Promise<AntiHabitFull[]>;
+
+  /**
+   * Удаляет анти-привычку владельца со всем её таймлайном.
+   *
+   * Для домена удаление безвозвратно ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md));
+   * что хранилище оставляет строку у себя — его дело, и знать об этом порту незачем.
+   * @param id Идентификатор.
+   * @param accountId Владелец.
+   * @returns `true`, если было что удалять.
+   */
+  delete(id: string, accountId: string): Promise<boolean>;
 
   /**
    * Находит анти-привычку по id с проверкой владения.

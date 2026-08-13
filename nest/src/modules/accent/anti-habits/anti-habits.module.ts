@@ -20,6 +20,8 @@ import { ReorderAntiHabitsUseCase } from './use-cases/reorder-anti-habits.use-ca
 import { SeedAntiHabitStarterPackUseCase } from './use-cases/seed-anti-habit-starter-pack.use-case';
 import { ClearAntiHabitStartersUseCase } from './use-cases/clear-anti-habit-starters.use-case';
 import { AdoptAntiHabitUseCase } from './use-cases/adopt-anti-habit.use-case';
+import { SetAntiHabitArchivedUseCase } from './use-cases/set-anti-habit-archived.use-case';
+import { DeleteAntiHabitUseCase } from './use-cases/delete-anti-habit.use-case';
 
 /**
  * Область анти-привычек «держусь» раздела «Акцент» (мультимодуль, ADR-0050; подфаза 2.6).
@@ -38,6 +40,8 @@ import { AdoptAntiHabitUseCase } from './use-cases/adopt-anti-habit.use-case';
     { provide: ACCENT_ANTI_HABIT_EVENTS, useClass: LoggingAntiHabitEventsAdapter },
     AccentAntiHabitDomainService,
     ListAntiHabitsUseCase,
+    SetAntiHabitArchivedUseCase,
+    DeleteAntiHabitUseCase,
     CreateAntiHabitUseCase,
     GetAntiHabitUseCase,
     UpdateAntiHabitUseCase,

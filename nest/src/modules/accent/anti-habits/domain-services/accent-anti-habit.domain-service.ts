@@ -108,8 +108,51 @@ export class AccentAntiHabitDomainService {
    * @param accountId Идентификатор аккаунта.
    * @returns Список анти-привычек владельца.
    */
-  public async list(accountId: string): Promise<AntiHabitFull[]> {
-    return this._repository.listByAccount(accountId);
+  public async list(accountId: string, archived = false): Promise<AntiHabitFull[]> {
+    return this._repository.listByAccount(accountId, archived);
+  }
+
+  /**
+   * Переносит анти-привычку в архив или возвращает из него.
+   *
+   * **Архив — состояние продукта, а не удаление** ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md)):
+   * у него обязаны быть оба перехода, иначе «убрал» читается как «навсегда» — ровно та болячка,
+   * с которой начался разбор 14.08.2026. Серия архивной анти-привычки не идёт и рецидив по ней
+   * не принимается: она инертна, как пример-витрина.
+   * @param id Идентификатор.
+   * @param accountId Владелец.
+   * @param archived `true` — в архив, `false` — вернуть в работу.
+   * @returns Обновлённая анти-привычка.
+   * @throws {AntiHabitNotFoundError} Если чужая или не существует.
+   */
+  public async setArchived(
+    id: string,
+    accountId: string,
+    archived: boolean,
+  ): Promise<AntiHabitFull> {
+    await this.getOwned(id, accountId);
+    const updated = await this._repository.update(id, accountId, { isActive: !archived });
+    if (updated === null) {
+      throw new AntiHabitNotFoundError('Анти-привычка не найдена.');
+    }
+    return updated;
+  }
+
+  /**
+   * Удаляет анти-привычку владельца — **безвозвратно с точки зрения продукта**.
+   *
+   * Хранилище оставляет строку у себя ради разбора аварий, но обещать это человеку нельзя, и
+   * домен об этом не знает: он зовёт `delete()` и считает, что удалил ([ADR-0068]).
+   * @param id Идентификатор.
+   * @param accountId Владелец.
+   * @returns Промис завершения.
+   * @throws {AntiHabitNotFoundError} Если чужая или не существует.
+   */
+  public async delete(id: string, accountId: string): Promise<void> {
+    const removed = await this._repository.delete(id, accountId);
+    if (!removed) {
+      throw new AntiHabitNotFoundError('Анти-привычка не найдена.');
+    }
   }
 
   /**

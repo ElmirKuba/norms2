@@ -13,10 +13,11 @@ export class ListAntiHabitsUseCase {
 
   /**
    * @param accountId Идентификатор аккаунта (из Guard).
+   * @param archived `false` (умолчание) — в работе, `true` — архив.
    * @returns Проекции анти-привычек (единый `now` для стабильного снимка серий).
    */
-  public async execute(accountId: string): Promise<AntiHabitView[]> {
-    const items = await this._antiHabits.list(accountId);
+  public async execute(accountId: string, archived = false): Promise<AntiHabitView[]> {
+    const items = await this._antiHabits.list(accountId, archived);
     const now = Date.now();
     return items.map((item) => toAntiHabitView(item, now));
   }

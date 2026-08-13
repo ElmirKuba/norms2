@@ -36,6 +36,8 @@ import { ReorderAntiHabitsUseCase } from '../use-cases/reorder-anti-habits.use-c
 import { SeedAntiHabitStarterPackUseCase } from '../use-cases/seed-anti-habit-starter-pack.use-case';
 import { ClearAntiHabitStartersUseCase } from '../use-cases/clear-anti-habit-starters.use-case';
 import { AdoptAntiHabitUseCase } from '../use-cases/adopt-anti-habit.use-case';
+import { SetAntiHabitArchivedUseCase } from '../use-cases/set-anti-habit-archived.use-case';
+import { DeleteAntiHabitUseCase } from '../use-cases/delete-anti-habit.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { AntiHabitView } from '../interfaces/anti-habit-view.interface';
 import type { AntiHabitEventPage } from '../interfaces/anti-habit-event-view.interface';
@@ -71,6 +73,8 @@ export class AntiHabitsController {
     private readonly _seedPack: SeedAntiHabitStarterPackUseCase,
     private readonly _clearStarters: ClearAntiHabitStartersUseCase,
     private readonly _adopt: AdoptAntiHabitUseCase,
+    private readonly _setArchived: SetAntiHabitArchivedUseCase,
+    private readonly _delete: DeleteAntiHabitUseCase,
   ) {}
 
   /**
@@ -112,13 +116,67 @@ export class AntiHabitsController {
   }
 
   /**
-   * Список анти-привычек аккаунта (активные, включая примеры).
+   * Список анти-привычек аккаунта: в работе (умолчание) или в архиве.
+   *
+   * **Фильтр — единственный способ увидеть архив**, отдельного «показать удалённые» нет и не
+   * будет ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md)):
+   * удалённое не отдаётся ни одним чтением.
    * @param request Запрос (аккаунт из Guard).
+   * @param filter `active` (умолчание) или `archived`; незнакомое значение читается как `active`.
    * @returns Проекции анти-привычек.
    */
   @Get('anti-habits')
-  public list(@Req() request: AuthenticatedRequest): Promise<AntiHabitView[]> {
-    return this._list.execute(request.account.id);
+  public list(
+    @Req() request: AuthenticatedRequest,
+    @Query('filter') filter?: string,
+  ): Promise<AntiHabitView[]> {
+    return this._list.execute(request.account.id, filter === 'archived');
+  }
+
+  /**
+   * Убирает анти-привычку в архив: она пропадает из списка «в работе», серия не идёт, рецидив
+   * не принимается. Обратимо — см. `/restore`.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('anti-habits/:id/archive')
+  @HttpCode(200)
+  public archive(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<AntiHabitView> {
+    return this._setArchived.execute(id, request.account.id, true);
+  }
+
+  /**
+   * Возвращает анти-привычку из архива в работу.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('anti-habits/:id/restore')
+  @HttpCode(200)
+  public restore(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<AntiHabitView> {
+    return this._setArchived.execute(id, request.account.id, false);
+  }
+
+  /**
+   * Удаляет анти-привычку вместе со всей её историей. **Для человека — безвозвратно.**
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Ничего (204).
+   */
+  @Delete('anti-habits/:id')
+  @HttpCode(204)
+  public async remove(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    await this._delete.execute(id, request.account.id);
   }
 
   /**

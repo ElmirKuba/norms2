@@ -22,7 +22,7 @@ export const telegramLinks = defineTableWithSchema<TelegramLinkFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     chatId: varchar('chat_id', { length: 32 }).notNull(),
     // По умолчанию false: согласие спрашивается явно (·15), а не выводится из привязки.
     notificationsAllowed: boolean('notifications_allowed').notNull().default(false),

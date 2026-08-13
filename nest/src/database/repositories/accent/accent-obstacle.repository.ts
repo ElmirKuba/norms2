@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -40,7 +42,7 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
     return this._db
       .select()
       .from(obstacles)
-      .where(where)
+      .where(and(alive(obstacles), where))
       .orderBy(asc(obstacles.position), asc(obstacles.createdAt), asc(obstacles.id));
   }
 
@@ -54,7 +56,7 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
     const rows = await this._db
       .select()
       .from(obstacles)
-      .where(and(eq(obstacles.id, id), eq(obstacles.accountId, accountId)))
+      .where(and(alive(obstacles), eq(obstacles.id, id), eq(obstacles.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -69,13 +71,13 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
     const rows = await this._db
       .select({ value: count() })
       .from(obstacles)
-      .where(
+      .where(and(alive(obstacles),
         and(
           eq(obstacles.accountId, accountId),
           eq(obstacles.isActive, true),
           eq(obstacles.isStarter, false),
         ),
-      );
+      ));
     return rows[0]?.value ?? 0;
   }
 
@@ -142,11 +144,15 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
    * @returns Число удалённых.
    */
   public async deleteStarters(accountId: string): Promise<number> {
-    const rows = await this._db
-      .delete(obstacles)
-      .where(and(eq(obstacles.accountId, accountId), eq(obstacles.isStarter, true)))
-      .returning({ id: obstacles.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        obstacles,
+        and(eq(obstacles.accountId, accountId), eq(obstacles.isStarter, true)),
+        { force: true },
+      );
+      return removed;
+    });
   }
 
   /**
@@ -165,7 +171,7 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
     const rows = await this._db
       .update(obstacles)
       .set({ ...patch, version: sql`${obstacles.version} + 1` })
-      .where(and(eq(obstacles.id, id), eq(obstacles.accountId, accountId)))
+      .where(and(alive(obstacles), eq(obstacles.id, id), eq(obstacles.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -178,11 +184,14 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
    * @returns true если удалено.
    */
   public async delete(id: string, accountId: string): Promise<boolean> {
-    const rows = await this._db
-      .delete(obstacles)
-      .where(and(eq(obstacles.id, id), eq(obstacles.accountId, accountId)))
-      .returning({ id: obstacles.id });
-    return rows.length > 0;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        obstacles,
+        and(alive(obstacles), eq(obstacles.id, id), eq(obstacles.accountId, accountId)),
+      );
+      return removed > 0;
+    });
   }
 
   /**

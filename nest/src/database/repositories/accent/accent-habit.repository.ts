@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -35,7 +37,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
     return this._db
       .select()
       .from(habits)
-      .where(and(eq(habits.accountId, accountId), eq(habits.isActive, true)))
+      .where(and(alive(habits), eq(habits.accountId, accountId), eq(habits.isActive, true)))
       // Тай-брейкер `id` (uuidv7 ≈ порядок вставки): drag-сортировка пишет в priority; при равных
       // priority+created_at (напр. сид: priority=0, один batch created_at) без него порядок
       // недетерминирован — привычка «прыгает» после edit (2.5.1). id делает порядок стабильным.
@@ -52,7 +54,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
     const rows = await this._db
       .select()
       .from(habits)
-      .where(and(eq(habits.id, id), eq(habits.accountId, accountId)))
+      .where(and(alive(habits), eq(habits.id, id), eq(habits.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -135,11 +137,15 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
    * @returns Число удалённых.
    */
   public async deleteStarters(accountId: string): Promise<number> {
-    const rows = await this._db
-      .delete(habits)
-      .where(and(eq(habits.accountId, accountId), eq(habits.isStarter, true)))
-      .returning({ id: habits.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        habits,
+        and(eq(habits.accountId, accountId), eq(habits.isStarter, true)),
+        { force: true },
+      );
+      return removed;
+    });
   }
 
   /**
@@ -158,7 +164,7 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
       .update(habits)
       // Любой update bump'ает version → CAS движка лесенки замечает конкурентную правку.
       .set({ ...patch, version: sql`${habits.version} + 1` })
-      .where(and(eq(habits.id, id), eq(habits.accountId, accountId)))
+      .where(and(alive(habits), eq(habits.id, id), eq(habits.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -180,13 +186,13 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
     const rows = await this._db
       .update(habits)
       .set({ ladder, version: sql`${habits.version} + 1` })
-      .where(
+      .where(and(alive(habits),
         and(
           eq(habits.id, id),
           eq(habits.accountId, accountId),
           eq(habits.version, expectedVersion),
         ),
-      )
+      ))
       .returning({ id: habits.id });
     return rows.length > 0;
   }

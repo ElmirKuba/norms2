@@ -21,7 +21,7 @@ export const microWins = defineTableWithSchema<MicroWinFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     title: text('title').notNull(),
     category: varchar('category', { length: 16 }).$type<MicroWinCategory>().notNull(),
     // Мягкий ключ сферы (опц., без FK) — общая ось со целями/привычками (ADR-0056, M#B3-1).

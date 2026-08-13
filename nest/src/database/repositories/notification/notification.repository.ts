@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
 import { and, asc, count, desc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -72,7 +73,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
           eq(notificationReads.accountId, accountId),
         ),
       )
-      .where(or(isNull(notifications.accountId), eq(notifications.accountId, accountId)))
+      .where(and(alive(releases), alive(notifications), or(isNull(notifications.accountId), eq(notifications.accountId, accountId))))
       // По дате ВЫПУСКА, а не записи строки: пересев одной ноты не должен выкидывать её
       // наверх колокольчика у всех (2.9.1·15). `id` вторым — детерминированный тайбрейк:
       // в uuidv7___unixmillis время зашито в сам ключ.
@@ -96,12 +97,12 @@ export class NotificationRepository implements NotificationRepositoryPort {
           eq(notificationReads.accountId, accountId),
         ),
       )
-      .where(
+      .where(and(alive(notifications),
         and(
           or(isNull(notifications.accountId), eq(notifications.accountId, accountId)),
           isNull(notificationReads.id),
         ),
-      );
+      ));
     return rows[0]?.value ?? 0;
   }
 
@@ -111,7 +112,7 @@ export class NotificationRepository implements NotificationRepositoryPort {
    * @returns Строка или null.
    */
   public async findById(id: string): Promise<NotificationFull | null> {
-    const rows = await this._db.select().from(notifications).where(eq(notifications.id, id)).limit(1);
+    const rows = await this._db.select().from(notifications).where(and(alive(notifications), eq(notifications.id, id))).limit(1);
     return rows[0] ?? null;
   }
 
@@ -147,12 +148,12 @@ export class NotificationRepository implements NotificationRepositoryPort {
           eq(notificationReads.accountId, accountId),
         ),
       )
-      .where(
+      .where(and(alive(notifications),
         and(
           or(isNull(notifications.accountId), eq(notifications.accountId, accountId)),
           isNull(notificationReads.id),
         ),
-      );
+      ));
     return rows.map((row) => row.id);
   }
 

@@ -23,7 +23,7 @@ export const obstacles = defineTableWithSchema<ObstacleFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     name: text('name').notNull(),
     type: varchar('type', { length: 20 }).$type<ObstacleType>().notNull(),
     // Мягкий ключ сферы (без FK) — вторая ось, общая со целями/привычками (ADR-0056).

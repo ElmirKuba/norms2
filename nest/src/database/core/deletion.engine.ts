@@ -39,7 +39,7 @@ export interface DeleteOptions {
 export async function deleteCascade(
   executor: DrizzleExecutor,
   table: PgTable,
-  where: SQL,
+  where: SQL | undefined,
   options: DeleteOptions = {},
 ): Promise<number> {
   const at = options.at ?? new Date();
@@ -83,7 +83,7 @@ export async function deleteCascade(
 export async function restoreCascade(
   executor: DrizzleExecutor,
   table: PgTable,
-  where: SQL,
+  where: SQL | undefined,
 ): Promise<number> {
   if (!isParanoid(table)) {
     return 0;
@@ -107,7 +107,7 @@ export async function restoreCascade(
       await restoreCascade(
         executor,
         edge.child,
-        and(eq(edge.column, row.id), eq(childDeletedAt, row.deletedAt)) as SQL,
+        and(eq(edge.column, row.id), eq(childDeletedAt, row.deletedAt)),
       );
     }
   }
@@ -173,7 +173,11 @@ interface DynamicExecutor {
  * @param where Условие.
  * @returns Список PK.
  */
-async function selectIds(executor: DrizzleExecutor, table: PgTable, where: SQL): Promise<string[]> {
+async function selectIds(
+  executor: DrizzleExecutor,
+  table: PgTable,
+  where: SQL | undefined,
+): Promise<string[]> {
   const rows = (await (executor as unknown as DynamicExecutor)
     .select({ id: primaryKeyOf(table) })
     .from(table)

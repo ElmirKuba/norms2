@@ -21,7 +21,7 @@ export const accountRoles = defineTableWithSchema<AccountRoleFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     roleId: fkColumn('role_id')
       .notNull()
       .references(() => roles.id, { onDelete: 'restrict' }),

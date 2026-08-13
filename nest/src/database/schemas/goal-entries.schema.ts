@@ -18,7 +18,7 @@ export const goalEntries = defineTableWithSchema<GoalEntryFull>()(
     id: idColumn(),
     goalId: fkColumn('goal_id')
       .notNull()
-      .references(() => goals.id, { onDelete: 'cascade' }),
+      .references(() => goals.id),
     value: doublePrecision('value').notNull(),
     occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
     note: text('note'),

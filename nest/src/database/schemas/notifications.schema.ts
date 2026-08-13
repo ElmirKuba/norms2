@@ -24,13 +24,13 @@ export const notifications = defineTableWithSchema<NotificationFull>()(
   {
     id: idColumn(),
     kind: varchar('kind', { length: 16 }).$type<NotificationKind>().notNull(),
-    accountId: fkColumn('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
+    accountId: fkColumn('account_id').references(() => accounts.id),
     title: varchar('title', { length: 200 }).notNull(),
     body: text('body'),
     // Ссылка на публикацию (ADR-0065). Каскад — то, ради чего разделение и делалось:
     // удалили релиз → ушли и доставки, и отметки о прочтении, одной командой вместо
     // согласования трёх таблиц и прод-тома вручную.
-    releaseId: fkColumn('release_id').references(() => releases.id, { onDelete: 'cascade' }),
+    releaseId: fkColumn('release_id').references(() => releases.id),
     ...timestamps(),
   },
   (table) => [

@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -54,7 +56,7 @@ export class AccentMilestoneRepository implements AccentMilestoneRepositoryPort 
     return this._db
       .select()
       .from(milestones)
-      .where(eq(milestones.goalId, goalId))
+      .where(and(alive(milestones), eq(milestones.goalId, goalId)))
       .orderBy(asc(milestones.thresholdValue));
   }
 
@@ -68,7 +70,7 @@ export class AccentMilestoneRepository implements AccentMilestoneRepositoryPort 
     const rows = await this._db
       .select()
       .from(milestones)
-      .where(and(eq(milestones.id, id), eq(milestones.goalId, goalId)))
+      .where(and(alive(milestones), eq(milestones.id, id), eq(milestones.goalId, goalId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -80,10 +82,13 @@ export class AccentMilestoneRepository implements AccentMilestoneRepositoryPort 
    * @returns true, если строка удалена.
    */
   public async remove(id: string, goalId: string): Promise<boolean> {
-    const rows = await this._db
-      .delete(milestones)
-      .where(and(eq(milestones.id, id), eq(milestones.goalId, goalId)))
-      .returning({ id: milestones.id });
-    return rows.length > 0;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        milestones,
+        and(alive(milestones), eq(milestones.id, id), eq(milestones.goalId, goalId)),
+      );
+      return removed > 0;
+    });
   }
 }

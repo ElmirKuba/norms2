@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -45,7 +47,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     return this._db
       .select()
       .from(goals)
-      .where(and(...conds))
+      .where(and(alive(goals), ...conds))
       // Тай-брейкер `id` (uuidv7 ≈ порядок вставки) — стабильный порядок при равных
       // position+created_at, иначе строка «прыгает» после edit (2.5.1).
       .orderBy(asc(goals.position), asc(goals.createdAt), asc(goals.id));
@@ -64,9 +66,9 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     return this._db
       .select()
       .from(goals)
-      .where(
+      .where(and(alive(goals),
         and(eq(goals.parentGoalId, parentGoalId), eq(goals.accountId, accountId)),
-      )
+      ))
       .orderBy(asc(goals.createdAt), asc(goals.id));
   }
 
@@ -80,7 +82,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .select()
       .from(goals)
-      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .where(and(alive(goals), eq(goals.id, id), eq(goals.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -165,11 +167,15 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
    * @returns Число удалённых.
    */
   public async deleteStarters(accountId: string): Promise<number> {
-    const rows = await this._db
-      .delete(goals)
-      .where(and(eq(goals.accountId, accountId), eq(goals.isStarter, true)))
-      .returning({ id: goals.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        goals,
+        and(eq(goals.accountId, accountId), eq(goals.isStarter, true)),
+        { force: true },
+      );
+      return removed;
+    });
   }
 
   /**
@@ -187,7 +193,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set(patch)
-      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .where(and(alive(goals), eq(goals.id, id), eq(goals.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -202,13 +208,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set({ status: 'paused', pausedAt: new Date() })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           eq(goals.status, 'active'),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -229,13 +235,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
         pausedAt: null,
         pauseHistory: sql`${goals.pauseHistory} || jsonb_build_array(jsonb_build_object('pausedAt', ${goals.pausedAt}, 'resumedAt', now()))`,
       })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           eq(goals.status, 'paused'),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -251,13 +257,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .update(goals)
       // Архив снимает фокус (ADR-0053): архивная цель не «в фокусе» и не учитывается в пороге.
       .set({ status: 'archived', focusOrder: null })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           inArray(goals.status, ['active', 'paused', 'completed']),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -272,13 +278,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set({ status: 'active' })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           eq(goals.status, 'archived'),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -293,13 +299,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set({ status: 'active', completedAt: null })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           eq(goals.status, 'completed'),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -317,13 +323,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       // Завершение снимает фокус (·28.A1): достигнутая цель — из рабочего фокуса. Пауза фокус НЕ
       // снимает (временна, слот освобождается через countFocused-active, вернётся при resume).
       .set({ status: 'completed', completedAt: new Date(), focusOrder: null })
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.id, id),
           eq(goals.accountId, accountId),
           isNull(goals.completedAt),
         ),
-      )
+      ))
       .returning();
     return rows[0] ?? null;
   }
@@ -339,7 +345,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set({ focusOrder: order })
-      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .where(and(alive(goals), eq(goals.id, id), eq(goals.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -354,7 +360,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .update(goals)
       .set({ focusOrder: null })
-      .where(and(eq(goals.id, id), eq(goals.accountId, accountId)))
+      .where(and(alive(goals), eq(goals.id, id), eq(goals.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -369,13 +375,13 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
       .select({ n: sql<number>`count(*)::int` })
       .from(goals)
       // Только активные фокусные считаются в пороге (ADR-0053): архив/завершённые — не «в работе».
-      .where(
+      .where(and(alive(goals),
         and(
           eq(goals.accountId, accountId),
           isNotNull(goals.focusOrder),
           eq(goals.status, 'active'),
         ),
-      );
+      ));
     return Number(rows[0]?.n ?? 0);
   }
 
@@ -388,7 +394,7 @@ export class AccentGoalRepository implements AccentGoalRepositoryPort {
     const rows = await this._db
       .select({ m: sql<number | null>`max(${goals.focusOrder})` })
       .from(goals)
-      .where(and(eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
+      .where(and(alive(goals), eq(goals.accountId, accountId), isNotNull(goals.focusOrder)));
     const m = rows[0]?.m;
     return m === null || m === undefined ? null : Number(m);
   }

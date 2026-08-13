@@ -26,7 +26,7 @@ export const userAchievements = defineTableWithSchema<UserAchievementFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     code: varchar('code', { length: 32 }).$type<AchievementCode>().notNull(),
     awardedAt: timestamp('awarded_at', { withTimezone: true }).notNull().defaultNow(),
     context: varchar('context', { length: 120 }),

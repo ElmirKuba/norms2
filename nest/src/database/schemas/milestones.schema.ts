@@ -16,7 +16,7 @@ export const milestones = defineTableWithSchema<MilestoneFull>()(
     id: idColumn(),
     goalId: fkColumn('goal_id')
       .notNull()
-      .references(() => goals.id, { onDelete: 'cascade' }),
+      .references(() => goals.id),
     title: text('title').notNull(),
     thresholdValue: doublePrecision('threshold_value').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

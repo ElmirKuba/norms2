@@ -25,7 +25,7 @@ export const obstacleEncounters = defineTableWithSchema<ObstacleEncounterFull>()
     id: idColumn(),
     obstacleId: fkColumn('obstacle_id')
       .notNull()
-      .references(() => obstacles.id, { onDelete: 'cascade' }),
+      .references(() => obstacles.id),
     occurredAt: bigint('occurred_at', { mode: 'number' }).notNull(),
     counterplayId: fkColumn('counterplay_id').references(() => counterplays.id, {
       onDelete: 'set null',

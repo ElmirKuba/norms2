@@ -19,7 +19,7 @@ export const counterplays = defineTableWithSchema<CounterplayFull>()(
     id: idColumn(),
     obstacleId: fkColumn('obstacle_id')
       .notNull()
-      .references(() => obstacles.id, { onDelete: 'cascade' }),
+      .references(() => obstacles.id),
     text: text('text').notNull(),
     linkedMicroWinId: fkColumn('linked_micro_win_id').references(() => microWins.id, {
       onDelete: 'set null',

@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -33,7 +35,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
     return this._db
       .select()
       .from(microWins)
-      .where(and(eq(microWins.accountId, accountId), eq(microWins.isActive, true)))
+      .where(and(alive(microWins), eq(microWins.accountId, accountId), eq(microWins.isActive, true)))
       // Тай-брейкер `id` (uuidv7 ≈ порядок вставки): без него при равных position+created_at
       // (напр. весь стартер-пак: position=0, один batch created_at) порядок недетерминирован —
       // строка «прыгает» после UPDATE/edit (2.5.1). id делает порядок стабильным.
@@ -50,7 +52,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
     const rows = await this._db
       .select()
       .from(microWins)
-      .where(and(eq(microWins.id, id), eq(microWins.accountId, accountId)))
+      .where(and(alive(microWins), eq(microWins.id, id), eq(microWins.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -135,7 +137,7 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
     const rows = await this._db
       .update(microWins)
       .set(patch)
-      .where(and(eq(microWins.id, id), eq(microWins.accountId, accountId)))
+      .where(and(alive(microWins), eq(microWins.id, id), eq(microWins.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -147,11 +149,14 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
    * @returns true если удалено.
    */
   public async remove(id: string, accountId: string): Promise<boolean> {
-    const rows = await this._db
-      .delete(microWins)
-      .where(and(eq(microWins.id, id), eq(microWins.accountId, accountId)))
-      .returning({ id: microWins.id });
-    return rows.length > 0;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        microWins,
+        and(alive(microWins), eq(microWins.id, id), eq(microWins.accountId, accountId)),
+      );
+      return removed > 0;
+    });
   }
 
   /**
@@ -160,11 +165,15 @@ export class AccentMicroWinRepository implements AccentMicroWinRepositoryPort {
    * @returns Число удалённых.
    */
   public async deleteStarters(accountId: string): Promise<number> {
-    const rows = await this._db
-      .delete(microWins)
-      .where(and(eq(microWins.accountId, accountId), eq(microWins.isStarter, true)))
-      .returning({ id: microWins.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        microWins,
+        and(eq(microWins.accountId, accountId), eq(microWins.isStarter, true)),
+        { force: true },
+      );
+      return removed;
+    });
   }
 
   /**

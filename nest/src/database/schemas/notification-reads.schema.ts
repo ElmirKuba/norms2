@@ -16,10 +16,10 @@ export const notificationReads = defineTableWithSchema<NotificationReadFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     notificationId: fkColumn('notification_id')
       .notNull()
-      .references(() => notifications.id, { onDelete: 'cascade' }),
+      .references(() => notifications.id),
     ...timestamps(),
   },
   (table) => [

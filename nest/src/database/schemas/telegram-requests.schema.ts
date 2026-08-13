@@ -30,7 +30,7 @@ export const telegramRequests = defineTableWithSchema<TelegramRequestFull>()(
     type: varchar('type', { length: 16 }).$type<TelegramRequestType>().notNull(),
     status: varchar('status', { length: 16 }).$type<TelegramRequestStatus>().notNull(),
     // Только у `more_invites` и только из привязки: начислять квоту по словам человека нельзя.
-    accountId: fkColumn('account_id').references(() => accounts.id, { onDelete: 'cascade' }),
+    accountId: fkColumn('account_id').references(() => accounts.id),
     // Код удаляется при регистрации, поэтому SET NULL, а не CASCADE: заявку удалять нельзя,
     // она — история решения. Побочный смысл полезен: ссылка жива → код выдан и не использован;
     // стала null → человек зарегистрировался (или код отозвали).

@@ -20,7 +20,7 @@ export const antiHabits = defineTableWithSchema<AntiHabitFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     title: text('title').notNull(),
     description: text('description'),
     isActive: boolean('is_active').notNull().default(true),

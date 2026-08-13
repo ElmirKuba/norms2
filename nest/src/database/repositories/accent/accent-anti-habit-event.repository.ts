@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
 import { and, desc, eq, gte, lt, max, or } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -135,7 +136,7 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
       })
       .from(antiHabitEvents)
       .innerJoin(antiHabits, eq(antiHabits.id, antiHabitEvents.antiHabitId))
-      .where(
+      .where(and(alive(antiHabits), 
         and(
           eq(antiHabits.accountId, accountId),
           // Только по ЖИВЫМ анти-привычкам. Без этого условия строка «новое достижение»
@@ -146,7 +147,7 @@ export class AccentAntiHabitEventRepository implements AccentAntiHabitEventRepos
           eq(antiHabitEvents.type, 'goal_reached'),
           gte(antiHabitEvents.occurredAt, sinceOccurredAt),
         ),
-      )
+      ))
       .orderBy(desc(antiHabitEvents.occurredAt), desc(antiHabitEvents.thresholdDays))
       .limit(1);
     const row = rows[0];

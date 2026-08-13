@@ -22,7 +22,7 @@ export const habits = defineTableWithSchema<HabitFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     title: text('title').notNull(),
     description: text('description'),
     icon: varchar('icon', { length: 32 }),

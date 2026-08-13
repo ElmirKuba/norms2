@@ -15,7 +15,7 @@ export const accentSettings = defineTableWithSchema<AccentSettingsFull>()(
   {
     accountId: fkColumn('account_id')
       .primaryKey()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     pausedFrom: timestamp('paused_from', { withTimezone: true }),
     ...timestamps(),
   },

@@ -24,8 +24,8 @@ export const tasks = defineTableWithSchema<TaskFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
-    templateId: fkColumn('template_id').references(() => habits.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
+    templateId: fkColumn('template_id').references(() => habits.id),
     goalId: fkColumn('goal_id'),
     title: text('title').notNull(),
     occurredOn: date('occurred_on', { mode: 'string' }).notNull(),

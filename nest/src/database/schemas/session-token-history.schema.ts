@@ -19,7 +19,7 @@ export const sessionTokenHistory = defineTableWithSchema<SessionTokenHistoryFull
     id: idColumn(),
     sessionId: fkColumn('session_id')
       .notNull()
-      .references(() => sessions.id, { onDelete: 'cascade' }),
+      .references(() => sessions.id),
     tokenHash: text('token_hash').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

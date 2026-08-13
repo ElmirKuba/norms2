@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
 import { and, count, desc, eq, lt } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
@@ -65,7 +66,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     await this._db
       .update(telegramRequests)
       .set({ ownerMessageId: messageId })
-      .where(eq(telegramRequests.id, id));
+      .where(and(alive(telegramRequests), eq(telegramRequests.id, id)));
   }
 
   /**
@@ -77,7 +78,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._db
       .select()
       .from(telegramRequests)
-      .where(and(eq(telegramRequests.chatId, chatId), eq(telegramRequests.status, 'pending')))
+      .where(and(alive(telegramRequests), eq(telegramRequests.chatId, chatId), eq(telegramRequests.status, 'pending')))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -91,7 +92,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._db
       .select()
       .from(telegramRequests)
-      .where(eq(telegramRequests.id, id))
+      .where(and(alive(telegramRequests), eq(telegramRequests.id, id)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -105,7 +106,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._db
       .select()
       .from(telegramRequests)
-      .where(eq(telegramRequests.inviteCodeId, inviteCodeId))
+      .where(and(alive(telegramRequests), eq(telegramRequests.inviteCodeId, inviteCodeId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -125,7 +126,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     return this._db
       .select()
       .from(telegramRequests)
-      .where(eq(telegramRequests.status, status))
+      .where(and(alive(telegramRequests), eq(telegramRequests.status, status)))
       .orderBy(desc(telegramRequests.createdAt))
       .limit(limit)
       .offset(offset);
@@ -140,7 +141,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._db
       .select({ value: count() })
       .from(telegramRequests)
-      .where(eq(telegramRequests.status, status));
+      .where(and(alive(telegramRequests), eq(telegramRequests.status, status)));
     return rows[0]?.value ?? 0;
   }
 
@@ -160,7 +161,7 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._exec(tx)
       .update(telegramRequests)
       .set({ ...decision, decidedAt: new Date() })
-      .where(and(eq(telegramRequests.id, id), eq(telegramRequests.status, 'pending')))
+      .where(and(alive(telegramRequests), eq(telegramRequests.id, id), eq(telegramRequests.status, 'pending')))
       .returning({ id: telegramRequests.id });
     return rows.length > 0;
   }
@@ -174,9 +175,9 @@ export class TelegramRepository implements TelegramRepositoryPort {
     const rows = await this._db
       .update(telegramRequests)
       .set({ status: 'expired', decidedAt: new Date() })
-      .where(
+      .where(and(alive(telegramRequests),
         and(eq(telegramRequests.status, 'pending'), lt(telegramRequests.createdAt, olderThan)),
-      )
+      ))
       .returning({ id: telegramRequests.id });
     return rows.length;
   }

@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -33,7 +35,7 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
     return this._db
       .select()
       .from(counterplays)
-      .where(eq(counterplays.obstacleId, obstacleId))
+      .where(and(alive(counterplays), eq(counterplays.obstacleId, obstacleId)))
       .orderBy(asc(counterplays.position), asc(counterplays.createdAt), asc(counterplays.id));
   }
 
@@ -50,7 +52,7 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
     const rows = await this._db
       .select({ obstacleId: counterplays.obstacleId, value: count() })
       .from(counterplays)
-      .where(inArray(counterplays.obstacleId, [...obstacleIds]))
+      .where(and(alive(counterplays), inArray(counterplays.obstacleId, [...obstacleIds])))
       .groupBy(counterplays.obstacleId);
     return new Map(rows.map((row) => [row.obstacleId, row.value]));
   }
@@ -65,7 +67,7 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
     const rows = await this._db
       .select()
       .from(counterplays)
-      .where(and(eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)))
+      .where(and(alive(counterplays), eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -79,7 +81,7 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
     const rows = await this._db
       .select({ value: count() })
       .from(counterplays)
-      .where(eq(counterplays.obstacleId, obstacleId));
+      .where(and(alive(counterplays), eq(counterplays.obstacleId, obstacleId)));
     return rows[0]?.value ?? 0;
   }
 
@@ -145,7 +147,7 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
     const rows = await this._db
       .update(counterplays)
       .set(patch)
-      .where(and(eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)))
+      .where(and(alive(counterplays), eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -157,11 +159,14 @@ export class AccentCounterplayRepository implements AccentCounterplayRepositoryP
    * @returns true если удалено.
    */
   public async delete(id: string, obstacleId: string): Promise<boolean> {
-    const rows = await this._db
-      .delete(counterplays)
-      .where(and(eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)))
-      .returning({ id: counterplays.id });
-    return rows.length > 0;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        counterplays,
+        and(alive(counterplays), eq(counterplays.id, id), eq(counterplays.obstacleId, obstacleId)),
+      );
+      return removed > 0;
+    });
   }
 
   /**

@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -33,7 +35,7 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
     return this._db
       .select()
       .from(antiHabits)
-      .where(and(eq(antiHabits.accountId, accountId), eq(antiHabits.isActive, true)))
+      .where(and(alive(antiHabits), eq(antiHabits.accountId, accountId), eq(antiHabits.isActive, true)))
       // Ручной порядок (ADR-0054), затем created_at, тай-брейкер id (детерминизм при равных position).
       .orderBy(asc(antiHabits.position), asc(antiHabits.createdAt), asc(antiHabits.id));
   }
@@ -48,7 +50,7 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
     const rows = await this._db
       .select()
       .from(antiHabits)
-      .where(and(eq(antiHabits.id, id), eq(antiHabits.accountId, accountId)))
+      .where(and(alive(antiHabits), eq(antiHabits.id, id), eq(antiHabits.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -119,11 +121,15 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
    * @returns Число удалённых.
    */
   public async deleteStarters(accountId: string): Promise<number> {
-    const rows = await this._db
-      .delete(antiHabits)
-      .where(and(eq(antiHabits.accountId, accountId), eq(antiHabits.isStarter, true)))
-      .returning({ id: antiHabits.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        antiHabits,
+        and(eq(antiHabits.accountId, accountId), eq(antiHabits.isStarter, true)),
+        { force: true },
+      );
+      return removed;
+    });
   }
 
   /**
@@ -159,7 +165,7 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
     const rows = await this._db
       .update(antiHabits)
       .set({ ...patch, version: sql`${antiHabits.version} + 1` })
-      .where(and(eq(antiHabits.id, id), eq(antiHabits.accountId, accountId)))
+      .where(and(alive(antiHabits), eq(antiHabits.id, id), eq(antiHabits.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -188,13 +194,13 @@ export class AccentAntiHabitRepository implements AccentAntiHabitRepositoryPort 
         recordAttemptStartedAt: patch.recordAttemptStartedAt,
         version: sql`${antiHabits.version} + 1`,
       })
-      .where(
+      .where(and(alive(antiHabits),
         and(
           eq(antiHabits.id, id),
           eq(antiHabits.accountId, accountId),
           eq(antiHabits.version, expectedVersion),
         ),
-      )
+      ))
       .returning({ id: antiHabits.id });
     return rows.length > 0;
   }

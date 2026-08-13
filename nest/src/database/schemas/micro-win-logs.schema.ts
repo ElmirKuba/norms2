@@ -17,10 +17,10 @@ export const microWinLogs = defineTableWithSchema<MicroWinLogFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+      .references(() => accounts.id),
     microWinId: fkColumn('micro_win_id')
       .notNull()
-      .references(() => microWins.id, { onDelete: 'cascade' }),
+      .references(() => microWins.id),
     occurredOn: date('occurred_on', { mode: 'string' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

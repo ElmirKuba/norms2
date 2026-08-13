@@ -337,6 +337,13 @@
       "when": 1786660273244,
       "tag": "0047_young_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1786660952002,
+      "tag": "0048_free_photon",
+      "breakpoints": true
     }
   ]
 }

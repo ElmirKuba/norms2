@@ -37,12 +37,10 @@ export const goals = defineTableWithSchema<GoalFull>()(
     id: idColumn(),
     accountId: fkColumn('account_id')
       .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
-    // self-FK на родительскую цель: удаление родителя каскадит подцели.
-    parentGoalId: fkColumn('parent_goal_id').references(
-      (): AnyPgColumn => goals.id,
-      { onDelete: 'cascade' },
-    ),
+      .references(() => accounts.id),
+    // self-FK на родительскую цель. Каскад снят с базы (ADR-0068): подцели уходят вместе с
+    // родителем, но решает это карта владения слоя 5, а не СУБД.
+    parentGoalId: fkColumn('parent_goal_id').references((): AnyPgColumn => goals.id),
     title: text('title').notNull(),
     whyItMatters: text('why_it_matters'),
     domainKey: varchar('domain_key', { length: 64 }),

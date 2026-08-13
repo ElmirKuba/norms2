@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -67,7 +69,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
     return this._db
       .select()
       .from(goalEntries)
-      .where(and(...conds))
+      .where(and(alive(goalEntries), ...conds))
       .orderBy(desc(goalEntries.id))
       .limit(options.limit);
   }
@@ -83,7 +85,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
         total: sql<number>`coalesce(sum(${goalEntries.value}), 0)::double precision`,
       })
       .from(goalEntries)
-      .where(eq(goalEntries.goalId, goalId));
+      .where(and(alive(goalEntries), eq(goalEntries.goalId, goalId)));
     return Number(rows[0]?.total ?? 0);
   }
 
@@ -96,7 +98,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
     const rows = await this._db
       .select({ value: goalEntries.value })
       .from(goalEntries)
-      .where(eq(goalEntries.goalId, goalId))
+      .where(and(alive(goalEntries), eq(goalEntries.goalId, goalId)))
       .orderBy(desc(goalEntries.occurredOn), desc(goalEntries.createdAt))
       .limit(1);
     return rows[0]?.value ?? null;
@@ -111,7 +113,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
     const rows = await this._db
       .select({ value: goalEntries.value })
       .from(goalEntries)
-      .where(eq(goalEntries.goalId, goalId))
+      .where(and(alive(goalEntries), eq(goalEntries.goalId, goalId)))
       .orderBy(asc(goalEntries.occurredOn), asc(goalEntries.createdAt))
       .limit(1);
     return rows[0]?.value ?? null;
@@ -126,7 +128,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
     const rows = await this._db
       .select({ n: sql<number>`count(*)::int` })
       .from(goalEntries)
-      .where(eq(goalEntries.goalId, goalId));
+      .where(and(alive(goalEntries), eq(goalEntries.goalId, goalId)));
     return Number(rows[0]?.n ?? 0);
   }
 
@@ -154,7 +156,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
         inBand: sql<number>`count(*) filter (where ${goalEntries.value} between ${low} and ${high})::int`,
       })
       .from(goalEntries)
-      .where(and(...conds));
+      .where(and(alive(goalEntries), ...conds));
     return { total: Number(rows[0]?.total ?? 0), inBand: Number(rows[0]?.inBand ?? 0) };
   }
 
@@ -177,13 +179,13 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       })
       .from(goalEntries)
       .innerJoin(goals, eq(goals.id, goalEntries.goalId))
-      .where(
+      .where(and(alive(goals), alive(goalEntries),
         and(
           eq(goals.accountId, accountId),
           eq(goals.direction, 'maintain'),
           gte(goalEntries.occurredOn, sinceYmd),
         ),
-      )
+      ))
       .groupBy(goalEntries.goalId);
     return new Map(
       rows.map((r) => [r.goalId, { inBand: Number(r.inBand), total: Number(r.total) }]),
@@ -203,11 +205,14 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
    * @returns true, если удалено.
    */
   public async removeById(id: string, goalId: string): Promise<boolean> {
-    const rows = await this._db
-      .delete(goalEntries)
-      .where(and(eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)))
-      .returning({ id: goalEntries.id });
-    return rows.length > 0;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        goalEntries,
+        and(alive(goalEntries), eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)),
+      );
+      return removed > 0;
+    });
   }
 
   /**
@@ -225,19 +230,20 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
     const rows = await this._db
       .update(goalEntries)
       .set(patch)
-      .where(and(eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)))
+      .where(and(alive(goalEntries), eq(goalEntries.id, id), eq(goalEntries.goalId, goalId)))
       .returning();
     return rows[0] ?? null;
   }
 
   public async deleteBySourceTask(goalId: string, sourceTaskId: string): Promise<number> {
-    const rows = await this._db
-      .delete(goalEntries)
-      .where(
-        and(eq(goalEntries.goalId, goalId), eq(goalEntries.sourceTaskId, sourceTaskId)),
-      )
-      .returning({ id: goalEntries.id });
-    return rows.length;
+    return this._db.transaction(async (transaction) => {
+      const removed = await deleteCascade(
+        transaction,
+        goalEntries,
+        and(alive(goalEntries), and(eq(goalEntries.goalId, goalId), eq(goalEntries.sourceTaskId, sourceTaskId)),),
+      );
+      return removed;
+    });
   }
 
   /**
@@ -253,7 +259,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       })
       .from(goalEntries)
       .innerJoin(goals, eq(goals.id, goalEntries.goalId))
-      .where(eq(goals.accountId, accountId))
+      .where(and(alive(goals), alive(goalEntries), eq(goals.accountId, accountId)))
       .groupBy(goalEntries.goalId);
     return new Map(rows.map((r) => [r.goalId, Number(r.total)]));
   }
@@ -269,7 +275,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       .selectDistinct({ occurredOn: goalEntries.occurredOn })
       .from(goalEntries)
       .innerJoin(goals, eq(goals.id, goalEntries.goalId))
-      .where(eq(goals.accountId, accountId))
+      .where(and(alive(goals), alive(goalEntries), eq(goals.accountId, accountId)))
       .orderBy(goalEntries.occurredOn);
     return rows.map((row) => row.occurredOn);
   }
@@ -287,7 +293,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       })
       .from(goalEntries)
       .innerJoin(goals, eq(goals.id, goalEntries.goalId))
-      .where(eq(goals.accountId, accountId))
+      .where(and(alive(goals), alive(goalEntries), eq(goals.accountId, accountId)))
       .orderBy(goalEntries.goalId, desc(goalEntries.occurredOn), desc(goalEntries.createdAt));
     return new Map(rows.map((r) => [r.goalId, r.value]));
   }
@@ -305,7 +311,7 @@ export class AccentGoalEntryRepository implements AccentGoalEntryRepositoryPort 
       })
       .from(goalEntries)
       .innerJoin(goals, eq(goals.id, goalEntries.goalId))
-      .where(eq(goals.accountId, accountId))
+      .where(and(alive(goals), alive(goalEntries), eq(goals.accountId, accountId)))
       .orderBy(goalEntries.goalId, asc(goalEntries.occurredOn), asc(goalEntries.createdAt));
     return new Map(rows.map((r) => [r.goalId, r.value]));
   }

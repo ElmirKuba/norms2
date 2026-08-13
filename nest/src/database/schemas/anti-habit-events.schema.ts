@@ -21,7 +21,7 @@ export const antiHabitEvents = defineTableWithSchema<AntiHabitEventFull>()(
     id: idColumn(),
     antiHabitId: fkColumn('anti_habit_id')
       .notNull()
-      .references(() => antiHabits.id, { onDelete: 'cascade' }),
+      .references(() => antiHabits.id),
     type: varchar('type', { length: 16 }).$type<AntiHabitEventType>().notNull(),
     occurredAt: bigint('occurred_at', { mode: 'number' }).notNull(),
     // relapse

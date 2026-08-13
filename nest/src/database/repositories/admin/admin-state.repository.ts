@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
 import { count, desc, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -39,8 +40,14 @@ export class AdminStateRepository implements AdminStateRepositoryPort {
       .select({ value: count() })
       .from(accounts)
       .where(isNull(accounts.deletedAt));
-    const [releasesRow] = await this._database.select({ value: count() }).from(releases);
-    const [notificationsRow] = await this._database.select({ value: count() }).from(notifications);
+    const [releasesRow] = await this._database
+      .select({ value: count() })
+      .from(releases)
+      .where(alive(releases));
+    const [notificationsRow] = await this._database
+      .select({ value: count() })
+      .from(notifications)
+      .where(alive(notifications));
     return {
       accounts: accountsRow?.value ?? 0,
       releases: releasesRow?.value ?? 0,
@@ -81,6 +88,7 @@ export class AdminStateRepository implements AdminStateRepositoryPort {
         broadcastedAt: releases.broadcastedAt,
       })
       .from(releases)
+      .where(alive(releases))
       // Тот же порядок, что у витрины: без отката на `created_at` публикация без даты выпуска
       // оказалась бы «последней» или «первой» в зависимости от настроения планировщика.
       .orderBy(desc(sql`coalesce(${releases.publishedAt}, ${releases.createdAt})`))

@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq, isNull, sql } from 'drizzle-orm';
+import { deleteCascade } from '../../core/deletion.engine';
+import { alive } from '../../core/alive.util';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
 import { releases } from '../../schemas/releases.schema';
@@ -42,6 +44,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
         publishedAt: releases.publishedAt,
       })
       .from(releases)
+      .where(alive(releases))
       // По дате ВЫПУСКА с откатом на дату записи; `id` вторым — детерминированный тайбрейк
       // (в uuidv7___unixmillis время зашито в сам ключ).
       .orderBy(sql`coalesce(${releases.publishedAt}, ${releases.createdAt}) desc`, sql`${releases.id} desc`)
@@ -65,7 +68,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
         publishedAt: releases.publishedAt,
       })
       .from(releases)
-      .where(eq(releases.key, key))
+      .where(and(alive(releases), eq(releases.key, key)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -94,7 +97,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
     const existing = await this._db
       .select({ id: releases.id })
       .from(releases)
-      .where(eq(releases.key, data.key))
+      .where(and(alive(releases), eq(releases.key, data.key)))
       .limit(1);
     const row = existing[0];
     if (!row) {
@@ -113,7 +116,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
     await this._db
       .update(releases)
       .set({ publishedAt })
-      .where(sql`${releases.key} = ${key} and ${releases.publishedAt} is null`);
+      .where(and(alive(releases), sql`${releases.key} = ${key} and ${releases.publishedAt} is null`));
   }
 
   /**
@@ -122,7 +125,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
    * @returns Промис завершения.
    */
   public async markBroadcasted(id: string): Promise<void> {
-    await this._db.update(releases).set({ broadcastedAt: new Date() }).where(eq(releases.id, id));
+    await this._db.update(releases).set({ broadcastedAt: new Date() }).where(and(alive(releases), eq(releases.id, id)));
   }
 
   /**
@@ -133,7 +136,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
     return this._db
       .select()
       .from(releases)
-      .where(isNull(releases.broadcastedAt))
+      .where(and(alive(releases), isNull(releases.broadcastedAt)))
       .orderBy(asc(sql`coalesce(${releases.publishedAt}, ${releases.createdAt})`), asc(releases.id));
   }
 
@@ -145,6 +148,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
     return this._db
       .select()
       .from(releases)
+      .where(alive(releases))
       // Тот же порядок, что у витрины: чтобы админка и публичная страница не спорили о том,
       // какая публикация последняя.
       .orderBy(
@@ -160,7 +164,7 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
    * @returns Строка или null.
    */
   public async findFullByKey(key: string): Promise<ReleaseFull | null> {
-    const [row] = await this._db.select().from(releases).where(eq(releases.key, key)).limit(1);
+    const [row] = await this._db.select().from(releases).where(and(alive(releases), eq(releases.key, key))).limit(1);
     return row ?? null;
   }
 
@@ -174,7 +178,19 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
    * @returns Удалённая публикация или null.
    */
   public async deleteByKey(key: string): Promise<ReleaseFull | null> {
-    const [row] = await this._db.delete(releases).where(eq(releases.key, key)).returning();
-    return row ?? null;
+    return this._db.transaction(async (transaction) => {
+      const [row] = await transaction
+        .select()
+        .from(releases)
+        .where(and(alive(releases), eq(releases.key, key)))
+        .limit(1);
+      if (row === undefined) {
+        return null;
+      }
+      // Доставку и отметки прочтения уносит наш каскад (ADR-0068), а не база: она с 2.9.3·17
+      // ничего не удаляет сама. Строку возвращаем ту, что прочитали до удаления.
+      await deleteCascade(transaction, releases, eq(releases.id, row.id));
+      return row;
+    });
   }
 }

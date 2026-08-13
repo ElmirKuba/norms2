@@ -69,6 +69,21 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         </div>
       </header>
 
+      <nav class="ah__tabs" aria-label="Что показывать">
+        <button
+          type="button"
+          class="ah__tab"
+          [class.ah__tab--on]="!archived()"
+          (click)="setArchived(false)"
+        >В работе</button>
+        <button
+          type="button"
+          class="ah__tab"
+          [class.ah__tab--on]="archived()"
+          (click)="setArchived(true)"
+        >В архиве</button>
+      </nav>
+
       <aside class="ah__why">
         <span class="ah__why-icon" aria-hidden="true">🛡️</span>
         <p class="ah__why-text">
@@ -82,6 +97,11 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         <p class="ah__muted">Загрузка…</p>
       } @else if (error()) {
         <p class="ah__error">{{ error() }}</p>
+      } @else if (items().length === 0 && archived()) {
+        <app-empty-state
+          title="В архиве пусто"
+          text="Сюда попадает то, что ты убрал с глаз, но не удалил. Вернуть можно в любой момент."
+        />
       } @else if (items().length === 0) {
         <app-empty-state
           title="Пока нет ни одного «держусь»"
@@ -143,13 +163,24 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
                           <span class="ah__menu-ico" aria-hidden="true">✏️</span>
                           Изменить
                         </button>
+                        @if (archived()) {
+                          <button type="button" class="ah__menu-item" (click)="restore(ah); closeMenu()">
+                            <span class="ah__menu-ico" aria-hidden="true">↩️</span>
+                            Вернуть в работу
+                          </button>
+                        } @else {
+                          <button type="button" class="ah__menu-item" (click)="archive(ah); closeMenu()">
+                            <span class="ah__menu-ico" aria-hidden="true">📦</span>
+                            В архив
+                          </button>
+                        }
                         <button
                           type="button"
                           class="ah__menu-item ah__menu-item--danger"
-                          (click)="removeFromList(ah); closeMenu()"
+                          (click)="remove(ah); closeMenu()"
                         >
-                          <span class="ah__menu-ico" aria-hidden="true">📦</span>
-                          Убрать из списка
+                          <span class="ah__menu-ico" aria-hidden="true">🗑️</span>
+                          Удалить
                         </button>
                       </div>
                     }
@@ -230,6 +261,29 @@ import type { AntiHabitPayload, AntiHabitView } from '../accent.types';
         margin-top: var(--space-2);
         padding-left: calc(var(--touch-min) + var(--space-2));
       }
+      /* Вкладки «в работе / в архиве»: архив обязан быть видим, иначе «убрал» = «навсегда». */
+      .ah__tabs {
+        display: flex;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+
+      .ah__tab {
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--color-text-muted);
+        font: inherit;
+        font-size: var(--fs-sm);
+        cursor: pointer;
+      }
+
+      .ah__tab--on {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
+
       .ah__why {
         display: flex;
         align-items: flex-start;
@@ -422,6 +476,13 @@ export class AntiHabitsComponent implements OnDestroy {
   protected readonly items = signal<AntiHabitView[]>([]);
   /** Идёт первичная загрузка. */
   protected readonly loading = signal(true);
+  /**
+   * Что на экране: работа или архив.
+   *
+   * **Архив виден человеку — в этом весь смысл 2.9.3·19.** До него «убрал из списка» было
+   * дорогой в один конец: строка оставалась в базе, но вернуть её человек не мог ничем.
+   */
+  protected readonly archived = signal(false);
   /** Ошибка загрузки или null. */
   protected readonly error = signal<string | null>(null);
   /** Id карточки с открытым меню «⋯» или null. */
@@ -559,7 +620,7 @@ export class AntiHabitsComponent implements OnDestroy {
 
   private _load(): void {
     this.loading.set(true);
-    this._api.listAntiHabits().subscribe({
+    this._api.listAntiHabits(this.archived()).subscribe({
       next: (items) => {
         this.items.set(items);
         this.error.set(null);
@@ -582,20 +643,64 @@ export class AntiHabitsComponent implements OnDestroy {
     this._openForm({ antiHabit: ah }, (payload) => this._api.updateAntiHabit(ah.id, payload));
   }
 
-  /** Убирает из списка (мягко, `isActive:false`) после подтверждения; история сохраняется. */
-  protected removeFromList(ah: AntiHabitView): void {
+  /**
+   * Переключает вкладку «в работе» / «в архиве».
+   * @param archived Показывать ли архив.
+   */
+  protected setArchived(archived: boolean): void {
+    if (this.archived() === archived) {
+      return;
+    }
+    this.archived.set(archived);
+    this._load();
+  }
+
+  /** Убирает в архив: из работы пропадает, но никуда не девается — вернуть можно вкладкой. */
+  protected archive(ah: AntiHabitView): void {
     void this._modal
       .confirm({
-        title: 'Убрать из списка?',
-        text: `«${ah.title}» скроется из списка. История попыток сохранится.`,
-        confirmText: 'Убрать',
+        title: 'Убрать в архив?',
+        text: `«${ah.title}» уйдёт со вкладки «В работе». Серия остановится, история сохранится, вернуть можно в любой момент — вкладка «В архиве».`,
+        confirmText: 'В архив',
+      })
+      .then((ok) => {
+        if (ok) {
+          this._api.archiveAntiHabit(ah.id).subscribe({
+            next: () => this._load(),
+            error: (err: unknown) => this._modal.error('Не удалось убрать', errorMessage(err)),
+          });
+        }
+      });
+  }
+
+  /** Возвращает из архива в работу. */
+  protected restore(ah: AntiHabitView): void {
+    this._api.restoreAntiHabit(ah.id).subscribe({
+      next: () => this._load(),
+      error: (err: unknown) => this._modal.error('Не удалось вернуть', errorMessage(err)),
+    });
+  }
+
+  /**
+   * Удаляет насовсем.
+   *
+   * **Текст подтверждения говорит правду: вернуть нельзя.** То, что хранилище оставляет строку у
+   * себя ([ADR-0068]), — страховка на случай нашей аварии, а не возможность человека, и обещать
+   * её в интерфейсе запрещено.
+   */
+  protected remove(ah: AntiHabitView): void {
+    void this._modal
+      .confirm({
+        title: 'Удалить насовсем?',
+        text: `«${ah.title}» исчезнет вместе со всей историей попыток и рекордом. Вернуть будет нельзя. Если нужно просто убрать с глаз — есть архив.`,
+        confirmText: 'Удалить',
         danger: true,
       })
       .then((ok) => {
         if (ok) {
-          this._api.updateAntiHabit(ah.id, { isActive: false }).subscribe({
+          this._api.deleteAntiHabit(ah.id).subscribe({
             next: () => this._load(),
-            error: (err: unknown) => this._modal.error('Не удалось убрать', errorMessage(err)),
+            error: (err: unknown) => this._modal.error('Не удалось удалить', errorMessage(err)),
           });
         }
       });

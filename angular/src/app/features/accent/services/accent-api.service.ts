@@ -86,8 +86,10 @@ export class AccentApiService {
   }
 
   /** Список активных микро-побед (с `completedToday`); первый заход сеет стартовый набор. */
-  public listMicroWins(): Observable<MicroWinView[]> {
-    return this._http.get<MicroWinView[]>(`${API_PREFIX}/accent/micro-wins`);
+  public listMicroWins(archived = false): Observable<MicroWinView[]> {
+    return this._http.get<MicroWinView[]>(`${API_PREFIX}/accent/micro-wins`, {
+      params: archived ? { filter: 'archived' } : {},
+    });
   }
 
   /** Создать микро-победу. */
@@ -135,8 +137,10 @@ export class AccentApiService {
   // ── Привычки (2.4) ──
 
   /** Список активных привычек. */
-  public listHabits(): Observable<HabitView[]> {
-    return this._http.get<HabitView[]>(`${API_PREFIX}/accent/habits`);
+  public listHabits(archived = false): Observable<HabitView[]> {
+    return this._http.get<HabitView[]>(`${API_PREFIX}/accent/habits`, {
+      params: archived ? { filter: 'archived' } : {},
+    });
   }
 
   /** Одна привычка. */
@@ -427,8 +431,10 @@ export class AccentApiService {
   // ─────────────────────────── Держусь / анти-привычки (2.6) ───────────────────────────
 
   /** Список активных анти-привычек «держусь». */
-  public listAntiHabits(): Observable<AntiHabitView[]> {
-    return this._http.get<AntiHabitView[]>(`${API_PREFIX}/accent/anti-habits`);
+  public listAntiHabits(archived = false): Observable<AntiHabitView[]> {
+    return this._http.get<AntiHabitView[]>(`${API_PREFIX}/accent/anti-habits`, {
+      params: archived ? { filter: 'archived' } : {},
+    });
   }
 
   /** Одна анти-привычка. */
@@ -504,8 +510,10 @@ export class AccentApiService {
   // ─────────────────────────── Препятствия (2.7, ADR-0062) ───────────────────────────
 
   /** Список препятствий + флаг мягкого порога (подсказка «может, часть в архив?»). */
-  public listObstacles(): Observable<ObstacleListView> {
-    return this._http.get<ObstacleListView>(`${API_PREFIX}/accent/obstacles`);
+  public listObstacles(archived = false): Observable<ObstacleListView> {
+    return this._http.get<ObstacleListView>(`${API_PREFIX}/accent/obstacles`, {
+      params: archived ? { filter: 'archived' } : {},
+    });
   }
 
   /** Одно препятствие. */
@@ -632,5 +640,90 @@ export class AccentApiService {
       `${API_PREFIX}/accent/obstacles/${obstacleId}/encounters/${encounterId}`,
       { outcome },
     );
+  }
+
+  /**
+   * Переходы архива (2.9.3·19, [ADR-0068]): убрать из работы и вернуть обратно.
+   *
+   * **Два метода, а не флаг в патче** — по той же причине, по какой на бэке это один use-case с
+   * двумя дверями: намерение человека («спрятал» / «вернул») должно читаться в коде экрана, а не
+   * выводиться из `isActive: false`.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public archiveAntiHabit(id: string): Observable<AntiHabitView> {
+    return this._http.post<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}/archive`, {});
+  }
+
+  /**
+   * Возвращает анти-привычку из архива.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public restoreAntiHabit(id: string): Observable<AntiHabitView> {
+    return this._http.post<AntiHabitView>(`${API_PREFIX}/accent/anti-habits/${id}/restore`, {});
+  }
+
+  /**
+   * Удаляет анти-привычку вместе с историей. **Для человека безвозвратно.**
+   * @param id Идентификатор.
+   * @returns Поток завершения.
+   */
+  public deleteAntiHabit(id: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/accent/anti-habits/${id}`);
+  }
+
+  /**
+   * Убирает препятствие в архив.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public archiveObstacle(id: string): Observable<ObstacleView> {
+    return this._http.post<ObstacleView>(`${API_PREFIX}/accent/obstacles/${id}/archive`, {});
+  }
+
+  /**
+   * Возвращает препятствие из архива.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public restoreObstacle(id: string): Observable<ObstacleView> {
+    return this._http.post<ObstacleView>(`${API_PREFIX}/accent/obstacles/${id}/restore`, {});
+  }
+
+  /**
+   * Убирает микро-победу в архив.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public archiveMicroWin(id: string): Observable<MicroWinView> {
+    return this._http.post<MicroWinView>(`${API_PREFIX}/accent/micro-wins/${id}/archive`, {});
+  }
+
+  /**
+   * Возвращает микро-победу из архива.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public restoreMicroWin(id: string): Observable<MicroWinView> {
+    return this._http.post<MicroWinView>(`${API_PREFIX}/accent/micro-wins/${id}/restore`, {});
+  }
+
+  /**
+   * Убирает шаблон привычки в архив.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public archiveHabit(id: string): Observable<HabitView> {
+    return this._http.post<HabitView>(`${API_PREFIX}/accent/habits/${id}/archive`, {});
+  }
+
+  /**
+   * Возвращает шаблон привычки из архива.
+   * @param id Идентификатор.
+   * @returns Поток обновлённой проекции.
+   */
+  public restoreHabit(id: string): Observable<HabitView> {
+    return this._http.post<HabitView>(`${API_PREFIX}/accent/habits/${id}/restore`, {});
   }
 }

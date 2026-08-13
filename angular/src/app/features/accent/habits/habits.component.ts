@@ -89,6 +89,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       <nav class="hb__tabs">
         <button type="button" [class.active]="tab() === 'today'" (click)="selectTab('today')">Сегодня</button>
         <button type="button" [class.active]="tab() === 'templates'" (click)="selectTab('templates')">Шаблоны</button>
+        <button type="button" [class.active]="tab() === 'archived'" (click)="selectTab('archived')">В архиве</button>
       </nav>
 
       @if (tab() === 'today') {
@@ -204,6 +205,11 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
           <p class="hb__muted">Загрузка…</p>
         } @else if (error()) {
           <p class="hb__error">{{ error() }}</p>
+        } @else if (habits().length === 0 && tab() === 'archived') {
+          <app-empty-state
+            title="В архиве пусто"
+            text="Сюда попадают привычки, убранные с глаз. Они не удалены — вернуть можно в любой момент."
+          />
         } @else if (habits().length === 0) {
           <app-empty-state
             title="Пока нет привычек"
@@ -261,14 +267,17 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                               <span class="hb__menu-ico" aria-hidden="true">✏️</span>
                               Изменить
                             </button>
-                            <button
-                              type="button"
-                              class="hb__menu-item hb__menu-item--danger"
-                              (click)="deactivate(h); closeMenu()"
-                            >
-                              <span class="hb__menu-ico" aria-hidden="true">🗑️</span>
-                              Удалить
-                            </button>
+                            @if (tab() === 'archived') {
+                              <button type="button" class="hb__menu-item" (click)="restore(h); closeMenu()">
+                                <span class="hb__menu-ico" aria-hidden="true">↩️</span>
+                                Вернуть в работу
+                              </button>
+                            } @else {
+                              <button type="button" class="hb__menu-item" (click)="deactivate(h); closeMenu()">
+                                <span class="hb__menu-ico" aria-hidden="true">📦</span>
+                                В архив
+                              </button>
+                            }
                           </div>
                         }
                       </div>
@@ -606,7 +615,7 @@ export class HabitsComponent {
   private readonly _dialog = inject(MatDialog);
 
   /** Активная вкладка. */
-  protected readonly tab = signal<'today' | 'templates'>('today');
+  protected readonly tab = signal<'today' | 'templates' | 'archived'>('today');
   /** Список привычек. */
   protected readonly habits = signal<HabitView[]>([]);
   /** Идёт загрузка. */
@@ -690,11 +699,35 @@ export class HabitsComponent {
   }
 
   /** Переключает вкладку; при «Сегодня» — (пере)загружает задачи (материализация на бэке). */
-  protected selectTab(tab: 'today' | 'templates'): void {
+  protected selectTab(tab: 'today' | 'templates' | 'archived'): void {
+    const wasArchived = this.tab() === 'archived';
     this.tab.set(tab);
     if (tab === 'today') {
       this._loadTasks();
+      return;
     }
+    // Между «Шаблонами» и «В архиве» меняется не вкладка, а выборка — список надо перечитать.
+    if (wasArchived !== (tab === 'archived')) {
+      this._load();
+    }
+  }
+
+  /**
+   * Возвращает шаблон привычки из архива в работу.
+   * @param habit Привычка.
+   */
+  protected restore(habit: HabitView): void {
+    this.busyId.set(habit.id);
+    this._api.restoreHabit(habit.id).subscribe({
+      next: () => {
+        this.habits.update((list) => list.filter((h) => h.id !== habit.id));
+        this.busyId.set(null);
+      },
+      error: (err: unknown) => {
+        this.busyId.set(null);
+        this._modal.error('Не удалось вернуть', errorMessage(err));
+      },
+    });
   }
 
   /** Метаданные задачи (тип + явные «надо/сделано» — без неявной дроби). */
@@ -1032,7 +1065,7 @@ export class HabitsComponent {
 
   private _load(): void {
     this.loading.set(true);
-    this._api.listHabits().subscribe({
+    this._api.listHabits(this.tab() === 'archived').subscribe({
       next: (items) => {
         this.habits.set(items);
         this.error.set(null);
@@ -1129,14 +1162,20 @@ export class HabitsComponent {
     });
   }
 
-  /** Удаляет привычку после подтверждения (мягко: деактивация — исчезает из активных). */
+  /**
+   * Убирает шаблон привычки в архив.
+   *
+   * **Раньше пункт назывался «Удалить», а делал архив** — и вернуть привычку было нечем: экрана
+   * скрытых не существовало. Слово исправлено вместе с появлением вкладки «В архиве»
+   * ([ADR-0068](../../../../docs/decisions/0068-deletion-belongs-to-storage.md)).
+   * @param habit Привычка.
+   */
   protected deactivate(habit: HabitView): void {
     void this._modal
       .confirm({
-        title: 'Удалить привычку?',
-        text: `«${habit.title}» перестанет появляться в задачах дня. История останется.`,
-        confirmText: 'Удалить',
-        danger: true,
+        title: 'Убрать в архив?',
+        text: `«${habit.title}» перестанет появляться в задачах дня. История останется, вернуть можно на вкладке «В архиве».`,
+        confirmText: 'В архив',
       })
       .then((ok) => {
         if (!ok) {

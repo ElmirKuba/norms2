@@ -85,6 +85,21 @@ import type {
         </div>
       </header>
 
+      <nav class="ob__tabs" aria-label="Что показывать">
+        <button
+          type="button"
+          class="ob__tab"
+          [class.ob__tab--on]="!archived()"
+          (click)="setArchived(false)"
+        >В работе</button>
+        <button
+          type="button"
+          class="ob__tab"
+          [class.ob__tab--on]="archived()"
+          (click)="setArchived(true)"
+        >В архиве</button>
+      </nav>
+
       <aside class="ob__why">
         <span class="ob__why-icon" aria-hidden="true">🧭</span>
         <p class="ob__why-text">
@@ -185,14 +200,17 @@ import type {
                             <span class="ob__menu-ico" aria-hidden="true">✏️</span>
                             Изменить
                           </button>
-                          <button
-                            type="button"
-                            class="ob__menu-item ob__menu-item--danger"
-                            (click)="archive(o); closeMenu()"
-                          >
-                            <span class="ob__menu-ico" aria-hidden="true">📦</span>
-                            Убрать из списка
-                          </button>
+                          @if (archived()) {
+                            <button type="button" class="ob__menu-item" (click)="restore(o); closeMenu()">
+                              <span class="ob__menu-ico" aria-hidden="true">↩️</span>
+                              Вернуть в работу
+                            </button>
+                          } @else {
+                            <button type="button" class="ob__menu-item" (click)="archive(o); closeMenu()">
+                              <span class="ob__menu-ico" aria-hidden="true">📦</span>
+                              В архив
+                            </button>
+                          }
                         </div>
                       }
                     </div>
@@ -220,6 +238,29 @@ import type {
         flex-direction: column;
         gap: var(--space-4);
       }
+      /* Вкладки «в работе / в архиве» — единый приём со всеми списками «Акцента». */
+      .ob__tabs {
+        display: flex;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+
+      .ob__tab {
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--color-text-muted);
+        font: inherit;
+        font-size: var(--fs-sm);
+        cursor: pointer;
+      }
+
+      .ob__tab--on {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
+
       .ob__head {
         display: flex;
         align-items: center;
@@ -408,6 +449,8 @@ export class ObstaclesComponent {
   protected readonly softLimitExceeded = signal(false);
   /** Идёт загрузка списка. */
   protected readonly loading = signal(true);
+  /** Что на экране: работа или архив (2.9.3·19) — архив обязан быть виден, иначе «убрал» = «навсегда». */
+  protected readonly archived = signal(false);
   /** Ошибка загрузки. */
   protected readonly error = signal<string | null>(null);
   /** Id карточки с открытым меню «⋯» или null. */
@@ -446,7 +489,7 @@ export class ObstaclesComponent {
   /** Перезагружает список. */
   protected reload(): void {
     this.loading.set(true);
-    this._api.listObstacles().subscribe({
+    this._api.listObstacles(this.archived()).subscribe({
       next: (list) => {
         this.items.set(list.items);
         this.softLimitExceeded.set(list.softLimitExceeded);
@@ -505,10 +548,33 @@ export class ObstaclesComponent {
    * @param obstacle Препятствие.
    */
   protected archive(obstacle: ObstacleView): void {
-    this._api.updateObstacle(obstacle.id, { isActive: false }).subscribe({
+    this._api.archiveObstacle(obstacle.id).subscribe({
       next: () => this.items.update((list) => list.filter((o) => o.id !== obstacle.id)),
       error: (err: unknown) => this.error.set(errorMessage(err)),
     });
+  }
+
+  /**
+   * Возвращает препятствие из архива в работу.
+   * @param obstacle Препятствие.
+   */
+  protected restore(obstacle: ObstacleView): void {
+    this._api.restoreObstacle(obstacle.id).subscribe({
+      next: () => this.items.update((list) => list.filter((o) => o.id !== obstacle.id)),
+      error: (err: unknown) => this.error.set(errorMessage(err)),
+    });
+  }
+
+  /**
+   * Переключает вкладку «в работе» / «в архиве».
+   * @param archived Показывать ли архив.
+   */
+  protected setArchived(archived: boolean): void {
+    if (this.archived() === archived) {
+      return;
+    }
+    this.archived.set(archived);
+    this.reload();
   }
 
   /**

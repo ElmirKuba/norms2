@@ -65,6 +65,21 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
           </span>
         </div>
       </header>
+
+      <nav class="mw__tabs" aria-label="Что показывать">
+        <button
+          type="button"
+          class="mw__tab"
+          [class.mw__tab--on]="!archived()"
+          (click)="setArchived(false)"
+        >В работе</button>
+        <button
+          type="button"
+          class="mw__tab"
+          [class.mw__tab--on]="archived()"
+          (click)="setArchived(true)"
+        >В архиве</button>
+      </nav>
       <aside class="mw__why">
         <span class="mw__why-icon" aria-hidden="true">🌱</span>
         <p class="mw__why-text">
@@ -153,6 +168,17 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                             <span class="mw__menu-ico" aria-hidden="true">✏️</span>
                             Изменить
                           </button>
+                          @if (archived()) {
+                            <button type="button" class="mw__menu-item" (click)="restore(mw); closeMenu()">
+                              <span class="mw__menu-ico" aria-hidden="true">↩️</span>
+                              Вернуть в работу
+                            </button>
+                          } @else {
+                            <button type="button" class="mw__menu-item" (click)="archive(mw); closeMenu()">
+                              <span class="mw__menu-ico" aria-hidden="true">📦</span>
+                              В архив
+                            </button>
+                          }
                           <button
                             type="button"
                             class="mw__menu-item mw__menu-item--danger"
@@ -178,6 +204,29 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       .mw {
         padding: var(--space-4) 0;
       }
+      /* Вкладки «в работе / в архиве» — единый приём со всеми списками «Акцента». */
+      .mw__tabs {
+        display: flex;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+
+      .mw__tab {
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--color-text-muted);
+        font: inherit;
+        font-size: var(--fs-sm);
+        cursor: pointer;
+      }
+
+      .mw__tab--on {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+      }
+
       .mw__head {
         display: flex;
         align-items: center;
@@ -401,6 +450,8 @@ export class MicroWinsComponent {
   protected readonly items = signal<MicroWinView[]>([]);
   /** Идёт первичная загрузка. */
   protected readonly loading = signal(true);
+  /** Что на экране: работа или архив (2.9.3·19). */
+  protected readonly archived = signal(false);
   /** Ошибка загрузки (или null). */
   protected readonly error = signal<string | null>(null);
   /** Id микро-победы, по которой идёт отметка «сделал» (для спиннера). */
@@ -460,9 +511,43 @@ export class MicroWinsComponent {
     return seconds < 60 ? `${String(seconds)} сек` : `${String(Math.round(seconds / 60))} мин`;
   }
 
+  /**
+   * Переключает вкладку «в работе» / «в архиве».
+   * @param archived Показывать ли архив.
+   */
+  protected setArchived(archived: boolean): void {
+    if (this.archived() === archived) {
+      return;
+    }
+    this.archived.set(archived);
+    this._load();
+  }
+
+  /**
+   * Убирает микро-победу в архив: с глаз уходит, но не удаляется — и это видно вкладкой.
+   * @param mw Микро-победа.
+   */
+  protected archive(mw: MicroWinView): void {
+    this._api.archiveMicroWin(mw.id).subscribe({
+      next: () => this._load(),
+      error: (err: unknown) => this._modal.error('Не удалось убрать', errorMessage(err)),
+    });
+  }
+
+  /**
+   * Возвращает микро-победу из архива в работу.
+   * @param mw Микро-победа.
+   */
+  protected restore(mw: MicroWinView): void {
+    this._api.restoreMicroWin(mw.id).subscribe({
+      next: () => this._load(),
+      error: (err: unknown) => this._modal.error('Не удалось вернуть', errorMessage(err)),
+    });
+  }
+
   private _load(): void {
     this.loading.set(true);
-    this._api.listMicroWins().subscribe({
+    this._api.listMicroWins(this.archived()).subscribe({
       next: (items) => {
         this.items.set(items);
         this.error.set(null);

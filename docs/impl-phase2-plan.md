@@ -3060,12 +3060,33 @@ _Заземлено на существующую доку: `domain-model §7`, 
     таблице**, а не побочный эффект. Кандидаты на разбор: `accounts.lower(login)`,
     `invite_codes.code`, `tasks (template_id, occurred_on)`, `micro_win_logs (micro_win_id,
     occurred_on)`, `user_achievements (account_id, code)`.
+  - **Режим по таблицам решён заранее (аудит 14.08.2026), чтобы при реализации не гадать:**
+    - **мягко (12):** `accounts`, `releases`, `notifications`, `telegram_requests`, `habits`,
+      `micro_wins`, `goals`, `goal_entries`, `milestones`, `anti_habits`, `obstacles`,
+      `counterplays`;
+    - **физически (6, `paranoid: false` явной строкой):** `secret_qa` (хеши старых ответов копить
+      незачем), `invite_codes` (код — секрет и занимает `unique`), `account_roles` (след уже в
+      журнале), `telegram_links` (отвязка обязана стирать `chat_id`), `telegram_updates` (дедуп,
+      растёт вечно), `tasks` (материализация шаблона, а не данные человека);
+    - **удаления нет вовсе (15):** `sessions` (у них `revoked_at` — своё, бизнесовое),
+      `session_token_history`, `invitations`, `bans`, `roles`, `app_settings`, `admin_audit_log`,
+      `notification_reads`, `accent_settings`, `accent_domains`, `accent_attributes`,
+      `micro_win_logs`, `anti_habit_events`, `obstacle_encounters`, `user_achievements`.
   - Поведение продукта не меняется — шаг проверяется тем, что **ничего не сломалось**.
 - [ ] **·17 (инфра)** — **paranoid как способность слоя 5**.
+  - **Флаг живёт на определении таблицы** (`defineTableWithSchema`), а не на классе репозитория —
+    и это не вкусовщина: чтения ходят через join (события «Держусь» джойнят `anti_habits`, роли
+    джойнят `accounts`), и репозиторий событий не обязан знать чужой режим, но условие подставить
+    обязан. `alive(table)` выводит условие из самой таблицы: у мягкой — `deleted_at is null`, у
+    жёсткой — **`undefined`, условие не добавляется вовсе**. Join-safe по построению.
+  - `paranoid: false` означает буквально: `delete` физически стирает, чтения **не добавляют
+    никакого условия** по `deleted_at`, а запрос корзины на такой таблице — ошибка разработчику,
+    а не тихий пустой список.
   - Общий механизм в `database/` — **единственное место, где живёт условие живости**:
-    - **чтение** принимает флаг `paranoid` (по умолчанию `false`): `false` → `deleted_at is null`
-      (живые), `true` → `deleted_at is not null` (удалённые, «корзина»). Значение по умолчанию —
-      живые: забыть флаг должно быть безопасно.
+    - **чтение** принимает `{ deleted }` (по умолчанию `false`): `false` → `deleted_at is null`
+      (живые), `true` → `deleted_at is not null` (корзина). Значение по умолчанию — живые: забыть
+      флаг должно быть безопасно. Слово намеренно **не** `paranoid`: так называется флаг таблицы,
+      и два разных смысла под одним именем в коде — гарантированная путаница.
     - **удаление** (`delete`/`destroy`) проставляет `deleted_at = now()` вместо `DELETE FROM`.
     - **`force`** — явный физический `DELETE` для тех мест, где стирание и есть смысл операции:
       дедуп `telegram_updates`, погашенные `invite_codes`, сброс витрины `starter-pack`. Не

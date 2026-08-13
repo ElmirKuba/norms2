@@ -23,7 +23,7 @@ PROD_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-co
 # (/home/norms2_stage). Своего Traefik у него нет: роутит прод-прокси по домену.
 STAGE_COMPOSE := docker compose --env-file .env -f docker/compose-files/docker-compose.stage.yml
 
-.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio audit-fields prod-build prod-migrate prod-up prod-down prod-config stage-build stage-up stage-down stage-logs env-cleanup
+.PHONY: help dev-up dev-up-detach dev-rebuild dev-down dev-logs dev-ps dev-restart db-psql dev-config db-generate db-migrate db-studio audit-fields audit-states prod-build prod-migrate prod-up prod-down prod-config stage-build stage-up stage-down stage-logs env-cleanup
 
 help: ## Показать список команд
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -92,6 +92,9 @@ prod-config: ## Проверить prod-compose
 
 audit-fields: ## Найти поля API без потребителя на фронте (write-only fields)
 	@node scripts/audit-write-only-fields.mjs
+
+audit-states: ## Детектор состояний хранения: архив без возврата, чтения без фильтра (ADR-0068)
+	node scripts/audit-storage-states.mjs
 
 env-cleanup: ## ОПАСНО: снести контейнеры/локальные образы/ДАННЫЕ только этого проекта (5×y чтобы удалить)
 	@printf "⚠️  Удалит контейнеры, локально собранные образы (nest/angular) и ВСЕ данные проекта\n   (docker/volumes/pg_data, pgadmin_data). Базовые образы (postgres/node/pgadmin) и чужие ресурсы НЕ трогаются. Необратимо.\n"

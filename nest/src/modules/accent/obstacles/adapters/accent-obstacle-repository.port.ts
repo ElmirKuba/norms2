@@ -49,7 +49,7 @@ export interface AccentObstacleRepositoryPort {
    * @param includeArchived Включать ли архивные (`is_active=false`); по умолчанию нет.
    * @returns Список препятствий владельца.
    */
-  listByAccount(accountId: string, includeArchived?: boolean): Promise<ObstacleFull[]>;
+  listByAccount(accountId: string, archived?: boolean): Promise<ObstacleFull[]>;
 
   /**
    * Находит препятствие по id с проверкой владения.

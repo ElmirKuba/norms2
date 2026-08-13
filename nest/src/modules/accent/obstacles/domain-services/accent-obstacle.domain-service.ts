@@ -94,8 +94,8 @@ export class AccentObstacleDomainService {
    * @param includeArchived Включать ли архивные.
    * @returns Препятствия в ручном порядке и флаг подсказки.
    */
-  public async list(accountId: string, includeArchived = false): Promise<ObstacleListResult> {
-    const items = await this._repository.listByAccount(accountId, includeArchived);
+  public async list(accountId: string, archived = false): Promise<ObstacleListResult> {
+    const items = await this._repository.listByAccount(accountId, archived);
     const softLimit = this._config.get('ACCENT_OBSTACLE_SOFT_LIMIT', { infer: true });
     const activeOwn = items.filter((o) => o.isActive && !o.isStarter).length;
     return { items, softLimitExceeded: activeOwn > softLimit };
@@ -114,6 +114,28 @@ export class AccentObstacleDomainService {
       throw new ObstacleNotFoundError('Препятствие не найдено.');
     }
     return found;
+  }
+
+  /**
+   * Переносит препятствие в архив или возвращает из него.
+   *
+   * **Архив — состояние продукта, и у него обязаны быть оба перехода**
+   * ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md)). До 2.9.3
+   * вход был, выхода не было: «Убрать из списка» звучало обратимо, а возврата не существовало
+   * ни на экране, ни в контракте.
+   * @param id Идентификатор препятствия.
+   * @param accountId Владелец.
+   * @param archived `true` — в архив, `false` — вернуть в работу.
+   * @returns Обновлённое препятствие.
+   * @throws {ObstacleNotFoundError} Если чужое или не существует.
+   */
+  public async setArchived(id: string, accountId: string, archived: boolean): Promise<ObstacleFull> {
+    await this.getOwned(id, accountId);
+    const updated = await this._repository.update(id, accountId, { isActive: !archived });
+    if (updated === null) {
+      throw new ObstacleNotFoundError('Препятствие не найдено.');
+    }
+    return updated;
   }
 
   /**

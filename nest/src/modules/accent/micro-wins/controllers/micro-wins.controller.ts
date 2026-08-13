@@ -1,4 +1,17 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../../auth/guards/auth.guard';
 import { createMicroWinSchema } from '../dtos/create-micro-win.dto';
@@ -19,6 +32,7 @@ import { SeedStarterPackUseCase } from '../use-cases/seed-starter-pack.use-case'
 import { ClearStartersUseCase } from '../use-cases/clear-starters.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { MicroWinView } from '../interfaces/micro-win-view.interface';
+import { SetMicroWinArchivedUseCase } from '../use-cases/set-micro-win-archived.use-case';
 
 /**
  * Контроллер микро-побед (`/api/v1/accent/micro-wins`) — под Guard (members-only,
@@ -43,6 +57,7 @@ export class MicroWinsController {
     private readonly _seedStarterPack: SeedStarterPackUseCase,
     private readonly _clearStarters: ClearStartersUseCase,
     private readonly _reorder: ReorderMicroWinsUseCase,
+    private readonly _setArchived: SetMicroWinArchivedUseCase,
   ) {}
 
   /**
@@ -51,8 +66,41 @@ export class MicroWinsController {
    * @returns Проекции микро-побед.
    */
   @Get('micro-wins')
-  public list(@Req() request: AuthenticatedRequest): Promise<MicroWinView[]> {
-    return this._list.execute(request.account.id, request.account.timezone);
+  public list(
+    @Req() request: AuthenticatedRequest,
+    @Query('filter') filter?: string,
+  ): Promise<MicroWinView[]> {
+    return this._list.execute(request.account.id, request.account.timezone, filter === 'archived');
+  }
+
+  /**
+   * Убирает микро-победу в архив: пропадает из списка «в работе», но не исчезает.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('micro-wins/:id/archive')
+  @HttpCode(200)
+  public archive(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MicroWinView> {
+    return this._setArchived.execute(id, request.account.id, true);
+  }
+
+  /**
+   * Возвращает микро-победу из архива в работу.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('micro-wins/:id/restore')
+  @HttpCode(200)
+  public restore(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MicroWinView> {
+    return this._setArchived.execute(id, request.account.id, false);
   }
 
   /**

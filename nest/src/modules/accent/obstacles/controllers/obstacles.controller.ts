@@ -51,6 +51,7 @@ import { SetEncounterOutcomeUseCase } from '../use-cases/set-encounter-outcome.u
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { ObstacleListView, ObstacleView } from '../interfaces/obstacle-view.interface';
 import type { CounterplayView } from '../interfaces/counterplay-view.interface';
+import { SetObstacleArchivedUseCase } from '../use-cases/set-obstacle-archived.use-case';
 import type {
   ObstacleEncounterPage,
   ObstacleEncounterView,
@@ -102,6 +103,7 @@ export class ObstaclesController {
     private readonly _seedPack: SeedObstacleStarterPackUseCase,
     private readonly _clearStarters: ClearObstacleStartersUseCase,
     private readonly _adopt: AdoptObstacleUseCase,
+    private readonly _setArchived: SetObstacleArchivedUseCase,
   ) {}
 
   /**
@@ -161,8 +163,41 @@ export class ObstaclesController {
    * @returns `{ items, softLimitExceeded }`.
    */
   @Get('obstacles')
-  public list(@Req() request: AuthenticatedRequest): Promise<ObstacleListView> {
-    return this._list.execute(request.account.id);
+  public list(
+    @Req() request: AuthenticatedRequest,
+    @Query('filter') filter?: string,
+  ): Promise<ObstacleListView> {
+    return this._list.execute(request.account.id, filter === 'archived');
+  }
+
+  /**
+   * Убирает препятствие в архив: пропадает из списка «в работе», но не исчезает.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('obstacles/:id/archive')
+  @HttpCode(200)
+  public archive(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ObstacleView> {
+    return this._setArchived.execute(id, request.account.id, true);
+  }
+
+  /**
+   * Возвращает препятствие из архива в работу.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('obstacles/:id/restore')
+  @HttpCode(200)
+  public restore(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ObstacleView> {
+    return this._setArchived.execute(id, request.account.id, false);
   }
 
   /**

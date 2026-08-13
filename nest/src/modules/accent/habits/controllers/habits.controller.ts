@@ -21,6 +21,7 @@ import { AdoptHabitUseCase } from '../use-cases/adopt-habit.use-case';
 import type { AuthenticatedRequest } from '../../../auth/interfaces/authenticated-request.interface';
 import type { HabitHistoryView } from '../interfaces/habit-history-view.interface';
 import type { HabitView } from '../interfaces/habit-view.interface';
+import { SetHabitArchivedUseCase } from '../use-cases/set-habit-archived.use-case';
 
 /**
  * Контроллер привычек (`/api/v1/accent/habits`) — под Guard (members-only, per-account).
@@ -48,6 +49,7 @@ export class HabitsController {
     private readonly _clearStarters: ClearHabitStartersUseCase,
     private readonly _adopt: AdoptHabitUseCase,
     private readonly _reorder: ReorderHabitsUseCase,
+    private readonly _setArchived: SetHabitArchivedUseCase,
   ) {}
 
   /**
@@ -56,8 +58,41 @@ export class HabitsController {
    * @returns Проекции привычек.
    */
   @Get('habits')
-  public list(@Req() request: AuthenticatedRequest): Promise<HabitView[]> {
-    return this._list.execute(request.account.id);
+  public list(
+    @Req() request: AuthenticatedRequest,
+    @Query('filter') filter?: string,
+  ): Promise<HabitView[]> {
+    return this._list.execute(request.account.id, filter === 'archived');
+  }
+
+  /**
+   * Убирает привычку в архив: пропадает из списка «в работе», но не исчезает.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('habits/:id/archive')
+  @HttpCode(200)
+  public archive(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<HabitView> {
+    return this._setArchived.execute(id, request.account.id, true);
+  }
+
+  /**
+   * Возвращает привычку из архива в работу.
+   * @param id Идентификатор.
+   * @param request Запрос (аккаунт из Guard).
+   * @returns Проекция после перехода.
+   */
+  @Post('habits/:id/restore')
+  @HttpCode(200)
+  public restore(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<HabitView> {
+    return this._setArchived.execute(id, request.account.id, false);
   }
 
   /**

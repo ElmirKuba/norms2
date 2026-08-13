@@ -23,8 +23,8 @@ export class ListObstaclesUseCase {
    * @param accountId Идентификатор аккаунта (из Guard).
    * @returns Препятствия в ручном порядке + флаг мягкого порога (подсказка, не запрет).
    */
-  public async execute(accountId: string): Promise<ObstacleListView> {
-    const { items, softLimitExceeded } = await this._obstacles.list(accountId);
+  public async execute(accountId: string, archived = false): Promise<ObstacleListView> {
+    const { items, softLimitExceeded } = await this._obstacles.list(accountId, archived);
     const ids = items.map((o) => o.id);
     const [counts, encounters] = await Promise.all([
       this._counterplays.countByObstacles(ids),

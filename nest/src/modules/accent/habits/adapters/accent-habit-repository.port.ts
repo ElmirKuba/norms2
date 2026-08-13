@@ -74,7 +74,7 @@ export interface AccentHabitRepositoryPort {
    * @param accountId Идентификатор аккаунта.
    * @returns Список привычек владельца.
    */
-  listByAccount(accountId: string): Promise<HabitFull[]>;
+  listByAccount(accountId: string, archived?: boolean): Promise<HabitFull[]>;
 
   /**
    * Находит привычку по id с проверкой владения.

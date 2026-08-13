@@ -47,8 +47,28 @@ export class AccentMicroWinDomainService {
    * @param accountId Идентификатор аккаунта.
    * @returns Список микро-побед владельца.
    */
-  public async list(accountId: string): Promise<MicroWinFull[]> {
-    return this._repository.listByAccount(accountId);
+  public async list(accountId: string, archived = false): Promise<MicroWinFull[]> {
+    return this._repository.listByAccount(accountId, archived);
+  }
+
+  /**
+   * Переносит в архив или возвращает из него.
+   *
+   * **Архив — состояние продукта, и оба перехода обязаны существовать**
+   * ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md)): до 2.9.3
+   * вход был, а выхода не было — «убрал» читалось как «навсегда».
+   * @param id Идентификатор.
+   * @param accountId Владелец.
+   * @param archived `true` — в архив, `false` — вернуть в работу.
+   * @returns Обновлённая строка.
+   * @throws {MicroWinNotFoundError} Если чужое или не существует.
+   */
+  public async setArchived(id: string, accountId: string, archived: boolean): Promise<MicroWinFull> {
+    const updated = await this._repository.update(id, accountId, { isActive: !archived });
+    if (updated === null) {
+      throw new MicroWinNotFoundError('Микро-победа не найдена.');
+    }
+    return updated;
   }
 
   /**

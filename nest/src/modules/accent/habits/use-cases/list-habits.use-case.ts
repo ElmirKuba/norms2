@@ -15,8 +15,8 @@ export class ListHabitsUseCase {
    * @param accountId Идентификатор аккаунта (из Guard).
    * @returns Проекции активных привычек.
    */
-  public async execute(accountId: string): Promise<HabitView[]> {
-    const items = await this._habits.list(accountId);
+  public async execute(accountId: string, archived = false): Promise<HabitView[]> {
+    const items = await this._habits.list(accountId, archived);
     return items.map((item) => toHabitView(item));
   }
 }

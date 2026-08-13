@@ -60,7 +60,7 @@ export interface AccentMicroWinRepositoryPort {
    * @param accountId Идентификатор аккаунта.
    * @returns Список микро-побед владельца.
    */
-  listByAccount(accountId: string): Promise<MicroWinFull[]>;
+  listByAccount(accountId: string, archived?: boolean): Promise<MicroWinFull[]>;
 
   /**
    * Находит микро-победу по id с проверкой владения.

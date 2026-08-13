@@ -33,11 +33,11 @@ export class AccentHabitRepository implements AccentHabitRepositoryPort {
    * @param accountId Идентификатор аккаунта.
    * @returns Список привычек владельца.
    */
-  public async listByAccount(accountId: string): Promise<HabitFull[]> {
+  public async listByAccount(accountId: string, archived = false): Promise<HabitFull[]> {
     return this._db
       .select()
       .from(habits)
-      .where(and(alive(habits), eq(habits.accountId, accountId), eq(habits.isActive, true)))
+      .where(and(alive(habits), eq(habits.accountId, accountId), eq(habits.isActive, !archived)))
       // Тай-брейкер `id` (uuidv7 ≈ порядок вставки): drag-сортировка пишет в priority; при равных
       // priority+created_at (напр. сид: priority=0, один batch created_at) без него порядок
       // недетерминирован — привычка «прыгает» после edit (2.5.1). id делает порядок стабильным.

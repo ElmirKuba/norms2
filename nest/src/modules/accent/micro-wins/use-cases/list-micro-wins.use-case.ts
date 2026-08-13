@@ -21,8 +21,12 @@ export class ListMicroWinsUseCase {
    * @param timezone IANA-таймзона аккаунта (из Guard) — для «сегодня».
    * @returns Проекции активных микро-побед с актуальным `completedToday`.
    */
-  public async execute(accountId: string, timezone: string): Promise<MicroWinView[]> {
-    const items = await this._microWins.list(accountId);
+  public async execute(
+    accountId: string,
+    timezone: string,
+    archived = false,
+  ): Promise<MicroWinView[]> {
+    const items = await this._microWins.list(accountId, archived);
     const today = todayInTimezone(timezone);
     const completedToday = await this._microWins.completedIdsOn(accountId, today);
     return items.map((item) => toMicroWinView(item, completedToday.has(item.id)));

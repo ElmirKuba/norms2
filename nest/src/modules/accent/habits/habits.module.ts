@@ -31,6 +31,7 @@ import { CompleteMinimumTaskUseCase } from './use-cases/complete-minimum-task.us
 import { UncompleteTaskUseCase } from './use-cases/uncomplete-task.use-case';
 import { PostponeTaskUseCase } from './use-cases/postpone-task.use-case';
 import { UnpostponeTaskUseCase } from './use-cases/unpostpone-task.use-case';
+import { SetHabitArchivedUseCase } from './use-cases/set-habit-archived.use-case';
 
 /**
  * Область привычек раздела «Акцент» (мультимодуль, ADR-0050; «сердце продукта», 2.4):
@@ -50,6 +51,7 @@ import { UnpostponeTaskUseCase } from './use-cases/unpostpone-task.use-case';
     AccentHabitHistoryDomainService,
     AccentLadderEngine,
     ListHabitsUseCase,
+    SetHabitArchivedUseCase,
     GetHabitUseCase,
     GetHabitHistoryUseCase,
     CreateHabitUseCase,

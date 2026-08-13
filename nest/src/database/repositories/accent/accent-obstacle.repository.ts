@@ -29,20 +29,21 @@ export class AccentObstacleRepository implements AccentObstacleRepositoryPort {
    * Препятствия аккаунта в ручном порядке (position, затем created_at, тай-брейкер id —
    * детерминизм при равных позициях, как у остальных трекеров).
    * @param accountId Идентификатор аккаунта.
-   * @param includeArchived Включать ли архивные (`is_active=false`).
+   * @param archived `false` (умолчание) — в работе, `true` — архив (ADR-0068: два состояния,
+   * оба видимые).
    * @returns Список препятствий владельца.
    */
-  public async listByAccount(
-    accountId: string,
-    includeArchived: boolean = false,
-  ): Promise<ObstacleFull[]> {
-    const where = includeArchived
-      ? eq(obstacles.accountId, accountId)
-      : and(eq(obstacles.accountId, accountId), eq(obstacles.isActive, true));
+  public async listByAccount(accountId: string, archived: boolean = false): Promise<ObstacleFull[]> {
     return this._db
       .select()
       .from(obstacles)
-      .where(and(alive(obstacles), where))
+      .where(
+        and(
+          alive(obstacles),
+          eq(obstacles.accountId, accountId),
+          eq(obstacles.isActive, !archived),
+        ),
+      )
       .orderBy(asc(obstacles.position), asc(obstacles.createdAt), asc(obstacles.id));
   }
 

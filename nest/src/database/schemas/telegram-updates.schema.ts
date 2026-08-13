@@ -16,4 +16,6 @@ export const telegramUpdates = defineTableWithSchema<TelegramUpdateLogFull>()(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('telegram_updates_created_at_idx').on(table.createdAt)],
+  // Жёсткое удаление (ADR-0068): дедуп-отметки, а не сущность продукта: без чистки таблица растёт вечно.
+  { paranoid: false },
 );

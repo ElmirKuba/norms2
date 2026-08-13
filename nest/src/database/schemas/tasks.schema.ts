@@ -54,4 +54,6 @@ export const tasks = defineTableWithSchema<TaskFull>()(
   (table) => [
     uniqueIndex('tasks_template_day_unique').on(table.templateId, table.occurredOn),
   ],
+  // Жёсткое удаление (ADR-0068): материализация шаблона на день, а не данные человека.
+  { paranoid: false },
 );

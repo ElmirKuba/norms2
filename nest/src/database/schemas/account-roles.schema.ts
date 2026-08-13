@@ -32,4 +32,6 @@ export const accountRoles = defineTableWithSchema<AccountRoleFull>()(
     // «Кто у нас админы» — частый запрос админки, он идёт от роли к людям.
     index('account_roles_role_idx').on(table.roleId),
   ],
+  // Жёсткое удаление (ADR-0068): снятие роли стирает пару, след остаётся в журнале админа.
+  { paranoid: false },
 );

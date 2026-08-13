@@ -20,4 +20,6 @@ export const secretQa = defineTableWithSchema<SecretQaFull>()(
     ...timestamps(),
   },
   (table) => [index('secret_qa_account_id_idx').on(table.accountId)],
+  // Жёсткое удаление (ADR-0068): хеши старых ответов копить незачем — это фактор доступа, а не история.
+  { paranoid: false },
 );

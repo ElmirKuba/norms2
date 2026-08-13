@@ -34,4 +34,6 @@ export const telegramLinks = defineTableWithSchema<TelegramLinkFull>()(
     uniqueIndex('telegram_links_account_id_unique').on(table.accountId),
     uniqueIndex('telegram_links_chat_id_unique').on(table.chatId),
   ],
+  // Жёсткое удаление (ADR-0068): отвязка обязана стирать связь с чужим сервисом, а не прятать её.
+  { paranoid: false },
 );

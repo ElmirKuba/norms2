@@ -12,6 +12,14 @@ export const idColumn = () => varchar('id', { length: 52 }).primaryKey();
  */
 export const fkColumn = (name: string) => varchar(name, { length: 52 });
 
+/**
+ * `deleted_at` — метка мягкого удаления (ADR-0068). Навешивается **хелпером определения таблицы
+ * на все таблицы разом**, а не пишется в схемах: колонка, добавленная руками, обязана появиться
+ * и в доменном интерфейсе (проверка «колонки 1:1 с контрактом»), то есть протекла бы в домен на
+ * уровне типов. Домен про хранение знать не должен — он зовёт `delete()` и считает, что удалил.
+ */
+export const deletedAtColumn = () => timestamp('deleted_at', { withTimezone: true });
+
 /** created_at + updated_at (timestamptz, not null); updated_at автообновляется (ADR-0011). */
 export const timestamps = () => ({
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

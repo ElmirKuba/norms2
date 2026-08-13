@@ -24,4 +24,6 @@ export const inviteCodes = defineTableWithSchema<InviteCodeFull>()(
     uniqueIndex('invite_codes_code_unique').on(table.code),
     index('invite_codes_inviter_id_idx').on(table.inviterId),
   ],
+  // Жёсткое удаление (ADR-0068): код — секрет и занимает уникальное значение; погашенный обязан исчезнуть.
+  { paranoid: false },
 );

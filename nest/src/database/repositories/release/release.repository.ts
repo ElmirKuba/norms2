@@ -138,6 +138,33 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
   }
 
   /**
+   * Все публикации целиком, новые сверху (2.9.3·13).
+   * @returns Полные строки.
+   */
+  public async listAll(): Promise<ReleaseFull[]> {
+    return this._db
+      .select()
+      .from(releases)
+      // Тот же порядок, что у витрины: чтобы админка и публичная страница не спорили о том,
+      // какая публикация последняя.
+      .orderBy(
+        sql`coalesce(${releases.publishedAt}, ${releases.createdAt}) desc`,
+        sql`${releases.id} desc`,
+      )
+      .limit(RELEASES_LIMIT);
+  }
+
+  /**
+   * Полная строка публикации по ключу (2.9.3·13).
+   * @param key Публичный ключ.
+   * @returns Строка или null.
+   */
+  public async findFullByKey(key: string): Promise<ReleaseFull | null> {
+    const [row] = await this._db.select().from(releases).where(eq(releases.key, key)).limit(1);
+    return row ?? null;
+  }
+
+  /**
    * Удаляет публикацию по ключу (2.9.3·7).
    *
    * Возвращает удалённую строку, а не признак: вызывающему нужен заголовок для журнала, и

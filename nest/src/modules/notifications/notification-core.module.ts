@@ -10,6 +10,7 @@ import { NotificationRepository } from '../../database/repositories/notification
 import { ReleaseRepository } from '../../database/repositories/release/release.repository';
 import { NotificationDomainService } from './domain-services/notification.domain-service';
 import { NotificationSeedService } from './seed/notification-seed.service';
+import { ReleaseContentService } from './domain-services/release-content.service';
 
 /**
  * Ядро области notifications: `NotificationDomainService` + биндинг репозитория +
@@ -37,8 +38,11 @@ import { NotificationSeedService } from './seed/notification-seed.service';
           : new TelegramReleaseBroadcastAdapter(configService),
     },
     NotificationDomainService,
+    ReleaseContentService,
     NotificationSeedService,
   ],
-  exports: [NotificationDomainService],
+  // `ReleaseContentService` наружу — админке (2.9.3·13): она регистрирует публикацию для
+  // файла, который уже развёрнут, и обязана проверить, что он на месте.
+  exports: [NotificationDomainService, ReleaseContentService],
 })
 export class NotificationCoreModule {}

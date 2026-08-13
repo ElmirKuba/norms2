@@ -1,0 +1,122 @@
+<div class="releases">
+  <div class="releases__top">
+    <app-button variant="ghost" (click)="toggleForm()">
+      {{ formOpen() ? 'Свернуть форму' : 'Зарегистрировать публикацию' }}
+    </app-button>
+  </div>
+
+  @if (formOpen()) {
+    <app-card>
+      <p class="releases__note">
+        Здесь <b>регистрируется публикация</b>, а не пишется текст. Файл ноты приезжает вместе с
+        образом — если его нет на сервере, регистрация не пройдёт. В канал ничего не уходит:
+        вещание отдельной кнопкой.
+      </p>
+
+      <form class="releases__form" (submit)="$event.preventDefault(); create()">
+        <label class="releases__label" for="release-key">Ключ — он же адрес страницы</label>
+        <input
+          class="releases__input"
+          id="release-key"
+          name="key"
+          [(ngModel)]="key"
+          placeholder="release-2.9.4"
+          required
+        />
+
+        <label class="releases__label" for="release-title">Заголовок — виден в колокольчике</label>
+        <input
+          class="releases__input"
+          id="release-title"
+          name="title"
+          [(ngModel)]="title"
+          placeholder="Нормисы 2.9.4 — ..."
+          required
+        />
+
+        <label class="releases__label" for="release-format">Чем является нота</label>
+        <select
+          class="releases__input"
+          id="release-format"
+          name="contentFormat"
+          [(ngModel)]="contentFormat"
+        >
+          <option value="md">Текст .md</option>
+          <option value="page">Страница фронта</option>
+        </select>
+
+        @if (contentFormat === 'md') {
+          <label class="releases__label" for="release-file">Путь к файлу внутри content/</label>
+          <input
+            class="releases__input"
+            id="release-file"
+            name="contentFile"
+            [(ngModel)]="contentFile"
+            placeholder="notifications/release-2.9.4.md"
+          />
+        }
+
+        <div class="releases__act">
+          <app-button type="submit" [loading]="creating()">Зарегистрировать</app-button>
+        </div>
+      </form>
+    </app-card>
+  }
+
+  @if (loading()) {
+    <app-spinner />
+  } @else if (error(); as message) {
+    <app-card>
+      <p class="releases__muted">{{ message }}</p>
+    </app-card>
+  } @else {
+    @for (release of releases(); track release.key) {
+      <app-card>
+        <div class="releases__head">
+          <b class="releases__title">{{ release.title }}</b>
+          <span class="releases__key">{{ release.key }}</span>
+        </div>
+
+        <dl class="releases__facts">
+          <div class="releases__fact">
+            <dt>Выпущен</dt>
+            <dd>{{ when(release.publishedAt) }}</dd>
+          </div>
+          <div class="releases__fact">
+            <dt>Вид</dt>
+            <dd>{{ release.contentFormat === 'md' ? 'текст .md' : 'страница' }}</dd>
+          </div>
+          @if (release.contentFile; as file) {
+            <div class="releases__fact">
+              <dt>Файл</dt>
+              <dd>{{ file }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (release.broadcastedAt) {
+          <p class="releases__muted">Объявлен в канал {{ when(release.broadcastedAt) }}.</p>
+        } @else {
+          <p class="releases__wait">В канал ещё не объявлен.</p>
+        }
+
+        <div class="releases__act">
+          @if (!release.broadcastedAt) {
+            <app-button [loading]="busy() === release.key" (click)="broadcast(release)">
+              Объявить в канал
+            </app-button>
+          }
+          <app-button
+            variant="danger"
+            [loading]="busy() === release.key"
+            (click)="remove(release)"
+          >
+            Удалить
+          </app-button>
+        </div>
+      </app-card>
+    } @empty {
+      <app-card><p class="releases__muted">Публикаций пока нет.</p></app-card>
+    }
+  }
+</div>

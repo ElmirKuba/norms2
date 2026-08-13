@@ -13,6 +13,7 @@ import { UpdateSettingUseCase } from './use-cases/update-setting.use-case';
 import { DeleteReleaseUseCase } from './use-cases/delete-release.use-case';
 import { ManageRolesUseCase } from './use-cases/manage-roles.use-case';
 import { GetReleaseStateUseCase } from './use-cases/get-release-state.use-case';
+import { ManageReleasesUseCase } from './use-cases/manage-releases.use-case';
 import { ADMIN_STATE_REPOSITORY } from './adapters/admin-state-repository.port';
 import { AdminStateRepository } from '../../database/repositories/admin/admin-state.repository';
 
@@ -50,6 +51,7 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
     DeleteReleaseUseCase,
     ManageRolesUseCase,
     GetReleaseStateUseCase,
+    ManageReleasesUseCase,
   ],
 })
 export class AdminModule {}

@@ -61,6 +61,25 @@ export interface ReleaseRepositoryPort {
   listUnbroadcasted(): Promise<ReleaseFull[]>;
 
   /**
+   * Все публикации целиком, новые сверху (2.9.3·13).
+   *
+   * Отдельно от `listPublic`: витрине незачем знать `broadcastedAt`, а админке без него
+   * не ответить на главный вопрос — объявлен ли релиз в канал.
+   * @returns Полные строки.
+   */
+  listAll(): Promise<ReleaseFull[]>;
+
+  /**
+   * Полная строка публикации по ключу (2.9.3·13).
+   *
+   * `findByKey` отдаёт проекцию витрины — там нет ни `id`, ни `broadcastedAt`, а вещанию нужны
+   * оба: по первому ставится отметка, по второму решается, не объявляли ли уже.
+   * @param key Публичный ключ.
+   * @returns Строка или null.
+   */
+  findFullByKey(key: string): Promise<ReleaseFull | null>;
+
+  /**
    * Удаляет публикацию по ключу (2.9.3·7).
    *
    * Каскад по `notifications.release_id` уносит доставку, а оттуда — отметки прочтения

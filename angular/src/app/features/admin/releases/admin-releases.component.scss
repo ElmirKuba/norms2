@@ -1,0 +1,99 @@
+// Публикации релизов: список карточек + форма регистрации.
+.releases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.releases__top {
+  display: flex;
+}
+
+.releases__note {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.releases__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.releases__label {
+  margin-top: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.releases__input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.releases__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.releases__title {
+  font-weight: 500;
+}
+
+.releases__key {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.releases__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+}
+
+.releases__fact {
+  display: flex;
+  gap: var(--space-1);
+  align-items: baseline;
+
+  dt {
+    font-size: var(--fs-sm);
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--fs-sm);
+  }
+}
+
+// «Не объявлен» — не ошибка, но состояние, ради которого сюда и заходят.
+.releases__wait {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--color-accent);
+}
+
+.releases__act {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.releases__muted {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}

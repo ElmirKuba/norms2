@@ -150,3 +150,34 @@ export interface AdminReleaseState {
   /** Последняя публикация или null. */
   lastRelease: AdminLastRelease | null;
 }
+
+/** Чем является нота: текстом `.md` или страницей фронта. */
+export type AdminReleaseFormat = 'md' | 'page';
+
+/** Публикация релиза так, как её видит админка (2.9.3·13). */
+export interface AdminRelease {
+  /** PK. */
+  id: string;
+  /** Публичный ключ и сегмент URL. */
+  key: string;
+  /** Заголовок. */
+  title: string;
+  /** Путь к `.md` или null. */
+  contentFile: string | null;
+  /** Вид содержимого. */
+  contentFormat: AdminReleaseFormat;
+  /** Дата выпуска (ISO) или null. */
+  publishedAt: string | null;
+  /** Когда объявлена в канал (ISO) или null. */
+  broadcastedAt: string | null;
+  /** Когда записана (ISO). */
+  createdAt: string;
+}
+
+/** Итог вещания: отметка и признак доставки. */
+export interface AdminBroadcastResult {
+  /** Дата вещания или null, если пост не ушёл. */
+  broadcastedAt: string | null;
+  /** Дошло ли до канала. */
+  sent: boolean;
+}

@@ -16,6 +16,10 @@ export const AUDIT_ACTIONS = {
   ROLE_REVOKED: 'role.revoked',
   /** Публикация релиза удалена (каскадом ушли доставка и отметки прочтения). */
   RELEASE_DELETED: 'release.deleted',
+  /** Публикация релиза создана (в колокольчиках появилась, в канал ещё не ушла). */
+  RELEASE_CREATED: 'release.created',
+  /** Релиз объявлен во внешний канал по команде человека. */
+  RELEASE_BROADCASTED: 'release.broadcasted',
   /** Заявка на вступление одобрена — выдан код приглашения. */
   TELEGRAM_REQUEST_APPROVED: 'telegram.request.approved',
   /** Просьба о приглашениях удовлетворена — начислена квота. */

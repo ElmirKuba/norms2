@@ -1,7 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { OnApplicationBootstrap } from '@nestjs/common';
 import { NOTIFICATION_REPOSITORY } from '../adapters/notification-repository.port';
 import { RELEASE_REPOSITORY } from '../adapters/release-repository.port';
@@ -11,10 +8,7 @@ import type { NotificationRepositoryPort } from '../adapters/notification-reposi
 import type { ReleaseRepositoryPort } from '../adapters/release-repository.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RELEASE_NOTES, validateReleaseNote } from './release-notes.seed';
-import type { Env } from '../../../system/config/env.schema';
-
-/** Папка с авторскими seed-файлами в образе/репо (рядом с рантаймом, cwd-relative). */
-const SEED_DIR = 'seed-content';
+import { ReleaseContentService } from '../domain-services/release-content.service';
 
 /**
  * Сид релиз-нот (F7): на старте приложения гарантирует для каждой записи
@@ -32,20 +26,17 @@ export class NotificationSeedService implements OnApplicationBootstrap {
    * @param _notificationRepository Порт репозитория доставки.
    * @param _releaseRepository Порт репозитория публикаций (ADR-0065).
    * @param _broadcast Порт вещания релизов наружу (2.9.1).
-   * @param _configService Конфиг (CONTENT_DIR).
+   * @param _content Содержимое нот на диске — общее с админкой (2.9.3·13).
    */
   public constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly _notificationRepository: NotificationRepositoryPort,
     @Inject(RELEASE_REPOSITORY) private readonly _releaseRepository: ReleaseRepositoryPort,
     @Inject(RELEASE_BROADCAST) private readonly _broadcast: ReleaseBroadcastPort,
-    private readonly _configService: ConfigService<Env, true>,
+    private readonly _content: ReleaseContentService,
   ) {}
 
   /** Прогоняет сид релиз-нот после полной инициализации приложения. */
   public async onApplicationBootstrap(): Promise<void> {
-    const contentDir = resolve(this._configService.get('CONTENT_DIR', { infer: true }));
-    const seedDir = resolve(process.cwd(), SEED_DIR);
-
     for (const note of RELEASE_NOTES) {
       try {
         // Поломку данных не сеем вовсе ('md' без файла роняет копирование, 'page' с файлом
@@ -61,8 +52,9 @@ export class NotificationSeedService implements OnApplicationBootstrap {
         }
         const format = note.contentFormat ?? 'md';
         // У страницы файла нет: контент это компонент фронта, бэк хранит только формат и ключ.
-        if (note.contentFile !== null) {
-          this._ensureFile(seedDir, contentDir, note.contentFile);
+        if (note.contentFile !== null && !this._content.ensureAvailable(note.contentFile)) {
+          this._logger.error(`Сид релиз-ноты пропущен — файла '${note.contentFile}' нет нигде.`);
+          continue;
         }
         // Сначала ПУБЛИКАЦИЯ (ADR-0065): она первична и существует независимо от того, кому и
         // когда её доставили. Идентификатор нужен дальше, чтобы связать с ней доставку.
@@ -126,16 +118,5 @@ export class NotificationSeedService implements OnApplicationBootstrap {
     } catch (error) {
       this._logger.warn(`Релиз '${key}' не объявлен наружу: ${String(error)}`);
     }
-  }
-
-  /** Копирует `.md` из seed-content в content/, если в content/ его ещё нет. */
-  private _ensureFile(seedDir: string, contentDir: string, contentFile: string): void {
-    const dest = join(contentDir, contentFile);
-    if (existsSync(dest)) {
-      return;
-    }
-    mkdirSync(dirname(dest), { recursive: true });
-    copyFileSync(join(seedDir, contentFile), dest);
-    this._logger.log(`Релиз-нота скопирована в content/: ${contentFile}`);
   }
 }

@@ -13,6 +13,11 @@ export const adminRoutes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'settings' },
       {
+        path: 'releases',
+        loadComponent: () =>
+          import('./releases/admin-releases.component').then((m) => m.AdminReleasesComponent),
+      },
+      {
         path: 'state',
         loadComponent: () =>
           import('./state/admin-state.component').then((m) => m.AdminStateComponent),

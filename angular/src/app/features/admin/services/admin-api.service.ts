@@ -4,6 +4,9 @@ import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
   AdminAccount,
+  AdminBroadcastResult,
+  AdminRelease,
+  AdminReleaseFormat,
   AdminReleaseState,
   AdminAccountPage,
   AdminRequestDecision,
@@ -81,6 +84,57 @@ export class AdminApiService {
     return this._http.delete<AdminAccount>(
       `${API_PREFIX}/admin/accounts/${accountId}/roles/${encodeURIComponent(code)}`,
     );
+  }
+
+  /**
+   * Все публикации релизов, новые сверху (2.9.3·13).
+   * @returns Поток списка.
+   */
+  public listReleases(): Observable<AdminRelease[]> {
+    return this._http.get<AdminRelease[]>(`${API_PREFIX}/admin/releases`);
+  }
+
+  /**
+   * Регистрирует публикацию. **В канал ничего не уходит** — вещание отдельной ручкой.
+   * @param key Публичный ключ.
+   * @param title Заголовок.
+   * @param contentFormat Вид содержимого.
+   * @param contentFile Путь к `.md` или null.
+   * @returns Поток созданной публикации.
+   */
+  public createRelease(
+    key: string,
+    title: string,
+    contentFormat: AdminReleaseFormat,
+    contentFile: string | null,
+  ): Observable<AdminRelease> {
+    return this._http.post<AdminRelease>(`${API_PREFIX}/admin/releases`, {
+      key,
+      title,
+      contentFormat,
+      contentFile,
+    });
+  }
+
+  /**
+   * Объявляет релиз в канал. Повтор по уже объявленному → 409.
+   * @param key Публичный ключ.
+   * @returns Поток итога вещания.
+   */
+  public broadcastRelease(key: string): Observable<AdminBroadcastResult> {
+    return this._http.post<AdminBroadcastResult>(
+      `${API_PREFIX}/admin/releases/${encodeURIComponent(key)}/broadcast`,
+      {},
+    );
+  }
+
+  /**
+   * Удаляет публикацию вместе с доставкой и отметками прочтения.
+   * @param key Публичный ключ.
+   * @returns Поток завершения.
+   */
+  public deleteRelease(key: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/admin/releases/${encodeURIComponent(key)}`);
   }
 
   /**

@@ -186,7 +186,7 @@ import type {
                       {{ pressure(o.intensity) }}
                     </span>
                     <div class="ob__menu-wrap">
-                      <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
+                      <span class="tooltip-host tooltip-host--end" [attr.data-tooltip]="'Дополнительные опции'">
                         <button
                           type="button"
                           class="ob__menu-btn"

@@ -154,7 +154,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                       </span>
                     }
                     <div class="mw__menu-wrap">
-                      <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
+                      <span class="tooltip-host tooltip-host--end" [attr.data-tooltip]="'Дополнительные опции'">
                         <button
                           type="button"
                           class="mw__menu-btn"

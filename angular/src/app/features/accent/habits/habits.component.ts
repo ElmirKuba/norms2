@@ -253,7 +253,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                         <app-button [loading]="busyId() === h.id" (click)="adoptHabit(h)">Добавить себе</app-button>
                       }
                       <div class="hb__menu-wrap">
-                        <span class="tooltip-host" [attr.data-tooltip]="'Дополнительные опции'">
+                        <span class="tooltip-host tooltip-host--end" [attr.data-tooltip]="'Дополнительные опции'">
                           <button
                             type="button"
                             class="hb__menu-btn"

@@ -15,7 +15,12 @@
   bottom: calc(100% + 7px);
   left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap;
+  // Ширину ограничиваем всегда: подсказка в одну строку у правого края уезжала за вьюпорт и
+  // добавляла ГОРИЗОНТАЛЬНУЮ ПРОКРУТКУ ВСЕЙ СТРАНИЦЕ (поймано Elmir 14.08.2026). Перенос строк
+  // дешевле, чем страница, которую можно утащить вбок.
+  white-space: normal;
+  width: max-content;
+  max-width: min(260px, 90vw);
   background: var(--color-text);
   color: var(--color-surface);
   padding: var(--space-1) var(--space-2);
@@ -48,4 +53,13 @@
   border-top-color: var(--color-text);
   pointer-events: none;
   z-index: 20;
+}
+
+// Подсказка у элемента, прижатого к правому краю (кнопка «⋯» в карточках): раскрывается влево.
+// Центрирование там гарантированно вылезает за экран — половина ширины всегда уходит вправо.
+.tooltip-host--end[data-tooltip]:hover::after,
+.tooltip-host--end[data-tooltip]:focus-within::after {
+  left: auto;
+  right: 0;
+  transform: none;
 }

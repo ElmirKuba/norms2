@@ -23,14 +23,29 @@
   font-size: var(--fs-sm);
 }
 
+// Вкладки — одной строкой с горизонтальной прокруткой, как в «Акценте», а не переносом.
+// Перенос ломал сам смысл ряда: на узком экране «Состояние» и «Журнал» уезжали во вторую
+// строку и читались как отдельная группа, хотя они такие же вкладки, как остальные.
 .admin__tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
+  overflow-x: auto;
+  min-width: 0;
+  scroll-behavior: smooth;
   border-bottom: 1px solid var(--color-border);
+  // Полоса скрыта во всех браузерах: подсказку о прокрутке даёт `appHscrollHint` нуджем.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin__tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .admin__tab {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: var(--space-2) var(--space-3);
   color: var(--color-text-muted);
   text-decoration: none;

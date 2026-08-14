@@ -6,7 +6,7 @@
     </p>
   </header>
 
-  <nav class="admin__tabs" aria-label="Разделы админки">
+  <nav class="admin__tabs" aria-label="Разделы админки" appHscrollHint [appHscrollHintDelay]="1300">
     <a class="admin__tab" routerLink="settings" routerLinkActive="admin__tab--on">Настройки</a>
     <a class="admin__tab" routerLink="people" routerLinkActive="admin__tab--on">Люди и роли</a>
     <a class="admin__tab" routerLink="requests" routerLinkActive="admin__tab--on">Заявки</a>

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TelegramDomainService } from '../domain-services/telegram.domain-service';
-import { OwnerActionsUseCase } from './owner-actions.use-case';
+import { AdminActionsUseCase } from './admin-actions.use-case';
 import { RequestInvitesUseCase } from './request-invites.use-case';
 import { ManageTelegramLinkUseCase } from './manage-telegram-link.use-case';
 import { LinkWaitStore } from '../domain-services/link-wait.store';
@@ -22,7 +22,7 @@ const GRANT_PREFIXES = new Set(['g1', 'g3', 'g5']);
  * **Порядок проверок — часть безопасности, а не стиль:**
  * 1. повтор апдейта отсекается **до любых действий** — Telegram повторяет доставку, и без этого
  *    заявка создалась бы дважды, а код выдался бы дважды;
- * 2. **владелец определяется до разбора команды.** Бот умеет выдавать приглашения; сверяй мы
+ * 2. **админ определяется до разбора команды.** Бот умеет выдавать приглашения; сверяй мы
  *    автора после разбора — любой, кто дотянется до вебхука, выдал бы их себе
  *    ([ADR-0064 §2a](../../../../docs/decisions/0064-telegram-release-channel.md)).
  *
@@ -33,7 +33,7 @@ const GRANT_PREFIXES = new Set(['g1', 'g3', 'g5']);
 export class HandleTelegramUpdateUseCase {
   /**
    * @param _telegramDomainService Гостевая часть (меню, анкета).
-   * @param _ownerActions Сценарий владельца (очередь, решения).
+   * @param _adminActions Сценарий админа (очередь, решения).
    * @param _requestInvites Просьба о дополнительных приглашениях (нужен аккаунт заявителя).
    * @param _manageLink Привязка чата к аккаунту (`/link КОД`, `/unlink`).
    * @param _linkWait Ожидание кода после голой команды `/link`.
@@ -41,7 +41,7 @@ export class HandleTelegramUpdateUseCase {
    */
   public constructor(
     private readonly _telegramDomainService: TelegramDomainService,
-    private readonly _ownerActions: OwnerActionsUseCase,
+    private readonly _adminActions: AdminActionsUseCase,
     private readonly _requestInvites: RequestInvitesUseCase,
     private readonly _requestUnban: RequestUnbanUseCase,
     private readonly _accounts: AccountDomainService,
@@ -97,7 +97,7 @@ export class HandleTelegramUpdateUseCase {
    * @returns Промис завершения.
    */
   private async _routeMessage(chatId: string, text: string | undefined): Promise<void> {
-    // Привязка — команда для всех, включая владельца: аккаунт у него такой же, как у остальных,
+    // Привязка — команда для всех, включая админа: аккаунт у него такой же, как у остальных,
     // и отдельный путь для него означал бы вторую реализацию той же вещи.
     if (text !== undefined) {
       const trimmed = text.trim();
@@ -126,22 +126,22 @@ export class HandleTelegramUpdateUseCase {
       return;
     }
     if (text === undefined) {
-      await this._ownerActions.sendMenu(chatId);
+      await this._adminActions.sendMenu(chatId);
       return;
     }
     const trimmed = text.trim();
     const command = trimmed.split(/\s+/)[0]?.toLowerCase() ?? '';
 
     if (command === '/start' || command === '/menu') {
-      await this._ownerActions.sendMenu(chatId);
+      await this._adminActions.sendMenu(chatId);
       return;
     }
-    // Владелец мог нажать кнопку решения и теперь пишет причину. Проверяем ПОСЛЕ команд:
+    // Админ мог нажать кнопку решения и теперь пишет причину. Проверяем ПОСЛЕ команд:
     // иначе «/start», набранный вместо причины, стал бы подписью к приглашению.
-    if (await this._ownerActions.applyReason(chatId, trimmed)) {
+    if (await this._adminActions.applyReason(chatId, trimmed)) {
       return;
     }
-    // Владелец — тоже человек: если он проходит анкету, отдаём гостевой сценарий.
+    // Админ — тоже человек: если он проходит анкету, отдаём гостевой сценарий.
     await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text, await this._chatContext(chatId)));
   }
 
@@ -210,28 +210,28 @@ export class HandleTelegramUpdateUseCase {
     const prefix = separator === -1 ? data : data.slice(0, separator);
     const payload = separator === -1 ? '' : data.slice(separator + 1);
 
-    // Кнопки владельца исполняются только из его чата. Для чужих их как бы нет.
+    // Кнопки админа исполняются только из его чата. Для чужих их как бы нет.
     if (isAdmin && (prefix === 'q' || prefix === 'h')) {
-      await this._ownerActions.showQueue(chatId, Number(payload) || 0, prefix === 'h');
+      await this._adminActions.showQueue(chatId, Number(payload) || 0, prefix === 'h');
       return;
     }
     if (isAdmin && prefix === 'c') {
-      await this._ownerActions.showCard(chatId, payload);
+      await this._adminActions.showCard(chatId, payload);
       return;
     }
     if (isAdmin && prefix === 'menu') {
-      await this._ownerActions.sendMenu(chatId);
+      await this._adminActions.sendMenu(chatId);
       return;
     }
     if (isAdmin && prefix === 'cancel') {
-      await this._ownerActions.cancelPending(chatId);
+      await this._adminActions.cancelPending(chatId);
       return;
     }
     if (isAdmin && (prefix === 'ok' || prefix === 'no')) {
-      await this._ownerActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
+      await this._adminActions.askReason(chatId, prefix === 'ok' ? 'approve' : 'reject', payload);
       return;
     }
-    // Согласие на уведомления — кнопка не владельца, а любого человека (·15).
+    // Согласие на уведомления — кнопка не админа, а любого человека (·15).
     if (prefix === 'nt') {
       await this._telegramDomainService.setNotificationsConsent(chatId, payload === '1');
       return;
@@ -239,7 +239,7 @@ export class HandleTelegramUpdateUseCase {
     // Номинал начисления зашит в сам префикс кнопки (`g1` / `g3` / `g5`): в `callback_data`
     // остаётся 12 символов сверх идентификатора заявки, отдельного поля туда не положить.
     if (isAdmin && GRANT_PREFIXES.has(prefix)) {
-      await this._ownerActions.askGrantReason(chatId, Number(prefix.slice(1)), payload);
+      await this._adminActions.askGrantReason(chatId, Number(prefix.slice(1)), payload);
       return;
     }
     await this._finish(chatId, await this._telegramDomainService.handleGuestCallback(chatId, data, await this._chatContext(chatId)));

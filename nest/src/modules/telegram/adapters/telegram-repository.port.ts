@@ -42,12 +42,12 @@ export interface TelegramRepositoryPort {
   createRequest(id: string, data: TelegramRequestBase): Promise<TelegramRequestFull>;
 
   /**
-   * Запоминает id сообщения-карточки в личке владельца.
+   * Запоминает id сообщения-карточки в личке админа.
    *
    * Отдельным вызовом после создания, а не полем при вставке: `message_id` появляется только
    * после успешной отправки, а строка нужна раньше — её `id` едет в `callback_data` кнопок.
    * @param id Заявка.
-   * @param messageId Сообщение в чате владельца.
+   * @param messageId Сообщение в чате админа.
    * @returns Промис завершения.
    */
   setRequestOwnerMessage(id: string, messageId: number): Promise<void>;
@@ -77,7 +77,7 @@ export interface TelegramRepositoryPort {
   findRequestByInviteCode(inviteCodeId: string): Promise<TelegramRequestFull | null>;
 
   /**
-   * Очередь заявок для владельца, новые сверху.
+   * Очередь заявок для админа, новые сверху.
    * @param status Какие показывать.
    * @param limit Сколько.
    * @param offset Сдвиг (пагинация по 5).

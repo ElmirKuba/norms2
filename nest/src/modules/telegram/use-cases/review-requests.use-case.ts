@@ -243,7 +243,7 @@ export class ReviewRequestsUseCase {
         `➕ <b>Начислено приглашений: +${String(amount)}</b>`,
         '',
         `Теперь у тебя их ${String(remaining)}. Выдать приглашение можно в личном кабинете.`,
-        ...(reason === null ? [] : ['', `От владельца: ${escapeHtml(reason)}`]),
+        ...(reason === null ? [] : ['', `От админа: ${escapeHtml(reason)}`]),
       ].join('\n'),
     );
 

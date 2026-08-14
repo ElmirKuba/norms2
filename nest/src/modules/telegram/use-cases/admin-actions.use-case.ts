@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import { TELEGRAM_REPOSITORY } from '../adapters/telegram-repository.port';
-import { OwnerActionStore } from '../domain-services/owner-action.store';
+import { AdminActionStore } from '../domain-services/admin-action.store';
 import { ReviewRequestsUseCase } from './review-requests.use-case';
 import { RequestDecisionError } from '../../../shared/errors/request-decision.error';
 import type { RequestDecisionFailure } from '../../../shared/errors/request-decision.error';
@@ -14,7 +14,7 @@ import {
 import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.port';
 import type { TelegramRepositoryPort } from '../adapters/telegram-repository.port';
 import type { TelegramRequestFull } from '../interfaces/telegram-request-full.interface';
-import type { OwnerActionKind } from '../domain-services/owner-action.store';
+import type { AdminActionKind } from '../domain-services/admin-action.store';
 import type { RequestActor } from '../interfaces/request-actor.interface';
 
 /** Возврат в меню — есть на каждом экране: без него любой список тупик. */
@@ -23,14 +23,14 @@ const MENU_BUTTON = { text: '🏠 Меню', callbackData: 'menu' };
 /** Сколько заявок показываем на странице очереди. */
 const PAGE_SIZE = 5;
 
-/** Причина по умолчанию, если владелец поставил прочерк. */
+/** Причина по умолчанию, если админ поставил прочерк. */
 const DEFAULT_REASON = 'По заявке через бота';
 
-/** Что владелец пишет, чтобы оставить причину пустой. */
+/** Что админ пишет, чтобы оставить причину пустой. */
 const SKIP_REASON = '-';
 
 /**
- * Сценарий владельца: меню, очередь заявок, решения и выдача кода (2.9.1·11–·12).
+ * Сценарий админа: меню, очередь заявок, решения и выдача кода (2.9.1·11–·12).
  *
  * **Почему use-case, а не domain-service.** Выдача приглашения — это чужие области: списать
  * квоту у `account`, создать код в `invites`. Кросс-доменные вызовы идут только вниз и только
@@ -41,20 +41,20 @@ const SKIP_REASON = '-';
  * намеренно, чтобы не создавать впечатление, будто проверка бывает необязательной.
  */
 @Injectable()
-export class OwnerActionsUseCase {
+export class AdminActionsUseCase {
   private readonly _logger = new Logger('TelegramOwner');
 
   /**
    * @param _repository Порт репозитория заявок.
    * @param _api Исходящий порт Bot API.
-   * @param _pending Незавершённые действия владельца (ждём причину).
+   * @param _pending Незавершённые действия админа (ждём причину).
    * @param _accountDomainService Domain-service аккаунтов (аккаунт по идентификатору).
    * @param _review Ядро разбора заявок — **общее с админкой** (2.9.3·11).
    */
   public constructor(
     @Inject(TELEGRAM_REPOSITORY) private readonly _repository: TelegramRepositoryPort,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
-    private readonly _pending: OwnerActionStore,
+    private readonly _pending: AdminActionStore,
     private readonly _accountDomainService: AccountDomainService,
     private readonly _review: ReviewRequestsUseCase,
   ) {}
@@ -66,7 +66,7 @@ export class OwnerActionsUseCase {
    * который уже внутри, предлагает подать заявку на то, что у него есть, — и эта заявка легла бы
    * в очередь к нему же. «Получить приглашения» бессмысленна по той же причине: он их выдаёт.
    *
-   * **Заголовок — «админа», а не «владельца»:** с 2.9.3·3а права в боте определяет роль
+   * **Заголовок — «админа», а не «админа»:** с 2.9.3·3а права в боте определяет роль
    * аккаунта, а не единственный вшитый `chat_id`, и админов может быть несколько.
    * @param chatId Чат админа.
    * @returns Промис завершения.
@@ -89,7 +89,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Показывает страницу очереди заявок или истории решений.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param offset Сдвиг страницы.
    * @param history `true` — показать закрытые вместо ожидающих.
    * @returns Промис завершения.
@@ -143,7 +143,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Показывает одну заявку с кнопками решения.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param requestId Заявка.
    * @returns Промис завершения.
    */
@@ -154,7 +154,7 @@ export class OwnerActionsUseCase {
       return;
     }
     // Текста заявки у нас нет — он не хранится (ADR-0064 §10). Зато сохранён id сообщения
-    // в этом же чате: пересылаем его сам себе, и владелец видит исходную анкету.
+    // в этом же чате: пересылаем его сам себе, и админ видит исходную анкету.
     // ВАЖНО: при пересылке Telegram срезает инлайн-кнопки, поэтому действия идут отдельным
     // сообщением следом — иначе карточка приходит «мёртвой» (поймано 05.08.2026).
     if (request.ownerMessageId !== null) {
@@ -179,12 +179,12 @@ export class OwnerActionsUseCase {
 
   /**
    * Запоминает выбранное действие и просит причину.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param kind Одобрить или отказать.
    * @param requestId Заявка.
    * @returns Промис завершения.
    */
-  public async askReason(chatId: string, kind: OwnerActionKind, requestId: string): Promise<void> {
+  public async askReason(chatId: string, kind: AdminActionKind, requestId: string): Promise<void> {
     const request = await this._repository.findRequestById(requestId);
     if (request === null || request.status !== 'pending') {
       await this._api.sendMessage(chatId, 'Эта заявка уже закрыта.');
@@ -211,7 +211,7 @@ export class OwnerActionsUseCase {
    *
    * Причина спрашивается и здесь — ради истории решений: квота в аккаунте станет просто числом,
    * и через месяц по нему не вспомнить, за что дали. Прочерк по-прежнему допустим.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param amount Сколько приглашений начислить.
    * @param requestId Заявка.
    * @returns Промис завершения.
@@ -240,7 +240,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Отменяет начатое действие (кнопка «Отмена» под запросом причины).
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @returns Промис завершения.
    */
   public async cancelPending(chatId: string): Promise<void> {
@@ -252,7 +252,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Принимает причину и закрывает заявку.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param text Написанная причина.
    * @returns `true`, если сообщение было причиной и обработано.
    */
@@ -276,8 +276,8 @@ export class OwnerActionsUseCase {
    * Одобряет заявку: списывает квоту, создаёт код, шлёт его человеку.
    *
    * Вся механика — в общем с админкой ядре (`ReviewRequestsUseCase`); здесь остаётся ровно то,
-   * что относится к боту: чей это аккаунт и как отчитаться владельцу в чат.
-   * @param chatId Чат владельца.
+   * что относится к боту: чей это аккаунт и как отчитаться админу в чат.
+   * @param chatId Чат админа.
    * @param requestId Заявка.
    * @param reason Подпись к приглашению или null.
    * @returns Промис завершения.
@@ -303,7 +303,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Начисляет приглашения по просьбе (·13).
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param requestId Заявка.
    * @param amount Сколько начислить.
    * @param reason Подпись к начислению или null.
@@ -334,7 +334,7 @@ export class OwnerActionsUseCase {
 
   /**
    * Отказывает по заявке.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @param requestId Заявка.
    * @param reason Причина или null.
    * @returns Промис завершения.
@@ -358,11 +358,11 @@ export class OwnerActionsUseCase {
   }
 
   /**
-   * Определяет, от чьего имени решает владелец: чат → привязка → аккаунт.
+   * Определяет, от чьего имени решает админ: чат → привязка → аккаунт.
    *
    * Без привязки решать нельзя: квота приглашений списывается с конкретного аккаунта, а подпись
    * в журнале должна указывать на человека, а не на чат.
-   * @param chatId Чат владельца.
+   * @param chatId Чат админа.
    * @returns Актёр или null, если привязки нет (сообщение уже отправлено).
    */
   private async _resolveActor(chatId: string): Promise<RequestActor | null> {
@@ -383,8 +383,8 @@ export class OwnerActionsUseCase {
   }
 
   /**
-   * Переводит машинный код отказа в реплику владельцу.
-   * @param chatId Чат владельца.
+   * Переводит машинный код отказа в реплику админу.
+   * @param chatId Чат админа.
    * @param requestId Заявка (для лога).
    * @param error Что произошло.
    * @returns Промис завершения.
@@ -409,8 +409,8 @@ export class OwnerActionsUseCase {
   }
 
   /**
-   * Отчёт владельцу с возвратом к очереди.
-   * @param chatId Чат владельца.
+   * Отчёт админу с возвратом к очереди.
+   * @param chatId Чат админа.
    * @param text Текст.
    * @returns Промис завершения.
    */

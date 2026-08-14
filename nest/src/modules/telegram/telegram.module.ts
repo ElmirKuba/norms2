@@ -7,10 +7,10 @@ import { GetTelegramPublicUseCase } from './use-cases/get-telegram-public.use-ca
 import { LinkCodeStore } from './domain-services/link-code.store';
 import { LinkWaitStore } from './domain-services/link-wait.store';
 import { HandleTelegramUpdateUseCase } from './use-cases/handle-telegram-update.use-case';
-import { OwnerActionsUseCase } from './use-cases/owner-actions.use-case';
+import { AdminActionsUseCase } from './use-cases/admin-actions.use-case';
 import { ReviewRequestsUseCase } from './use-cases/review-requests.use-case';
 import { RequestInvitesUseCase } from './use-cases/request-invites.use-case';
-import { OwnerActionStore } from './domain-services/owner-action.store';
+import { AdminActionStore } from './domain-services/admin-action.store';
 import { AccountModule } from '../account/account.module';
 import { InvitesModule } from '../invites/invites.module';
 import { AccessControlModule } from '../auth/access-control.module';
@@ -29,12 +29,12 @@ import { BanCoreModule } from '../bans/ban-core.module';
   providers: [
     RequestUnbanUseCase,
     HandleTelegramUpdateUseCase,
-    OwnerActionsUseCase,
+    AdminActionsUseCase,
     ReviewRequestsUseCase,
     RequestInvitesUseCase,
     ManageTelegramLinkUseCase,
     GetTelegramPublicUseCase,
-    OwnerActionStore,
+    AdminActionStore,
     LinkCodeStore,
     LinkWaitStore,
   ],

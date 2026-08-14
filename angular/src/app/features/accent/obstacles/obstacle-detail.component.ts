@@ -125,8 +125,8 @@ import type {
                       <div class="obd__cp-main">
                         <span class="obd__cp-text">{{ c.text }}</span>
                         <span class="obd__cp-meta">
-                          @if (c.linkedMicroWinId) {
-                            <span class="obd__cp-timer">⏱ {{ microWinTitle(c.linkedMicroWinId) }}</span>
+                          @if (c.linkedMicroWinId && microWinTitle(c.linkedMicroWinId); as title) {
+                            <span class="obd__cp-timer">⏱ {{ title }}</span>
                           }
                           @if (effectiveness(c); as eff) {
                             <span class="obd__cp-eff">{{ eff }}</span>
@@ -913,8 +913,11 @@ export class ObstacleDetailComponent {
    * @param id Идентификатор микро-победы.
    * @returns Название или «микро-победа» (если её удалили — привязка уже обнулена сервером).
    */
-  protected microWinTitle(id: string): string {
-    return this.microWins().find((mw) => mw.id === id)?.title ?? 'микро-победа';
+  protected microWinTitle(id: string): string | null {
+    // `null`, если микро-победы больше нет: с 2.9.3 ссылка переживает удаление цели (каскад
+    // «обнули ссылку» снят вместе с остальными, ADR-0068), и подпись «микро-победа» рисовала бы
+    // живой ярлык на том, чего не существует.
+    return this.microWins().find((mw) => mw.id === id)?.title ?? null;
   }
 
   /**

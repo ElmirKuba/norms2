@@ -4,6 +4,7 @@ import { AdminActionsUseCase } from './admin-actions.use-case';
 import { RequestInvitesUseCase } from './request-invites.use-case';
 import { ManageTelegramLinkUseCase } from './manage-telegram-link.use-case';
 import { LinkWaitStore } from '../domain-services/link-wait.store';
+import { TelegramUpkeepService } from '../domain-services/telegram-upkeep.service';
 import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { GuestOutcome } from '../domain-services/telegram.domain-service';
@@ -37,6 +38,7 @@ export class HandleTelegramUpdateUseCase {
    * @param _requestInvites Просьба о дополнительных приглашениях (нужен аккаунт заявителя).
    * @param _manageLink Привязка чата к аккаунту (`/link КОД`, `/unlink`).
    * @param _linkWait Ожидание кода после голой команды `/link`.
+   * @param _upkeep Уборка заявок: протухание и срок хранения гостевых (2.9.3·35).
    * @param _api Исходящий порт Bot API (гашение «часиков» на кнопке).
    */
   public constructor(
@@ -48,6 +50,7 @@ export class HandleTelegramUpdateUseCase {
     private readonly _bans: BanDomainService,
     private readonly _manageLink: ManageTelegramLinkUseCase,
     private readonly _linkWait: LinkWaitStore,
+    private readonly _upkeep: TelegramUpkeepService,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
   ) {}
 
@@ -60,6 +63,11 @@ export class HandleTelegramUpdateUseCase {
     if (!(await this._telegramDomainService.consumeUpdate(update.update_id))) {
       return;
     }
+
+    // Уборка заявок (2.9.3·35) — до разбора, но не мешая ему: сама решает, пора ли, и сама
+    // гасит свои ошибки. Планировщика в проекте нет, и цепляться к живому потоку дешевле, чем
+    // заводить его ради двух запросов в час.
+    await this._upkeep.sweepIfDue();
 
     const callback = update.callback_query;
     if (callback !== undefined) {

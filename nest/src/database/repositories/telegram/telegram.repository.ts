@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { alive } from '../../core/alive.util';
-import { and, count, desc, eq, lt } from 'drizzle-orm';
+import { deleteCascade } from '../../core/deletion.engine';
+import { and, count, desc, eq, lt, ne } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
@@ -180,6 +181,29 @@ export class TelegramRepository implements TelegramRepositoryPort {
       ))
       .returning({ id: telegramRequests.id });
     return rows.length;
+  }
+
+  /**
+   * Удаляет закрытые гостевые заявки старше границы (2.9.3·35).
+   *
+   * Идёт через общий движок удаления, а не через `db.delete`: правило «что значит удалить для
+   * этой таблицы» принадлежит слою 5, и вызывающему знать его не положено
+   * ([ADR-0068](../../../../../docs/decisions/0068-deletion-belongs-to-storage.md)). Для
+   * `telegram_requests` режим — физическое удаление: мы обещали в политике, что адрес чата не
+   * остаётся, а спрятанная строка остаётся.
+   * @param before Граница по времени решения.
+   * @returns Сколько удалено.
+   */
+  public async purgeClosedGuestRequestsBefore(before: Date): Promise<number> {
+    return deleteCascade(
+      this._db,
+      telegramRequests,
+      and(
+        eq(telegramRequests.type, 'join'),
+        ne(telegramRequests.status, 'pending'),
+        lt(telegramRequests.decidedAt, before),
+      ),
+    );
   }
 
   /**

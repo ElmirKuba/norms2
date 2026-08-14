@@ -9,6 +9,7 @@ import { BotCommandsInitializer } from './domain-services/bot-commands.initializ
 import { TelegramApiAdapter } from './adapters/telegram-api.adapter';
 import { TelegramDomainService } from './domain-services/telegram.domain-service';
 import { RequestDraftStore } from './domain-services/request-draft.store';
+import { TelegramUpkeepService } from './domain-services/telegram-upkeep.service';
 
 /**
  * Ядро области telegram (2.9.1·8): биндинг порта репозитория на Drizzle-реализацию.
@@ -30,7 +31,14 @@ import { RequestDraftStore } from './domain-services/request-draft.store';
     BotCommandsInitializer,
     RequestDraftStore,
     TelegramDomainService,
+    TelegramUpkeepService,
   ],
-  exports: [TELEGRAM_REPOSITORY, TELEGRAM_API, ADMIN_AUDIENCE, TelegramDomainService],
+  exports: [
+    TELEGRAM_REPOSITORY,
+    TELEGRAM_API,
+    ADMIN_AUDIENCE,
+    TelegramDomainService,
+    TelegramUpkeepService,
+  ],
 })
 export class TelegramCoreModule {}

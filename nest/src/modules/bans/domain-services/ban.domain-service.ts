@@ -45,7 +45,15 @@ export class BanDomainService {
   }
 
   /**
-   * Снимает бан **без проверки права** — её делает вызывающий
+   * Снимает бан **без проверки права** — её делает вызывающий.
+   *
+   * Рядом до 14.08.2026 жил `unban(banId, requesterId)` поверх `deactivateOwn`, то есть
+   * «снять может только тот, кто банил». С 2.9.3·21 правило другое — право идёт вверх по ветке,
+   * — и метод остался мёртвым: его не звал никто. Удалён не за неопрятность, а потому что
+   * **живой код со старым правилом опаснее отсутствующего**: первый же вызывающий тихо откатил
+   * бы решение, и никакой тест этого не заметил бы.
+   *
+   * Право проверяет вызывающий
    * ([ADR-0003, дополнение](../../../../docs/decisions/0003-ban-semantics.md)): снимать вправе
    * банивший, любой его предок по дереву или админ. Право требует дерева, а дерево — чужая
    * область, поэтому проверка живёт этажом выше, как и у самого бана.
@@ -70,19 +78,6 @@ export class BanDomainService {
    */
   public async liftAllFor(targetId: string): Promise<number> {
     return this._banRepository.deactivateAllByTarget(targetId);
-  }
-
-  /**
-   * Снимает СВОЙ бан.
-   * @param banId Идентификатор записи.
-   * @param requesterId Запросивший (владелец).
-   * @throws {BanNotFoundError} Если запись не найдена/не своя/уже снята.
-   */
-  public async unban(banId: string, requesterId: string): Promise<void> {
-    const deactivated = await this._banRepository.deactivateOwn(banId, requesterId);
-    if (!deactivated) {
-      throw new BanNotFoundError('Бан не найден.');
-    }
   }
 
   /**

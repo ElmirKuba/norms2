@@ -54,11 +54,6 @@ export interface ReleaseRepositoryPort {
    */
   markBroadcasted(id: string): Promise<void>;
 
-  /**
-   * Публикации без отметки о вещании, старые → новые. Для публикации истории по явной команде.
-   * @returns Строки в хронологическом порядке.
-   */
-  listUnbroadcasted(): Promise<ReleaseFull[]>;
 
   /**
    * Все публикации целиком, новые сверху (2.9.3·13).

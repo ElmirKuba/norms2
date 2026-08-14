@@ -21,21 +21,6 @@ export interface BanRepositoryPort {
   createBan(id: string, data: BanCreate): Promise<BanFull>;
 
   /**
-   * Снимает СВОЙ активный бан (active=false). Чужой/несуществующий/уже снятый — no-op.
-   * @param banId Идентификатор записи.
-   * @param bannerId Идентификатор владельца (должен совпасть).
-   * @returns true, если запись деактивирована.
-   */
-  deactivateOwn(banId: string, bannerId: string): Promise<boolean>;
-
-  /**
-   * Есть ли активный бан на цель (быстрый login-чек по индексу).
-   * @param targetId Идентификатор цели.
-   * @returns true, если эффективно забанен.
-   */
-  existsActiveByTarget(targetId: string): Promise<boolean>;
-
-  /**
    * Активные баны на цель с именем банившего (join accounts) — для экрана
    * «вы забанены»: кто/за что (ADR-0012).
    * @param targetId Идентификатор цели.

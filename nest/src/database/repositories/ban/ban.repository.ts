@@ -49,21 +49,6 @@ export class BanRepository implements BanRepositoryPort {
   }
 
   /**
-   * Деактивирует свою активную запись.
-   * @param banId Идентификатор записи.
-   * @param bannerId Владелец.
-   * @returns true, если деактивирована.
-   */
-  public async deactivateOwn(banId: string, bannerId: string): Promise<boolean> {
-    const rows = await this._db
-      .update(bans)
-      .set({ active: false })
-      .where(and(eq(bans.id, banId), eq(bans.bannerId, bannerId), eq(bans.active, true)))
-      .returning({ id: bans.id });
-    return rows.length > 0;
-  }
-
-  /**
    * Активный бан по идентификатору — нужен, чтобы проверить право снятия по ветке (2.9.3·21).
    * @param banId Идентификатор записи.
    * @returns Строка или null.
@@ -105,20 +90,6 @@ export class BanRepository implements BanRepositoryPort {
       .where(and(eq(bans.targetId, targetId), eq(bans.active, true)))
       .returning({ id: bans.id });
     return rows.length;
-  }
-
-  /**
-   * Есть ли активный бан на цель.
-   * @param targetId Идентификатор цели.
-   * @returns true, если есть.
-   */
-  public async existsActiveByTarget(targetId: string): Promise<boolean> {
-    const rows = await this._db
-      .select({ id: bans.id })
-      .from(bans)
-      .where(and(eq(bans.targetId, targetId), eq(bans.active, true)))
-      .limit(1);
-    return rows.length > 0;
   }
 
   /**

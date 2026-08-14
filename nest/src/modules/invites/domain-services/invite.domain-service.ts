@@ -118,25 +118,12 @@ export class InviteDomainService {
   }
 
   /**
-   * Проверяет, валиден ли код (для предпроверки на фронте). Не бросает.
-   * @param rawCode Сырой код.
-   * @returns true, если код существует и не истёк.
-   */
-  public async checkCode(rawCode: string): Promise<boolean> {
-    let normalized: string;
-    try {
-      normalized = InviteCodeValue.create(rawCode).value;
-    } catch {
-      return false;
-    }
-    return (await this._inviteRepository.findActiveCodeByValue(normalized)) !== null;
-  }
-
-  /**
    * Проверяет код и отдаёт его подпись — для экрана «Тебя пригласили!».
    *
-   * Отдельно от {@link checkCode}, потому что у того другой контракт (`boolean`) и другие
-   * вызывающие: расширять его до объекта значило бы тащить подпись туда, где нужен только факт.
+   * **Единственная предпроверка кода.** Раньше рядом жил `checkCode`, отдававший голый
+   * `boolean`, и комментарий здесь ссылался на «других вызывающих» у него — а их не было ни
+   * одного (найдено сверкой вызовов 14.08.2026). Удалён: два способа спросить одно и то же
+   * расходятся молча, и однажды экран начинает верить не тому.
    * @param rawCode Сырой код.
    * @returns `{ valid, reason }`; у невалидного кода `reason` всегда null.
    */

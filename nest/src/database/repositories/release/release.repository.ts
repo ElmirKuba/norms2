@@ -129,18 +129,6 @@ export class ReleaseRepository implements ReleaseRepositoryPort {
   }
 
   /**
-   * Публикации без отметки о вещании, старые → новые.
-   * @returns Строки в хронологическом порядке.
-   */
-  public async listUnbroadcasted(): Promise<ReleaseFull[]> {
-    return this._db
-      .select()
-      .from(releases)
-      .where(and(alive(releases), isNull(releases.broadcastedAt)))
-      .orderBy(asc(sql`coalesce(${releases.publishedAt}, ${releases.createdAt})`), asc(releases.id));
-  }
-
-  /**
    * Все публикации целиком, новые сверху (2.9.3·13).
    * @returns Полные строки.
    */

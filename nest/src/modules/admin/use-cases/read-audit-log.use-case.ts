@@ -38,6 +38,8 @@ export class ReadAuditLogUseCase {
       targetId: entry.targetId,
       targetLabel: entry.targetLabel,
       details: entry.details,
+      targetAlive: entry.targetAlive,
+      actorAlive: entry.actorAlive,
     }));
   }
 

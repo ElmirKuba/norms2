@@ -1,5 +1,6 @@
 import type { AuditEntryBase } from '../interfaces/audit-entry-base.interface';
 import type { AuditEntryFull } from '../interfaces/audit-entry-full.interface';
+import type { AuditEntryRow } from '../interfaces/audit-entry-row.interface';
 
 /** DI-токен порта репозитория журнала (биндится на реализацию в audit.module). */
 export const AUDIT_REPOSITORY = Symbol('AUDIT_REPOSITORY');
@@ -27,5 +28,5 @@ export interface AuditRepositoryPort {
    * @param action Код действия для фильтра или `null` — тогда все подряд.
    * @returns Строки журнала.
    */
-  findRecent(limit: number, action: string | null): Promise<AuditEntryFull[]>;
+  findRecent(limit: number, action: string | null): Promise<AuditEntryRow[]>;
 }

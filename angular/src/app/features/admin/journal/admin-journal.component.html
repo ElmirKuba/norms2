@@ -39,9 +39,15 @@
                 [class.journal__actor--system]="entry.actorLogin === null"
                 >{{ actorOf(entry) }}</b
               >
+              @if (entry.actorAlive === false) {
+                <span class="journal__gone" title="Аккаунт действовавшего удалён — сегодняшний владелец этого логина может быть другим человеком">аккаунта нет</span>
+              }
               <span class="journal__what">{{ actionLabel(entry) }}</span>
               @if (targetLabel(entry); as target) {
                 <span class="journal__target">{{ target }}</span>
+              }
+              @if (entry.targetAlive === false) {
+                <span class="journal__gone" title="Аккаунт удалён — сегодняшний владелец этого логина может быть другим человеком">аккаунта нет</span>
               }
               <span class="journal__when">{{ when(entry.createdAt) }}</span>
             </div>

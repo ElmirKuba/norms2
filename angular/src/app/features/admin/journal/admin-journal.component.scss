@@ -107,3 +107,13 @@
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
 }
+
+// «Аккаунта нет» (2.9.3·29.2): логин удалённого освобождается, и одинаковая подпись в двух
+// записях может принадлежать разным людям. Пометка не даёт склеить их взглядом.
+.journal__gone {
+  padding: 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}

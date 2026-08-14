@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AUDIT_REPOSITORY } from '../adapters/audit-repository.port';
 import type { AuditRepositoryPort } from '../adapters/audit-repository.port';
 import type { AuditEntryBase } from '../interfaces/audit-entry-base.interface';
-import type { AuditEntryFull } from '../interfaces/audit-entry-full.interface';
+import type { AuditEntryRow } from '../interfaces/audit-entry-row.interface';
 
 /** Коды действий журнала (2.9.3·6). Машинные, стабильные: по ним потом фильтруют. */
 export const AUDIT_ACTIONS = {
@@ -89,7 +89,7 @@ export class AuditDomainService {
    * @param action Код действия для фильтра или `null` — тогда все подряд.
    * @returns Строки журнала.
    */
-  public async recent(limit: number = 100, action: string | null = null): Promise<AuditEntryFull[]> {
+  public async recent(limit: number = 100, action: string | null = null): Promise<AuditEntryRow[]> {
     return this._repository.findRecent(limit, action);
   }
 }

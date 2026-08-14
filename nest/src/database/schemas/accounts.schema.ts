@@ -22,12 +22,16 @@ export const accounts = defineTableWithSchema<AccountFull>()(
     recoveryRequiredCount: integer('recovery_required_count'),
     timezone: varchar('timezone', { length: 64 }).notNull().default('UTC'),
     deactivatedAt: timestamp('deactivated_at', { withTimezone: true }),
-    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     version: bigint('version', { mode: 'number' }).notNull().default(0),
     ...timestamps(),
   },
   (table) => [
-    uniqueIndex('accounts_login_lower_unique').on(sql`lower(${table.login})`),
+    // Частичный unique (2.9.3·29.1, реш. Elmir 14.08.2026): удалённая строка **не занимает**
+    // логин. Иначе paranoid половинчатый — для домена аккаунта нет, а зарегистрироваться под тем
+    // же логином нельзя, и человеку приходится объяснять, почему «занято» то, чего не существует.
+    uniqueIndex('accounts_login_lower_unique')
+      .on(sql`lower(${table.login})`)
+      .where(sql`deleted_at is null`),
     check(
       'accounts_registration_source_check',
       sql`${table.registrationSource} in ('free', 'invite', 'seed')`,

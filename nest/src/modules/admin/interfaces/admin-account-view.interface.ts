@@ -20,8 +20,6 @@ export interface AdminAccountView {
   invitesRemaining: number;
   /** Метка деактивации или null. */
   deactivatedAt: Date | null;
-  /** Метка soft-delete или null. */
-  deletedAt: Date | null;
   /** Когда зарегистрировался. */
   createdAt: Date;
   /**

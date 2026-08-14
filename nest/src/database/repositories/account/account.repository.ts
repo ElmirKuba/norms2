@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
 import { deleteCascade } from '../../core/deletion.engine';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
@@ -62,7 +63,11 @@ export class AccountRepository implements AccountRepositoryPort {
    * @returns Полная строка или null.
    */
   public async findById(id: string): Promise<AccountFull | null> {
-    const rows = await this._db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
+    const rows = await this._db
+      .select()
+      .from(accounts)
+      .where(and(alive(accounts), eq(accounts.id, id)))
+      .limit(1);
     const row = rows[0];
     return row ? this._toFull(row) : null;
   }
@@ -76,7 +81,9 @@ export class AccountRepository implements AccountRepositoryPort {
     const rows = await this._db
       .select()
       .from(accounts)
-      .where(sql`lower(${accounts.login}) = ${loginNormalized}`)
+      // Удалённых не отдаём (2.9.3·29.1): для домена их нет, а значит и логин свободен —
+      // регистрация под тем же логином обязана проходить.
+      .where(and(alive(accounts), sql`lower(${accounts.login}) = ${loginNormalized}`))
       .limit(1);
     const row = rows[0];
     return row ? this._toFull(row) : null;
@@ -91,7 +98,9 @@ export class AccountRepository implements AccountRepositoryPort {
     const rows = await this._db
       .select({ id: accounts.id })
       .from(accounts)
-      .where(sql`lower(${accounts.login}) = ${loginNormalized}`)
+      // Удалённых не отдаём (2.9.3·29.1): для домена их нет, а значит и логин свободен —
+      // регистрация под тем же логином обязана проходить.
+      .where(and(alive(accounts), sql`lower(${accounts.login}) = ${loginNormalized}`))
       .limit(1);
     return rows.length > 0;
   }
@@ -193,8 +202,12 @@ export class AccountRepository implements AccountRepositoryPort {
    * @returns Доменный AccountFull.
    */
   private _toFull(row: typeof accounts.$inferSelect): AccountFull {
+    // `deleted_at` не уезжает в домен даже значением (2.9.3·29.1, реш. Elmir): бизнес-логика не
+    // должна получать поле, которого для неё не существует. Иначе оно рано или поздно попадёт в
+    // ответ спредом — так и случилось с `GET /accounts/me`.
+    const { deletedAt: _deletedAt, ...rest } = row;
     return {
-      ...row,
+      ...rest,
       registrationSource: row.registrationSource as AccountFull['registrationSource'],
     };
   }

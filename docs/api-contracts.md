@@ -84,7 +84,7 @@ Body: `{ login, password }`.
 
 ## Профиль / аккаунт ([ADR-0017](./decisions/0017-account-soft-delete.md))
 
-- `GET /accounts/me` (auth) → `AccountRead` (полная строка БЕЗ `passwordHash`): `{ id, login, alias, avatar: string|null, timezone, registrationSource: 'free'|'invite'|'seed', invitesRemaining, recoveryRequiredCount: number|null, deactivatedAt: string|null, deletedAt: string|null, version, createdAt, updatedAt }`. «Кто пригласил» — отдельно `GET /invites/my-inviter`; статус бана — не поле, а реакция Guard/login-флоу (ADR-0038). Список приглашённых — `GET /invites`.
+- `GET /accounts/me` (auth) → `AccountRead` (полная строка БЕЗ `passwordHash`): `{ id, login, alias, avatar: string|null, timezone, registrationSource: 'free'|'invite'|'seed', invitesRemaining, recoveryRequiredCount: number|null, deactivatedAt: string|null, version, createdAt, updatedAt }` — **без `deletedAt`** (2.9.3·29.1): домен этого поля не видит, а удалённых не отдаёт ни одно чтение. «Кто пригласил» — отдельно `GET /invites/my-inviter`; статус бана — не поле, а реакция Guard/login-флоу (ADR-0038). Список приглашённых — `GET /invites`.
 - `GET /accounts/:login` (auth) → `AccountPublicView` = `{ id, login, alias, avatar: string|null }` (`id` не ПДн — нужен как `targetId` для бана из карточки; приватное — квота/K/таймзона/метки/даты — наружу не уходит).
 - `PATCH /accounts/me` (auth) Body `{ alias }` → 200 `AccountRead` (обновлённый).
 - `POST /accounts/me/deactivate` (auth) → 204. `POST /accounts/me/reactivate`. `DELETE /accounts/me` (soft, без UI-восстановления — [ADR-0017](./decisions/0017-account-soft-delete.md)) → 204.

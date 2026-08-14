@@ -38,8 +38,6 @@ export interface AdminAccount {
   invitesRemaining: number;
   /** Метка деактивации (ISO) или null. */
   deactivatedAt: string | null;
-  /** Метка удаления (ISO) или null. */
-  deletedAt: string | null;
   /** Когда зарегистрировался (ISO). */
   createdAt: string;
   /**

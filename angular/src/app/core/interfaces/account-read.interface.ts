@@ -19,8 +19,6 @@ export interface AccountRead {
   timezone: string;
   /** Метка деактивации (ISO) или null. */
   deactivatedAt: string | null;
-  /** Метка soft-delete (ISO) или null. */
-  deletedAt: string | null;
   /** Когда создан (ISO). */
   createdAt: string;
   /** Когда изменён (ISO). */

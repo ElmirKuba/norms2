@@ -9,6 +9,6 @@ import type { AccountFull } from './account-full.interface';
 export type AccountMutable = Partial<
   Pick<
     AccountFull,
-    'alias' | 'avatar' | 'timezone' | 'passwordHash' | 'recoveryRequiredCount' | 'deactivatedAt' | 'deletedAt'
+    'alias' | 'avatar' | 'timezone' | 'passwordHash' | 'recoveryRequiredCount' | 'deactivatedAt'
   >
 >;

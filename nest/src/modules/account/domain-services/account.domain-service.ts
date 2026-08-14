@@ -168,11 +168,10 @@ export class AccountDomainService {
     }
     // Бан-чек — НЕ здесь (account-домен про bans не знает): его делает
     // LoginAccountUseCase кросс-доменно (ADR-0038).
-    // Удалён — терминально, единый 401 (не раскрываем). Деактивирован — отдельный
-    // сигнал 403, чтобы фронт предложил реактивацию (ADR-0017/0039).
-    if (account.deletedAt !== null) {
-      throw new BadCredentialsError('Неверный логин или пароль.');
-    }
+    // Про удалённых домен не знает и знать не должен (2.9.3·29.1): их не возвращает хранилище —
+    // для бизнес-логики такого аккаунта просто нет, как если бы включили `paranoid` в ORM.
+    // Деактивирован — другое дело: это состояние продукта, отдельный 403, чтобы фронт предложил
+    // реактивацию (ADR-0017/0039).
     if (account.deactivatedAt !== null) {
       throw new AccountDeactivatedError('Аккаунт деактивирован.');
     }
@@ -194,7 +193,7 @@ export class AccountDomainService {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
     const passwordOk = await this._hashService.verify(account.passwordHash, passwordRaw);
-    if (!passwordOk || account.deletedAt !== null) {
+    if (!passwordOk) {
       throw new BadCredentialsError('Неверный логин или пароль.');
     }
     return account;
@@ -257,7 +256,7 @@ export class AccountDomainService {
       throw new BadCredentialsError('Аккаунт не найден.');
     }
     // Бан-чек — НЕ здесь: его делает AuthGuard кросс-доменно (ADR-0038).
-    if (account.deletedAt !== null || account.deactivatedAt !== null) {
+    if (account.deactivatedAt !== null) {
       throw new BadCredentialsError('Вход запрещён.');
     }
     return account;
@@ -333,7 +332,7 @@ export class AccountDomainService {
    */
   public async getPublicByLogin(loginRaw: string): Promise<AccountPublicView | null> {
     const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
-    if (account?.deletedAt !== null) {
+    if (account === null) {
       return null;
     }
     return { id: account.id, login: account.login, alias: account.alias, avatar: account.avatar };
@@ -368,7 +367,7 @@ export class AccountDomainService {
    */
   public async findRecoveryAccountByLogin(loginRaw: string): Promise<RecoveryAccount | null> {
     const account = await this._accountRepository.findByLoginNormalized(loginRaw.toLowerCase());
-    if (account?.deletedAt !== null) {
+    if (account === null) {
       return null;
     }
     return { id: account.id, recoveryRequiredCount: account.recoveryRequiredCount };

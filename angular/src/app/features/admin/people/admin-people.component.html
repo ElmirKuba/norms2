@@ -22,14 +22,9 @@
       <app-card>
         <div class="people__row">
           <div class="people__who">
-            @if (person.deletedAt === null) {
-              <a class="people__login people__link" [routerLink]="['/app/u', person.login]">
-                {{ person.login }}
-              </a>
-            } @else {
-              <b class="people__login people__login--deleted">{{ person.login }}</b>
-              <span class="people__role">удалён</span>
-            }
+            <a class="people__login people__link" [routerLink]="['/app/u', person.login]">
+              {{ person.login }}
+            </a>
             <span class="people__alias">{{ person.alias }}</span>
             @if (person.banned) {
               <span class="people__role people__role--banned">забанен</span>

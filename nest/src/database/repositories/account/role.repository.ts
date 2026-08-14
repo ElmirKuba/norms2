@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { alive } from '../../core/alive.util';
+import type { SQL } from 'drizzle-orm';
 import { and, desc, eq, notExists, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase } from '../../client/database.constants';
@@ -111,7 +113,9 @@ export class RoleRepository implements RoleRepositoryPort {
     cursor: string | null;
   }): Promise<AdminAccountPage> {
     const { query, limit, cursor } = params;
-    const conditions = [];
+    // Удалённых в списке нет (2.9.3·29.1): для продукта их не существует, а показывать
+    // «человека, которого нет» админу — тот же обман, что и везде.
+    const conditions: (SQL | undefined)[] = [alive(accounts)];
     if (query !== '') {
       const pattern = `%${query.toLowerCase()}%`;
       conditions.push(
@@ -170,7 +174,6 @@ export class RoleRepository implements RoleRepositoryPort {
       registrationSource: accounts.registrationSource,
       invitesRemaining: accounts.invitesRemaining,
       deactivatedAt: accounts.deactivatedAt,
-      deletedAt: accounts.deletedAt,
       createdAt: accounts.createdAt,
       roles: sql<string[]>`coalesce((
         select array_agg(lower(r.code) order by lower(r.code))

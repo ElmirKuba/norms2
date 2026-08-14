@@ -12,8 +12,6 @@ export interface AccountFull extends Required<AccountBase> {
   id: string;
   /** Метка обратимой деактивации или null. */
   deactivatedAt: Date | null;
-  /** Метка soft-delete или null. */
-  deletedAt: Date | null;
   /** Версия для optimistic-lock (ADR-0035). */
   version: number;
   /** Когда создан. */

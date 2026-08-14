@@ -31,6 +31,36 @@ export class BanDomainService {
   }
 
   /**
+   * Активный бан по идентификатору — чтобы вызывающий мог проверить право снятия.
+   * @param banId Идентификатор записи.
+   * @returns Запись.
+   * @throws {BanNotFoundError} Если нет активной записи.
+   */
+  public async getActive(banId: string): Promise<BanFull> {
+    const found = await this._banRepository.findActiveById(banId);
+    if (found === null) {
+      throw new BanNotFoundError('Бан не найден.');
+    }
+    return found;
+  }
+
+  /**
+   * Снимает бан **без проверки права** — её делает вызывающий
+   * ([ADR-0003, дополнение](../../../../docs/decisions/0003-ban-semantics.md)): снимать вправе
+   * банивший, любой его предок по дереву или админ. Право требует дерева, а дерево — чужая
+   * область, поэтому проверка живёт этажом выше, как и у самого бана.
+   * @param banId Идентификатор записи.
+   * @returns Промис завершения.
+   * @throws {BanNotFoundError} Если запись уже снята.
+   */
+  public async lift(banId: string): Promise<void> {
+    const lifted = await this._banRepository.deactivateById(banId);
+    if (!lifted) {
+      throw new BanNotFoundError('Бан не найден.');
+    }
+  }
+
+  /**
    * Снимает СВОЙ бан.
    * @param banId Идентификатор записи.
    * @param requesterId Запросивший (владелец).

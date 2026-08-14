@@ -24,6 +24,8 @@ export const AUDIT_ACTIONS = {
   TELEGRAM_REQUEST_APPROVED: 'telegram.request.approved',
   /** Просьба о приглашениях удовлетворена — начислена квота. */
   TELEGRAM_REQUEST_GRANTED: 'telegram.request.granted',
+  /** Бан снят: банившим, его предком по ветке или админом (2.9.3·21). */
+  BAN_LIFTED: 'ban.lifted',
   /** По заявке отказано. */
   TELEGRAM_REQUEST_REJECTED: 'telegram.request.rejected',
 } as const;

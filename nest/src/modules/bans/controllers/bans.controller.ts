@@ -44,7 +44,10 @@ export class BansController {
   }
 
   /**
-   * Снимает свой бан.
+   * Снимает бан: свой либо наложенный тем, кто ниже тебя по ветке (2.9.3·21).
+   *
+   * Право идёт вверх, как и право банить: посторонний получает 404, чтобы не узнать даже о
+   * существовании записи.
    * @param id Идентификатор записи.
    * @param request Запрос (аккаунт из Guard).
    * @returns Промис завершения.
@@ -56,7 +59,7 @@ export class BansController {
     @Param('id') id: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
-    await this._unbanUserUseCase.execute(id, request.account.id);
+    await this._unbanUserUseCase.execute(id, request.account.id, request.account.login);
   }
 
   /**

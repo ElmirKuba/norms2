@@ -9,6 +9,7 @@ import { AdminReleasesController } from './controllers/admin-releases.controller
 import { AdminTelegramController } from './controllers/admin-telegram.controller';
 import { AdminStateController } from './controllers/admin-state.controller';
 import { AdminAuditController } from './controllers/admin-audit.controller';
+import { AdminBansController } from './controllers/admin-bans.controller';
 import { ListSettingsUseCase } from './use-cases/list-settings.use-case';
 import { UpdateSettingUseCase } from './use-cases/update-setting.use-case';
 import { DeleteReleaseUseCase } from './use-cases/delete-release.use-case';
@@ -16,6 +17,8 @@ import { ManageRolesUseCase } from './use-cases/manage-roles.use-case';
 import { GetReleaseStateUseCase } from './use-cases/get-release-state.use-case';
 import { ManageReleasesUseCase } from './use-cases/manage-releases.use-case';
 import { ReadAuditLogUseCase } from './use-cases/read-audit-log.use-case';
+import { LiftBanUseCase } from './use-cases/lift-ban.use-case';
+import { BanCoreModule } from '../bans/ban-core.module';
 import { ADMIN_STATE_REPOSITORY } from './adapters/admin-state-repository.port';
 import { AdminStateRepository } from '../../database/repositories/admin/admin-state.repository';
 
@@ -38,7 +41,7 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
  * telegram про admin ничего не знает.
  */
 @Module({
-  imports: [AccessControlModule, AccountModule, NotificationCoreModule, TelegramModule],
+  imports: [AccessControlModule, AccountModule, NotificationCoreModule, TelegramModule, BanCoreModule],
   controllers: [
     AdminSettingsController,
     AdminReleasesController,
@@ -46,6 +49,7 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
     AdminTelegramController,
     AdminStateController,
     AdminAuditController,
+    AdminBansController,
   ],
   providers: [
     { provide: ADMIN_STATE_REPOSITORY, useClass: AdminStateRepository },
@@ -56,6 +60,7 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
     GetReleaseStateUseCase,
     ManageReleasesUseCase,
     ReadAuditLogUseCase,
+    LiftBanUseCase,
   ],
 })
 export class AdminModule {}

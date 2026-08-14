@@ -64,6 +64,36 @@ export class BanRepository implements BanRepositoryPort {
   }
 
   /**
+   * Активный бан по идентификатору — нужен, чтобы проверить право снятия по ветке (2.9.3·21).
+   * @param banId Идентификатор записи.
+   * @returns Строка или null.
+   */
+  public async findActiveById(banId: string): Promise<BanFull | null> {
+    const rows = await this._db
+      .select()
+      .from(bans)
+      .where(and(eq(bans.id, banId), eq(bans.active, true)))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Деактивирует запись **без проверки владения** — право проверяет domain-service
+   * ([ADR-0003, дополнение](../../../../../docs/decisions/0003-ban-semantics.md): снимать вправе
+   * банивший, предок банившего или админ).
+   * @param banId Идентификатор записи.
+   * @returns true, если деактивирована.
+   */
+  public async deactivateById(banId: string): Promise<boolean> {
+    const rows = await this._db
+      .update(bans)
+      .set({ active: false })
+      .where(and(eq(bans.id, banId), eq(bans.active, true)))
+      .returning({ id: bans.id });
+    return rows.length > 0;
+  }
+
+  /**
    * Есть ли активный бан на цель.
    * @param targetId Идентификатор цели.
    * @returns true, если есть.

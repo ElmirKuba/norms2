@@ -57,4 +57,18 @@ export interface BanRepositoryPort {
    * @returns Пары {targetId, bannerId} активных банов (может быть >1 на цель).
    */
   listActiveBansForTargets(targetIds: string[]): Promise<Pick<BanFull, 'targetId' | 'bannerId'>[]>;
+  /**
+   * Активный бан по идентификатору (для проверки права снятия по ветке).
+   * @param banId Идентификатор записи.
+   * @returns Строка или null.
+   */
+  findActiveById(banId: string): Promise<BanFull | null>;
+
+  /**
+   * Деактивирует запись без проверки владения — право проверяет domain-service.
+   * @param banId Идентификатор записи.
+   * @returns true, если деактивирована.
+   */
+  deactivateById(banId: string): Promise<boolean>;
+
 }

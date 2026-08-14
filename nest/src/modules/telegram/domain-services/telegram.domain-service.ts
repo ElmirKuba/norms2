@@ -176,8 +176,8 @@ export type GuestOutcome =
   | { type: 'invitesRequested' }
   /** Анкета на приглашения дособрана — нужно отправить карточку владельцу. */
   | { type: 'invitesReady'; purpose: string }
-  /** Человек нажал «Меня забанили» — дальше нужен его аккаунт по логину. */
-  | { type: 'unbanReady'; login: string };
+  /** Просьба о разбане дособрана: логин и объяснение «почему стоит вернуть». */
+  | { type: 'unbanReady'; login: string; appeal: string };
 
 /** Тексты, не зависящие от шага диалога. */
 const REPLY = {
@@ -445,7 +445,11 @@ export class TelegramDomainService {
       return { type: 'handled' };
     }
     if (data === 'unban_self' && context.login !== null) {
-      return { type: 'unbanReady', login: context.login };
+      // Логин известен — остаётся объяснение: без него заявка приходит пустой и решать по ней
+      // нечего (замечание Elmir 14.08.2026).
+      this._drafts.start(chatId, 'unban', { login: context.login });
+      await this._api.sendMessage(chatId, QUESTIONS.appeal);
+      return { type: 'handled' };
     }
     if (data === 'unban_other') {
       await this.startUnban(chatId);
@@ -536,8 +540,9 @@ export class TelegramDomainService {
     }
     if (updated.kind === 'unban') {
       const login = updated.answers.login ?? '';
+      const appeal = updated.answers.appeal ?? '';
       this._drafts.forget(chatId);
-      return { type: 'unbanReady', login };
+      return { type: 'unbanReady', login, appeal };
     }
     if (updated.kind === 'more_invites') {
       // Черновик забываем только здесь: карточку соберёт use-case, но текст ему уже отдан.

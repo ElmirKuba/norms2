@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 /** Шаги анкеты по порядку. */
-export type DraftStep = 'name' | 'age' | 'gender' | 'why' | 'purpose' | 'login';
+export type DraftStep = 'name' | 'age' | 'gender' | 'why' | 'purpose' | 'login' | 'appeal';
 
 /** Что человек просит. */
 export type DraftKind = 'join' | 'more_invites' | 'unban';
@@ -15,9 +15,10 @@ export type DraftKind = 'join' | 'more_invites' | 'unban';
 export const DRAFT_STEPS: Record<DraftKind, readonly DraftStep[]> = {
   join: ['name', 'age', 'gender', 'why'],
   more_invites: ['purpose'],
-  // У просьбы о разбане тоже один вопрос — логин. Причину не спрашиваем: она уже записана тем,
-  // кто банил, и админ смотрит на неё, а не на версию забаненного.
-  unban: ['login'],
+  // У просьбы о разбане два: логин и объяснение. Без объяснения заявка приходит пустой, и
+  // решать по ней нечего — за что банили, админ и так видит, а вот «почему стоит вернуть» может
+  // сказать только сам человек (замечание Elmir 14.08.2026).
+  unban: ['login', 'appeal'],
 };
 
 /** Сколько живёт недособранный черновик. */
@@ -70,9 +71,16 @@ export class RequestDraftStore {
    * @param kind Тип заявки (определяет набор вопросов).
    * @returns Созданный черновик.
    */
-  public start(chatId: string, kind: DraftKind): RequestDraft {
-    const first = DRAFT_STEPS[kind][0] ?? 'why';
-    const draft: RequestDraft = { kind, step: first, answers: {}, touchedAt: Date.now() };
+  public start(
+    chatId: string,
+    kind: DraftKind,
+    answers: Partial<Record<DraftStep, string>> = {},
+  ): RequestDraft {
+    // Часть ответов может быть известна заранее: у привязанного чата логин спрашивать незачем,
+    // он подтверждается кнопкой. Начинаем с первого НЕотвеченного шага.
+    const steps = DRAFT_STEPS[kind];
+    const first = steps.find((step) => answers[step] === undefined) ?? steps[0] ?? 'why';
+    const draft: RequestDraft = { kind, step: first, answers: { ...answers }, touchedAt: Date.now() };
     this._drafts.set(chatId, draft);
     return draft;
   }

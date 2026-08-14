@@ -189,7 +189,7 @@ export class HandleTelegramUpdateUseCase {
       return;
     }
     if (outcome.type === 'unbanReady') {
-      await this._requestUnban.submit(chatId, outcome.login);
+      await this._requestUnban.submit(chatId, outcome.login, outcome.appeal);
     }
   }
 

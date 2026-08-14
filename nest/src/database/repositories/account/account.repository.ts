@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { deleteCascade } from '../../core/deletion.engine';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
@@ -206,4 +207,16 @@ export class AccountRepository implements AccountRepositoryPort {
   private _exec(tx?: Transaction): DrizzleExecutor {
     return tx === undefined ? this._db : (tx as unknown as DrizzleExecutor);
   }
+  /**
+   * Удаляет аккаунт со всеми его данными — каскад наш (ADR-0068), одной транзакцией и одной
+   * меткой времени.
+   * @param accountId Идентификатор аккаунта.
+   * @returns Промис завершения.
+   */
+  public async delete(accountId: string): Promise<void> {
+    await this._db.transaction(async (transaction) => {
+      await deleteCascade(transaction, accounts, eq(accounts.id, accountId));
+    });
+  }
+
 }

@@ -1,4 +1,6 @@
 import { accounts } from '../schemas/accounts.schema';
+import { inviteCodes } from '../schemas/invite-codes.schema';
+import { secretQa } from '../schemas/secret-qa.schema';
 import { accountRoles } from '../schemas/account-roles.schema';
 import { accentSettings } from '../schemas/accent-settings.schema';
 import { antiHabits } from '../schemas/anti-habits.schema';
@@ -46,6 +48,12 @@ export interface OwnedEdge {
  * **Список закрыт тестом:** каждый внешний ключ схемы обязан быть классифицирован — владение,
  * слабая ссылка (`set null`) или сторож (`restrict`). Новый FK без решения уронит тест, а не
  * тихо выпадет из каскада.
+ *
+ * **Чего у аккаунта нет намеренно: `invitations` и `bans`.** Это не его данные, а запись связей
+ * с другими людьми: ребро «кто кого привёл» держит дерево приглашений для всех остальных
+ * ([ADR-0017](../../../../docs/decisions/0017-account-soft-delete.md)), а бан описывает действие
+ * над другим человеком или от него. Унести их вместе с аккаунтом значило бы переписать чужую
+ * историю, а не свою.
  */
 export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
   PgTable,
@@ -55,6 +63,11 @@ export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
     accounts,
     [
       { child: accentSettings, column: accentSettings.accountId },
+      // Данные доступа уходят вместе с человеком (реш. Elmir 14.08.2026): секретные вопросы —
+      // фактор входа, а не история; невыданные коды приглашений — тоже его, и без него мертвы.
+      { child: secretQa, column: secretQa.accountId },
+      { child: inviteCodes, column: inviteCodes.inviterId },
+      { child: sessions, column: sessions.accountId },
       { child: accountRoles, column: accountRoles.accountId },
       { child: antiHabits, column: antiHabits.accountId },
       { child: goals, column: goals.accountId },

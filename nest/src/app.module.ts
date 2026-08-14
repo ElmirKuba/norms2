@@ -22,6 +22,7 @@ import { VersionModule } from './modules/version/version.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AccentModule } from './modules/accent/accent.module';
 import { RateLimitGuard } from './shared/guards/rate-limit.guard';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 
 /**
  * Корневой модуль приложения: конфиг (zod, fail-fast), логирование (pino),
@@ -32,6 +33,7 @@ import { RateLimitGuard } from './shared/guards/rate-limit.guard';
  */
 @Module({
   imports: [
+    MaintenanceModule,
     AppConfigModule,
     LoggingModule,
     SharedModule,

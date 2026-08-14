@@ -42,7 +42,7 @@ North star: **даже человек в тяжёлом состоянии, де
 | **Identity** | игровая личность, развитая из `alias` ЛК |
 | **CheckIn** | единый дневной снимок (mood/energy/sleep/… → выводит UserState; тренды 7/30/90) |
 | **PointEvent / Achievement / Streak** | геймификация (идемпотентно, на бэке) |
-| **WeeklyGoal / DailyLesson** | недельный фокус, «урок-якорь» |
+| ~~WeeklyGoal~~ / **DailyLesson** | недельного планера **не будет** ([ADR-0069](../../decisions/0069-week-is-a-horizon-not-a-list.md)) — неделя вычисляется и живёт блоком на дашборде; «урок-якорь» — 2.8 |
 
 Полные поля и инварианты — [`domain-model.md`](./domain-model.md).
 
@@ -72,7 +72,7 @@ North star: **даже человек в тяжёлом состоянии, де
 
 ## 7. Объём: MVP и волны
 
-**MVP (подфазы `2.0.0`–`2.12`)** — широкий ([ADR-0027](../../decisions/0027-accent-phase2-core.md) R7): Goal(+why/fallback/вехи)+GoalEntry, Habit/Task (ролловер RRULE)+разовые, AntiHabit, **микро-победы + адаптивная лесенка**, WeeklyGoal, DailyLesson, геймификация (XP/серии/достижения), **модель состояний + CheckIn** (CheckIn — единый дневной снимок, тренды из него), Obstacle, Dashboard-агрегатор. Порядок и детальная разбивка — `docs/impl-phase2-plan.md`.
+**MVP (подфазы `2.0.0`–`2.12`)** — широкий ([ADR-0027](../../decisions/0027-accent-phase2-core.md) R7): Goal(+why/fallback/вехи)+GoalEntry, Habit/Task (ролловер RRULE)+разовые, AntiHabit, **микро-победы + адаптивная лесенка**, WeeklyGoal, DailyLesson, геймификация (XP/серии/достижения), **модель состояний + CheckIn** (CheckIn — единый дневной снимок, тренды из него), Obstacle, Dashboard-агрегатор. **`WeeklyGoal` из этого списка вычеркнут 14.08.2026** ([ADR-0069](../../decisions/0069-week-is-a-horizon-not-a-list.md)). Порядок и детальная разбивка — `docs/impl-phase2-plan.md`.
 
 **Поздние волны (миноры `2.13+`, тоже фаза 2):** Workout (тяжёлый модуль), круг доверия/соц (Supporter-взаимодействие, совместные челленджи), AI-помощник (декомпозиция целей, перепаковка срывов — с границами безопасности), доп-модули (шаблоны целей/привычек, квесты, сезоны, ритуалы, экспорт данных), полный onboarding.
 

@@ -143,8 +143,13 @@
 - _Соц-взаимодействие (видеть прогресс с согласия, совместные челленджи) — поздняя волна 2.13+._
 
 ## 10. Недельный слой и журналы
-- `GET/POST/DELETE /accent/weekly-goals?week=YYYY-Www` (+ items: `PATCH /accent/weekly-goals/:id` toggle done).
-- `GET /accent/weekly-stats?week=YYYY-Www` → `{ bestDay, worstDay, avgPercent, tasksDone }`.
+- ~~`GET/POST/DELETE /accent/weekly-goals`~~, ~~`PATCH /accent/weekly-goals/:id`~~ — **отменены**
+  ([ADR-0069](../../decisions/0069-week-is-a-horizon-not-a-list.md)): недельного планера нет, писать
+  нечего.
+- ~~`GET /accent/weekly-stats?week=YYYY-Www`~~ — **отдельного эндпоинта не заводим**, пока нет
+  экрана: недельный обзор приезжает **внутри `GET /accent/dashboard`** (§12) одним блоком. Состав —
+  плотность по дням, самый плотный и самый тихий день; **без общей оценки недели** и **без
+  сравнения с прошлой неделей** (обе — оценка человека, а не информация).
 - `GET/PUT /accent/lessons?date=YYYY-MM-DD` (урок-якорь). `GET /accent/lessons?tag=`.
 - _(Дневные метрики самочувствия — это `CheckIn` (§3), отдельного `/accent/metrics` нет — слили.)_
 

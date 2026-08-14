@@ -8,6 +8,7 @@ import { TELEGRAM_API } from '../adapters/telegram-api.port';
 import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { GuestOutcome } from '../domain-services/telegram.domain-service';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
+import { RequestUnbanUseCase } from './request-unban.use-case';
 
 /** Префиксы кнопок начисления: номинал прямо в префиксе (`g3` = «+3»). */
 const GRANT_PREFIXES = new Set(['g1', 'g3', 'g5']);
@@ -39,6 +40,7 @@ export class HandleTelegramUpdateUseCase {
     private readonly _telegramDomainService: TelegramDomainService,
     private readonly _ownerActions: OwnerActionsUseCase,
     private readonly _requestInvites: RequestInvitesUseCase,
+    private readonly _requestUnban: RequestUnbanUseCase,
     private readonly _manageLink: ManageTelegramLinkUseCase,
     private readonly _linkWait: LinkWaitStore,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
@@ -154,6 +156,10 @@ export class HandleTelegramUpdateUseCase {
     }
     if (outcome.type === 'invitesReady') {
       await this._requestInvites.submit(chatId, outcome.purpose);
+      return;
+    }
+    if (outcome.type === 'unbanReady') {
+      await this._requestUnban.submit(chatId, outcome.login);
     }
   }
 

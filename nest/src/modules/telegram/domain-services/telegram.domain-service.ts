@@ -7,7 +7,7 @@ import type { TelegramApiPort, TelegramButton } from '../adapters/telegram-api.p
 import type { AdminAudiencePort } from '../adapters/admin-audience.port';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import { RequestDraftStore } from './request-draft.store';
-import { INVITES_NOTICE, PRIVACY_NOTICE, QUESTIONS, validateAnswer } from './request-dialog.util';
+import { INVITES_NOTICE, UNBAN_NOTICE, PRIVACY_NOTICE, QUESTIONS, validateAnswer } from './request-dialog.util';
 import type { TelegramRequestType } from '../interfaces/telegram-request-pure.interface';
 
 /**
@@ -97,6 +97,7 @@ export function renderInvitesCard(login: string, remaining: number, purpose: str
 const GUEST_MENU: TelegramButton[][] = [
   [{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }],
   [{ text: '➕ Получить приглашения', callbackData: 'invites' }],
+  [{ text: '🔓 Меня забанили', callbackData: 'unban' }],
 ];
 
 /**
@@ -113,7 +114,9 @@ export type GuestOutcome =
   /** Человек нажал «Получить приглашения» — нужен его аккаунт. */
   | { type: 'invitesRequested' }
   /** Анкета на приглашения дособрана — нужно отправить карточку владельцу. */
-  | { type: 'invitesReady'; purpose: string };
+  | { type: 'invitesReady'; purpose: string }
+  /** Человек нажал «Меня забанили» — дальше нужен его аккаунт по логину. */
+  | { type: 'unbanReady'; login: string };
 
 /** Тексты, не зависящие от шага диалога. */
 const REPLY = {
@@ -299,6 +302,37 @@ export class TelegramDomainService {
   }
 
   /**
+   * Отправляет человеку сообщение в его чат — короткий путь для use-case, которому нужно только
+   * ответить, а не вести диалог.
+   * @param chatId Чат.
+   * @param text Текст (HTML).
+   * @returns Промис завершения.
+   */
+  public async reply(chatId: string, text: string): Promise<void> {
+    await this._api.sendMessage(chatId, text);
+  }
+
+  /**
+   * Пишет владельцу аккаунта, если он привязал Telegram (2.9.3·22).
+   *
+   * **Согласие на уведомления здесь не спрашивается намеренно.** Оно про сообщения продукта —
+   * вехи, новости; а закрытый или открытый доступ это не рассылка, а факт, без которого человек
+   * упирается в «вы забанены» без единого объяснения. Остановил бота — сообщение не дойдёт, и
+   * это его выбор: добиваться доставки продукт не будет.
+   * @param accountId Кому.
+   * @param text Текст (HTML).
+   * @returns `true`, если было куда писать.
+   */
+  public async notifyAccount(accountId: string, text: string): Promise<boolean> {
+    const link = await this._repository.findLinkByAccount(accountId);
+    if (link === null) {
+      return false;
+    }
+    await this._api.sendMessage(link.chatId, text);
+    return true;
+  }
+
+  /**
    * Разбирает нажатие кнопки гостя.
    * @param chatId Чат.
    * @param data Данные кнопки.
@@ -312,6 +346,10 @@ export class TelegramDomainService {
     if (data === 'invites') {
       // Дальше нужен аккаунт заявителя — это чужая область, доводит use-case.
       return { type: 'invitesRequested' };
+    }
+    if (data === 'unban') {
+      await this.startUnban(chatId);
+      return { type: 'handled' };
     }
     await this.sendGuestMenu(chatId);
     return { type: 'handled' };
@@ -353,6 +391,26 @@ export class TelegramDomainService {
   }
 
   /**
+   * Начинает просьбу о снятии бана — **один вопрос, логин** (2.9.3·22).
+   *
+   * Причину не спрашиваем: она уже записана тем, кто банил, и решение принимают по ней, а не по
+   * версии забаненного. Проверить, существует ли такой аккаунт и правда ли он забанен, здесь
+   * нельзя — это чужая область, и доводит её use-case.
+   * @param chatId Чат.
+   * @returns Промис завершения.
+   */
+  public async startUnban(chatId: string): Promise<void> {
+    const pending = await this._repository.findPendingByChat(chatId);
+    if (pending !== null) {
+      await this._api.sendMessage(chatId, REPLY.alreadyPending);
+      return;
+    }
+    this._drafts.start(chatId, 'unban');
+    await this._api.sendMessage(chatId, UNBAN_NOTICE);
+    await this._api.sendMessage(chatId, QUESTIONS.login);
+  }
+
+  /**
    * Принимает ответ на текущий вопрос анкеты.
    * @param chatId Чат.
    * @param text Ответ.
@@ -375,6 +433,11 @@ export class TelegramDomainService {
     if (!this._drafts.isComplete(updated)) {
       await this._api.sendMessage(chatId, QUESTIONS[updated.step]);
       return { type: 'handled' };
+    }
+    if (updated.kind === 'unban') {
+      const login = updated.answers.login ?? '';
+      this._drafts.forget(chatId);
+      return { type: 'unbanReady', login };
     }
     if (updated.kind === 'more_invites') {
       // Черновик забываем только здесь: карточку соберёт use-case, но текст ему уже отдан.

@@ -94,6 +94,20 @@ export class BanRepository implements BanRepositoryPort {
   }
 
   /**
+   * Снимает **все** активные баны на человеке (2.9.3·22, одобрение заявки на разбан).
+   * @param targetId Забаненный.
+   * @returns Сколько записей снято.
+   */
+  public async deactivateAllByTarget(targetId: string): Promise<number> {
+    const rows = await this._db
+      .update(bans)
+      .set({ active: false })
+      .where(and(eq(bans.targetId, targetId), eq(bans.active, true)))
+      .returning({ id: bans.id });
+    return rows.length;
+  }
+
+  /**
    * Есть ли активный бан на цель.
    * @param targetId Идентификатор цели.
    * @returns true, если есть.

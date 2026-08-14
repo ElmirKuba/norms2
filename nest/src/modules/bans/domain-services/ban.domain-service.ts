@@ -61,6 +61,18 @@ export class BanDomainService {
   }
 
   /**
+   * Снимает **все** активные баны на человеке — одобренная просьба о разбане (2.9.3·22).
+   *
+   * Все, а не выбранные: заявка про доступ, а не про отношения с конкретным банившим, и «сняли
+   * один из трёх» для человека выглядит как «ничего не изменилось».
+   * @param targetId Забаненный.
+   * @returns Сколько снято.
+   */
+  public async liftAllFor(targetId: string): Promise<number> {
+    return this._banRepository.deactivateAllByTarget(targetId);
+  }
+
+  /**
    * Снимает СВОЙ бан.
    * @param banId Идентификатор записи.
    * @param requesterId Запросивший (владелец).

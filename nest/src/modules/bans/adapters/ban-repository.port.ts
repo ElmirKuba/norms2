@@ -71,4 +71,11 @@ export interface BanRepositoryPort {
    */
   deactivateById(banId: string): Promise<boolean>;
 
+  /**
+   * Снимает все активные баны на человеке.
+   * @param targetId Забаненный.
+   * @returns Сколько снято.
+   */
+  deactivateAllByTarget(targetId: string): Promise<number>;
+
 }

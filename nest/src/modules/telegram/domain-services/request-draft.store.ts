@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 /** Шаги анкеты по порядку. */
-export type DraftStep = 'name' | 'age' | 'gender' | 'why' | 'purpose';
+export type DraftStep = 'name' | 'age' | 'gender' | 'why' | 'purpose' | 'login';
 
 /** Что человек просит. */
-export type DraftKind = 'join' | 'more_invites';
+export type DraftKind = 'join' | 'more_invites' | 'unban';
 
 /**
  * Порядок шагов по типу заявки — единственный источник истины о том, что идёт за чем.
@@ -15,6 +15,9 @@ export type DraftKind = 'join' | 'more_invites';
 export const DRAFT_STEPS: Record<DraftKind, readonly DraftStep[]> = {
   join: ['name', 'age', 'gender', 'why'],
   more_invites: ['purpose'],
+  // У просьбы о разбане тоже один вопрос — логин. Причину не спрашиваем: она уже записана тем,
+  // кто банил, и админ смотрит на неё, а не на версию забаненного.
+  unban: ['login'],
 };
 
 /** Сколько живёт недособранный черновик. */

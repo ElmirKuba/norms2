@@ -53,7 +53,7 @@ export interface AdminAccountPage {
 }
 
 /** Что человек просит у бота. */
-export type AdminRequestType = 'join' | 'more_invites';
+export type AdminRequestType = 'join' | 'more_invites' | 'unban';
 
 /** Где заявка в жизненном цикле. */
 export type AdminRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';

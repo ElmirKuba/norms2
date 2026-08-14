@@ -111,14 +111,22 @@ export class LoginComponent {
     });
   }
 
-  /** Показывает, кто и за что забанил (из details.bans). */
+  /**
+   * Показывает, кто и за что забанил (из details.bans), **и что с этим делать**.
+   *
+   * До 2.9.3 модалка была тупиком: человек видел «вы забанены» и не имел ни одного пути дальше —
+   * снять бан мог только тот, кто банил, а он мог удалить аккаунт или молчать. Теперь есть
+   * заявка боту ([ADR-0003, дополнение](../../../../../docs/decisions/0003-ban-semantics.md)).
+   */
   private _showBanned(error: unknown): void {
     const bans = this._extractBans(error);
-    const text =
+    const reasons =
       bans.length > 0
         ? bans.map((ban) => `• ${ban.bannerAlias} (@${ban.bannerLogin}): ${ban.reason}`).join('<br>')
         : 'Доступ к аккаунту закрыт.';
-    this._modal.error('Вы забанены', text);
+    const howTo =
+      '<br><br>Считаете, что это ошибка? Напишите боту <b>/start</b> и выберите «Меня забанили» — заявку разберут.';
+    this._modal.error('Вы забанены', `${reasons}${howTo}`);
   }
 
   /** Достаёт список банов из конверта ошибки. */

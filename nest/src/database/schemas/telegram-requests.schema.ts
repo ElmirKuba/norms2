@@ -56,7 +56,10 @@ export const telegramRequests = defineTableWithSchema<TelegramRequestFull>()(
     uniqueIndex('telegram_requests_one_pending_per_chat')
       .on(table.chatId)
       .where(sql`status = 'pending'`),
-    check('telegram_requests_type_check', sql`${table.type} in ('join', 'more_invites')`),
+    check(
+      'telegram_requests_type_check',
+      sql`${table.type} in ('join', 'more_invites', 'unban')`,
+    ),
     check(
       'telegram_requests_status_check',
       sql`${table.status} in ('pending', 'approved', 'rejected', 'expired')`,
@@ -68,9 +71,11 @@ export const telegramRequests = defineTableWithSchema<TelegramRequestFull>()(
       'telegram_requests_granted_amount_check',
       sql`${table.grantedAmount} is null or ${table.grantedAmount} > 0`,
     ),
+    // `more_invites` и `unban` без аккаунта бессмысленны (некому начислять и некого разбанивать),
+    // `join` с аккаунтом — противоречие: человек ещё не зарегистрирован.
     check(
       'telegram_requests_account_by_type_check',
-      sql`(${table.type} = 'more_invites' and ${table.accountId} is not null)
+      sql`(${table.type} in ('more_invites', 'unban') and ${table.accountId} is not null)
           or (${table.type} = 'join' and ${table.accountId} is null)`,
     ),
   ],

@@ -18,6 +18,7 @@ import type { RequestActor } from '../interfaces/request-actor.interface';
 import type { RequestDecisionOutcome } from '../interfaces/request-decision-outcome.interface';
 import type { TelegramRequestReviewView } from '../interfaces/telegram-request-review-view.interface';
 import type { Env } from '../../../system/config/env.schema';
+import { BanDomainService } from '../../bans/domain-services/ban.domain-service';
 
 /** Подпись к приглашению, если решающий поставил прочерк. */
 const DEFAULT_REASON = 'По заявке через бота';
@@ -65,6 +66,7 @@ export class ReviewRequestsUseCase {
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
     private readonly _accountDomainService: AccountDomainService,
     private readonly _inviteDomainService: InviteDomainService,
+    private readonly _bans: BanDomainService,
     private readonly _audit: AuditDomainService,
     @Inject(TRANSACTION_RUNNER) private readonly _transactionRunner: TransactionRunnerPort,
     configService: ConfigService<Env, true>,
@@ -108,6 +110,14 @@ export class ReviewRequestsUseCase {
     reason: string | null,
   ): Promise<RequestDecisionOutcome> {
     const request = await this._requirePending(requestId);
+
+    // Просьба о разбане закрывается своим путём: кода не выдаётся, квота не тратится — снимаются
+    // активные баны (2.9.3·22). Ветка стоит здесь, а не отдельной ручкой, потому что решение
+    // принимается тем же жестом и в том же месте, что и остальные: бот и админка зовут этот
+    // use-case, а не свои копии (правило ·5).
+    if (request.type === 'unban') {
+      return this._approveUnban(request, actor, reason);
+    }
 
     // Квота и код — в одной транзакции: списалось, но код не создался — откатываем оба.
     let created: { code: string; id: string };
@@ -275,6 +285,49 @@ export class ReviewRequestsUseCase {
 
     return this._finish(requestId, actor, AUDIT_ACTIONS.TELEGRAM_REQUEST_REJECTED, notified, {
       reason,
+    }, null);
+  }
+
+  /**
+   * Одобряет просьбу о разбане: снимает **все активные** баны на человеке.
+   *
+   * Снимаются все, а не выбранные: заявка — про доступ, а не про отношения с конкретным
+   * банившим, и «сняли один из трёх» для человека выглядит как «ничего не изменилось».
+   * @param request Заявка.
+   * @param actor Кто решает.
+   * @param reason Подпись решения.
+   * @returns Итог решения.
+   */
+  private async _approveUnban(
+    request: TelegramRequestFull,
+    actor: RequestActor,
+    reason: string | null,
+  ): Promise<RequestDecisionOutcome> {
+    const accountId = request.accountId;
+    if (accountId === null) {
+      throw new RequestDecisionError('WRONG_TYPE', 'В заявке нет аккаунта — снимать нечего.');
+    }
+    const lifted = await this._bans.liftAllFor(accountId);
+
+    const closed = await this._repository.decideIfPending(request.id, {
+      status: 'approved',
+      decisionReason: reason,
+      inviteCodeId: null,
+      grantedAmount: null,
+    });
+    if (!closed) {
+      throw new RequestDecisionError('ALREADY_CLOSED', 'Заявка уже закрыта.');
+    }
+
+    const notified = await this._notify(
+      request.chatId,
+      lifted === 0
+        ? 'Активных банов на аккаунте не осталось — вход открыт.'
+        : 'Бан снят, вход открыт.',
+    );
+    return this._finish(request.id, actor, AUDIT_ACTIONS.BAN_LIFTED, notified, {
+      reason,
+      lifted,
     }, null);
   }
 

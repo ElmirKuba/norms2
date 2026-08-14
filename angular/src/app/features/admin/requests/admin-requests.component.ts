@@ -9,6 +9,7 @@ import { SpinnerComponent } from '../../../shared/ui/spinner/spinner.component';
 import type { Observable } from 'rxjs';
 import type {
   AdminRequestDecision,
+  AdminRequestType,
   AdminRequestStatus,
   AdminTelegramRequest,
 } from '../admin.types';
@@ -169,9 +170,12 @@ export class AdminRequestsComponent {
    */
   public async approve(request: AdminTelegramRequest): Promise<void> {
     const confirmed = await this._modals.confirm({
-      title: 'Выдать код приглашения?',
-      text: 'Код спишется с вашей квоты, а подпись останется в дереве приглашений навсегда — её увидит приглашённый.',
-      confirmText: 'Выдать код',
+      title: request.type === 'unban' ? 'Снять бан?' : 'Выдать код приглашения?',
+      text:
+        request.type === 'unban'
+          ? 'Снимутся ВСЕ активные баны на этом человеке, включая наложенные другими. Вход откроется сразу.'
+          : 'Код спишется с вашей квоты, а подпись останется в дереве приглашений навсегда — её увидит приглашённый.',
+      confirmText: request.type === 'unban' ? 'Снять бан' : 'Выдать код',
     });
     if (!confirmed) {
       return;
@@ -232,7 +236,26 @@ export class AdminRequestsComponent {
    * @returns Подпись.
    */
   public typeLabel(request: AdminTelegramRequest): string {
-    return request.type === 'join' ? 'Хочет вступить' : 'Просит приглашений';
+    const labels: Record<AdminRequestType, string> = {
+      join: 'Хочет вступить',
+      more_invites: 'Просит приглашений',
+      unban: 'Просит снять бан',
+    };
+    return labels[request.type];
+  }
+
+  /**
+   * Подпись к полю причины — она у каждого типа про своё.
+   * @param request Заявка.
+   * @returns Текст подписи.
+   */
+  public reasonLabel(request: AdminTelegramRequest): string {
+    const labels: Record<AdminRequestType, string> = {
+      join: 'Подпись к приглашению — останется в дереве навсегда',
+      more_invites: 'За что начисляем — человек это прочитает',
+      unban: 'Что написать человеку — он прочитает это дословно',
+    };
+    return labels[request.type];
   }
 
   /**

@@ -14,6 +14,8 @@ import { OwnerActionStore } from './domain-services/owner-action.store';
 import { AccountModule } from '../account/account.module';
 import { InvitesModule } from '../invites/invites.module';
 import { AccessControlModule } from '../auth/access-control.module';
+import { RequestUnbanUseCase } from './use-cases/request-unban.use-case';
+import { BanCoreModule } from '../bans/ban-core.module';
 
 /**
  * Модуль приёмной заявок (2.9.1·9): вебхук + use-case над ядром области.
@@ -22,9 +24,10 @@ import { AccessControlModule } from '../auth/access-control.module';
 @Module({
   // `AccessControlModule`, а не `AuthModule` — он даёт `AuthGuard` для экрана привязки в ЛК и
   // не тянет за собой весь модуль авторизации (та же причина, что в `InvitesModule`).
-  imports: [TelegramCoreModule, AccountModule, InvitesModule, AccessControlModule],
+  imports: [BanCoreModule, TelegramCoreModule, AccountModule, InvitesModule, AccessControlModule],
   controllers: [TelegramWebhookController, TelegramLinkController],
   providers: [
+    RequestUnbanUseCase,
     HandleTelegramUpdateUseCase,
     OwnerActionsUseCase,
     ReviewRequestsUseCase,

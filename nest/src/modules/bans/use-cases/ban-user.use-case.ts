@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { BanDomainService } from '../domain-services/ban.domain-service';
 import { InviteTreeDomainService } from '../../invites/domain-services/invite-tree.domain-service';
 import { BanForbiddenError } from '../../../shared/errors/ban-forbidden.error';
+import {
+  escapeHtml,
+  TelegramDomainService,
+} from '../../telegram/domain-services/telegram.domain-service';
 import type { BanFull } from '../interfaces/ban-full.interface';
 
 /**
@@ -17,6 +21,7 @@ export class BanUserUseCase {
   public constructor(
     private readonly _banDomainService: BanDomainService,
     private readonly _inviteTreeDomainService: InviteTreeDomainService,
+    private readonly _telegram: TelegramDomainService,
   ) {}
 
   /**
@@ -35,6 +40,25 @@ export class BanUserUseCase {
     if (!allowed) {
       throw new BanForbiddenError('Банить можно только в своём поддереве приглашений.');
     }
-    return this._banDomainService.ban(bannerId, targetId, reason);
+    const ban = await this._banDomainService.ban(bannerId, targetId, reason);
+
+    // Человек узнаёт о бане от бота, если привязал Telegram (реш. Elmir 14.08.2026). Иначе он
+    // упирается в «вы забанены» на входе без единого объяснения. Остановил бота — сообщение не
+    // дойдёт, и это его выбор: добиваться доставки не будем. Сбой доставки не отменяет бан,
+    // поэтому ошибка проглатывается.
+    await this._telegram
+      .notifyAccount(
+        targetId,
+        [
+          '<b>Доступ закрыт</b>',
+          '',
+          `Причина: ${escapeHtml(reason)}`,
+          '',
+          'Считаешь, что это ошибка? Нажми /start и выбери «Меня забанили».',
+        ].join('\n'),
+      )
+      .catch(() => false);
+
+    return ban;
   }
 }

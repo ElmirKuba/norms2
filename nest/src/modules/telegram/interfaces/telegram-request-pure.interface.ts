@@ -1,5 +1,10 @@
 /** Что человек просит: попасть внутрь или добавить приглашений. */
-export type TelegramRequestType = 'join' | 'more_invites';
+/**
+ * Что человек просит у бота. `unban` добавлен в 2.9.3·22: снять бан вправе банивший или его
+ * предок по ветке, но они могли удалиться или молчать — и тогда у забаненного не оставалось ни
+ * одного пути ([ADR-0003, дополнение](../../../../docs/decisions/0003-ban-semantics.md)).
+ */
+export type TelegramRequestType = 'join' | 'more_invites' | 'unban';
 
 /** Где заявка в жизненном цикле. */
 export type TelegramRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';

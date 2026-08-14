@@ -65,11 +65,7 @@
           </p>
 
           <label class="requests__label" [attr.for]="'reason-' + request.id">
-            {{
-              request.type === 'join'
-                ? 'Подпись к приглашению — останется в дереве навсегда'
-                : 'За что начисляем — человек это прочитает'
-            }}
+            {{ reasonLabel(request) }}
           </label>
           <textarea
             #reason
@@ -85,6 +81,10 @@
             @if (request.type === 'join') {
               <app-button [loading]="busy() === request.id" (click)="approve(request)">
                 Выдать код
+              </app-button>
+            } @else if (request.type === 'unban') {
+              <app-button [loading]="busy() === request.id" (click)="approve(request)">
+                Снять бан
               </app-button>
             } @else {
               @for (amount of amounts; track amount) {

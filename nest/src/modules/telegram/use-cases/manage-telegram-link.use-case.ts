@@ -115,6 +115,28 @@ export class ManageTelegramLinkUseCase {
       );
       return;
     }
+    // Проверяем ДО погашения кода: иначе человек потеряет одноразовый код на отказе, которого
+    // сам не ждал.
+    const alreadyLinked = await this._repository.findLinkByChat(chatId);
+    if (alreadyLinked !== null) {
+      // Перепривязка молча (было до 14.08.2026) уводила чат к другому аккаунту, а прежний
+      // владелец узнавал об этом никогда: его заявки и уведомления просто переставали приходить.
+      // Отвязка — отдельное осознанное действие (замечание Elmir).
+      await this._api.sendMessage(
+        chatId,
+        [
+          '⚠️ Этот чат уже привязан к аккаунту.',
+          '',
+          'Сначала отвяжи его — /unlink, — потом привязывай заново. Так сделано нарочно: иначе',
+          'чат уезжает к другому аккаунту молча, а прежний владелец остаётся без уведомлений и',
+          'не понимает, почему.',
+          '',
+          'Код не потрачен — он ещё жив.',
+        ].join('\n'),
+      );
+      return;
+    }
+
     const accountId = this._codes.consume(codeRaw);
     if (accountId === null) {
       await this._api.sendMessage(
@@ -124,15 +146,12 @@ export class ManageTelegramLinkUseCase {
       return;
     }
 
-    // Обе стороны уникальны в БД, поэтому старые привязки снимаем сами: иначе вставка упадёт,
-    // а человек увидит ошибку там, где хотел просто перепривязать чат.
+    // Аккаунт мог быть привязан к ДРУГОМУ чату — эту связь снимаем сами: код взят из его же
+    // личного кабинета, значит он и переносит привязку на новый чат осознанно. Обратный случай
+    // (чат занят другим аккаунтом) отбит выше.
     const previousOfAccount = await this._repository.findLinkByAccount(accountId);
     if (previousOfAccount !== null) {
       await this._repository.deleteLinkByChat(previousOfAccount.chatId);
-    }
-    const previousOfChat = await this._repository.findLinkByChat(chatId);
-    if (previousOfChat !== null) {
-      await this._repository.deleteLinkByChat(chatId);
     }
 
     await this._repository.createLink(generateId(), accountId, chatId);

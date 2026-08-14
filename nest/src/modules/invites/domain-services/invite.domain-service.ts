@@ -40,6 +40,21 @@ export class InviteDomainService {
    * @param tx Опц. транзакция (атомарность со списанием квоты, create-invite).
    * @returns Созданный код.
    */
+  /**
+   * Выносит протухшие коды человека (2.9.3·24).
+   *
+   * Погашенный код удаляется сам — это гард одноразовости; протухший же просто переставал
+   * находиться и лежал в таблице вечно. Неиспользованный секрет без срока — ровно то, за что мы
+   * чистили остальное в 2.9.3.
+   *
+   * **Не бросает.** Уборка не вправе помешать человеку получить код.
+   * @param inviterId Владелец кодов.
+   * @returns Сколько удалено (0 при сбое).
+   */
+  public async purgeExpired(inviterId: string): Promise<number> {
+    return this._inviteRepository.deleteExpiredOf(inviterId).catch(() => 0);
+  }
+
   public async createCode(
     inviterId: string,
     reason: string,

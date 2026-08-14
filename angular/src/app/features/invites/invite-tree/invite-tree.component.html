@@ -20,7 +20,12 @@
         </button>
         <div class="node__body">
           <div class="node__head">
-            <a class="node__name" [routerLink]="['/app/u', row.login]">{{ row.alias }}</a>
+            @if (row.deleted) {
+              <span class="node__name node__name--deleted">{{ row.alias }}</span>
+              <span class="badge">удалён</span>
+            } @else {
+              <a class="node__name" [routerLink]="['/app/u', row.login]">{{ row.alias }}</a>
+            }
             @if (row.bannedByMe) {
               <span class="badge">забанен вами</span>
             }

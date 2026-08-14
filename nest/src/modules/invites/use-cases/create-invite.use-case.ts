@@ -33,6 +33,12 @@ export class CreateInviteUseCase {
    * @throws {QuotaExceededError} Если квота исчерпана.
    */
   public async execute(inviterId: string, reason: string): Promise<InviteCodeFull> {
+    // Заодно выносим протухшие коды этого человека (2.9.3·24). Крона у нас нет осознанно, а он в
+    // этот момент и так здесь: чистить лениво по касанию дешевле, чем заводить обходчик ради
+    // нескольких строк. Вне транзакции и с проглоченной ошибкой — уборка не вправе помешать
+    // выдать код.
+    await this._inviteDomainService.purgeExpired(inviterId);
+
     return this._transactionRunner.run(async (tx) => {
       const consumed = await this._accountDomainService.consumeInviteQuota(inviterId, tx);
       if (!consumed) {

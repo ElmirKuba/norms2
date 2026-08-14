@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt, isNull, sql } from 'drizzle-orm';
+import { deleteCascade } from '../../core/deletion.engine';
+import { and, eq, gt, isNull, lt, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { inviteCodes } from '../../schemas/invite-codes.schema';
@@ -155,9 +156,12 @@ export class InviteRepository implements InviteRepositoryPort {
         reason: invitations.reason,
         invitedAt: invitations.invitedAt,
         bannedByMe: sql<boolean>`${bans.id} is not null`,
+        // Удалённых НЕ прячем (2.9.3·24): узел держит под собой свою подветку, и без него
+        // потомки повисли бы в воздухе. Показываем факт, а решение «как это выглядит» — экрану.
+        deleted: sql<boolean>`${accounts.deletedAt} is not null`,
       })
       .from(invitations)
-      .innerJoin(accounts, and(eq(accounts.id, invitations.accountId), isNull(accounts.deletedAt)))
+      .innerJoin(accounts, eq(accounts.id, invitations.accountId))
       .leftJoin(
         bans,
         and(eq(bans.targetId, invitations.accountId), eq(bans.bannerId, viewerId), eq(bans.active, true)),
@@ -194,4 +198,20 @@ export class InviteRepository implements InviteRepositoryPort {
   private _exec(tx?: Transaction): DrizzleExecutor {
     return tx === undefined ? this._db : (tx as unknown as DrizzleExecutor);
   }
+  /**
+   * Удаляет протухшие коды владельца. Через ядро удаления, а не прямым `delete`: у таблицы режим
+   * `paranoid: false`, и решение «стереть физически» принимает она, а не этот метод.
+   * @param inviterId Владелец кодов.
+   * @returns Сколько удалено.
+   */
+  public async deleteExpiredOf(inviterId: string): Promise<number> {
+    return this._db.transaction(async (transaction) =>
+      deleteCascade(
+        transaction,
+        inviteCodes,
+        and(eq(inviteCodes.inviterId, inviterId), lt(inviteCodes.expiresAt, new Date())),
+      ),
+    );
+  }
+
 }

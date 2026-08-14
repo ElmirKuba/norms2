@@ -84,3 +84,11 @@
   color: var(--color-danger, #c0392b);
   white-space: nowrap;
 }
+
+/* Удалённый участник (2.9.3·24): узел остаётся ради подветки, но человека уже нет —
+   имя без ссылки и приглушённое, чтобы его не путали с живым. */
+.node__name--deleted {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  cursor: default;
+}

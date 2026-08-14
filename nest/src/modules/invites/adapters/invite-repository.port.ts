@@ -86,4 +86,15 @@ export interface InviteRepositoryPort {
    * @returns Проекция пригласившего или null (корень дерева: free/seed).
    */
   findInvitationByAccount(accountId: string): Promise<InviterRead | null>;
+  /**
+   * Удаляет протухшие коды этого человека (2.9.3·24).
+   *
+   * Погашенный код исчезает сам — это гард одноразовости; протухший же просто переставал
+   * находиться и лежал в таблице вечно. Неиспользованный секрет без срока — ровно то, за что мы
+   * чистили остальное ([ADR-0068](../../../../docs/decisions/0068-deletion-belongs-to-storage.md)).
+   * @param inviterId Владелец кодов.
+   * @returns Сколько удалено.
+   */
+  deleteExpiredOf(inviterId: string): Promise<number>;
+
 }

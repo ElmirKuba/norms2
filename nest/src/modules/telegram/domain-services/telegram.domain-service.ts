@@ -121,12 +121,15 @@ function guestMenu(context: ChatContext): TelegramButton[][] {
     buttons.push([{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }]);
   }
   buttons.push([{ text: '➕ Получить приглашения', callbackData: 'invites' }]);
-  if (context.bans.length > 0) {
-    buttons.push([{ text: '🔓 Попросить снять бан', callbackData: 'unban' }]);
-  } else if (context.login === null) {
-    // Чат ничей: человек может быть забанен под своим логином, а бот об этом не знает.
-    buttons.push([{ text: '🔓 Меня забанили', callbackData: 'unban' }]);
-  }
+  // Кнопка есть **всегда**, меняется только подпись (уточнено Elmir 14.08.2026). Прятать её у
+  // непривязанного нельзя: бот не знает, кто он, и как раз забаненный чаще всего приходит с
+  // чистого чата. Прятать у привязанного и не забаненного — тоже: просить можно **за другого**,
+  // и такая просьба ничем не хуже своей.
+  buttons.push([
+    context.bans.length > 0
+      ? { text: '🔓 Попросить снять бан', callbackData: 'unban' }
+      : { text: '🔓 Снять бан (себе или другому)', callbackData: 'unban' },
+  ]);
   return buttons;
 }
 

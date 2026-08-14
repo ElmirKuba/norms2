@@ -344,6 +344,20 @@
       "when": 1786660952002,
       "tag": "0048_free_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1786683574696,
+      "tag": "0049_release_key_2_9_3",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1786683574697,
+      "tag": "0050_purge_hidden_content",
+      "breakpoints": true
     }
   ]
 }

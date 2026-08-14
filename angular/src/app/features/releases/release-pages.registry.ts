@@ -28,11 +28,6 @@ export type ReleasePortals = Record<string, string>;
 export const RELEASE_PORTALS: ReleasePortals = {
   'release-2.0.0': '/releases/release-2.0.0.html',
   'release-2.9.3': '/releases/release-2.9.3.html',
-  // Алиас старого адреса на тот же лендинг. Публикация в базе называется `release-2.9.2` (номер
-  // выпуска поднялся до 2.9.3 позже, коммит `12540cb`), а ссылка на неё уже уехала в канал —
-  // менять ключ нельзя, он и есть публичный адрес. Без этой строки страница открывалась пустой:
-  // портал по ключу не находился, и человек видел заголовок без содержимого.
-  'release-2.9.2': '/releases/release-2.9.3.html',
 };
 
 /**

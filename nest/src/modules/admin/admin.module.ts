@@ -18,6 +18,9 @@ import { GetReleaseStateUseCase } from './use-cases/get-release-state.use-case';
 import { ManageReleasesUseCase } from './use-cases/manage-releases.use-case';
 import { ReadAuditLogUseCase } from './use-cases/read-audit-log.use-case';
 import { LiftBanUseCase } from './use-cases/lift-ban.use-case';
+import { BanFromAdminUseCase } from './use-cases/ban-from-admin.use-case';
+import { LiftBansOfAccountUseCase } from './use-cases/lift-bans-of-account.use-case';
+import { TelegramCoreModule } from '../telegram/telegram-core.module';
 import { BanCoreModule } from '../bans/ban-core.module';
 import { ADMIN_STATE_REPOSITORY } from './adapters/admin-state-repository.port';
 import { AdminStateRepository } from '../../database/repositories/admin/admin-state.repository';
@@ -41,7 +44,7 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
  * telegram про admin ничего не знает.
  */
 @Module({
-  imports: [AccessControlModule, AccountModule, NotificationCoreModule, TelegramModule, BanCoreModule],
+  imports: [AccessControlModule, AccountModule, NotificationCoreModule, TelegramModule, BanCoreModule, TelegramCoreModule],
   controllers: [
     AdminSettingsController,
     AdminReleasesController,
@@ -61,6 +64,8 @@ import { AdminStateRepository } from '../../database/repositories/admin/admin-st
     ManageReleasesUseCase,
     ReadAuditLogUseCase,
     LiftBanUseCase,
+    BanFromAdminUseCase,
+    LiftBansOfAccountUseCase,
   ],
 })
 export class AdminModule {}

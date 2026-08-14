@@ -91,3 +91,40 @@
   color: var(--color-text-muted);
   text-decoration: line-through;
 }
+
+// Бан из админки (2.9.3·26): поле причины разворачивается в карточке — причину пишут, глядя на
+// человека, а модалка закрыла бы собой ровно то, ради чего её открыли.
+.people__role--banned {
+  border-color: var(--color-danger, var(--color-accent));
+  color: var(--color-danger, var(--color-accent));
+}
+
+.people__ban {
+  margin-top: var(--space-3);
+}
+
+.people__ban-label {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.people__ban-reason {
+  width: 100%;
+  min-width: 0;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  resize: vertical;
+}
+
+.people__ban-act {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

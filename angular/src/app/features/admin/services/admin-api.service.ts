@@ -215,4 +215,26 @@ export class AdminApiService {
       { reason },
     );
   }
+
+  /**
+   * Банит человека от имени админа (2.9.3·26) — вне ветки приглашений.
+   *
+   * **Причина обязательна:** человек прочитает её при входе и получит от бота. Идемпотентно —
+   * повтор обновляет причину, второй записи не появляется.
+   * @param accountId Кого.
+   * @param reason За что.
+   * @returns Поток завершения.
+   */
+  public banAccount(accountId: string, reason: string): Observable<void> {
+    return this._http.post<void>(`${API_PREFIX}/admin/bans`, { targetId: accountId, reason });
+  }
+
+  /**
+   * Снимает с человека все активные баны.
+   * @param accountId Кого разбанить.
+   * @returns Поток завершения.
+   */
+  public liftBansOf(accountId: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/admin/bans/of/${accountId}`);
+  }
 }

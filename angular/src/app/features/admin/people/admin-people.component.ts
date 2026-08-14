@@ -41,6 +41,11 @@ export class AdminPeopleComponent {
   public readonly loadingMore = signal(false);
   /** Идёт смена роли у этого аккаунта. */
   public readonly busy = signal<string | null>(null);
+  /** У кого сейчас открыто поле причины бана (2.9.3·26). */
+  public readonly banningId = signal<string | null>(null);
+
+  /** Черновики причин по людям — живут в компоненте, а не в каждой карточке. */
+  private readonly _banReasons = signal<Record<string, string>>({});
   /** Текст ошибки или null. */
   public readonly error = signal<string | null>(null);
   /** Строка поиска. */
@@ -97,6 +102,83 @@ export class AdminPeopleComponent {
    * @param person Строка человека.
    * @returns Показывать ли кнопку.
    */
+  /**
+   * Текущий черновик причины.
+   * @param id Кого банят.
+   * @returns Написанный текст.
+   */
+  public banReasonOf(id: string): string {
+    return this._banReasons()[id] ?? '';
+  }
+
+  /**
+   * Запоминает написанную причину.
+   * @param id Кого банят.
+   * @param value Текст.
+   */
+  public setBanReason(id: string, value: string): void {
+    this._banReasons.update((all) => ({ ...all, [id]: value }));
+  }
+
+  /**
+   * Открывает поле причины.
+   *
+   * **Поле, а не модалка-подтверждение:** причину пишут, глядя на человека и его роли, а модалка
+   * закрыла бы собой ровно то, ради чего её открыли (тот же приём, что в разборе заявок).
+   * @param person Кого банят.
+   */
+  public startBan(person: AdminAccount): void {
+    this.banningId.set(person.id);
+  }
+
+  /** Закрывает поле причины, ничего не делая. */
+  public cancelBan(): void {
+    this.banningId.set(null);
+  }
+
+  /**
+   * Банит человека от имени админа. Пустую причину не пропускаем на фронте, чтобы человек не
+   * ловил 400 после нажатия.
+   * @param person Кого банят.
+   */
+  public confirmBan(person: AdminAccount): void {
+    const reason = this.banReasonOf(person.id).trim();
+    if (reason === '') {
+      this._modals.error('Нужна причина', 'Человек прочитает её при попытке входа — без неё бан непрозрачен.');
+      return;
+    }
+    this.busy.set(person.id);
+    this._api.banAccount(person.id, reason).subscribe({
+      next: () => {
+        this.busy.set(null);
+        this.banningId.set(null);
+        this.search();
+      },
+      error: (error: unknown) => {
+        this.busy.set(null);
+        this._modals.error('Не удалось забанить', errorMessage(error));
+      },
+    });
+  }
+
+  /**
+   * Снимает с человека все активные баны.
+   * @param person Кого разбанить.
+   */
+  public liftBans(person: AdminAccount): void {
+    this.busy.set(person.id);
+    this._api.liftBansOf(person.id).subscribe({
+      next: () => {
+        this.busy.set(null);
+        this.search();
+      },
+      error: (error: unknown) => {
+        this.busy.set(null);
+        this._modals.error('Не удалось снять бан', errorMessage(error));
+      },
+    });
+  }
+
   public canRevokeAdmin(person: AdminAccount): boolean {
     return person.id !== this._authStore.account()?.id;
   }

@@ -31,6 +31,9 @@
               <span class="people__role">удалён</span>
             }
             <span class="people__alias">{{ person.alias }}</span>
+            @if (person.banned) {
+              <span class="people__role people__role--banned">забанен</span>
+            }
             <span class="people__roles">
               @for (role of person.roles; track role) {
                 <span class="people__role" [class.people__role--admin]="role === 'admin'">{{ role }}</span>
@@ -39,6 +42,21 @@
           </div>
 
           <div class="people__act">
+            @if (person.banned) {
+              <app-button
+                variant="ghost"
+                [loading]="busy() === person.id"
+                (click)="liftBans(person)"
+              >Снять бан</app-button>
+            } @else if (!canRevokeAdmin(person) && isAdmin(person)) {
+              <!-- себя не банят: кнопки нет вовсе, чтобы не объяснять отказ постфактум -->
+            } @else {
+              <app-button
+                variant="danger"
+                [loading]="busy() === person.id"
+                (click)="startBan(person)"
+              >Забанить</app-button>
+            }
             @if (isAdmin(person)) {
               @if (canRevokeAdmin(person)) {
                 <app-button
@@ -58,6 +76,31 @@
             }
           </div>
         </div>
+
+        @if (banningId() === person.id) {
+          <div class="people__ban">
+            <label class="people__ban-label" [attr.for]="'ban-' + person.id">
+              За что — человек прочитает это дословно при попытке входа и получит от бота
+            </label>
+            <textarea
+              #banReason
+              class="people__ban-reason"
+              [id]="'ban-' + person.id"
+              rows="2"
+              placeholder="Без причины забанить нельзя"
+              [value]="banReasonOf(person.id)"
+              (input)="setBanReason(person.id, banReason.value)"
+            ></textarea>
+            <div class="people__ban-act">
+              <app-button
+                variant="danger"
+                [loading]="busy() === person.id"
+                (click)="confirmBan(person)"
+              >Забанить</app-button>
+              <app-button variant="ghost" (click)="cancelBan()">Отмена</app-button>
+            </div>
+          </div>
+        }
       </app-card>
     } @empty {
       <app-card><p class="people__error">Никого не нашлось.</p></app-card>

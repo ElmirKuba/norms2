@@ -12,6 +12,7 @@ import type { RoleRepositoryPort } from '../../../modules/account/adapters/role-
 import type { RoleFull } from '../../../modules/account/interfaces/role-full.interface';
 import type { AdminAccountPage } from '../../../modules/admin/interfaces/admin-account-page.interface';
 import type { AdminAccountView } from '../../../modules/admin/interfaces/admin-account-view.interface';
+import { bans } from '../../schemas/bans.schema';
 
 /**
  * Drizzle-реализация порта ролей (2.9.3).
@@ -177,6 +178,13 @@ export class RoleRepository implements RoleRepositoryPort {
           join ${roles} r on r.id = ar.role_id
          where ar.account_id = ${sql.raw('"accounts"."id"')}
       ), '{}')`,
+      // Забанен ли человек прямо сейчас (2.9.3·26). Без этого админка показывала бы «Забанить»
+      // тому, кто уже забанен, и не давала бы снять бан — а снять его иногда некому: банивший
+      // мог удалиться, а ветка выше молчать ([ADR-0003, дополнение]).
+      banned: sql<boolean>`exists (
+        select 1 from ${bans} b
+         where b.target_id = ${sql.raw('"accounts"."id"')} and b.active
+      )`,
     };
   }
 

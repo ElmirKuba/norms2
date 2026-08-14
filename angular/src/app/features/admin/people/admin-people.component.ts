@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../services/admin-api.service';
 import { AuthStore } from '../../../core/auth/auth-store.service';
 import { ModalService } from '../../../shared/modals/modal.service';
@@ -20,7 +21,7 @@ const ROLE_ADMIN = 'admin';
  */
 @Component({
   selector: 'app-admin-people',
-  imports: [FormsModule, ButtonComponent, CardComponent, SpinnerComponent],
+  imports: [FormsModule, RouterLink, ButtonComponent, CardComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-people.component.html',
   styleUrl: './admin-people.component.scss',

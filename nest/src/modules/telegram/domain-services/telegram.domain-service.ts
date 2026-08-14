@@ -282,7 +282,11 @@ export class TelegramDomainService {
     }
     const command = text.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
 
-    if (command === '/start') {
+    // `/menu` — синоним `/start` (2.9.3, поймано Elmir 14.08.2026). Команда объявлена в списке
+    // Telegram для **всех**, но обрабатывалась только у админа: обычный человек получал «не
+    // понял, нажми /start». Ровно та болезнь, ради которой список команд и переехал из BotFather
+    // в код, — просто разъехались не список с обработчиком, а две ветки обработчика.
+    if (command === '/start' || command === '/menu') {
       this._drafts.forget(chatId);
       await this.sendGuestMenu(chatId);
       return { type: 'handled' };

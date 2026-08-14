@@ -110,7 +110,9 @@ export class TelegramLinkComponent {
   protected async unlink(): Promise<void> {
     const confirmed = await this._modal.confirm({
       title: 'Отвязать Telegram?',
-      text: 'Просить дополнительные приглашения из этого чата больше не получится. Привязать снова можно в любой момент.',
+      text:
+        'Просить дополнительные приглашения из этого чата больше не получится, и бот перестанет ' +
+        'писать о бане и решениях по заявкам. Привязать снова можно в любой момент — новым кодом.',
     });
     if (!confirmed) {
       return;

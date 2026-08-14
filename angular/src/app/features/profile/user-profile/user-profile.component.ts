@@ -151,7 +151,9 @@ export class UserProfileComponent {
     }
     const confirmed = await this._modal.confirm({
       title: 'Снять бан?',
-      text: 'Участник снова получит доступ.',
+      text:
+        'Ваш бан снимется. Если участника забанил кто-то ещё, доступ останется закрытым — ' +
+        'чужие баны снимает их автор или тот, кто выше него по ветке приглашений.',
       confirmText: 'Снять',
       cancelText: 'Отмена',
     });

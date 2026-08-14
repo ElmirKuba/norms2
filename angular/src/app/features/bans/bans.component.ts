@@ -38,7 +38,9 @@ export class BansComponent {
   protected async unban(ban: BanListItem): Promise<void> {
     const confirmed = await this._modal.confirm({
       title: 'Снять бан?',
-      text: `Участник «${ban.targetAlias}» снова получит доступ.`,
+      text:
+        `Ваш бан с «${ban.targetAlias}» снимется. Если его забанил кто-то ещё, ` +
+        'доступ останется закрытым — чужие баны снимает их автор или тот, кто выше него по ветке.',
       confirmText: 'Снять',
       cancelText: 'Отмена',
     });

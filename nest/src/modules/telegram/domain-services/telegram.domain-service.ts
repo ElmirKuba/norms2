@@ -93,12 +93,73 @@ export function renderInvitesCard(login: string, remaining: number, purpose: str
   ].join('\n');
 }
 
-/** Меню гостя — кнопками, а не командами: человек не должен запоминать `/join`. */
-const GUEST_MENU: TelegramButton[][] = [
-  [{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }],
-  [{ text: '➕ Получить приглашения', callbackData: 'invites' }],
-  [{ text: '🔓 Меня забанили', callbackData: 'unban' }],
-];
+/**
+ * Что бот знает о собеседнике к моменту показа меню (2.9.3, реш. Elmir 14.08.2026).
+ *
+ * Собирает его **use-case**: логин и баны — чужие области, domain-service туда не ходит.
+ */
+export interface ChatContext {
+  /** Логин привязанного аккаунта или `null` — чат ничей. */
+  login: string | null;
+  /** Активные баны на этом аккаунте: кто и за что. Пусто — доступ открыт. */
+  bans: readonly { bannerLogin: string; reason: string }[];
+}
+
+/**
+ * Меню зависит от того, кто по ту сторону.
+ *
+ * **Привязанному не предлагаем «Вступить»** (замечание Elmir 14.08.2026): он уже внутри, и
+ * кнопка звала бы его подать заявку на то, что у него есть, — а админ увидел бы эту заявку в
+ * очереди и не понял бы, что с ней делать. **«Меня забанили» показываем только забаненному:**
+ * остальным она предлагает решать несуществующую проблему.
+ * @param context Что известно о чате.
+ * @returns Раскладка кнопок.
+ */
+function guestMenu(context: ChatContext): TelegramButton[][] {
+  const buttons: TelegramButton[][] = [];
+  if (context.login === null) {
+    buttons.push([{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }]);
+  }
+  buttons.push([{ text: '➕ Получить приглашения', callbackData: 'invites' }]);
+  if (context.bans.length > 0) {
+    buttons.push([{ text: '🔓 Попросить снять бан', callbackData: 'unban' }]);
+  } else if (context.login === null) {
+    // Чат ничей: человек может быть забанен под своим логином, а бот об этом не знает.
+    buttons.push([{ text: '🔓 Меня забанили', callbackData: 'unban' }]);
+  }
+  return buttons;
+}
+
+/**
+ * Строка состояния над меню: кто ты и открыт ли доступ.
+ *
+ * До 2.9.3 бот не говорил об этом ничего, и человек, привязавший чат, видел то же меню, что
+ * посторонний. Забаненный — тем более: он узнавал о бане только на экране входа.
+ * @param context Что известно о чате.
+ * @returns Текст приветствия.
+ */
+function guestGreeting(context: ChatContext): string {
+  const lines = [
+    '<b>Нормисы</b> — площадка по приглашениям: без рекламы, без слежки, только свои.',
+    '',
+  ];
+  if (context.login === null) {
+    lines.push('Этот чат пока ни к кому не привязан. Выбери, что нужно.');
+    return lines.join('\n');
+  }
+
+  lines.push(`Чат привязан к аккаунту <b>@${escapeHtml(context.login)}</b>.`);
+  if (context.bans.length === 0) {
+    lines.push('', '✅ Активных банов нет — вход открыт.');
+    return lines.join('\n');
+  }
+  lines.push('', '⛔️ <b>Доступ закрыт.</b>');
+  for (const ban of context.bans) {
+    lines.push(`• @${escapeHtml(ban.bannerLogin)}: ${escapeHtml(ban.reason)}`);
+  }
+  lines.push('', 'Считаешь, что это ошибка, — нажми «Попросить снять бан».');
+  return lines.join('\n');
+}
 
 /**
  * Чем закончился разбор сообщения или кнопки гостя.
@@ -120,11 +181,6 @@ export type GuestOutcome =
 
 /** Тексты, не зависящие от шага диалога. */
 const REPLY = {
-  guestGreeting: [
-    '<b>Нормисы</b> — площадка по приглашениям: без рекламы, без слежки, только свои.',
-    '',
-    'Выбери, что нужно.',
-  ].join('\n'),
   unknown: 'Не понял. Нажми /start — покажу меню.',
   alreadyPending: 'У тебя уже есть заявка на рассмотрении. Я напишу, как только будет решение.',
   needText: 'Мне нужен текст — картинки и стикеры я не понимаю.',
@@ -171,6 +227,18 @@ export class TelegramDomainService {
    */
   public async isAdmin(chatId: string): Promise<boolean> {
     return this._audience.isAdminChat(chatId);
+  }
+
+  /**
+   * Чей это чат — идентификатор привязанного аккаунта или `null`.
+   *
+   * Логин и баны по нему достаёт use-case: они живут в чужих областях.
+   * @param chatId Чат.
+   * @returns Идентификатор аккаунта или null.
+   */
+  public async findAccountByChat(chatId: string): Promise<string | null> {
+    const link = await this._repository.findLinkByChat(chatId);
+    return link?.accountId ?? null;
   }
 
   /**
@@ -265,8 +333,8 @@ export class TelegramDomainService {
    * @param chatId Чат.
    * @returns Промис завершения.
    */
-  public async sendGuestMenu(chatId: string): Promise<void> {
-    await this._api.sendMessage(chatId, REPLY.guestGreeting, GUEST_MENU);
+  public async sendGuestMenu(chatId: string, context: ChatContext): Promise<void> {
+    await this._api.sendMessage(chatId, guestGreeting(context), guestMenu(context));
   }
 
   /**
@@ -275,7 +343,11 @@ export class TelegramDomainService {
    * @param text Текст (undefined у стикеров и фото).
    * @returns Промис завершения.
    */
-  public async handleGuestMessage(chatId: string, text: string | undefined): Promise<GuestOutcome> {
+  public async handleGuestMessage(
+    chatId: string,
+    text: string | undefined,
+    context: ChatContext,
+  ): Promise<GuestOutcome> {
     if (text === undefined) {
       await this._api.sendMessage(chatId, REPLY.needText);
       return { type: 'handled' };
@@ -288,7 +360,7 @@ export class TelegramDomainService {
     // в код, — просто разъехались не список с обработчиком, а две ветки обработчика.
     if (command === '/start' || command === '/menu') {
       this._drafts.forget(chatId);
-      await this.sendGuestMenu(chatId);
+      await this.sendGuestMenu(chatId, context);
       return { type: 'handled' };
     }
     // `/cancel` проверяется РАНЬШЕ ответов анкеты: иначе, набранный на шаге «зачем тебе
@@ -342,7 +414,11 @@ export class TelegramDomainService {
    * @param data Данные кнопки.
    * @returns Промис завершения.
    */
-  public async handleGuestCallback(chatId: string, data: string | undefined): Promise<GuestOutcome> {
+  public async handleGuestCallback(
+    chatId: string,
+    data: string | undefined,
+    context: ChatContext,
+  ): Promise<GuestOutcome> {
     if (data === 'join') {
       await this.startJoin(chatId);
       return { type: 'handled' };
@@ -352,10 +428,30 @@ export class TelegramDomainService {
       return { type: 'invitesRequested' };
     }
     if (data === 'unban') {
+      // Чат привязан — логин мы уже знаем, и спрашивать его заново было бы издевательством.
+      // Но и подставлять молча нельзя: человек может просить за другого (реш. Elmir 14.08.2026).
+      if (context.login !== null) {
+        await this._api.sendMessage(
+          chatId,
+          `Просишь за себя — <b>@${escapeHtml(context.login)}</b>?`,
+          [
+            [{ text: '✅ Да, это я', callbackData: 'unban_self' }],
+            [{ text: '✏️ Нет, другой логин', callbackData: 'unban_other' }],
+          ],
+        );
+        return { type: 'handled' };
+      }
       await this.startUnban(chatId);
       return { type: 'handled' };
     }
-    await this.sendGuestMenu(chatId);
+    if (data === 'unban_self' && context.login !== null) {
+      return { type: 'unbanReady', login: context.login };
+    }
+    if (data === 'unban_other') {
+      await this.startUnban(chatId);
+      return { type: 'handled' };
+    }
+    await this.sendGuestMenu(chatId, context);
     return { type: 'handled' };
   }
 

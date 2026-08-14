@@ -9,6 +9,9 @@ import type { TelegramApiPort } from '../adapters/telegram-api.port';
 import type { GuestOutcome } from '../domain-services/telegram.domain-service';
 import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
 import { RequestUnbanUseCase } from './request-unban.use-case';
+import { BanDomainService } from '../../bans/domain-services/ban.domain-service';
+import type { ChatContext } from '../domain-services/telegram.domain-service';
+import { AccountDomainService } from '../../account/domain-services/account.domain-service';
 
 /** Префиксы кнопок начисления: номинал прямо в префиксе (`g3` = «+3»). */
 const GRANT_PREFIXES = new Set(['g1', 'g3', 'g5']);
@@ -41,6 +44,8 @@ export class HandleTelegramUpdateUseCase {
     private readonly _ownerActions: OwnerActionsUseCase,
     private readonly _requestInvites: RequestInvitesUseCase,
     private readonly _requestUnban: RequestUnbanUseCase,
+    private readonly _accounts: AccountDomainService,
+    private readonly _bans: BanDomainService,
     private readonly _manageLink: ManageTelegramLinkUseCase,
     private readonly _linkWait: LinkWaitStore,
     @Inject(TELEGRAM_API) private readonly _api: TelegramApiPort,
@@ -117,7 +122,7 @@ export class HandleTelegramUpdateUseCase {
       }
     }
     if (!(await this._telegramDomainService.isAdmin(chatId))) {
-      await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
+      await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text, await this._chatContext(chatId)));
       return;
     }
     if (text === undefined) {
@@ -137,7 +142,32 @@ export class HandleTelegramUpdateUseCase {
       return;
     }
     // Владелец — тоже человек: если он проходит анкету, отдаём гостевой сценарий.
-    await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text));
+    await this._finish(chatId, await this._telegramDomainService.handleGuestMessage(chatId, text, await this._chatContext(chatId)));
+  }
+
+  /**
+   * Собирает, что бот знает о собеседнике: чей это чат и открыт ли доступ (2.9.3).
+   *
+   * **Живёт в use-case, а не в domain-service**, потому что логин и баны — чужие области, а
+   * кросс-домен ходит только отсюда и только вниз. Domain-service получает готовый снимок и
+   * решает, что показать.
+   * @param chatId Чат.
+   * @returns Снимок: привязанный логин и активные баны.
+   */
+  private async _chatContext(chatId: string): Promise<ChatContext> {
+    const accountId = await this._telegramDomainService.findAccountByChat(chatId);
+    if (accountId === null) {
+      return { login: null, bans: [] };
+    }
+    const account = await this._accounts.getActiveById(accountId).catch(() => null);
+    if (account === null) {
+      return { login: null, bans: [] };
+    }
+    const bans = await this._bans.listActiveAgainst(accountId);
+    return {
+      login: account.login,
+      bans: bans.map((ban) => ({ bannerLogin: ban.bannerLogin, reason: ban.reason })),
+    };
   }
 
   /**
@@ -212,6 +242,6 @@ export class HandleTelegramUpdateUseCase {
       await this._ownerActions.askGrantReason(chatId, Number(prefix.slice(1)), payload);
       return;
     }
-    await this._finish(chatId, await this._telegramDomainService.handleGuestCallback(chatId, data));
+    await this._finish(chatId, await this._telegramDomainService.handleGuestCallback(chatId, data, await this._chatContext(chatId)));
   }
 }

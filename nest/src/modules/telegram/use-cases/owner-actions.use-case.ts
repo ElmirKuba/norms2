@@ -60,8 +60,15 @@ export class OwnerActionsUseCase {
   ) {}
 
   /**
-   * Показывает меню владельца — **объединённое**: разбор заявок плюс то, что доступно гостю.
-   * @param chatId Чат владельца.
+   * Показывает меню админа.
+   *
+   * **Гостевых кнопок здесь нет** (замечание Elmir 14.08.2026): «Вступить в „Нормисы“» человеку,
+   * который уже внутри, предлагает подать заявку на то, что у него есть, — и эта заявка легла бы
+   * в очередь к нему же. «Получить приглашения» бессмысленна по той же причине: он их выдаёт.
+   *
+   * **Заголовок — «админа», а не «владельца»:** с 2.9.3·3а права в боте определяет роль
+   * аккаунта, а не единственный вшитый `chat_id`, и админов может быть несколько.
+   * @param chatId Чат админа.
    * @returns Промис завершения.
    */
   public async sendMenu(chatId: string): Promise<void> {
@@ -70,8 +77,6 @@ export class OwnerActionsUseCase {
     const menu: TelegramButton[][] = [
       [{ text: `📋 Заявки (${String(waiting)})`, callbackData: 'q:0' }],
       [{ text: '📜 История решений', callbackData: 'h:0' }],
-      [{ text: '🎟 Вступить в «Нормисы»', callbackData: 'join' }],
-      [{ text: '➕ Получить приглашения', callbackData: 'invites' }],
     ];
     const account =
       linked === null ? null : await this._accountDomainService.getActiveById(linked.accountId).catch(() => null);
@@ -79,7 +84,7 @@ export class OwnerActionsUseCase {
       account === null
         ? '\n\n⚠️ Аккаунт не привязан — выдать код я не смогу. Возьми код в личном кабинете («Настройки → Telegram») и пришли мне: <code>/link КОД</code>'
         : `\n\nПриглашения выдаются от аккаунта <b>@${escapeHtml(account.login)}</b> (осталось: ${String(account.invitesRemaining)}).`;
-    await this._api.sendMessage(chatId, `<b>Меню владельца</b>${hint}`, menu);
+    await this._api.sendMessage(chatId, `<b>Меню админа</b>${hint}`, menu);
   }
 
   /**

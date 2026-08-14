@@ -7,6 +7,10 @@ import { readGitCommit } from '../../../shared/utility-level/read-git-commit.uti
 import type { AdminStateRepositoryPort } from '../adapters/admin-state-repository.port';
 import type { ReleaseStateView } from '../interfaces/release-state-view.interface';
 import type { Env } from '../../../system/config/env.schema';
+import {
+  SETTING_TELEGRAM_BOT_PAUSED,
+  SettingsDomainService,
+} from '../../settings/domain-services/settings.domain-service';
 
 /**
  * Состояние выпуска (2.9.3·12) — «что развёрнуто и всё ли доехало».
@@ -22,6 +26,10 @@ import type { Env } from '../../../system/config/env.schema';
 @Injectable()
 export class GetReleaseStateUseCase {
   private readonly _envCommit: string;
+  private readonly _telegramToken: string;
+  private readonly _webhookSecret: string;
+  private readonly _botUsername: string;
+  private readonly _publicBaseUrl: string;
 
   /**
    * @param _repository Порт диагностических чтений.
@@ -30,8 +38,13 @@ export class GetReleaseStateUseCase {
   public constructor(
     @Inject(ADMIN_STATE_REPOSITORY) private readonly _repository: AdminStateRepositoryPort,
     configService: ConfigService<Env, true>,
+    private readonly _settings: SettingsDomainService,
   ) {
     this._envCommit = configService.get('GIT_COMMIT', { infer: true });
+    this._telegramToken = configService.get('TELEGRAM_BOT_TOKEN', { infer: true });
+    this._webhookSecret = configService.get('TELEGRAM_WEBHOOK_SECRET', { infer: true });
+    this._botUsername = configService.get('TELEGRAM_BOT_USERNAME', { infer: true });
+    this._publicBaseUrl = configService.get('PUBLIC_BASE_URL', { infer: true });
   }
 
   /**
@@ -61,6 +74,13 @@ export class GetReleaseStateUseCase {
       },
       counters,
       lastRelease,
+      telegram: {
+        configured: this._telegramToken !== '',
+        paused: this._settings.getBoolean(SETTING_TELEGRAM_BOT_PAUSED),
+        webhookSecret: this._webhookSecret !== '',
+        botUsername: this._botUsername,
+        publicBaseUrl: this._publicBaseUrl,
+      },
     };
   }
 

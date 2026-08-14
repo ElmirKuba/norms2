@@ -350,7 +350,8 @@ Body: `{ login, password }`.
 
 ✅ **Реализовано (·12).**
 
-- `GET /admin/release-state` (admin) → `{ product, commit, migrations: { applied: number, expected: number, last: string|null, behind: boolean }, counters: { accounts, releases, notifications }, lastRelease: { key, title, publishedAt: Date|null, broadcastedAt: Date|null } | null }`.
+- `GET /admin/release-state` (admin) → `{ product, commit, migrations: { applied, expected, last, behind }, counters: { accounts, releases, notifications }, lastRelease: {…} | null, telegram: { configured, paused, webhookSecret, botUsername, publicBaseUrl } }`.
+  - ✅ **Блок `telegram` (2.9.3·28)** — «настроено ли то, что снаружи выглядит одинаково». `configured && !webhookSecret` означает **бот принимает сообщения и молчит**: вебхук отдаёт 404. Ровно это стоило часа диагностики 14.08.2026, и экран заводился как раз под вопрос «всё ли доехало». `publicBaseUrl` с `localhost` на проде — почти наверняка неверное имя переменной (было в тот же день).
   - **Миграции — пара чисел, а не один тег.** База своих тегов не хранит (в служебной таблице
     только хеш и время), поэтому `applied` читается из базы, а `expected`/`last` — из журнала
     drizzle-kit **в образе**. То есть `expected` отражает развёрнутое, а не содержимое

@@ -86,5 +86,46 @@
       </dl>
       <p class="state__muted">Аккаунты — живые: удалённые в счёт не идут.</p>
     </app-card>
+
+    <app-card>
+      <h2 class="state__title">Telegram</h2>
+      @if (!info.telegram.configured) {
+        <p class="state__muted">
+          Бот выключен: токена нет. Заявки и посты в канал не работают, вещание уходит в лог —
+          на dev это нормально.
+        </p>
+      } @else {
+        <dl class="state__facts">
+          <div class="state__fact">
+            <dt>Бот</dt>
+            <dd>{{ info.telegram.paused ? 'на паузе' : 'работает' }}</dd>
+          </div>
+          <div class="state__fact">
+            <dt>Секрет вебхука</dt>
+            <dd>{{ info.telegram.webhookSecret ? 'есть' : 'ПУСТ' }}</dd>
+          </div>
+          <div class="state__fact">
+            <dt>Имя бота</dt>
+            <dd>{{ info.telegram.botUsername || '—' }}</dd>
+          </div>
+          <div class="state__fact">
+            <dt>Публичный адрес</dt>
+            <dd>{{ info.telegram.publicBaseUrl }}</dd>
+          </div>
+        </dl>
+        @if (!info.telegram.webhookSecret) {
+          <p class="state__alarm">
+            ⚠️ <b>Бот принимает сообщения и молчит.</b> Токен есть, а секрета вебхука нет —
+            ручка отдаёт 404, и Telegram некуда доставлять. Снаружи выглядит как исправный бот.
+          </p>
+        }
+        @if (info.telegram.publicBaseUrl.includes('localhost')) {
+          <p class="state__alarm">
+            ⚠️ <b>Публичный адрес — localhost.</b> Ссылки у бота и в постах канала поведут туда
+            же. На проде это почти наверняка неверное имя переменной.
+          </p>
+        }
+      }
+    </app-card>
   }
 </div>

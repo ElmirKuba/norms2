@@ -156,6 +156,27 @@ export interface AdminReleaseState {
   counters: { accounts: number; releases: number; notifications: number };
   /** Последняя публикация или null. */
   lastRelease: AdminLastRelease | null;
+  /** Готовность Telegram-связки (2.9.3·28). */
+  telegram: AdminTelegramState;
+}
+
+/**
+ * Готовность бота — то, что снаружи выглядит одинаково и работает по-разному.
+ *
+ * `configured && !webhookSecret` = бот принимает сообщения и **молчит**: вебхук отдаёт 404.
+ * Ровно это стоило часа диагностики 14.08.2026.
+ */
+export interface AdminTelegramState {
+  /** Есть токен — бот включён. */
+  configured: boolean;
+  /** Стоит ли пауза. */
+  paused: boolean;
+  /** Есть секрет вебхука. */
+  webhookSecret: boolean;
+  /** Имя бота для публичных ссылок. */
+  botUsername: string;
+  /** Публичный адрес продукта. */
+  publicBaseUrl: string;
 }
 
 /** Чем является нота: текстом `.md` или страницей фронта. */

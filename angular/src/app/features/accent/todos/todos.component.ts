@@ -3,6 +3,7 @@ import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { errorMessage } from '../../../core/http/error-message.util';
+import { ModalService } from '../../../shared/modals/modal.service';
 import { AccentApiService } from '../services/accent-api.service';
 import { TODO_KIND_LABELS } from '../accent.types';
 import type { TodoKind, TodoView } from '../accent.types';
@@ -84,10 +85,25 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         <ul class="todos__list">
           @for (item of items(); track item.id) {
             <li class="todos__item" [class.todos__item--done]="item.status === 'done'">
+              <input
+                class="todos__check"
+                type="checkbox"
+                [checked]="item.status === 'done'"
+                (change)="toggleDone(item)"
+                [attr.aria-label]="'Отметить: ' + item.title"
+              />
               <span class="todos__title">{{ item.title }}</span>
               @if (item.badge) {
                 <span class="todos__badge">{{ item.badge }}</span>
               }
+              <button
+                type="button"
+                class="todos__remove"
+                (click)="remove(item)"
+                [attr.aria-label]="'Удалить: ' + item.title"
+              >
+                ×
+              </button>
             </li>
           }
         </ul>
@@ -185,6 +201,29 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         flex: 1;
       }
 
+      .todos__check {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--color-accent);
+        cursor: pointer;
+      }
+
+      .todos__remove {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+        transition: color var(--transition);
+      }
+
+      .todos__remove:hover {
+        color: var(--color-danger);
+      }
+
       .todos__badge {
         padding: 2px var(--space-2);
         border-radius: var(--radius-sm);
@@ -214,6 +253,7 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
 })
 export class TodosComponent {
   private readonly _api = inject(AccentApiService);
+  private readonly _modal = inject(ModalService);
 
   /** Виды в порядке вкладок. */
   protected readonly kinds = KIND_ORDER;
@@ -282,6 +322,81 @@ export class TodosComponent {
         this.adding.set(false);
       },
     });
+  }
+
+  /**
+   * Переключает отметку выполнения.
+   *
+   * Обновляем строку на месте, а не перезагружаем список: перезагрузка сбросила бы позицию
+   * прокрутки и «моргнула» бы всем экраном ради одной галочки.
+   * @param item Запись.
+   * @returns Ничего.
+   */
+  protected toggleDone(item: TodoView): void {
+    const done = item.status !== 'done';
+    this._api.setTodoDone(item.id, done).subscribe({
+      next: (row) => {
+        this.items.update((rows) =>
+          this._sorted(rows.map((current) => (current.id === row.id ? row : current))),
+        );
+      },
+      error: (err: unknown) => {
+        this._modal.error('Не удалось отметить', errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Раскладывает записи так же, как сервер: открытые сверху, выполненные снизу, внутри — по
+   * позиции.
+   *
+   * Нужно, потому что после отметки строка обновляется **на месте**, а обещание продукта —
+   * «выполненное уходит вниз, но не исчезает». Без локальной пересортировки оно выполнялось бы
+   * только после перезагрузки страницы, то есть выглядело бы как случайность.
+   * @param rows Записи.
+   * @returns Отсортированная копия.
+   */
+  private _sorted(rows: TodoView[]): TodoView[] {
+    return [...rows].sort((left, right) => {
+      if (left.status !== right.status) {
+        return left.status === 'done' ? 1 : -1;
+      }
+      return left.position - right.position;
+    });
+  }
+
+  /**
+   * Удаляет запись после подтверждения.
+   *
+   * Подтверждение обязательно: у записи могут быть подзадачи, и они уходят вместе с ней —
+   * человек должен об этом узнать до, а не после.
+   * @param item Запись.
+   * @returns Ничего.
+   */
+  protected remove(item: TodoView): void {
+    const hasChildren = item.children.length > 0;
+    void this._modal
+      .confirm({
+        title: 'Удалить запись?',
+        text: hasChildren
+          ? `«${item.title}» и её подзадачи (${String(item.children.length)}) будут удалены.`
+          : `«${item.title}» будет удалена.`,
+        confirmText: 'Удалить',
+        danger: true,
+      })
+      .then((ok) => {
+        if (!ok) {
+          return;
+        }
+        this._api.deleteTodo(item.id).subscribe({
+          next: () => {
+            this.items.update((rows) => rows.filter((current) => current.id !== item.id));
+          },
+          error: (err: unknown) => {
+            this._modal.error('Не удалось удалить', errorMessage(err));
+          },
+        });
+      });
   }
 
   /**

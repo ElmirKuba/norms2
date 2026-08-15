@@ -1,3 +1,5 @@
+import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
+
 /** DI-токен исходящего порта Bot API. */
 export const TELEGRAM_API = Symbol('TELEGRAM_API');
 
@@ -63,4 +65,28 @@ export interface TelegramApiPort {
    * @returns Промис завершения.
    */
   setCommands(commands: { command: string; description: string }[]): Promise<void>;
+
+  /**
+   * Забирает накопившиеся апдейты (`getUpdates`, режим `polling` — 15.08.2026).
+   *
+   * **Длинное ожидание, а не опрос по таймеру:** Telegram держит соединение открытым до
+   * `timeoutSeconds` и отвечает в момент появления сообщения. Задержка для человека — доли
+   * секунды, как с вебхуком, а запросов почти нет.
+   *
+   * **Подтверждение — через `offset`:** апдейты остаются в очереди Telegram, пока мы не
+   * попросим следующие. Упали на середине — те же апдейты придут снова, ничего не теряется.
+   * @param offset Идентификатор первого нужного апдейта (`последний обработанный + 1`); 0 — с начала очереди.
+   * @param timeoutSeconds Сколько секунд держать соединение открытым.
+   * @returns Апдейты или пустой массив (в том числе при сетевом сбое — тогда зовущий просто повторит).
+   */
+  getUpdates(offset: number, timeoutSeconds: number): Promise<TelegramUpdate[]>;
+
+  /**
+   * Снимает вебхук — обязательный шаг перед `getUpdates` (иначе Telegram отвечает 409).
+   *
+   * **Накопленное не выбрасывается** (`drop_pending_updates` не передаём): сообщения, пришедшие
+   * пока доставка не работала, должны дойти до человека, а не исчезнуть при переключении режима.
+   * @returns `true`, если Telegram подтвердил.
+   */
+  deleteWebhook(): Promise<boolean>;
 }

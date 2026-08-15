@@ -1,4 +1,11 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  type CdkDragDrop,
+} from '@angular/cdk/drag-drop';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -30,7 +37,7 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
  */
 @Component({
   selector: 'app-todos',
-  imports: [CardComponent, EmptyStateComponent, ButtonComponent],
+  imports: [CardComponent, EmptyStateComponent, ButtonComponent, CdkDropList, CdkDrag, CdkDragHandle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="todos">
@@ -105,9 +112,12 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
       } @else if (items().length === 0) {
         <app-empty-state [title]="emptyTitle()" [text]="emptyDescription()"></app-empty-state>
       } @else {
-        <ul class="todos__list">
+        <ul class="todos__list" cdkDropList (cdkDropListDropped)="drop($event)">
           @for (item of items(); track item.id) {
-            <li class="todos__item" [class.todos__item--done]="item.status === 'done'">
+            <li class="todos__item" [class.todos__item--done]="item.status === 'done'" cdkDrag>
+              <button type="button" class="todos__grip" cdkDragHandle aria-label="Перетащить">
+                ⠿
+              </button>
               <input
                 class="todos__check"
                 type="checkbox"
@@ -325,6 +335,20 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
 
       .todos__title {
         flex: 1;
+      }
+
+      .todos__grip {
+        min-width: 32px;
+        min-height: var(--touch-min);
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .todos__grip:active {
+        cursor: grabbing;
       }
 
       .todos__check {
@@ -663,6 +687,29 @@ export class TodosComponent {
       },
       error: (err: unknown) => {
         this._modal.error('Не удалось отметить', errorMessage(err));
+      },
+    });
+  }
+
+  /**
+   * Сохраняет новый порядок после перетаскивания.
+   *
+   * Оптимистично: список переставляется сразу, запрос уходит следом. Ошибка — перезагружаем с
+   * сервера и говорим об этом: молча оставить порядок, которого нет в базе, хуже, чем откатить.
+   * @param event Событие перетаскивания.
+   * @returns Ничего.
+   */
+  protected drop(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.items()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.set(next);
+    this._api.reorderTodos(next.map((row) => row.id)).subscribe({
+      error: (err: unknown) => {
+        this.load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
       },
     });
   }

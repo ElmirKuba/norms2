@@ -10,6 +10,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
 import { SetTodoDoneUseCase } from './use-cases/set-todo-done.use-case';
 import { SetTodoArchivedUseCase } from './use-cases/set-todo-archived.use-case';
 import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
+import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
 
 /**
  * Область списков дел раздела «Акцент» (2.10, блок C): порт `ACCENT_TODO_REPOSITORY` →
@@ -31,6 +32,7 @@ import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
     SetTodoDoneUseCase,
     SetTodoArchivedUseCase,
     DeleteTodoUseCase,
+    ReorderTodosUseCase,
   ],
   exports: [AccentTodoDomainService],
 })

@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -19,6 +20,9 @@ import { UpdateTodoUseCase } from '../use-cases/update-todo.use-case';
 import { SetTodoDoneUseCase } from '../use-cases/set-todo-done.use-case';
 import { SetTodoArchivedUseCase } from '../use-cases/set-todo-archived.use-case';
 import { DeleteTodoUseCase } from '../use-cases/delete-todo.use-case';
+import { ReorderTodosUseCase } from '../use-cases/reorder-todos.use-case';
+import { reorderTodosSchema } from '../dtos/create-todo.dto';
+import type { ReorderTodosDto } from '../dtos/create-todo.dto';
 import { createTodoSchema, updateTodoSchema } from '../dtos/create-todo.dto';
 import type { CreateTodoDto, UpdateTodoDto } from '../dtos/create-todo.dto';
 import { TODO_KINDS } from '../interfaces/todo-full.interface';
@@ -40,6 +44,7 @@ export class TodosController {
    * @param _setDone Отметка выполнения.
    * @param _setArchived Архивация и возврат.
    * @param _delete Удаление.
+   * @param _reorder Перестановка.
    */
   public constructor(
     private readonly _list: ListTodosUseCase,
@@ -48,6 +53,7 @@ export class TodosController {
     private readonly _setDone: SetTodoDoneUseCase,
     private readonly _setArchived: SetTodoArchivedUseCase,
     private readonly _delete: DeleteTodoUseCase,
+    private readonly _reorder: ReorderTodosUseCase,
   ) {}
 
   /**
@@ -68,6 +74,24 @@ export class TodosController {
       ? (kind as TodoKind)
       : 'deed';
     return this._list.execute(request.account.id, safeKind, archived === '1');
+  }
+
+  /**
+   * Переставляет записи.
+   *
+   * Объявлен **до** маршрутов с `:id` намеренно: иначе `reorder` был бы прочитан как
+   * идентификатор записи — классическая ловушка порядка маршрутов.
+   * @param request Запрос с аккаунтом из Guard.
+   * @param dto Идентификаторы в новом порядке.
+   * @returns Пустой ответ 204.
+   */
+  @Put('todos/reorder')
+  @HttpCode(204)
+  public async reorder(
+    @Req() request: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(reorderTodosSchema)) dto: ReorderTodosDto,
+  ): Promise<void> {
+    await this._reorder.execute(request.account.id, dto.ids);
   }
 
   /**

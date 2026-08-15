@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
-import { tasks } from '../../schemas/tasks.schema';
+import { habitTasks } from '../../schemas/habit-tasks.schema';
 import { generateId } from '../../../shared/utility-level/generate-id.util';
 import type {
   AccentTaskRepositoryPort,
@@ -13,7 +13,7 @@ import type { TaskFull } from '../../../modules/accent/habits/interfaces/task-fu
 import type { Transaction } from '../../../shared/transactions/transaction.interface';
 
 /**
- * Drizzle-реализация порта задач дня (единственное место с ORM). Строка `tasks`
+ * Drizzle-реализация порта задач дня (единственное место с ORM). Строка `habitTasks`
  * структурно совпадает с `TaskFull` (колонки 1:1) → маппинг прямой. Всё скоупится по
  * `account_id`. Биндится на `ACCENT_TASK_REPOSITORY`.
  */
@@ -33,9 +33,9 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   public async listByAccountOn(accountId: string, occurredOn: string): Promise<TaskFull[]> {
     return this._db
       .select()
-      .from(tasks)
-      .where(and(eq(tasks.accountId, accountId), eq(tasks.occurredOn, occurredOn)))
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt));
+      .from(habitTasks)
+      .where(and(eq(habitTasks.accountId, accountId), eq(habitTasks.occurredOn, occurredOn)))
+      .orderBy(desc(habitTasks.priority), asc(habitTasks.createdAt));
   }
 
   /**
@@ -47,8 +47,8 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   public async findOwned(id: string, accountId: string): Promise<TaskFull | null> {
     const rows = await this._db
       .select()
-      .from(tasks)
-      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
+      .from(habitTasks)
+      .where(and(eq(habitTasks.id, id), eq(habitTasks.accountId, accountId)))
       .limit(1);
     return rows[0] ?? null;
   }
@@ -60,10 +60,10 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @throws {Error} Если insert не вернул строку.
    */
   public async create(data: TaskCreateData, tx?: Transaction): Promise<TaskFull> {
-    const rows = await this._exec(tx).insert(tasks).values(this._toRow(data)).returning();
+    const rows = await this._exec(tx).insert(habitTasks).values(this._toRow(data)).returning();
     const row = rows[0];
     if (!row) {
-      throw new Error('tasks: create не вернул строку.');
+      throw new Error('habitTasks: create не вернул строку.');
     }
     return row;
   }
@@ -78,10 +78,10 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
       return 0;
     }
     const rows = await this._db
-      .insert(tasks)
+      .insert(habitTasks)
       .values(items.map((data) => this._toRow(data)))
       .onConflictDoNothing()
-      .returning({ id: tasks.id });
+      .returning({ id: habitTasks.id });
     return rows.length;
   }
 
@@ -99,9 +99,9 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
     tx?: Transaction,
   ): Promise<TaskFull | null> {
     const rows = await this._exec(tx)
-      .update(tasks)
+      .update(habitTasks)
       .set(patch)
-      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
+      .where(and(eq(habitTasks.id, id), eq(habitTasks.accountId, accountId)))
       .returning();
     return rows[0] ?? null;
   }
@@ -121,13 +121,13 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
     patch: TaskUpdateData,
   ): Promise<TaskFull | null> {
     const rows = await this._db
-      .update(tasks)
+      .update(habitTasks)
       .set(patch)
       .where(
         and(
-          eq(tasks.id, id),
-          eq(tasks.accountId, accountId),
-          inArray(tasks.status, ['pending', 'skipped']),
+          eq(habitTasks.id, id),
+          eq(habitTasks.accountId, accountId),
+          inArray(habitTasks.status, ['pending', 'skipped']),
         ),
       )
       .returning();
@@ -142,16 +142,16 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   public async listOpenOneOffWithDeadline(accountId: string): Promise<TaskFull[]> {
     return this._db
       .select()
-      .from(tasks)
+      .from(habitTasks)
       .where(
         and(
-          eq(tasks.accountId, accountId),
-          isNull(tasks.templateId),
-          isNotNull(tasks.deadline),
-          inArray(tasks.status, ['pending', 'partial']),
+          eq(habitTasks.accountId, accountId),
+          isNull(habitTasks.templateId),
+          isNotNull(habitTasks.deadline),
+          inArray(habitTasks.status, ['pending', 'partial']),
         ),
       )
-      .orderBy(asc(tasks.deadline));
+      .orderBy(asc(habitTasks.deadline));
   }
 
   /**
@@ -167,25 +167,25 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
     today: string,
   ): Promise<number> {
     const rows = await this._db
-      .delete(tasks)
+      .delete(habitTasks)
       .where(
         and(
-          eq(tasks.accountId, accountId),
-          eq(tasks.templateId, templateId),
+          eq(habitTasks.accountId, accountId),
+          eq(habitTasks.templateId, templateId),
           or(
-            eq(tasks.status, 'pending'),
+            eq(habitTasks.status, 'pending'),
             // Перенос — это НЕ история, а незакрытое дело с другой датой: у него живая кнопка
             // «Вернуть на сегодня». Оставь его — и человек вернёт задачу шаблона, которого в
             // списке уже нет (поймано живым пользователем 05.08.2026).
             and(
-              eq(tasks.status, 'skipped'),
-              eq(tasks.skipReason, 'postponed'),
-              gte(tasks.occurredOn, today),
+              eq(habitTasks.status, 'skipped'),
+              eq(habitTasks.skipReason, 'postponed'),
+              gte(habitTasks.occurredOn, today),
             ),
           ),
         ),
       )
-      .returning({ id: tasks.id });
+      .returning({ id: habitTasks.id });
     return rows.length;
   }
 
@@ -198,9 +198,9 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    */
   public async deleteOwned(id: string, accountId: string, tx?: Transaction): Promise<boolean> {
     const rows = await this._exec(tx)
-      .delete(tasks)
-      .where(and(eq(tasks.id, id), eq(tasks.accountId, accountId)))
-      .returning({ id: tasks.id });
+      .delete(habitTasks)
+      .where(and(eq(habitTasks.id, id), eq(habitTasks.accountId, accountId)))
+      .returning({ id: habitTasks.id });
     return rows.length > 0;
   }
 
@@ -219,17 +219,17 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
   ): Promise<TaskFull[]> {
     const where =
       options.before === undefined
-        ? and(eq(tasks.accountId, accountId), eq(tasks.templateId, templateId))
+        ? and(eq(habitTasks.accountId, accountId), eq(habitTasks.templateId, templateId))
         : and(
-            eq(tasks.accountId, accountId),
-            eq(tasks.templateId, templateId),
-            lt(tasks.occurredOn, options.before),
+            eq(habitTasks.accountId, accountId),
+            eq(habitTasks.templateId, templateId),
+            lt(habitTasks.occurredOn, options.before),
           );
     return this._db
       .select()
-      .from(tasks)
+      .from(habitTasks)
       .where(where)
-      .orderBy(desc(tasks.occurredOn))
+      .orderBy(desc(habitTasks.occurredOn))
       .limit(options.limit);
   }
 
@@ -241,16 +241,16 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    */
   public async findLastMarkedOn(templateId: string, accountId: string): Promise<string | null> {
     const rows = await this._db
-      .select({ occurredOn: tasks.occurredOn })
-      .from(tasks)
+      .select({ occurredOn: habitTasks.occurredOn })
+      .from(habitTasks)
       .where(
         and(
-          eq(tasks.accountId, accountId),
-          eq(tasks.templateId, templateId),
-          inArray(tasks.status, ['done', 'partial']),
+          eq(habitTasks.accountId, accountId),
+          eq(habitTasks.templateId, templateId),
+          inArray(habitTasks.status, ['done', 'partial']),
         ),
       )
-      .orderBy(desc(tasks.occurredOn))
+      .orderBy(desc(habitTasks.occurredOn))
       .limit(1);
     return rows[0]?.occurredOn ?? null;
   }
@@ -262,9 +262,9 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    */
   public async hasAnyCompletion(accountId: string): Promise<boolean> {
     const rows = await this._db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(and(eq(tasks.accountId, accountId), inArray(tasks.status, ['done', 'partial'])))
+      .select({ id: habitTasks.id })
+      .from(habitTasks)
+      .where(and(eq(habitTasks.accountId, accountId), inArray(habitTasks.status, ['done', 'partial'])))
       .limit(1);
     return rows.length > 0;
   }
@@ -277,12 +277,12 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @returns Даты `YYYY-MM-DD` по возрастанию.
    */
   public async listActiveDays(accountId: string, templateId?: string): Promise<string[]> {
-    const base = and(eq(tasks.accountId, accountId), inArray(tasks.status, ['done', 'partial']));
+    const base = and(eq(habitTasks.accountId, accountId), inArray(habitTasks.status, ['done', 'partial']));
     const rows = await this._db
-      .selectDistinct({ occurredOn: tasks.occurredOn })
-      .from(tasks)
-      .where(templateId === undefined ? base : and(base, eq(tasks.templateId, templateId)))
-      .orderBy(tasks.occurredOn);
+      .selectDistinct({ occurredOn: habitTasks.occurredOn })
+      .from(habitTasks)
+      .where(templateId === undefined ? base : and(base, eq(habitTasks.templateId, templateId)))
+      .orderBy(habitTasks.occurredOn);
     return rows.map((row) => row.occurredOn);
   }
 
@@ -301,7 +301,7 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @param data Данные создания.
    * @returns Объект значений вставки.
    */
-  private _toRow(data: TaskCreateData): typeof tasks.$inferInsert {
+  private _toRow(data: TaskCreateData): typeof habitTasks.$inferInsert {
     return {
       id: generateId(),
       accountId: data.accountId,

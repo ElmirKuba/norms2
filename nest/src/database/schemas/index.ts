@@ -21,7 +21,7 @@ export * from './todo-events.schema';
 export * from './todos.schema';
 export * from './micro-win-logs.schema';
 export * from './habits.schema';
-export * from './tasks.schema';
+export * from './habit-tasks.schema';
 export * from './goals.schema';
 export * from './goal-entries.schema';
 export * from './milestones.schema';

@@ -21,7 +21,7 @@ import { obstacleEncounters } from '../schemas/obstacle-encounters.schema';
 import { releases } from '../schemas/releases.schema';
 import { sessions } from '../schemas/sessions.schema';
 import { sessionTokenHistory } from '../schemas/session-token-history.schema';
-import { tasks } from '../schemas/tasks.schema';
+import { habitTasks } from '../schemas/habit-tasks.schema';
 import { telegramLinks } from '../schemas/telegram-links.schema';
 import { telegramRequests } from '../schemas/telegram-requests.schema';
 import { userAchievements } from '../schemas/user-achievements.schema';
@@ -79,7 +79,7 @@ export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
       { child: notifications, column: notifications.accountId },
       { child: notificationReads, column: notificationReads.accountId },
       { child: obstacles, column: obstacles.accountId },
-      { child: tasks, column: tasks.accountId },
+      { child: habitTasks, column: habitTasks.accountId },
       { child: todos, column: todos.accountId },
       { child: todoEvents, column: todoEvents.accountId },
       { child: telegramLinks, column: telegramLinks.accountId },
@@ -97,7 +97,7 @@ export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
       { child: goals, column: goals.parentGoalId },
     ],
   ],
-  [habits, [{ child: tasks, column: tasks.templateId }]],
+  [habits, [{ child: habitTasks, column: habitTasks.templateId }]],
   // Подзадача не переживает родителя: дерево дел — одна сущность для человека (как у целей).
   [todos, [{ child: todos, column: todos.parentId }]],
   [microWins, [{ child: microWinLogs, column: microWinLogs.microWinId }]],

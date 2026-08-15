@@ -18,7 +18,7 @@ import type { TaskFull } from '../../modules/accent/habits/interfaces/task-full.
  * привычки на день (NULL-шаблоны не конфликтуют → разовых на день сколько угодно).
  * `goal_id`/`postponed_from_task_id` — мягкие ссылки без FK (goals — 2.5; self-ref — проще).
  */
-export const tasks = defineTableWithSchema<TaskFull>()(
+export const habitTasks = defineTableWithSchema<TaskFull>()(
   'habit_tasks',
   {
     id: idColumn(),

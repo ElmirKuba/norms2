@@ -100,6 +100,21 @@ services:
     environment:
       NODE_ENV: production
       DB_HOST: norms2_postgres_prod
+      # Прокси для исходящих к Telegram (15.08.2026, ADR-0064 → «Дополнение»).
+      #
+      # ⚠️ Задаётся ЗДЕСЬ, а не строкой `HTTPS_PROXY=` в `.env`, и это не стилистика:
+      # Makefile делает `include .env` + `export`, поэтому такая строка утекала бы в
+      # окружение самого `docker build` — и сборка падала с «lookup norms2_xray_prod:
+      # no such host», потому что имя из docker-сети с хоста не резолвится (поймано
+      # при выкатке 15.08.2026). Через `environment` переменная живёт только внутри
+      # контейнера, где это имя как раз и разрешается.
+      #
+      # Пустой `TELEGRAM_PROXY_URL` = ходим напрямую, как раньше.
+      HTTPS_PROXY: ${TELEGRAM_PROXY_URL:-}
+      HTTP_PROXY: ${TELEGRAM_PROXY_URL:-}
+      NO_PROXY: localhost,127.0.0.1,norms2_postgres_prod,norms2_angular_prod
+      # Node 24 уводит `fetch` в прокси только с этим флагом.
+      NODE_USE_ENV_PROXY: ${NODE_USE_ENV_PROXY:-0}
     volumes:
       # Загруженный контент (аватары и пр., CONTENT_DIR=content → /app/content) —
       # ПЕРСИСТЕНТНО, иначе аватары теряются при пересоздании контейнера. Релиз-ноты

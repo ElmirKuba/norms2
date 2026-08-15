@@ -19,6 +19,9 @@ import { HscrollHintDirective } from '../../shared/ui/hscroll-hint.directive';
              инструментов раздела (реш. Elmir 04.08.2026). -->
         <a routerLink="dashboard" routerLinkActive="active">Дашборд</a>
         <a routerLink="stats" routerLinkActive="active">Статистика</a>
+        <!-- «Дела» — сразу после пары «сейчас · путь»: это вход для того, что просто надо
+             сделать, и он должен быть ближе, чем инструменты долгой работы (2.10). -->
+        <a routerLink="todos" routerLinkActive="active">Дела</a>
         <a routerLink="goals" routerLinkActive="active">Цели</a>
         <a routerLink="habits" routerLinkActive="active">Привычки</a>
         <a routerLink="anti-habits" routerLinkActive="active">Держусь</a>

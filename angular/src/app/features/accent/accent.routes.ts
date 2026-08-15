@@ -56,6 +56,10 @@ export const accentRoutes: Routes = [
           import('./obstacles/obstacle-detail.component').then((m) => m.ObstacleDetailComponent),
       },
       {
+        path: 'todos',
+        loadComponent: () => import('./todos/todos.component').then((m) => m.TodosComponent),
+      },
+      {
         path: 'micro-wins',
         loadComponent: () =>
           import('./micro-wins/micro-wins.component').then((m) => m.MicroWinsComponent),

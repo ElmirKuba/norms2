@@ -3,6 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
+  TodoKind,
+  TodoPayload,
+  TodoView,
   AccentRefItem,
   AccentSettingsView,
   AddGoalEntryResult,
@@ -83,6 +86,45 @@ export class AccentApiService {
   /** Снять паузу. */
   public resume(): Observable<void> {
     return this._http.post<void>(`${API_PREFIX}/accent/resume`, {});
+  }
+
+  /** Записи списка дел одного вида с подзадачами (2.10). */
+  public listTodos(kind: TodoKind, archived = false): Observable<TodoView[]> {
+    return this._http.get<TodoView[]>(`${API_PREFIX}/accent/todos`, {
+      params: archived ? { kind, archived: '1' } : { kind },
+    });
+  }
+
+  /** Создать запись: обязателен только заголовок. */
+  public createTodo(payload: TodoPayload): Observable<TodoView> {
+    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos`, payload);
+  }
+
+  /** Изменить запись (частичный патч). */
+  public updateTodo(id: string, payload: Partial<Omit<TodoPayload, 'parentId'>>): Observable<TodoView> {
+    return this._http.patch<TodoView>(`${API_PREFIX}/accent/todos/${id}`, payload);
+  }
+
+  /** Отметить выполненной или снять отметку. */
+  public setTodoDone(id: string, done: boolean): Observable<TodoView> {
+    const action = done ? 'complete' : 'uncomplete';
+    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/${action}`, {});
+  }
+
+  /** Отправить в архив или вернуть. */
+  public setTodoArchived(id: string, archived: boolean): Observable<TodoView> {
+    const action = archived ? 'archive' : 'restore';
+    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/${action}`, {});
+  }
+
+  /** Удалить запись вместе с подзадачами. */
+  public deleteTodo(id: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/accent/todos/${id}`);
+  }
+
+  /** Переставить записи. */
+  public reorderTodos(ids: string[]): Observable<void> {
+    return this._http.put<void>(`${API_PREFIX}/accent/todos/reorder`, { ids });
   }
 
   /** Список активных микро-побед (с `completedToday`); первый заход сеет стартовый набор. */

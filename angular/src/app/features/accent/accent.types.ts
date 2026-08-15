@@ -1080,3 +1080,68 @@ export interface ObstacleEncounterPage {
   /** Курсор следующей страницы или null. */
   nextCursor: string | null;
 }
+
+/** Вид записи списка дел: идея, дело или покупка (2.10, блок C). */
+export type TodoKind = 'idea' | 'deed' | 'purchase';
+
+/** Состояние записи: открыта или выполнена. */
+export type TodoStatus = 'open' | 'done';
+
+/** Подписи видов для интерфейса. */
+export const TODO_KIND_LABELS: Record<TodoKind, string> = {
+  deed: 'Дела',
+  idea: 'Идеи',
+  purchase: 'Покупки',
+};
+
+/** Запись списка дел (проекция бэка). */
+export interface TodoView {
+  /** Идентификатор. */
+  id: string;
+  /** Родитель или null (корневая). */
+  parentId: string | null;
+  /** Вид. */
+  kind: TodoKind;
+  /** Заголовок. */
+  title: string;
+  /** Свободная заметка. */
+  note: string | null;
+  /** Состояние. */
+  status: TodoStatus;
+  /** Когда отмечена выполненной (ISO) или null. */
+  completedAt: string | null;
+  /** Назначенный день `YYYY-MM-DD` или null. */
+  plannedOn: string | null;
+  /** Ожидаемое событие или null. */
+  waitsForEventId: string | null;
+  /** Ожидание даты или null. */
+  waitsUntil: string | null;
+  /** Метка-бейдж или null. */
+  badge: string | null;
+  /** В архиве. */
+  archived: boolean;
+  /** Порядок. */
+  position: number;
+  /** Подзадачи. */
+  children: TodoView[];
+}
+
+/** Тело создания записи: обязателен только заголовок и вид. */
+export interface TodoPayload {
+  /** Вид. */
+  kind: TodoKind;
+  /** Заголовок. */
+  title: string;
+  /** Родитель (для подзадачи). */
+  parentId?: string | null;
+  /** Заметка. */
+  note?: string | null;
+  /** Назначенный день. */
+  plannedOn?: string | null;
+  /** Ожидаемое событие. */
+  waitsForEventId?: string | null;
+  /** Ожидание даты. */
+  waitsUntil?: string | null;
+  /** Метка. */
+  badge?: string | null;
+}

@@ -1,4 +1,5 @@
 import { date, index, integer, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { accounts } from './accounts.schema';
 import { fkColumn, idColumn, timestamps } from './_shared';
 import { defineTableWithSchema } from './define-table.helper';
@@ -21,9 +22,8 @@ import type {
  * `archived_at` — состояние продукта с путём назад.
  *
  * **`parent_id` — рекурсия на себя**, потому что подзадача является полноценной записью: со своим
- * статусом, датой и ожиданием. Ссылка мягкая, без FK на себя же: каскад у нас свой, рекурсивный,
- * по карте владения (`database/core/deletion-graph.ts`), а `ON DELETE CASCADE` в базе нет ни
- * одного.
+ * статусом, датой и ожиданием. FK настоящий (как у подцелей), но **без `ON DELETE CASCADE`** —
+ * каскад у нас свой, рекурсивный, по карте владения (`database/core/deletion-graph.ts`).
  */
 export const todos = defineTableWithSchema<TodoFull>()(
   'todos',
@@ -32,7 +32,9 @@ export const todos = defineTableWithSchema<TodoFull>()(
     accountId: fkColumn('account_id')
       .notNull()
       .references(() => accounts.id),
-    parentId: fkColumn('parent_id'),
+    // FK на себя — как у подцелей: ссылка настоящая, чтобы карта владения (ADR-0068) видела
+    // ребро и каскад по нему был проверяем тестом, а не держался на договорённости.
+    parentId: fkColumn('parent_id').references((): AnyPgColumn => todos.id),
     kind: varchar('kind', { length: 16 }).$type<TodoKind>().notNull(),
     title: text('title').notNull(),
     note: text('note'),

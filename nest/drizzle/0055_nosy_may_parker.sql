@@ -32,6 +32,7 @@ CREATE TABLE "todos" (
 --> statement-breakpoint
 ALTER TABLE "todo_events" ADD CONSTRAINT "todo_events_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "todos" ADD CONSTRAINT "todos_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "todos" ADD CONSTRAINT "todos_parent_id_todos_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."todos"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "todo_events_account_idx" ON "todo_events" USING btree ("account_id");--> statement-breakpoint
 CREATE INDEX "todos_account_kind_idx" ON "todos" USING btree ("account_id","kind");--> statement-breakpoint
 CREATE INDEX "todos_parent_idx" ON "todos" USING btree ("parent_id");

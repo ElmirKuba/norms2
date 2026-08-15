@@ -1,5 +1,5 @@
 {
-  "id": "e4fd685c-22b0-449c-b38d-a8e85d3d28f8",
+  "id": "16a1c786-01bb-4abe-8d26-5d50770e9eb6",
   "prevId": "5a3c63d1-4a7f-4ef8-808a-8a7479816c35",
   "version": "7",
   "dialect": "postgresql",
@@ -2120,6 +2120,19 @@
           "tableTo": "accounts",
           "columnsFrom": [
             "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "todos_parent_id_todos_id_fk": {
+          "name": "todos_parent_id_todos_id_fk",
+          "tableFrom": "todos",
+          "tableTo": "todos",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"

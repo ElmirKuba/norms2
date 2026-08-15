@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AccentSettingsModule } from './settings/accent-settings.module';
 import { AccentReferenceModule } from './reference/accent-reference.module';
 import { MicroWinsModule } from './micro-wins/micro-wins.module';
+import { TodosModule } from './todos/todos.module';
 import { HabitsModule } from './habits/habits.module';
 import { GoalsModule } from './goals/goals.module';
 import { AntiHabitsModule } from './anti-habits/anti-habits.module';
@@ -21,6 +22,7 @@ import { ProgressModule } from './progress/progress.module';
     AccentSettingsModule,
     AccentReferenceModule,
     MicroWinsModule,
+    TodosModule,
     HabitsModule,
     GoalsModule,
     AntiHabitsModule,

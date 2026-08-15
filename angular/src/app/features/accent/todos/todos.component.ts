@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -32,6 +32,25 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
       <header class="todos__head">
         <h2>Дела</h2>
       </header>
+
+      <form class="todos__new" (submit)="add($event)">
+        <input
+          #draftInput
+          class="todos__input"
+          type="text"
+          [value]="draft()"
+          (input)="draft($any($event.target).value)"
+          [placeholder]="inputPlaceholder()"
+          aria-label="Что записать"
+          maxlength="200"
+        />
+        <app-button type="submit" [loading]="adding()" [disabled]="draft().trim() === ''">
+          Добавить
+        </app-button>
+      </form>
+      @if (addError()) {
+        <p class="todos__error" role="alert">{{ addError() }}</p>
+      }
 
       <nav class="todos__tabs" role="tablist" aria-label="Виды записей">
         @for (kind of kinds; track kind) {
@@ -115,6 +134,27 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         border-bottom-color: var(--color-accent);
       }
 
+      .todos__new {
+        display: flex;
+        gap: var(--space-2);
+      }
+
+      .todos__input {
+        flex: 1;
+        min-height: var(--touch-min);
+        padding: 0 var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: var(--fs-md);
+      }
+
+      .todos__input:focus {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 1px;
+      }
+
       .todos__list {
         display: flex;
         flex-direction: column;
@@ -187,9 +227,76 @@ export class TodosComponent {
   protected readonly loading = signal(true);
   /** Текст ошибки или пустая строка. */
   protected readonly error = signal('');
+  /** Черновик новой записи. */
+  protected readonly draftValue = signal('');
+  /** Идёт добавление. */
+  protected readonly adding = signal(false);
+  /** Ошибка добавления. */
+  protected readonly addError = signal('');
+  /** Поле ввода — чтобы вернуть в него фокус после добавления. */
+  private readonly _draftInput = viewChild<ElementRef<HTMLInputElement>>('draftInput');
 
   public constructor() {
     this.load();
+  }
+
+  /**
+   * Черновик: чтение без аргумента, запись с аргументом — чтобы шаблон обходился одним именем.
+   * @param value Новое значение (или ничего — тогда просто читаем).
+   * @returns Текущее значение черновика.
+   */
+  protected draft(value?: string): string {
+    if (value !== undefined) {
+      this.draftValue.set(value);
+    }
+    return this.draftValue();
+  }
+
+  /**
+   * Добавляет запись и **возвращает фокус в поле** — чтобы список переносился очередью, не
+   * отрывая рук от клавиатуры. Это и есть смысл шага: порог записи должен быть нулевым.
+   * @param event Событие отправки формы.
+   * @returns Ничего.
+   */
+  protected add(event: Event): void {
+    event.preventDefault();
+    const title = this.draftValue().trim();
+    if (title === '' || this.adding()) {
+      return;
+    }
+    this.adding.set(true);
+    this.addError.set('');
+    this._api.createTodo({ kind: this.activeKind(), title }).subscribe({
+      next: (row) => {
+        // Дописываем в конец: порядок ввода = порядок в списке, ничего не «прыгает».
+        this.items.update((rows) => [...rows, row]);
+        this.draftValue.set('');
+        this.adding.set(false);
+        this._draftInput()?.nativeElement.focus();
+        // Поле НЕ блокируется на время запроса намеренно: человек переносит список очередью,
+        // и ждать ответа сервера, чтобы напечатать следующую строку, — прямой урон смыслу шага.
+        // Заодно это чинит фокус: на заблокированный элемент он не встаёт (поймано проверкой).
+      },
+      error: (err: unknown) => {
+        this.addError.set(errorMessage(err, 'Не удалось добавить запись.'));
+        this.adding.set(false);
+      },
+    });
+  }
+
+  /**
+   * Подсказка в поле ввода — своя для каждого вида.
+   * @returns Текст подсказки.
+   */
+  protected inputPlaceholder(): string {
+    switch (this.activeKind()) {
+      case 'idea':
+        return 'Записать идею…';
+      case 'purchase':
+        return 'Что купить…';
+      default:
+        return 'Что нужно сделать…';
+    }
   }
 
   /**

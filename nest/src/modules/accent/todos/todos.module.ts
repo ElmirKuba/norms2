@@ -7,6 +7,9 @@ import { TodosController } from './controllers/todos.controller';
 import { ListTodosUseCase } from './use-cases/list-todos.use-case';
 import { CreateTodoUseCase } from './use-cases/create-todo.use-case';
 import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
+import { SetTodoDoneUseCase } from './use-cases/set-todo-done.use-case';
+import { SetTodoArchivedUseCase } from './use-cases/set-todo-archived.use-case';
+import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
 
 /**
  * Область списков дел раздела «Акцент» (2.10, блок C): порт `ACCENT_TODO_REPOSITORY` →
@@ -25,6 +28,9 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     ListTodosUseCase,
     CreateTodoUseCase,
     UpdateTodoUseCase,
+    SetTodoDoneUseCase,
+    SetTodoArchivedUseCase,
+    DeleteTodoUseCase,
   ],
   exports: [AccentTodoDomainService],
 })

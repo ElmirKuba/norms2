@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { API_PREFIX } from '../../../core/config/api.constants';
 import type {
+  TodoEventPayload,
+  TodoEventView,
   TodoKind,
   TodoPayload,
   TodoView,
@@ -129,6 +131,36 @@ export class AccentApiService {
   /** Переставить записи. */
   public reorderTodos(ids: string[]): Observable<void> {
     return this._http.put<void>(`${API_PREFIX}/accent/todos/reorder`, { ids });
+  }
+
+  /** События справочника (2.10·D1); `includeHappened` — показать и состоявшиеся. */
+  public listTodoEvents(includeHappened = false): Observable<TodoEventView[]> {
+    return this._http.get<TodoEventView[]>(`${API_PREFIX}/accent/todo-events`, {
+      params: includeHappened ? { happened: '1' } : {},
+    });
+  }
+
+  /** Создать событие. */
+  public createTodoEvent(payload: TodoEventPayload): Observable<TodoEventView> {
+    return this._http.post<TodoEventView>(`${API_PREFIX}/accent/todo-events`, payload);
+  }
+
+  /** Изменить событие. */
+  public updateTodoEvent(id: string, payload: Partial<TodoEventPayload>): Observable<TodoEventView> {
+    return this._http.patch<TodoEventView>(`${API_PREFIX}/accent/todo-events/${id}`, payload);
+  }
+
+  /** Отметить событие состоявшимся; в ответе — сколько дел освободилось. */
+  public markTodoEventHappened(id: string): Observable<{ event: TodoEventView; released: number }> {
+    return this._http.post<{ event: TodoEventView; released: number }>(
+      `${API_PREFIX}/accent/todo-events/${id}/happened`,
+      {},
+    );
+  }
+
+  /** Удалить событие (ожидание у дел снимается на бэке). */
+  public deleteTodoEvent(id: string): Observable<void> {
+    return this._http.delete<void>(`${API_PREFIX}/accent/todo-events/${id}`);
   }
 
   /** Список активных микро-побед (с `completedToday`); первый заход сеет стартовый набор. */

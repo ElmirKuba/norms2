@@ -14,6 +14,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { ModalService } from '../../../shared/modals/modal.service';
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { TodoFormModalComponent } from './todo-form-modal.component';
+import { TodoEventsModalComponent } from './todo-events-modal.component';
+import { formatDay } from './format-day.util';
 import type { TodoFormData } from './todo-form-modal.component';
 import { AccentApiService } from '../services/accent-api.service';
 import { TODO_KIND_LABELS } from '../accent.types';
@@ -43,6 +45,7 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
     <section class="todos">
       <header class="todos__head">
         <h2>Дела</h2>
+        <app-button variant="ghost" (click)="openEvents()">Чего ждём</app-button>
       </header>
 
       <form class="todos__new" (submit)="add($event)">
@@ -231,6 +234,13 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
+      }
+
+      .todos__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
       }
 
       .todos__head h2 {
@@ -480,6 +490,8 @@ export class TodosComponent {
 
   /** Виды в порядке вкладок. */
   protected readonly kinds = KIND_ORDER;
+  /** Человеческий формат дня — общий с справочником событий. */
+  protected readonly formatDay = formatDay;
   /** Подписи видов. */
   protected readonly labels = TODO_KIND_LABELS;
   /** Текущий вид. */
@@ -554,24 +566,21 @@ export class TodosComponent {
   }
 
   /**
-   * Приводит день к человеческому виду: `2026-08-27` → «27 авг».
+   * Открывает справочник событий.
    *
-   * Разбираем строку вручную, а не через `new Date(iso)`: тот трактует `YYYY-MM-DD` как UTC, и
-   * при отрицательном смещении дата уезжает на день назад — ровно тот класс ошибки, из-за
-   * которого чинится часовой пояс в этой же подфазе.
-   * @param iso День в формате `YYYY-MM-DD`.
-   * @returns Короткая подпись или исходная строка, если формат неожиданный.
+   * После закрытия перечитываем список: событие могло состояться, и тогда часть дел перестала
+   * ждать — экран обязан это показать, иначе человек будет видеть ожидание, которого уже нет.
+   * @returns Ничего.
    */
-  protected formatDay(iso: string): string {
-    const parts = iso.split('-').map(Number);
-    const [year, month, day] = parts;
-    if (parts.length !== 3 || year === undefined || month === undefined || day === undefined) {
-      return iso;
-    }
-    const date = new Date(year, month - 1, day);
-    const label = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(date);
-    const currentYear = new Date().getFullYear();
-    return year === currentYear ? label : `${label} ${String(year)}`;
+  protected openEvents(): void {
+    void this._dialog
+      .open(TodoEventsModalComponent, { width: MODAL_SMALL_WIDTH, autoFocus: false })
+      .afterClosed()
+      .subscribe((changed) => {
+        if (changed === true) {
+          this.load();
+        }
+      });
   }
 
   /**

@@ -1145,3 +1145,23 @@ export interface TodoPayload {
   /** Метка. */
   badge?: string | null;
 }
+
+/** Событие, которого ждут дела (справочник, 2.10·D1). */
+export interface TodoEventView {
+  /** Идентификатор. */
+  id: string;
+  /** Название («приедет сварщик»). */
+  title: string;
+  /** Ожидаемая дата `YYYY-MM-DD` или null — бывает «когда позвонят». */
+  expectedOn: string | null;
+  /** Когда состоялось (ISO) или null. */
+  happenedAt: string | null;
+}
+
+/** Тело создания события. */
+export interface TodoEventPayload {
+  /** Название. */
+  title: string;
+  /** Ожидаемая дата. */
+  expectedOn?: string | null;
+}

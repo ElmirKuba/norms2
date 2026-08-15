@@ -65,7 +65,7 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
               <div class="dash__now-actions">
                 <app-button [loading]="acting()" (click)="act(d)">{{ actionLabel(d) }}</app-button>
                 @if (d.now.kind !== 'micro_win') {
-                  <app-button variant="ghost" [routerLink]="['../habits']">Все задачи</app-button>
+                  <app-button variant="ghost" [routerLink]="['../habits']">Всё на сегодня</app-button>
                 }
               </div>
             }
@@ -122,7 +122,7 @@ import type { DashboardAntiHabitItem, DashboardView } from '../accent.types';
               </ul>
               <!-- «на сегодня» не лишнее слово: ссылка ведёт в «Привычки», и без уточнения
                    читается как «все задачи вообще», хотя за ней тот же сегодняшний список. -->
-              <a class="dash__more" [routerLink]="['../habits']">Все задачи на сегодня →</a>
+              <a class="dash__more" [routerLink]="['../habits']">Всё на сегодня →</a>
             </div>
           </app-card>
         }

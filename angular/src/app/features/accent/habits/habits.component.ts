@@ -111,8 +111,8 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
           <p class="hb__error">{{ tasksError() }}</p>
         } @else if (tasks().length === 0) {
           <app-empty-state
-            title="На сегодня задач нет"
-            text="Создай привычку в «Шаблонах» — и задачи появятся здесь по её расписанию."
+            title="На сегодня ничего не запланировано"
+            text="Создай привычку в «Шаблонах» — и она появится здесь по своему расписанию."
           />
           <div class="hb__empty-cta">
             <app-button (click)="selectTab('templates')">Перейти в шаблоны</app-button>
@@ -174,7 +174,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                         <app-button
                           variant="ghost"
                           [loading]="busyTaskId() === t.id"
-                          title="Силы вернулись? Забери задачу обратно на сегодня"
+                          title="Силы вернулись? Верни это на сегодня"
                           (click)="unpostpone(t)"
                         >↩ Вернуть на сегодня</app-button>
                       }
@@ -223,7 +223,7 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
           </app-empty-state>
         } @else {
           @if (hasStarters()) {
-            <p class="hb__hint">«Добавить себе» или «⋯» → ✏️ Изменить оставит привычку себе — и она начнёт давать задачи.</p>
+            <p class="hb__hint">«Добавить себе» или «⋯» → ✏️ Изменить оставит привычку себе — и она начнёт появляться в «Сегодня».</p>
           }
           <ul class="hb__list" cdkDropList (cdkDropListDropped)="dropHabit($event)">
             @for (h of habits(); track h.id) {

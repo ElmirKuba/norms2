@@ -98,12 +98,66 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
               }
               <button
                 type="button"
+                class="todos__sub"
+                (click)="startSub(item.id)"
+                [attr.aria-label]="'Добавить подзадачу к: ' + item.title"
+                title="Добавить подзадачу"
+              >
+                +
+              </button>
+              <button
+                type="button"
                 class="todos__remove"
                 (click)="remove(item)"
                 [attr.aria-label]="'Удалить: ' + item.title"
               >
                 ×
               </button>
+
+              @if (item.children.length > 0) {
+                <ul class="todos__children">
+                  @for (child of item.children; track child.id) {
+                    <li
+                      class="todos__item todos__item--child"
+                      [class.todos__item--done]="child.status === 'done'"
+                    >
+                      <input
+                        class="todos__check"
+                        type="checkbox"
+                        [checked]="child.status === 'done'"
+                        (change)="toggleDone(child, item.id)"
+                        [attr.aria-label]="'Отметить: ' + child.title"
+                      />
+                      <span class="todos__title">{{ child.title }}</span>
+                      <button
+                        type="button"
+                        class="todos__remove"
+                        (click)="remove(child, item.id)"
+                        [attr.aria-label]="'Удалить: ' + child.title"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (subParentId() === item.id) {
+                <form class="todos__subform" (submit)="addSub($event, item.id)">
+                  <input
+                    #subInput
+                    class="todos__input"
+                    type="text"
+                    [value]="subDraft()"
+                    (input)="subDraft($any($event.target).value)"
+                    placeholder="Подзадача…"
+                    aria-label="Название подзадачи"
+                    maxlength="200"
+                  />
+                  <app-button type="submit" [disabled]="subDraft().trim() === ''">Добавить</app-button>
+                  <app-button variant="ghost" type="button" (click)="cancelSub()">Отмена</app-button>
+                </form>
+              }
             </li>
           }
         </ul>
@@ -208,6 +262,48 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         cursor: pointer;
       }
 
+      .todos__item--child {
+        border: none;
+        background: none;
+        padding: var(--space-2) 0 var(--space-2) var(--space-5);
+        min-height: 36px;
+      }
+
+      .todos__children {
+        flex-basis: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .todos__subform {
+        display: flex;
+        flex-basis: 100%;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+        padding-left: var(--space-5);
+      }
+
+      .todos__item {
+        flex-wrap: wrap;
+      }
+
+      .todos__sub {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+        transition: color var(--transition);
+      }
+
+      .todos__sub:hover {
+        color: var(--color-accent);
+      }
+
       .todos__remove {
         min-width: var(--touch-min);
         min-height: var(--touch-min);
@@ -275,6 +371,10 @@ export class TodosComponent {
   protected readonly addError = signal('');
   /** Поле ввода — чтобы вернуть в него фокус после добавления. */
   private readonly _draftInput = viewChild<ElementRef<HTMLInputElement>>('draftInput');
+  /** Идентификатор записи, под которой открыта форма подзадачи, или null. */
+  protected readonly subParentId = signal<string | null>(null);
+  /** Черновик подзадачи. */
+  protected readonly subDraftValue = signal('');
 
   public constructor() {
     this.load();
@@ -325,6 +425,67 @@ export class TodosComponent {
   }
 
   /**
+   * Открывает форму подзадачи под записью.
+   * @param parentId Идентификатор родителя.
+   * @returns Ничего.
+   */
+  protected startSub(parentId: string): void {
+    this.subParentId.set(this.subParentId() === parentId ? null : parentId);
+    this.subDraftValue.set('');
+  }
+
+  /**
+   * Закрывает форму подзадачи.
+   * @returns Ничего.
+   */
+  protected cancelSub(): void {
+    this.subParentId.set(null);
+    this.subDraftValue.set('');
+  }
+
+  /**
+   * Черновик подзадачи: чтение без аргумента, запись с аргументом.
+   * @param value Новое значение.
+   * @returns Текущее значение.
+   */
+  protected subDraft(value?: string): string {
+    if (value !== undefined) {
+      this.subDraftValue.set(value);
+    }
+    return this.subDraftValue();
+  }
+
+  /**
+   * Добавляет подзадачу. Форма остаётся открытой — подзадачи чаще всего заводят пачкой
+   * («оплатить пошлину», «сдать документы», «забрать»).
+   * @param event Событие отправки формы.
+   * @param parentId Идентификатор родителя.
+   * @returns Ничего.
+   */
+  protected addSub(event: Event, parentId: string): void {
+    event.preventDefault();
+    const title = this.subDraftValue().trim();
+    if (title === '') {
+      return;
+    }
+    this._api.createTodo({ kind: this.activeKind(), title, parentId }).subscribe({
+      next: (row) => {
+        this.items.update((rows) =>
+          rows.map((current) =>
+            current.id === parentId
+              ? { ...current, children: [...current.children, row] }
+              : current,
+          ),
+        );
+        this.subDraftValue.set('');
+      },
+      error: (err: unknown) => {
+        this._modal.error('Не удалось добавить подзадачу', errorMessage(err));
+      },
+    });
+  }
+
+  /**
    * Переключает отметку выполнения.
    *
    * Обновляем строку на месте, а не перезагружаем список: перезагрузка сбросила бы позицию
@@ -332,12 +493,23 @@ export class TodosComponent {
    * @param item Запись.
    * @returns Ничего.
    */
-  protected toggleDone(item: TodoView): void {
+  protected toggleDone(item: TodoView, parentId?: string): void {
     const done = item.status !== 'done';
     this._api.setTodoDone(item.id, done).subscribe({
       next: (row) => {
         this.items.update((rows) =>
-          this._sorted(rows.map((current) => (current.id === row.id ? row : current))),
+          parentId === undefined
+            ? this._sorted(rows.map((current) => (current.id === row.id ? row : current)))
+            : rows.map((current) =>
+                current.id === parentId
+                  ? {
+                      ...current,
+                      children: this._sorted(
+                        current.children.map((child) => (child.id === row.id ? row : child)),
+                      ),
+                    }
+                  : current,
+              ),
         );
       },
       error: (err: unknown) => {
@@ -373,7 +545,7 @@ export class TodosComponent {
    * @param item Запись.
    * @returns Ничего.
    */
-  protected remove(item: TodoView): void {
+  protected remove(item: TodoView, parentId?: string): void {
     const hasChildren = item.children.length > 0;
     void this._modal
       .confirm({
@@ -390,7 +562,18 @@ export class TodosComponent {
         }
         this._api.deleteTodo(item.id).subscribe({
           next: () => {
-            this.items.update((rows) => rows.filter((current) => current.id !== item.id));
+            this.items.update((rows) =>
+              parentId === undefined
+                ? rows.filter((current) => current.id !== item.id)
+                : rows.map((current) =>
+                    current.id === parentId
+                      ? {
+                          ...current,
+                          children: current.children.filter((child) => child.id !== item.id),
+                        }
+                      : current,
+                  ),
+            );
           },
           error: (err: unknown) => {
             this._modal.error('Не удалось удалить', errorMessage(err));

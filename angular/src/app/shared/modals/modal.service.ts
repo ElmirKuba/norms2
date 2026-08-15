@@ -19,6 +19,17 @@ export interface ConfirmOptions {
   cancelText?: string;
   /** Опасное действие — иконка warning + красная кнопка. */
   danger?: boolean;
+  /**
+   * Порядок кнопок: по умолчанию подтверждение справа (как везде в продукте).
+   *
+   * `false` меняет их местами — приём против автоматизма для **второго подряд** подтверждения
+   * (2.10·A2, смена часового пояса): по мышечной памяти человек целится в тот же угол и
+   * обнаруживает там другое действие. Промах при этом безопасен — попадает в отмену.
+   *
+   * ⚠️ **Исключение, а не приём продукта.** Начни кнопки переезжать где попало — интерфейс станет
+   * непредсказуемым везде, а перестановка перестанет означать «стоп, это серьёзно».
+   */
+  buttonsOrderReversed?: boolean;
 }
 
 /**
@@ -43,7 +54,7 @@ export class ModalService {
         ...(options.text === undefined ? {} : { text: options.text }),
         textCenter: true,
         classIcon: options.danger ? ModalHeaderClassIcon.Warning : ModalHeaderClassIcon.Info,
-        isButtonsOrderReversed: true,
+        isButtonsOrderReversed: options.buttonsOrderReversed ?? true,
         confirmBtnText: options.confirmText ?? 'Да',
         cancelBtnText: options.cancelText ?? 'Нет',
         confirmBtnDanger: options.danger ?? false,

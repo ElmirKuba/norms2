@@ -17,6 +17,9 @@ import { ZodValidationPipe } from '../../../shared/pipes/zod-validation.pipe';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { AvatarInvalidError } from '../../../shared/errors/avatar-invalid.error';
 import { updateAliasSchema } from '../dtos/update-alias.dto';
+import { updateTimezoneSchema } from '../dtos/update-timezone.dto';
+import type { UpdateTimezoneDto } from '../dtos/update-timezone.dto';
+import { UpdateTimezoneUseCase } from '../use-cases/update-timezone.use-case';
 import type { UpdateAliasDto } from '../dtos/update-alias.dto';
 import { GetMyProfileUseCase } from '../use-cases/get-my-profile.use-case';
 import { GetProfileByLoginUseCase } from '../use-cases/get-profile-by-login.use-case';
@@ -40,11 +43,13 @@ export class ProfileController {
   /**
    * @param _getProfileByLoginUseCase Публичный профиль по логину.
    * @param _updateAliasUseCase Смена псевдонима.
+   * @param _updateTimezoneUseCase Смена часового пояса.
    */
   public constructor(
     private readonly _getMyProfileUseCase: GetMyProfileUseCase,
     private readonly _getProfileByLoginUseCase: GetProfileByLoginUseCase,
     private readonly _updateAliasUseCase: UpdateAliasUseCase,
+    private readonly _updateTimezoneUseCase: UpdateTimezoneUseCase,
     private readonly _deactivateMyAccountUseCase: DeactivateMyAccountUseCase,
     private readonly _deleteMyAccountUseCase: DeleteMyAccountUseCase,
     private readonly _uploadAvatarUseCase: UploadAvatarUseCase,
@@ -82,6 +87,25 @@ export class ProfileController {
    * @param request Запрос (аккаунт из Guard).
    * @returns Промис завершения.
    */
+  /**
+   * Меняет часовой пояс (2.10·A2).
+   *
+   * Отдельная ручка, а не поле в патче профиля: смена сдвигает границу суток, и человек
+   * подтверждает её двумя окнами — спрятать такое внутрь «сохранить профиль» значило бы сделать
+   * последствие незаметным.
+   * @param request Запрос с аккаунтом из Guard.
+   * @param body Новая зона.
+   * @returns Установленная зона.
+   */
+  @Post('me/timezone')
+  @UseGuards(AuthGuard)
+  public async updateTimezone(
+    @Req() request: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(updateTimezoneSchema)) body: UpdateTimezoneDto,
+  ): Promise<{ timezone: string }> {
+    return this._updateTimezoneUseCase.execute(request.account.id, body.timezone);
+  }
+
   @Post('me/deactivate')
   @UseGuards(AuthGuard)
   @HttpCode(204)

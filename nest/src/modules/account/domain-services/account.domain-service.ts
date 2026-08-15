@@ -359,6 +359,19 @@ export class AccountDomainService {
   }
 
   /**
+   * Меняет часовой пояс аккаунта (2.10·A2) через optimistic-CAS.
+   *
+   * Существование зоны проверяет вызывающий use-case: домен аккаунта не должен знать про `Intl`,
+   * а правило «зона обязана существовать» — про формат данных, а не про жизненный цикл аккаунта.
+   * @param accountId Идентификатор аккаунта.
+   * @param timezone Зона IANA.
+   * @returns Обновлённый аккаунт.
+   */
+  public async updateTimezone(accountId: string, timezone: string): Promise<AccountFull> {
+    return this._applyWithRetry(accountId, { timezone });
+  }
+
+  /**
    * Устанавливает/снимает путь аватарки (профиль) через optimistic-CAS. Файл на
    * диске пишет/удаляет use-case (account-домен про fs не знает).
    * @param accountId Идентификатор аккаунта.

@@ -8,6 +8,7 @@ import { AvatarDiskStorage } from '../../system/storage/avatar-disk.storage';
 import { GetMyProfileUseCase } from './use-cases/get-my-profile.use-case';
 import { GetProfileByLoginUseCase } from './use-cases/get-profile-by-login.use-case';
 import { UpdateAliasUseCase } from './use-cases/update-alias.use-case';
+import { UpdateTimezoneUseCase } from './use-cases/update-timezone.use-case';
 import { DeactivateMyAccountUseCase } from './use-cases/deactivate-my-account.use-case';
 import { DeleteMyAccountUseCase } from './use-cases/delete-my-account.use-case';
 import { UploadAvatarUseCase } from './use-cases/upload-avatar.use-case';
@@ -27,6 +28,7 @@ import { RemoveAvatarUseCase } from './use-cases/remove-avatar.use-case';
     GetMyProfileUseCase,
     GetProfileByLoginUseCase,
     UpdateAliasUseCase,
+    UpdateTimezoneUseCase,
     DeactivateMyAccountUseCase,
     DeleteMyAccountUseCase,
     UploadAvatarUseCase,

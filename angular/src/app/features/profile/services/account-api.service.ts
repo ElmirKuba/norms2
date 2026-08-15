@@ -25,6 +25,19 @@ export class AccountApiService {
     return this._http.patch<AccountRead>(`${API_PREFIX}/accounts/me`, { alias });
   }
 
+  /**
+   * Сменить часовой пояс (2.10·A2).
+   *
+   * Отдельная ручка, а не патч профиля: смена сдвигает границу суток и подтверждается двумя
+   * окнами — спрятать её в «сохранить профиль» значило бы сделать последствие незаметным.
+   * @param timezone Зона IANA.
+   * @returns Установленная зона.
+   */
+  public updateTimezone(timezone: string): Observable<{ timezone: string }> {
+    return this._http.post<{ timezone: string }>(`${API_PREFIX}/accounts/me/timezone`, { timezone });
+  }
+
+
   /** Деактивация своего аккаунта (обратимо, ADR-0017). */
   public deactivate(): Observable<void> {
     return this._http.post<void>(`${API_PREFIX}/accounts/me/deactivate`, null);

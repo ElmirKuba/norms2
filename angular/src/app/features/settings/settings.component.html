@@ -49,6 +49,23 @@
     @case ('account') {
       <app-card>
         <div class="account">
+          <!-- Часовой пояс (2.10·A2): платформенное поле, поэтому живёт здесь, а не в «Акценте».
+               Именно от него зависит, когда у человека начинается день. -->
+          <div class="account__row">
+            <div class="account__text">
+              <h2>Часовой пояс</h2>
+              <p>
+                Сейчас: <strong>{{ timezone() }}</strong>. По нему считается, когда у тебя
+                начинается день: отметки, серии и «сегодня».
+              </p>
+              @if (deviceZone() && deviceZone() !== timezone()) {
+                <p class="account__hint">Устройство сообщает: {{ deviceZone() }}</p>
+              }
+            </div>
+            <app-button type="button" variant="ghost" [disabled]="busy()" (click)="changeTimezone()">
+              Сменить
+            </app-button>
+          </div>
           <div class="account__row">
             <div class="account__text">
               <h2>Деактивировать аккаунт</h2>

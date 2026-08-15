@@ -4,6 +4,7 @@ import { AccountApiService } from '../profile/services/account-api.service';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { ModalService } from '../../shared/modals/modal.service';
 import { errorMessage } from '../../core/http/error-message.util';
+import { deviceTimezone } from '../../core/config/device-timezone.util';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
@@ -38,6 +39,80 @@ export class SettingsComponent {
   protected readonly tab = signal<SettingsTab>('security');
   /** Идёт деактивация/удаление. */
   protected readonly busy = signal(false);
+  /** Текущий часовой пояс аккаунта. */
+  protected readonly timezone = signal(this._authStore.account()?.timezone ?? 'UTC');
+  /** Что сообщает устройство — показываем, если расходится с сохранённым. */
+  protected readonly deviceZone = signal(deviceTimezone() ?? '');
+
+  /**
+   * Меняет часовой пояс — через **два подтверждения подряд** (реш. Elmir 15.08.2026).
+   *
+   * Первое говорит «это серьёзно», второе показывает **что именно потеряется** в цифрах: одинаковый
+   * текст дважды прокликивается на автомате, а числа, касающиеся лично тебя, прочитать придётся.
+   * У второго окна кнопки **меняются местами** — по мышечной памяти рука идёт в прежний угол и
+   * попадает в отмену, то есть промах безопасен.
+   * @returns Промис завершения.
+   */
+  protected async changeTimezone(): Promise<void> {
+    const zone = this.deviceZone();
+    if (zone === '' || zone === this.timezone()) {
+      this._modal.success('Часовой пояс', 'Устройство сообщает тот же пояс — менять нечего.');
+      return;
+    }
+
+    const first = await this._modal.confirm({
+      title: 'Сменить часовой пояс?',
+      text:
+        `Сейчас: ${this.timezone()}. Смена сдвинет границу суток — убедись, что всё за текущий ` +
+        'день учтено: вернуться и закрыть его будет нельзя.',
+      confirmText: 'Дальше',
+      danger: true,
+    });
+    if (!first) {
+      return;
+    }
+
+    const now = new Date();
+    const было = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: this.timezone(),
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(now);
+    const станет = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: zone,
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(now);
+
+    const second = await this._modal.confirm({
+      title: 'Точно меняем?',
+      text: `Сейчас у тебя ${было}. После смены станет ${станет}. Точно меняем?`,
+      confirmText: 'Сменить',
+      cancelText: 'Оставить',
+      danger: true,
+      buttonsOrderReversed: false,
+    });
+    if (!second) {
+      return;
+    }
+
+    this.busy.set(true);
+    this._accountApi.updateTimezone(zone).subscribe({
+      next: (result) => {
+        this.timezone.set(result.timezone);
+        this.busy.set(false);
+        this._modal.success('Часовой пояс изменён', `Теперь день считается по ${result.timezone}.`);
+      },
+      error: (error: unknown) => {
+        this._modal.error('Не удалось сменить', errorMessage(error));
+        this.busy.set(false);
+      },
+    });
+  }
 
   /** Деактивирует аккаунт (обратимо) с подтверждением. */
   protected async deactivate(): Promise<void> {

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { TelegramApiPort, TelegramButton } from './telegram-api.port';
+import type { TelegramUpdate } from '../interfaces/telegram-update.interface';
 import type { Env } from '../../../system/config/env.schema';
 import {
   SETTING_TELEGRAM_BOT_PAUSED,
@@ -150,6 +151,53 @@ export class TelegramApiAdapter implements TelegramApiPort {
    */
   public async setCommands(commands: { command: string; description: string }[]): Promise<void> {
     await this._call('setMyCommands', { commands });
+  }
+
+  /**
+   * Забирает апдейты длинным ожиданием (`polling`, 15.08.2026).
+   *
+   * **Мимо `_call` намеренно.** Тот заточен под «сказать и забыть»: короткий предел на попытку
+   * (8 с) и четыре повтора. Здесь наоборот — одно соединение, которое **обязано** висеть
+   * дольше предела `_call`, а повторять нечего: следующий круг цикла сделает это сам.
+   * @param offset Идентификатор первого нужного апдейта.
+   * @param timeoutSeconds Сколько секунд держать соединение открытым.
+   * @returns Апдейты; при сетевом сбое — пустой массив.
+   */
+  public async getUpdates(offset: number, timeoutSeconds: number): Promise<TelegramUpdate[]> {
+    // Пауза бота (2.9.3) закрывает и получение: иначе на паузе мы вычерпывали бы очередь
+    // Telegram и роняли апдейты — то же, что делает вебхук, но без права их вернуть.
+    if (this._settings.getBoolean(SETTING_TELEGRAM_BOT_PAUSED)) {
+      return [];
+    }
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${this._token}/getUpdates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offset, timeout: timeoutSeconds }),
+        // Предел с запасом к ожиданию: обрыв на самом Telegram мы не отличим от тишины.
+        signal: AbortSignal.timeout((timeoutSeconds + 15) * 1000),
+      });
+      const payload = (await response.json()) as { ok: boolean; description?: string; result?: TelegramUpdate[] };
+      if (!payload.ok) {
+        this._logger.warn(`getUpdates отклонён: ${payload.description ?? 'без описания'}`);
+        return [];
+      }
+      return payload.result ?? [];
+    } catch (error) {
+      // Сетевой сбой — норма при мерцающем маршруте. Молча возвращаем пусто: цикл повторит.
+      this._logger.debug(`getUpdates не удался: ${String(error)}`);
+      return [];
+    }
+  }
+
+  /**
+   * Снимает вебхук перед переходом на `getUpdates`.
+   * @returns `true`, если Telegram подтвердил.
+   */
+  public async deleteWebhook(): Promise<boolean> {
+    // Через `_call` — здесь как раз уместны его повторы: разовое действие при старте.
+    const payload = await this._call('deleteWebhook', {});
+    return payload?.ok === true;
   }
 
   private async _call(

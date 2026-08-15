@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TelegramCoreModule } from './telegram-core.module';
 import { TelegramWebhookController } from './controllers/telegram-webhook.controller';
+import { TelegramPollingRunner } from './controllers/telegram-polling.runner';
 import { TelegramLinkController } from './controllers/telegram-link.controller';
 import { ManageTelegramLinkUseCase } from './use-cases/manage-telegram-link.use-case';
 import { GetTelegramPublicUseCase } from './use-cases/get-telegram-public.use-case';
@@ -27,6 +28,10 @@ import { BanCoreModule } from '../bans/ban-core.module';
   imports: [BanCoreModule, TelegramCoreModule, AccountModule, InvitesModule, AccessControlModule],
   controllers: [TelegramWebhookController, TelegramLinkController],
   providers: [
+    // Второй вход для апдейтов (15.08.2026): при `TELEGRAM_UPDATES_MODE=polling` мы сами
+    // спрашиваем Telegram, а не ждём его стука. Провайдер, а не контроллер, потому что HTTP-ручки
+    // у него нет — но живёт рядом с вебхуком: это такая же точка входа.
+    TelegramPollingRunner,
     RequestUnbanUseCase,
     HandleTelegramUpdateUseCase,
     AdminActionsUseCase,

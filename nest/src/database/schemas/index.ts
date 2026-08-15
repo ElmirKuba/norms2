@@ -17,6 +17,8 @@ export * from './accent-settings.schema';
 export * from './accent-domains.schema';
 export * from './accent-attributes.schema';
 export * from './micro-wins.schema';
+export * from './todo-events.schema';
+export * from './todos.schema';
 export * from './micro-win-logs.schema';
 export * from './habits.schema';
 export * from './tasks.schema';

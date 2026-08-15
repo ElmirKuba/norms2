@@ -10,6 +10,8 @@ import { goals } from '../schemas/goals.schema';
 import { goalEntries } from '../schemas/goal-entries.schema';
 import { habits } from '../schemas/habits.schema';
 import { microWins } from '../schemas/micro-wins.schema';
+import { todoEvents } from '../schemas/todo-events.schema';
+import { todos } from '../schemas/todos.schema';
 import { microWinLogs } from '../schemas/micro-win-logs.schema';
 import { milestones } from '../schemas/milestones.schema';
 import { notifications } from '../schemas/notifications.schema';
@@ -78,6 +80,8 @@ export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
       { child: notificationReads, column: notificationReads.accountId },
       { child: obstacles, column: obstacles.accountId },
       { child: tasks, column: tasks.accountId },
+      { child: todos, column: todos.accountId },
+      { child: todoEvents, column: todoEvents.accountId },
       { child: telegramLinks, column: telegramLinks.accountId },
       { child: telegramRequests, column: telegramRequests.accountId },
       { child: userAchievements, column: userAchievements.accountId },
@@ -94,6 +98,8 @@ export const OWNED_EDGES: ReadonlyMap<PgTable, readonly OwnedEdge[]> = new Map<
     ],
   ],
   [habits, [{ child: tasks, column: tasks.templateId }]],
+  // Подзадача не переживает родителя: дерево дел — одна сущность для человека (как у целей).
+  [todos, [{ child: todos, column: todos.parentId }]],
   [microWins, [{ child: microWinLogs, column: microWinLogs.microWinId }]],
   [notifications, [{ child: notificationReads, column: notificationReads.notificationId }]],
   [

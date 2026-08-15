@@ -2093,7 +2093,7 @@ _Заземлено на существующую доку: `domain-model §7`, 
 - [x] **·C3.1 — контракты.** ✅ 15.08.2026 Проекции `TodoView` / `TodoEventView` и DTO на zod (закрытая форма).
 - [x] **·C4 — API: чтение.** ✅ 15.08.2026 Use-case списка + контроллер `GET /accent/todos?kind=&archived=`.
   **Проверяемо `curl`-ом сразу** — отдаёт пустой список, но живой.
-- [ ] **·C4.1 — API: создание и правка.** `POST /accent/todos`, `PATCH /accent/todos/:id`.
+- [x] **·C4.1 — API: создание и правка.** ✅ 15.08.2026 `POST /accent/todos`, `PATCH /accent/todos/:id`.
   **После этого шага дела уже можно вносить через HTTP.**
 - [ ] **·C4.2 — API: состояния.** Отметка и снятие (`/complete`, `/uncomplete`), архив и возврат
   (`/archive`, `/restore`), удаление.

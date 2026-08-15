@@ -7,6 +7,10 @@ import type {
   TodoEventUpdateData,
   TodoUpdateData,
 } from '../adapters/accent-todo-repository.port';
+import { TodoNotFoundError } from '../../../../shared/errors/todo-not-found.error';
+import { TodoEventNotFoundError } from '../../../../shared/errors/todo-event-not-found.error';
+import { TodoMaxDepthReachedError } from '../../../../shared/errors/todo-max-depth-reached.error';
+import { ValidationError } from '../../../../shared/errors/validation.error';
 import type { TodoFull, TodoKind } from '../interfaces/todo-full.interface';
 import type { TodoEventFull } from '../interfaces/todo-event-full.interface';
 
@@ -18,12 +22,6 @@ import type { TodoEventFull } from '../interfaces/todo-event-full.interface';
  * (в `KubaPersonal/tasks.md` встречается 2–3) и оставляют запас.
  */
 const MAX_DEPTH = 3;
-
-/** Запись не найдена (или принадлежит другому человеку — снаружи это одно и то же). */
-export class TodoNotFoundError extends Error {}
-
-/** Нарушено правило домена (пустой заголовок, слишком глубокая вложенность и т.п.). */
-export class TodoRuleError extends Error {}
 
 /**
  * Доменные правила списков дел (2.10, блок C).
@@ -66,13 +64,13 @@ export class AccentTodoDomainService {
    * Создаёт запись.
    * @param data Данные создания (заголовок обязателен, остальное — по желанию).
    * @returns Созданная запись.
-   * @throws {TodoRuleError} Пустой заголовок, слишком глубокая вложенность, чужое событие.
+   * @throws {ValidationError} Пустой заголовок, слишком глубокая вложенность, чужое событие.
    * @throws {TodoNotFoundError} Родитель не найден.
    */
   public async create(data: TodoCreateData): Promise<TodoFull> {
     const title = data.title.trim();
     if (title === '') {
-      throw new TodoRuleError('Заголовок не может быть пустым.');
+      throw new ValidationError('Заголовок не может быть пустым.');
     }
     if (data.parentId != null) {
       await this._assertDepthOk(data.parentId, data.accountId);
@@ -88,11 +86,11 @@ export class AccentTodoDomainService {
    * @param patch Изменяемые поля.
    * @returns Обновлённая запись.
    * @throws {TodoNotFoundError} Записи нет или она чужая.
-   * @throws {TodoRuleError} Пустой заголовок или чужое событие.
+   * @throws {ValidationError} Пустой заголовок или чужое событие.
    */
   public async update(id: string, accountId: string, patch: TodoUpdateData): Promise<TodoFull> {
     if (patch.title !== undefined && patch.title.trim() === '') {
-      throw new TodoRuleError('Заголовок не может быть пустым.');
+      throw new ValidationError('Заголовок не может быть пустым.');
     }
     if (patch.waitsForEventId !== undefined) {
       await this._assertEventOwned(patch.waitsForEventId, accountId);
@@ -182,12 +180,12 @@ export class AccentTodoDomainService {
    * Создаёт событие справочника.
    * @param data Данные создания.
    * @returns Созданное событие.
-   * @throws {TodoRuleError} Пустое название.
+   * @throws {ValidationError} Пустое название.
    */
   public async createEvent(data: TodoEventCreateData): Promise<TodoEventFull> {
     const title = data.title.trim();
     if (title === '') {
-      throw new TodoRuleError('Название события не может быть пустым.');
+      throw new ValidationError('Название события не может быть пустым.');
     }
     return this._repository.createEvent({ ...data, title });
   }
@@ -199,7 +197,7 @@ export class AccentTodoDomainService {
    * @param patch Изменяемые поля.
    * @returns Обновлённое событие.
    * @throws {TodoNotFoundError} События нет или оно чужое.
-   * @throws {TodoRuleError} Пустое название.
+   * @throws {ValidationError} Пустое название.
    */
   public async updateEvent(
     id: string,
@@ -207,7 +205,7 @@ export class AccentTodoDomainService {
     patch: TodoEventUpdateData,
   ): Promise<TodoEventFull> {
     if (patch.title !== undefined && patch.title.trim() === '') {
-      throw new TodoRuleError('Название события не может быть пустым.');
+      throw new ValidationError('Название события не может быть пустым.');
     }
     const clean: TodoEventUpdateData = { ...patch };
     if (clean.title !== undefined) {
@@ -215,7 +213,7 @@ export class AccentTodoDomainService {
     }
     const row = await this._repository.updateEvent(id, accountId, clean);
     if (!row) {
-      throw new TodoNotFoundError('Событие не найдено.');
+      throw new TodoEventNotFoundError('Событие не найдено.');
     }
     return row;
   }
@@ -238,7 +236,7 @@ export class AccentTodoDomainService {
   ): Promise<{ event: TodoEventFull; released: number }> {
     const event = await this._repository.setEventHappened(id, accountId, happened);
     if (!event) {
-      throw new TodoNotFoundError('Событие не найдено.');
+      throw new TodoEventNotFoundError('Событие не найдено.');
     }
     const released = happened ? await this._repository.releaseWaiting(accountId, id) : 0;
     return { event, released };
@@ -258,7 +256,7 @@ export class AccentTodoDomainService {
     await this._repository.releaseWaiting(accountId, id);
     const removed = await this._repository.deleteEvent(id, accountId);
     if (!removed) {
-      throw new TodoNotFoundError('Событие не найдено.');
+      throw new TodoEventNotFoundError('Событие не найдено.');
     }
   }
 
@@ -268,7 +266,7 @@ export class AccentTodoDomainService {
    * @param accountId Идентификатор аккаунта-владельца.
    * @returns Промис завершения.
    * @throws {TodoNotFoundError} Родитель не найден.
-   * @throws {TodoRuleError} Глубже допустимого.
+   * @throws {ValidationError} Глубже допустимого.
    */
   private async _assertDepthOk(parentId: string, accountId: string): Promise<void> {
     let depth = 0;
@@ -280,7 +278,7 @@ export class AccentTodoDomainService {
       }
       depth += 1;
       if (depth >= MAX_DEPTH) {
-        throw new TodoRuleError(`Глубже ${String(MAX_DEPTH)} уровней вкладывать нельзя.`);
+        throw new TodoMaxDepthReachedError(`Глубже ${String(MAX_DEPTH)} уровней вкладывать нельзя.`);
       }
       cursor = node.parentId;
     }
@@ -291,7 +289,7 @@ export class AccentTodoDomainService {
    * @param eventId Идентификатор события или null.
    * @param accountId Идентификатор аккаунта-владельца.
    * @returns Промис завершения.
-   * @throws {TodoRuleError} Событие чужое или не существует.
+   * @throws {ValidationError} Событие чужое или не существует.
    */
   private async _assertEventOwned(eventId: string | null, accountId: string): Promise<void> {
     if (eventId == null) {
@@ -299,7 +297,7 @@ export class AccentTodoDomainService {
     }
     const event = await this._repository.findOwnedEvent(eventId, accountId);
     if (!event) {
-      throw new TodoRuleError('Событие не найдено.');
+      throw new TodoEventNotFoundError('Событие не найдено.');
     }
   }
 }

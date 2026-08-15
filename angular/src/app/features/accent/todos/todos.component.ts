@@ -3,7 +3,11 @@ import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { errorMessage } from '../../../core/http/error-message.util';
+import { MatDialog } from '@angular/material/dialog';
 import { ModalService } from '../../../shared/modals/modal.service';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { TodoFormModalComponent } from './todo-form-modal.component';
+import type { TodoFormData } from './todo-form-modal.component';
 import { AccentApiService } from '../services/accent-api.service';
 import { TODO_KIND_LABELS } from '../accent.types';
 import type { TodoKind, TodoView } from '../accent.types';
@@ -96,6 +100,25 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
               @if (item.badge) {
                 <span class="todos__badge">{{ item.badge }}</span>
               }
+              @if (item.note || item.plannedOn) {
+                <span class="todos__mark" [title]="item.note ?? ''">
+                  @if (item.plannedOn) {
+                    <span class="todos__date">{{ formatDay(item.plannedOn) }}</span>
+                  }
+                  @if (item.note) {
+                    <span aria-label="Есть заметка">✎</span>
+                  }
+                </span>
+              }
+              <button
+                type="button"
+                class="todos__edit"
+                (click)="openDetails(item)"
+                [attr.aria-label]="'Детали: ' + item.title"
+                title="Детали"
+              >
+                ⋯
+              </button>
               <button
                 type="button"
                 class="todos__sub"
@@ -288,6 +311,36 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         flex-wrap: wrap;
       }
 
+      .todos__mark {
+        display: inline-flex;
+        gap: var(--space-2);
+        align-items: center;
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
+      }
+
+      .todos__date {
+        padding: 2px var(--space-2);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface-2);
+      }
+
+      .todos__edit {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+        transition: color var(--transition);
+      }
+
+      .todos__edit:hover {
+        color: var(--color-accent);
+      }
+
       .todos__sub {
         min-width: var(--touch-min);
         min-height: var(--touch-min);
@@ -350,6 +403,7 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
 export class TodosComponent {
   private readonly _api = inject(AccentApiService);
   private readonly _modal = inject(ModalService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Виды в порядке вкладок. */
   protected readonly kinds = KIND_ORDER;
@@ -422,6 +476,50 @@ export class TodosComponent {
         this.adding.set(false);
       },
     });
+  }
+
+  /**
+   * Приводит день к человеческому виду: `2026-08-27` → «27 авг».
+   *
+   * Разбираем строку вручную, а не через `new Date(iso)`: тот трактует `YYYY-MM-DD` как UTC, и
+   * при отрицательном смещении дата уезжает на день назад — ровно тот класс ошибки, из-за
+   * которого чинится часовой пояс в этой же подфазе.
+   * @param iso День в формате `YYYY-MM-DD`.
+   * @returns Короткая подпись или исходная строка, если формат неожиданный.
+   */
+  protected formatDay(iso: string): string {
+    const parts = iso.split('-').map(Number);
+    const [year, month, day] = parts;
+    if (parts.length !== 3 || year === undefined || month === undefined || day === undefined) {
+      return iso;
+    }
+    const date = new Date(year, month - 1, day);
+    const label = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(date);
+    const currentYear = new Date().getFullYear();
+    return year === currentYear ? label : `${label} ${String(year)}`;
+  }
+
+  /**
+   * Открывает детали записи: заметка, метка, назначенный день.
+   *
+   * Форма сама зовёт API и закрывается только при успехе — при ошибке остаётся открытой, и
+   * набранный текст не теряется.
+   * @param item Запись.
+   * @returns Ничего.
+   */
+  protected openDetails(item: TodoView): void {
+    const data: TodoFormData = {
+      todo: item,
+      submit: (payload) => this._api.updateTodo(item.id, payload),
+    };
+    void this._dialog
+      .open(TodoFormModalComponent, { data, width: MODAL_SMALL_WIDTH, autoFocus: false })
+      .afterClosed()
+      .subscribe((saved) => {
+        if (saved === true) {
+          this.load();
+        }
+      });
   }
 
   /**

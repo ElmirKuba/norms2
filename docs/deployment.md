@@ -164,6 +164,52 @@ A-запись и вебхук у стейдж-бота: он ест памят�
 
 ---
 
+## 4b. Telegram через туннель + long polling (15.08.2026)
+
+**Зачем.** Маршрут между инфраструктурой Telegram и IP прода закрылся в обе стороны: исходящие
+дали **0 успешных из 8**, доставка апдейтов к нам — `Connection timed out`. Сервер при этом
+здоров, снаружи отвечает `200`. Разбор и цена решения —
+[ADR-0064 → «Дополнение 15.08.2026»](./decisions/0064-telegram-release-channel.md).
+
+**Что стоит на сервере:**
+
+```bash
+# Клиент VLESS: HTTP-прокси 1080 внутри docker-сети, наружу НЕ опубликован.
+# Конфиг с ключами — вне репозитория, режим 600, от root.
+/opt/norms2-proxy/config.json
+docker run -d --name norms2_xray_prod --restart unless-stopped --user 0:0 \
+  --network norms2_prod-net -v /opt/norms2-proxy/config.json:/etc/xray/config.json:ro \
+  ghcr.io/xtls/xray-core:latest run -c /etc/xray/config.json
+```
+
+**Что добавлено в `/home/norms2/.env`:**
+
+```
+HTTPS_PROXY=http://norms2_xray_prod:1080
+HTTP_PROXY=http://norms2_xray_prod:1080
+NODE_USE_ENV_PROXY=1
+NO_PROXY=localhost,127.0.0.1,norms2_postgres_prod,norms2_angular_prod
+TELEGRAM_UPDATES_MODE=polling
+```
+
+Правки кода под прокси **не потребовалось**: Node 24 уводит `fetch` в прокси сам при
+`NODE_USE_ENV_PROXY=1`. Это безопасно потому, что исходящих `fetch` вне модуля бота в бэкенде нет.
+
+**Проверка после изменений:**
+
+```bash
+docker exec norms2_nest_prod node -e "fetch('https://api.telegram.org/bot'+process.env.TELEGRAM_BOT_TOKEN+'/getMe').then(r=>r.json()).then(j=>console.log(j.ok))"
+```
+
+**Возврат к вебхуку**, если маршрут откроется: `TELEGRAM_UPDATES_MODE=webhook` в `.env`, перезапуск
+бэкенда, затем `setWebhook` с прежним секретом. Прокси при этом можно оставить — он чинит
+исходящие независимо от режима.
+
+⚠️ **Новая точка отказа:** пока режим `polling`, бот зависит от туннеля целиком — упадёт `xray`,
+встанут обе половины, а не одна. Контейнер поднят с `--restart unless-stopped`.
+
+---
+
 ## 5. Рутинное обновление (выкатка новой версии)
 
 Из корня репо на сервере (`cd /home/norms2`). Makefile сам вычисляет `PROJECT_ROOT` и `GIT_COMMIT`.

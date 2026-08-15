@@ -19,7 +19,7 @@ import { formatDay } from './format-day.util';
 import type { TodoFormData } from './todo-form-modal.component';
 import { AccentApiService } from '../services/accent-api.service';
 import { TODO_KIND_LABELS } from '../accent.types';
-import type { TodoKind, TodoView } from '../accent.types';
+import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
 
 /** Виды в порядке вкладок: дела первыми — это основной сценарий. */
 const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
@@ -131,6 +131,11 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
               <span class="todos__title">{{ item.title }}</span>
               @if (item.badge) {
                 <span class="todos__badge">{{ item.badge }}</span>
+              }
+              @if (item.waitsForEventId || item.waitsUntil) {
+                <span class="todos__wait" [title]="waitTitle(item)">
+                  ⏳ {{ waitLabel(item) }}
+                </span>
               }
               @if (item.note || item.plannedOn) {
                 <span class="todos__mark" [title]="item.note ?? ''">
@@ -394,6 +399,18 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         flex-wrap: wrap;
       }
 
+      .todos__wait {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px var(--space-2);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface-2);
+        color: var(--color-warning);
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+      }
+
       .todos__mark {
         display: inline-flex;
         gap: var(--space-2);
@@ -498,6 +515,8 @@ export class TodosComponent {
   protected readonly activeKind = signal<TodoKind>('deed');
   /** Записи текущего вида. */
   protected readonly items = signal<TodoView[]>([]);
+  /** События справочника — чтобы подписать ожидание на карточке названием, а не идентификатором. */
+  protected readonly events = signal<TodoEventView[]>([]);
   /** Идёт загрузка. */
   protected readonly loading = signal(true);
   /** Текст ошибки или пустая строка. */
@@ -519,6 +538,19 @@ export class TodosComponent {
 
   public constructor() {
     this.load();
+    this._loadEvents();
+  }
+
+  /**
+   * Подтягивает справочник событий (включая состоявшиеся): подпись «ждёт X» должна остаться
+   * читаемой и после того, как событие случилось, — до перезагрузки списка.
+   * @returns Ничего.
+   */
+  private _loadEvents(): void {
+    this._api.listTodoEvents(true).subscribe({
+      next: (rows) => this.events.set(rows),
+      error: () => this.events.set([]),
+    });
   }
 
   /**
@@ -566,6 +598,39 @@ export class TodosComponent {
   }
 
   /**
+   * Короткая подпись ожидания на карточке.
+   *
+   * Название события подтягивается из справочника; пока он не загружен — показываем нейтральное
+   * «ждёт», а не пустоту: человек должен видеть, что дело **заблокировано не им**, даже если
+   * подробность ещё едет.
+   * @param item Запись.
+   * @returns Текст подписи.
+   */
+  protected waitLabel(item: TodoView): string {
+    const event = this.events().find((row) => row.id === item.waitsForEventId);
+    if (event) {
+      return event.expectedOn === null ? event.title : `${event.title}, ${formatDay(event.expectedOn)}`;
+    }
+    if (item.waitsUntil !== null) {
+      return `не раньше ${formatDay(item.waitsUntil)}`;
+    }
+    return 'ждёт';
+  }
+
+  /**
+   * Подсказка при наведении: полная формулировка ожидания.
+   * @param item Запись.
+   * @returns Текст подсказки.
+   */
+  protected waitTitle(item: TodoView): string {
+    const parts = [this.waitLabel(item)];
+    if (item.waitsUntil !== null && item.waitsForEventId !== null) {
+      parts.push(`не раньше ${formatDay(item.waitsUntil)}`);
+    }
+    return `Ждёт: ${parts.join(' · ')}`;
+  }
+
+  /**
    * Открывает справочник событий.
    *
    * После закрытия перечитываем список: событие могло состояться, и тогда часть дел перестала
@@ -579,6 +644,7 @@ export class TodosComponent {
       .subscribe((changed) => {
         if (changed === true) {
           this.load();
+          this._loadEvents();
         }
       });
   }

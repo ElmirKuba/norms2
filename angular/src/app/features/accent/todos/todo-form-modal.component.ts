@@ -4,8 +4,10 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
 import type { Observable } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { AccentApiService } from '../services/accent-api.service';
+import { formatDay } from './format-day.util';
 import { errorMessage } from '../../../core/http/error-message.util';
-import type { TodoPayload, TodoView } from '../accent.types';
+import type { TodoEventView, TodoPayload, TodoView } from '../accent.types';
 
 /** Данные в модалку. */
 export interface TodoFormData {
@@ -62,6 +64,27 @@ export interface TodoFormData {
               maxlength="64"
               placeholder="Например: у Румии, в аптеке"
             />
+          </label>
+
+          <label class="tf__field">
+            <span class="tf__label">Чего ждёт</span>
+            <select class="tf__input" formControlName="waitsForEventId">
+              <option value="">Ничего не ждёт</option>
+              @for (event of events(); track event.id) {
+                <option [value]="event.id">
+                  {{ event.title }}@if (event.expectedOn) { — {{ formatDay(event.expectedOn) }} }
+                </option>
+              }
+            </select>
+            <span class="tf__hint">
+              Дело, которое ждёт мастера или звонка, — не невыполненное: раньше срока его и нельзя
+              сделать.
+            </span>
+          </label>
+
+          <label class="tf__field">
+            <span class="tf__label">Не раньше даты</span>
+            <input class="tf__input" type="date" formControlName="waitsUntil" />
           </label>
 
           <label class="tf__field">
@@ -134,6 +157,7 @@ export interface TodoFormData {
 export class TodoFormModalComponent {
   private readonly _data = inject<TodoFormData>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef<TodoFormModalComponent>);
+  private readonly _api = inject(AccentApiService);
 
   /** Идёт сохранение. */
   protected readonly saving = signal(false);
@@ -149,7 +173,22 @@ export class TodoFormModalComponent {
     note: new FormControl(this._data.todo.note ?? '', { nonNullable: true }),
     badge: new FormControl(this._data.todo.badge ?? '', { nonNullable: true }),
     plannedOn: new FormControl(this._data.todo.plannedOn ?? '', { nonNullable: true }),
+    waitsForEventId: new FormControl(this._data.todo.waitsForEventId ?? '', { nonNullable: true }),
+    waitsUntil: new FormControl(this._data.todo.waitsUntil ?? '', { nonNullable: true }),
   });
+
+  /** События справочника — чтобы выбрать, чего ждёт дело. */
+  protected readonly events = signal<TodoEventView[]>([]);
+  /** Человеческий формат дня. */
+  protected readonly formatDay = formatDay;
+
+  public constructor() {
+    // Только ещё не случившиеся: предлагать ждать того, что уже произошло, бессмысленно.
+    this._api.listTodoEvents(false).subscribe({
+      next: (rows) => this.events.set(rows),
+      error: () => this.events.set([]),
+    });
+  }
 
   /**
    * Сохраняет изменения; пустые строки отправляются как `null` — «нет значения», а не «пустая
@@ -169,6 +208,8 @@ export class TodoFormModalComponent {
         note: raw.note.trim() === '' ? null : raw.note.trim(),
         badge: raw.badge.trim() === '' ? null : raw.badge.trim(),
         plannedOn: raw.plannedOn === '' ? null : raw.plannedOn,
+        waitsForEventId: raw.waitsForEventId === '' ? null : raw.waitsForEventId,
+        waitsUntil: raw.waitsUntil === '' ? null : raw.waitsUntil,
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({

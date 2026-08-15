@@ -393,6 +393,13 @@
       "when": 1786807500002,
       "tag": "0055_black_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1786825408462,
+      "tag": "0056_striped_jocasta",
+      "breakpoints": true
     }
   ]
 }

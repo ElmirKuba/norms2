@@ -12,14 +12,14 @@ import type { HabitKind } from '../../modules/accent/habits/interfaces/habit-ful
 import type { TaskFull } from '../../modules/accent/habits/interfaces/task-full.interface';
 
 /**
- * tasks — задачи дня (инстансы привычек + разовые; колонки 1:1 с TaskFull). Иммутабельны
+ * habit_tasks — задачи дня, порождённые привычками (колонки 1:1 с TaskFull). Иммутабельны
  * по `created_at` (но статус/doneValue/completedAt меняются на месте). `template_id` →
  * `habits` (cascade; null = разовая); **уник `(template_id, occurred_on)`** = 1 инстанс
  * привычки на день (NULL-шаблоны не конфликтуют → разовых на день сколько угодно).
  * `goal_id`/`postponed_from_task_id` — мягкие ссылки без FK (goals — 2.5; self-ref — проще).
  */
 export const tasks = defineTableWithSchema<TaskFull>()(
-  'tasks',
+  'habit_tasks',
   {
     id: idColumn(),
     accountId: fkColumn('account_id')
@@ -52,7 +52,7 @@ export const tasks = defineTableWithSchema<TaskFull>()(
       .$onUpdate(() => new Date()),
   },
   (table) => [
-    uniqueIndex('tasks_template_day_unique').on(table.templateId, table.occurredOn),
+    uniqueIndex('habit_tasks_template_day_unique').on(table.templateId, table.occurredOn),
   ],
   // Жёсткое удаление (ADR-0068): материализация шаблона на день, а не данные человека.
   { paranoid: false },

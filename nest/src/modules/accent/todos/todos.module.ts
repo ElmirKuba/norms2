@@ -4,6 +4,7 @@ import { ACCENT_TODO_REPOSITORY } from './adapters/accent-todo-repository.port';
 import { AccentTodoRepository } from '../../../database/repositories/accent/accent-todo.repository';
 import { AccentTodoDomainService } from './domain-services/accent-todo.domain-service';
 import { TodosController } from './controllers/todos.controller';
+import { TodoEventsController } from './controllers/todo-events.controller';
 import { ListTodosUseCase } from './use-cases/list-todos.use-case';
 import { CreateTodoUseCase } from './use-cases/create-todo.use-case';
 import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
@@ -11,6 +12,7 @@ import { SetTodoDoneUseCase } from './use-cases/set-todo-done.use-case';
 import { SetTodoArchivedUseCase } from './use-cases/set-todo-archived.use-case';
 import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
 import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
+import { ManageTodoEventsUseCase } from './use-cases/manage-todo-events.use-case';
 
 /**
  * Область списков дел раздела «Акцент» (2.10, блок C): порт `ACCENT_TODO_REPOSITORY` →
@@ -22,7 +24,7 @@ import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
  */
 @Module({
   imports: [AccessControlModule],
-  controllers: [TodosController],
+  controllers: [TodosController, TodoEventsController],
   providers: [
     { provide: ACCENT_TODO_REPOSITORY, useClass: AccentTodoRepository },
     AccentTodoDomainService,
@@ -33,6 +35,7 @@ import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
     SetTodoArchivedUseCase,
     DeleteTodoUseCase,
     ReorderTodosUseCase,
+    ManageTodoEventsUseCase,
   ],
   exports: [AccentTodoDomainService],
 })

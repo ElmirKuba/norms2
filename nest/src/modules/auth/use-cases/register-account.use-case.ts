@@ -71,6 +71,7 @@ export class RegisterAccountUseCase {
       alias: Alias.create(input.alias),
       password: Password.create(input.password),
       registrationSource: 'free',
+      timezone: input.timezone,
     });
   }
 
@@ -100,7 +101,7 @@ export class RegisterAccountUseCase {
 
     const { account, inviterId } = await this._transactionRunner.run(async (tx) => {
       const created = await this._accountDomainService.createAccount(
-        { login, alias, password, registrationSource: 'invite' },
+        { login, alias, password, registrationSource: 'invite', timezone: input.timezone },
         tx,
       );
       // Бросит InviteInvalidError при плохом коде → откат (аккаунт не сохранится).

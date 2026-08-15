@@ -10,6 +10,7 @@ import { errorMessage } from '../../../core/http/error-message.util';
 import { TextFieldComponent } from '../../../shared/ui/text-field/text-field.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { BannerComponent } from '../../../shared/ui/banner/banner.component';
+import { deviceTimezone } from '../../../core/config/device-timezone.util';
 
 /** Состояние проверки кода приглашения. */
 type CodeState = 'idle' | 'checking' | 'valid' | 'invalid';
@@ -121,7 +122,16 @@ export class RegisterComponent {
     this.formError.set(null);
     const { login, alias, password } = this.form.getRawValue();
     const code = this.acceptedCode();
-    const input = { login, alias, password, ...(code === null ? {} : { inviteCode: code }) };
+    // Часовой пояс устройства (2.10·A1): до этой подфазы всем прописывался литерал `UTC`, и
+    // сутки у человека из UTC+5 переключались в 05:00 по-местному.
+    const zone = deviceTimezone();
+    const input = {
+      login,
+      alias,
+      password,
+      ...(code === null ? {} : { inviteCode: code }),
+      ...(zone === undefined ? {} : { timezone: zone }),
+    };
 
     this._api.register(input).subscribe({
       next: () => {

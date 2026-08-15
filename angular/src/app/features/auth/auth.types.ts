@@ -8,6 +8,11 @@ export interface LoginCredentials {
 
 /** Вход регистрации (inviteCode — в invite-режиме). */
 export interface RegisterInput {
+  /**
+   * Часовой пояс устройства (IANA, 2.10·A1). Необязателен: регистрация не должна падать из-за
+   * часового пояса, а неизвестная зона на бэке заменяется на `UTC`.
+   */
+  timezone?: string;
   login: string;
   alias: string;
   password: string;

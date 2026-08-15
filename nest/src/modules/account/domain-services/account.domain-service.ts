@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { isValidTimezone } from '../../../shared/utility-level/timezone.util';
 import { ConfigService } from '@nestjs/config';
 import { ACCOUNT_REPOSITORY } from '../adapters/account-repository.port';
 import { ROLE_REPOSITORY } from '../adapters/role-repository.port';
@@ -38,6 +39,15 @@ export interface CreateAccountParams {
   password: Password;
   /** Источник регистрации. */
   registrationSource: 'free' | 'invite' | 'seed';
+  /**
+   * Часовой пояс устройства (IANA), если браузер его сообщил.
+   *
+   * До 2.10 здесь стоял литерал `'UTC'`, и это был не «дефолт», а **баг**: для UTC+5 сутки
+   * переключались в 05:00 по-местному, и вечерняя отметка попадала во вчера. Теперь зона
+   * приходит от клиента при регистрации; невалидная — отбрасывается в пользу `UTC`, потому что
+   * ронять регистрацию из-за часового пояса нельзя.
+   */
+  timezone?: string | undefined;
 }
 
 /**
@@ -70,7 +80,7 @@ export class AccountDomainService {
    * @throws {LoginTakenError} Если логин уже занят.
    */
   public async createAccount(params: CreateAccountParams, tx?: Transaction): Promise<AccountFull> {
-    const { login, alias, password, registrationSource } = params;
+    const { login, alias, password, registrationSource, timezone } = params;
 
     // Дружелюбная предпроверка; настоящий гард — UNIQUE(lower(login)) в БД. Гонку
     // (два параллельных register с одним логином: оба проходят предпроверку, второй
@@ -93,7 +103,7 @@ export class AccountDomainService {
         registrationSource,
         invitesRemaining,
         recoveryRequiredCount: null,
-        timezone: 'UTC',
+        timezone: timezone !== undefined && isValidTimezone(timezone) ? timezone : 'UTC',
       },
       tx,
     );

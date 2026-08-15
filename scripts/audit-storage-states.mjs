@@ -8,8 +8,9 @@
  * домен — тоже: каждый слой вёл себя правильно, дефект жил на стыке.
  *
  * Что проверяется:
- * 1. у таблицы со скрытием (`is_active`) есть маршруты `/:id/archive` и `/:id/restore` на бэке;
- * 2. фронт умеет их звать и умеет спросить архив (`filter: 'archived'`);
+ * 1. у таблицы со скрытием (`is_active` **или** `archived_at`) есть маршруты `/:id/archive` и
+ *    `/:id/restore` на бэке;
+ * 2. фронт умеет их звать и умеет спросить архив (`filter: 'archived'` **или** `archived: '1'`);
  * 3. чтения мягких таблиц не остаются без условия живости — `.from(<таблица>)` без `.where(`
  *    в репозиториях (ровно так удалённый релиз продолжал показываться в витрине).
  *
@@ -33,6 +34,7 @@ const API_PATHS = {
   obstacles: 'obstacles',
   micro_wins: 'micro-wins',
   habits: 'habits',
+  todos: 'todos',
 };
 
 /**
@@ -68,7 +70,13 @@ const hidden = [];
 for (const file of walk(SCHEMAS, '.schema.ts')) {
   const text = read(file);
   const name = /\(\)\(\s*'([^']+)'/.exec(text)?.[1];
-  if (name && text.includes("boolean('is_active')") && !CATALOGS.includes(name)) {
+  // Два способа спрятать: булев флаг (`is_active`, исторический) и метка времени
+  // (`archived_at`, появилась с `todos` в 2.10 — она заодно хранит, КОГДА спрятали).
+  // Детектор обязан знать оба: иначе новая таблица со скрытием тихо выпадает из проверки,
+  // а отчёт при этом говорит «всё хорошо» — ровно та слепота, ради которой правило заводили.
+  const hides =
+    text.includes("boolean('is_active')") || text.includes("timestamp('archived_at'");
+  if (name && hides && !CATALOGS.includes(name)) {
     hidden.push(name);
   }
 }
@@ -89,8 +97,9 @@ for (const table of hidden) {
     problems.push(`${table}: фронт не умеет убрать в архив и вернуть — экрана возврата нет`);
   }
 }
-if (!frontend.includes("filter: 'archived'")) {
-  problems.push('фронт нигде не спрашивает архив (`filter: archived`) — значит и не показывает');
+// Два способа спросить архив: старый `filter: 'archived'` и параметр `archived: '1'` (2.10).
+if (!frontend.includes("filter: 'archived'") && !frontend.includes("archived: '1'")) {
+  problems.push('фронт нигде не спрашивает архив — значит и не показывает');
 }
 
 // ---- 3. чтения мягких таблиц без условия живости -------------------------------------------

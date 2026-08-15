@@ -22,7 +22,6 @@ export const todoEvents = defineTableWithSchema<TodoEventFull>()(
     title: text('title').notNull(),
     expectedOn: date('expected_on', { mode: 'string' }),
     happenedAt: timestamp('happened_at', { withTimezone: true }),
-    archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps(),
   },
   (table) => [index('todo_events_account_idx').on(table.accountId)],

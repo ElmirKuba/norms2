@@ -57,6 +57,25 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         <p class="todos__error" role="alert">{{ addError() }}</p>
       }
 
+      <div class="todos__mode">
+        <button
+          type="button"
+          class="todos__mode-btn"
+          [class.todos__mode-btn--active]="!archived()"
+          (click)="setArchivedView(false)"
+        >
+          Живые
+        </button>
+        <button
+          type="button"
+          class="todos__mode-btn"
+          [class.todos__mode-btn--active]="archived()"
+          (click)="setArchivedView(true)"
+        >
+          Архив
+        </button>
+      </div>
+
       <nav class="todos__tabs" role="tablist" aria-label="Виды записей">
         @for (kind of kinds; track kind) {
           <button
@@ -110,6 +129,15 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
                   }
                 </span>
               }
+              <button
+                type="button"
+                class="todos__edit"
+                (click)="toggleArchived(item)"
+                [attr.aria-label]="(item.archived ? 'Вернуть из архива: ' : 'В архив: ') + item.title"
+                [title]="item.archived ? 'Вернуть из архива' : 'В архив'"
+              >
+                {{ item.archived ? '↩' : '⇥' }}
+              </button>
               <button
                 type="button"
                 class="todos__edit"
@@ -198,6 +226,27 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
       .todos__head h2 {
         margin: 0;
         font-size: var(--fs-xl);
+      }
+
+      .todos__mode {
+        display: flex;
+        gap: var(--space-2);
+      }
+
+      .todos__mode-btn {
+        min-height: 32px;
+        padding: 0 var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+        cursor: pointer;
+      }
+
+      .todos__mode-btn--active {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
       }
 
       .todos__tabs {
@@ -425,6 +474,8 @@ export class TodosComponent {
   protected readonly addError = signal('');
   /** Поле ввода — чтобы вернуть в него фокус после добавления. */
   private readonly _draftInput = viewChild<ElementRef<HTMLInputElement>>('draftInput');
+  /** Показывать архив вместо живых записей. */
+  protected readonly archived = signal(false);
   /** Идентификатор записи, под которой открыта форма подзадачи, или null. */
   protected readonly subParentId = signal<string | null>(null);
   /** Черновик подзадачи. */
@@ -702,7 +753,7 @@ export class TodosComponent {
   protected load(): void {
     this.loading.set(true);
     this.error.set('');
-    this._api.listTodos(this.activeKind()).subscribe({
+    this._api.listTodos(this.activeKind(), this.archived()).subscribe({
       next: (rows) => {
         this.items.set(rows);
         this.loading.set(false);
@@ -710,6 +761,42 @@ export class TodosComponent {
       error: (err: unknown) => {
         this.error.set(errorMessage(err, 'Не удалось загрузить список.'));
         this.loading.set(false);
+      },
+    });
+  }
+
+  /**
+   * Переключает показ архива.
+   * @param value `true` — показать архив.
+   * @returns Ничего.
+   */
+  protected setArchivedView(value: boolean): void {
+    if (value === this.archived()) {
+      return;
+    }
+    this.archived.set(value);
+    this.items.set([]);
+    this.cancelSub();
+    this.load();
+  }
+
+  /**
+   * Прячет запись в архив или возвращает её.
+   *
+   * Архив — не удаление: у спрятанного обязан быть экран, где его видно, и способ вернуть.
+   * Здесь это переключатель «Живые ↔ Архив» рядом со списком, а не спрятанный пункт меню.
+   * @param item Запись.
+   * @returns Ничего.
+   */
+  protected toggleArchived(item: TodoView): void {
+    const request = item.archived ? this._api.restoreTodo(item.id) : this._api.archiveTodo(item.id);
+    request.subscribe({
+      next: () => {
+        // Запись уходит из текущего списка: она переехала в другой режим показа.
+        this.items.update((rows) => rows.filter((current) => current.id !== item.id));
+      },
+      error: (err: unknown) => {
+        this._modal.error('Не удалось перенести', errorMessage(err));
       },
     });
   }
@@ -734,6 +821,9 @@ export class TodosComponent {
    * @returns Текст заголовка.
    */
   protected emptyTitle(): string {
+    if (this.archived()) {
+      return 'В архиве пусто';
+    }
     switch (this.activeKind()) {
       case 'idea':
         return 'Идей пока нет';
@@ -749,6 +839,9 @@ export class TodosComponent {
    * @returns Текст пояснения.
    */
   protected emptyDescription(): string {
+    if (this.archived()) {
+      return 'Сюда попадает то, что убрано с глаз, но не удалено. Вернуть можно тем же значком.';
+    }
     switch (this.activeKind()) {
       case 'idea':
         return 'Сюда можно записать мысль, про которую ещё не решено, делать её или нет.';

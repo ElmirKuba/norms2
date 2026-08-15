@@ -111,10 +111,14 @@ export class AccentApiService {
     return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/${action}`, {});
   }
 
-  /** Отправить в архив или вернуть. */
-  public setTodoArchived(id: string, archived: boolean): Observable<TodoView> {
-    const action = archived ? 'archive' : 'restore';
-    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/${action}`, {});
+  /** Убрать запись в архив. */
+  public archiveTodo(id: string): Observable<TodoView> {
+    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/archive`, {});
+  }
+
+  /** Вернуть запись из архива. */
+  public restoreTodo(id: string): Observable<TodoView> {
+    return this._http.post<TodoView>(`${API_PREFIX}/accent/todos/${id}/restore`, {});
   }
 
   /** Удалить запись вместе с подзадачами. */

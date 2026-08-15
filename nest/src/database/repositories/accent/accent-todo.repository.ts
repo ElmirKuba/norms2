@@ -235,7 +235,6 @@ export class AccentTodoRepository implements AccentTodoRepositoryPort {
         and(
           alive(todoEvents),
           eq(todoEvents.accountId, accountId),
-          isNull(todoEvents.archivedAt),
           includeHappened ? undefined : isNull(todoEvents.happenedAt),
         ),
       )
@@ -272,7 +271,6 @@ export class AccentTodoRepository implements AccentTodoRepositoryPort {
         title: data.title,
         expectedOn: data.expectedOn ?? null,
         happenedAt: null,
-        archivedAt: null,
       })
       .returning();
     const row = rows[0];

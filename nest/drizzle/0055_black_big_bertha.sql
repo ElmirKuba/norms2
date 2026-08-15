@@ -4,7 +4,6 @@ CREATE TABLE "todo_events" (
 	"title" text NOT NULL,
 	"expected_on" date,
 	"happened_at" timestamp with time zone,
-	"archived_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"deleted_at" timestamp with time zone

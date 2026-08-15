@@ -1,5 +1,5 @@
 {
-  "id": "16a1c786-01bb-4abe-8d26-5d50770e9eb6",
+  "id": "1d1d977e-46e4-42d3-ab2e-c03a8a6df12c",
   "prevId": "5a3c63d1-4a7f-4ef8-808a-8a7479816c35",
   "version": "7",
   "dialect": "postgresql",
@@ -1895,12 +1895,6 @@
         },
         "happened_at": {
           "name": "happened_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "archived_at": {
-          "name": "archived_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

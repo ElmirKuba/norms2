@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
+import { ValidationError } from '../../../../shared/errors/validation.error';
 import { AccentTaskDomainService } from '../domain-services/accent-task.domain-service';
 import { AccentGoalDomainService } from '../../goals/domain-services/accent-goal.domain-service';
 import { toTaskView } from '../interfaces/task-view.interface';
@@ -36,6 +38,17 @@ export class CompleteTaskUseCase {
     doneValue?: number,
     replace?: boolean,
   ): Promise<CompleteTaskResult> {
+    // Прошлое только для чтения (2.10·B1): отметить вчерашний день нельзя.
+    //
+    // Найдено прогоном ·B5: снятие отметки было защищено, а простановка — нет, то есть правило
+    // выполнялось наполовину. Разница важна по существу: разрешив отмечать задним числом, мы
+    // превращаем «дней подряд» из свидетельства в отчёт о намерениях — ровно то, ради чего
+    // read-only и выбиралось (реш. Elmir 14.08.2026: «это не свободная эксель-таблица»).
+    const existing = await this._tasks.findOwned(id, accountId);
+    if (existing !== null && existing.occurredOn !== todayInTimezone(timezone)) {
+      throw new ValidationError('Отмечать можно только сегодняшний день.');
+    }
+
     const { task, ladderEvent, transitioned } = await this._tasks.complete(
       id,
       accountId,

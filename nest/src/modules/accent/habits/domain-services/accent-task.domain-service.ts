@@ -94,6 +94,16 @@ export class AccentTaskDomainService {
   }
 
   /**
+   * Находит задачу владельца (2.10·B5) — нужно, чтобы узнать её день до изменения.
+   * @param id Идентификатор задачи.
+   * @param accountId Идентификатор аккаунта-владельца.
+   * @returns Задача или null.
+   */
+  public async findOwned(id: string, accountId: string): Promise<TaskFull | null> {
+    return this._repository.findOwned(id, accountId);
+  }
+
+  /**
    * Читает уже существующие задачи дня **без материализации** (2.10·B4).
    *
    * Нужен для просмотра прошлых дней: `listForDay` сначала создаёт недостающие задачи из

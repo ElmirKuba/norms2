@@ -60,6 +60,19 @@ export interface TaskUpdateData {
  */
 export interface AccentTaskRepositoryPort {
   /**
+   * Дни, в которые у человека вообще что-то было (2.10·B2) — для календаря.
+   *
+   * Календарь пускает только туда, где есть содержимое (реш. Elmir 15.08.2026), значит фронту
+   * нужен список кликабельных дат заранее: рисовать месяц, дёргая сервер на каждую клетку, — это
+   * тридцать запросов на один экран.
+   * @param accountId Идентификатор аккаунта.
+   * @param from Начало периода `YYYY-MM-DD`.
+   * @param to Конец периода `YYYY-MM-DD`.
+   * @returns Дни с задачами по возрастанию.
+   */
+  daysWithTasks(accountId: string, from: string, to: string): Promise<string[]>;
+
+  /**
    * Задачи аккаунта на день (по приоритету, затем дате создания).
    * @param accountId Идентификатор аккаунта.
    * @param occurredOn Локальная дата `YYYY-MM-DD`.

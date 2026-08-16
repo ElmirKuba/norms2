@@ -5,6 +5,8 @@ import { createOneOffTaskSchema } from '../dtos/create-one-off-task.dto';
 import type { CreateOneOffTaskDto } from '../dtos/create-one-off-task.dto';
 import { completeTaskSchema } from '../dtos/complete-task.dto';
 import type { CompleteTaskDto } from '../dtos/complete-task.dto';
+import { ListDayMapUseCase } from '../use-cases/list-day-map.use-case';
+import type { DayMapEntry } from '../use-cases/list-day-map.use-case';
 import { ListTasksUseCase } from '../use-cases/list-tasks.use-case';
 import { ListOverdueTasksUseCase } from '../use-cases/list-overdue-tasks.use-case';
 import { ListDueTodayTasksUseCase } from '../use-cases/list-due-today-tasks.use-case';
@@ -37,6 +39,7 @@ export class TasksController {
    */
   public constructor(
     private readonly _list: ListTasksUseCase,
+    private readonly _dayMap: ListDayMapUseCase,
     private readonly _overdue: ListOverdueTasksUseCase,
     private readonly _dueToday: ListDueTodayTasksUseCase,
     private readonly _create: CreateOneOffTaskUseCase,
@@ -53,6 +56,22 @@ export class TasksController {
    * @param date Дата `YYYY-MM-DD` (опц.).
    * @returns Проекции задач дня.
    */
+  /**
+   * Карта дней для календаря (2.10·B2): в какие дни периода вообще что-то было.
+   * @param request Запрос (аккаунт из Guard).
+   * @param from Начало периода `YYYY-MM-DD`.
+   * @param to Конец периода `YYYY-MM-DD`.
+   * @returns Дни с содержимым.
+   */
+  @Get('days')
+  public days(
+    @Req() request: AuthenticatedRequest,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ): Promise<DayMapEntry[]> {
+    return this._dayMap.execute(request.account.id, request.account.timezone, from, to);
+  }
+
   @Get('tasks')
   public list(
     @Req() request: AuthenticatedRequest,

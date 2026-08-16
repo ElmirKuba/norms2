@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ValidationError } from '../../../../shared/errors/validation.error';
 import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
 import { AccentTaskDomainService } from '../domain-services/accent-task.domain-service';
 import { AccentHabitDomainService } from '../domain-services/accent-habit.domain-service';
@@ -30,8 +31,23 @@ export class ListTasksUseCase {
    * @returns Проекции задач дня.
    */
   public async execute(accountId: string, timezone: string, date?: string): Promise<TaskView[]> {
-    const day = date ?? todayInTimezone(timezone);
-    const items = await this._tasks.listForDay(accountId, day, timezone);
+    const today = todayInTimezone(timezone);
+    const day = date ?? today;
+
+    // Будущее закрыто ОТВЕТОМ сервера, а не отсутствием кнопки на фронте (2.10·B2): иначе
+    // запрос руками создал бы задачи на неделю вперёд — с сегодняшней планкой лесенки вместо
+    // будущей.
+    if (day > today) {
+      throw new ValidationError('Будущие дни не показываем.');
+    }
+
+    // Прошлое ЧИТАЕМ, но не материализуем (2.10·B4): день, в который человек не заходил,
+    // должен остаться пустым. Создать его задним числом значило бы выдумать историю — причём
+    // с нынешней планкой, а не с той, что была тогда.
+    const items =
+      day === today
+        ? await this._tasks.listForDay(accountId, day, timezone)
+        : await this._tasks.listExistingForDay(accountId, day);
     const minActions = await this._minActionsByTemplate(accountId, items);
     return items.map((item) =>
       toTaskView(item, item.templateId === null ? null : (minActions.get(item.templateId) ?? null)),

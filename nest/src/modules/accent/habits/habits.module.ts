@@ -22,6 +22,7 @@ import { SeedHabitStarterPackUseCase } from './use-cases/seed-habit-starter-pack
 import { ClearHabitStartersUseCase } from './use-cases/clear-habit-starters.use-case';
 import { AdoptHabitUseCase } from './use-cases/adopt-habit.use-case';
 import { ReorderHabitsUseCase } from './use-cases/reorder-habits.use-case';
+import { ListDayMapUseCase } from './use-cases/list-day-map.use-case';
 import { ListTasksUseCase } from './use-cases/list-tasks.use-case';
 import { ListOverdueTasksUseCase } from './use-cases/list-overdue-tasks.use-case';
 import { ListDueTodayTasksUseCase } from './use-cases/list-due-today-tasks.use-case';
@@ -62,6 +63,7 @@ import { SetHabitArchivedUseCase } from './use-cases/set-habit-archived.use-case
     AdoptHabitUseCase,
     ReorderHabitsUseCase,
     ListTasksUseCase,
+    ListDayMapUseCase,
     ListOverdueTasksUseCase,
     ListDueTodayTasksUseCase,
     CreateOneOffTaskUseCase,

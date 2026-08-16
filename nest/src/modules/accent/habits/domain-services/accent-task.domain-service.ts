@@ -94,6 +94,20 @@ export class AccentTaskDomainService {
   }
 
   /**
+   * Читает уже существующие задачи дня **без материализации** (2.10·B4).
+   *
+   * Нужен для просмотра прошлых дней: `listForDay` сначала создаёт недостающие задачи из
+   * расписаний, и для прошлого это означало бы выдумывание истории — причём с нынешней планкой
+   * лесенки вместо тогдашней. «Запрашиваем историю, а не создаём её».
+   * @param accountId Идентификатор аккаунта.
+   * @param date День `YYYY-MM-DD`.
+   * @returns Задачи, которые в этот день действительно были.
+   */
+  public async listExistingForDay(accountId: string, date: string): Promise<TaskFull[]> {
+    return this._repository.listByAccountOn(accountId, date);
+  }
+
+  /**
    * Создаёт разовую задачу (one-off, `templateId=null`) после валидации.
    * @param data Данные создания (без templateId).
    * @returns Созданная задача.

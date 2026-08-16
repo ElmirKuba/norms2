@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or } from 'drizzle-orm';
+import { alive } from '../../core/alive.util';
 import { DRIZZLE } from '../../client/database.constants';
 import type { DrizzleDatabase, DrizzleExecutor } from '../../client/database.constants';
 import { habitTasks } from '../../schemas/habit-tasks.schema';
@@ -23,6 +24,29 @@ export class AccentTaskRepository implements AccentTaskRepositoryPort {
    * @param _db Инстанс Drizzle (DI-токен DRIZZLE).
    */
   public constructor(@Inject(DRIZZLE) private readonly _db: DrizzleDatabase) {}
+
+  /**
+   * Дни периода, в которые есть хотя бы одна задача (2.10·B2).
+   * @param accountId Идентификатор аккаунта.
+   * @param from Начало периода.
+   * @param to Конец периода.
+   * @returns Дни по возрастанию.
+   */
+  public async daysWithTasks(accountId: string, from: string, to: string): Promise<string[]> {
+    const rows = await this._db
+      .selectDistinct({ occurredOn: habitTasks.occurredOn })
+      .from(habitTasks)
+      .where(
+        and(
+          alive(habitTasks),
+          eq(habitTasks.accountId, accountId),
+          gte(habitTasks.occurredOn, from),
+          lte(habitTasks.occurredOn, to),
+        ),
+      )
+      .orderBy(asc(habitTasks.occurredOn));
+    return rows.map((row) => row.occurredOn);
+  }
 
   /**
    * Задачи аккаунта на день (priority desc, затем created_at asc).

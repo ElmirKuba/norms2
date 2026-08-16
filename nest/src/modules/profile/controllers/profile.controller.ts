@@ -20,6 +20,9 @@ import { updateAliasSchema } from '../dtos/update-alias.dto';
 import { updateTimezoneSchema } from '../dtos/update-timezone.dto';
 import type { UpdateTimezoneDto } from '../dtos/update-timezone.dto';
 import { UpdateTimezoneUseCase } from '../use-cases/update-timezone.use-case';
+import { dismissTimezoneSchema } from '../dtos/dismiss-timezone.dto';
+import type { DismissTimezoneDto } from '../dtos/dismiss-timezone.dto';
+import { DismissTimezoneUseCase } from '../use-cases/dismiss-timezone.use-case';
 import type { UpdateAliasDto } from '../dtos/update-alias.dto';
 import { GetMyProfileUseCase } from '../use-cases/get-my-profile.use-case';
 import { GetProfileByLoginUseCase } from '../use-cases/get-profile-by-login.use-case';
@@ -44,12 +47,14 @@ export class ProfileController {
    * @param _getProfileByLoginUseCase Публичный профиль по логину.
    * @param _updateAliasUseCase Смена псевдонима.
    * @param _updateTimezoneUseCase Смена часового пояса.
+   * @param _dismissTimezoneUseCase Отказ от предложения сменить пояс.
    */
   public constructor(
     private readonly _getMyProfileUseCase: GetMyProfileUseCase,
     private readonly _getProfileByLoginUseCase: GetProfileByLoginUseCase,
     private readonly _updateAliasUseCase: UpdateAliasUseCase,
     private readonly _updateTimezoneUseCase: UpdateTimezoneUseCase,
+    private readonly _dismissTimezoneUseCase: DismissTimezoneUseCase,
     private readonly _deactivateMyAccountUseCase: DeactivateMyAccountUseCase,
     private readonly _deleteMyAccountUseCase: DeleteMyAccountUseCase,
     private readonly _uploadAvatarUseCase: UploadAvatarUseCase,
@@ -104,6 +109,21 @@ export class ProfileController {
     @Body(new ZodValidationPipe(updateTimezoneSchema)) body: UpdateTimezoneDto,
   ): Promise<{ timezone: string }> {
     return this._updateTimezoneUseCase.execute(request.account.id, body.timezone);
+  }
+
+  /**
+   * Запоминает или забывает зону, про которую человек сказал «не спрашивать» (2.10·A3).
+   * @param request Запрос с аккаунтом из Guard.
+   * @param body Зона или null.
+   * @returns Что запомнили.
+   */
+  @Post('me/timezone-dismiss')
+  @UseGuards(AuthGuard)
+  public async dismissTimezone(
+    @Req() request: AuthenticatedRequest,
+    @Body(new ZodValidationPipe(dismissTimezoneSchema)) body: DismissTimezoneDto,
+  ): Promise<{ dismissedTimezone: string | null }> {
+    return this._dismissTimezoneUseCase.execute(request.account.id, body.timezone);
   }
 
   @Post('me/deactivate')

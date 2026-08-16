@@ -17,6 +17,8 @@ export interface AccountRead {
   recoveryRequiredCount: number | null;
   /** IANA-таймзона. */
   timezone: string;
+  /** Зона, про которую человек сказал «не спрашивать» (2.10·A3), или null. */
+  dismissedTimezone: string | null;
   /** Метка деактивации (ISO) или null. */
   deactivatedAt: string | null;
   /** Когда создан (ISO). */

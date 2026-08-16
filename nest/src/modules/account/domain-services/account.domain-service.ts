@@ -104,6 +104,7 @@ export class AccountDomainService {
         invitesRemaining,
         recoveryRequiredCount: null,
         timezone: timezone !== undefined && isValidTimezone(timezone) ? timezone : 'UTC',
+        dismissedTimezone: null,
       },
       tx,
     );
@@ -368,7 +369,22 @@ export class AccountDomainService {
    * @returns Обновлённый аккаунт.
    */
   public async updateTimezone(accountId: string, timezone: string): Promise<AccountFull> {
-    return this._applyWithRetry(accountId, { timezone });
+    // Отказ забывается вместе со сменой: он был про «не предлагай мне вот эту зону», а её только
+    // что приняли — держать память об отказе дальше значит молчать там, где надо спросить.
+    return this._applyWithRetry(accountId, { timezone, dismissedTimezone: null });
+  }
+
+  /**
+   * Запоминает или забывает зону, про которую человек сказал «не спрашивать» (2.10·A3).
+   * @param accountId Идентификатор аккаунта.
+   * @param timezone Зона или null — забыть прежний отказ.
+   * @returns Обновлённый аккаунт.
+   */
+  public async setDismissedTimezone(
+    accountId: string,
+    timezone: string | null,
+  ): Promise<AccountFull> {
+    return this._applyWithRetry(accountId, { dismissedTimezone: timezone });
   }
 
   /**

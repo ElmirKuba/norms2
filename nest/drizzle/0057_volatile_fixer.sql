@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "dismissed_timezone" varchar(64);

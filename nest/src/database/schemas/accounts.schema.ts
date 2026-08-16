@@ -21,6 +21,11 @@ export const accounts = defineTableWithSchema<AccountFull>()(
     invitesRemaining: integer('invites_remaining').notNull().default(3),
     recoveryRequiredCount: integer('recovery_required_count'),
     timezone: varchar('timezone', { length: 64 }).notNull().default('UTC'),
+    // Зона, про которую человек сказал «не спрашивать» (2.10·A3). Отказ привязан к КОНКРЕТНОЙ
+    // зоне, а не выключает предложения вообще: уехал в командировку — отказался один раз;
+    // вернулся домой или поехал дальше — отказ забывается сам. В логике нет ни одной даты,
+    // поэтому нечему протухать и нечего чинить при переводе часов.
+    dismissedTimezone: varchar('dismissed_timezone', { length: 64 }),
     deactivatedAt: timestamp('deactivated_at', { withTimezone: true }),
     version: bigint('version', { mode: 'number' }).notNull().default(0),
     ...timestamps(),

@@ -11,4 +11,6 @@ export interface AccountPure {
   avatar: string | null;
   /** IANA-таймзона пользователя. */
   timezone: string;
+  /** Зона, про которую сказано «не спрашивать» (2.10·A3), или null. */
+  dismissedTimezone: string | null;
 }

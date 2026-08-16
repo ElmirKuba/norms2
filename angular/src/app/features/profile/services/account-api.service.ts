@@ -38,6 +38,19 @@ export class AccountApiService {
   }
 
 
+  /**
+   * Запомнить или забыть зону, про которую сказано «не спрашивать» (2.10·A3).
+   * @param timezone Зона или null — забыть прежний отказ.
+   * @returns Что запомнили.
+   */
+  public dismissTimezone(timezone: string | null): Observable<{ dismissedTimezone: string | null }> {
+    return this._http.post<{ dismissedTimezone: string | null }>(
+      `${API_PREFIX}/accounts/me/timezone-dismiss`,
+      { timezone },
+    );
+  }
+
+
   /** Деактивация своего аккаунта (обратимо, ADR-0017). */
   public deactivate(): Observable<void> {
     return this._http.post<void>(`${API_PREFIX}/accounts/me/deactivate`, null);

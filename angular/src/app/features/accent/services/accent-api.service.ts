@@ -259,6 +259,19 @@ export class AccentApiService {
   // ── Задачи дня (2.4) ──
 
   /** Задачи дня (по умолчанию — сегодня); материализуются из привычек на бэке. */
+  /**
+   * Карта дней для календаря (2.10·B2): в какие дни периода вообще что-то было.
+   * @param from Начало периода `YYYY-MM-DD`.
+   * @param to Конец периода `YYYY-MM-DD`.
+   * @returns Дни с содержимым.
+   */
+  public listDayMap(from: string, to: string): Observable<{ date: string; hasContent: boolean }[]> {
+    return this._http.get<{ date: string; hasContent: boolean }[]>(
+      `${API_PREFIX}/accent/days`,
+      { params: { from, to } },
+    );
+  }
+
   public listTasks(date?: string): Observable<TaskView[]> {
     const query = date === undefined ? '' : `?date=${date}`;
     return this._http.get<TaskView[]>(`${API_PREFIX}/accent/tasks${query}`);

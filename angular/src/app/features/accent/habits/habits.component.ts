@@ -93,6 +93,34 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       </nav>
 
       @if (tab() === 'today') {
+        <!-- Навигация по дням (2.10·B3): прошлое доступно только на чтение, будущее закрыто
+             ответом сервера. Дни без содержимого не выбираются — попадать в пустоту незачем. -->
+        <div class="hb__daynav">
+          <button
+            type="button"
+            class="hb__daynav-arrow"
+            (click)="stepDay(-1)"
+            [disabled]="!hasPrevDay()"
+            aria-label="Предыдущий день с записями"
+          >
+            ‹
+          </button>
+          <span class="hb__daynav-label">{{ dayLabel() }}</span>
+          <button
+            type="button"
+            class="hb__daynav-arrow"
+            (click)="stepDay(1)"
+            [disabled]="isToday()"
+            aria-label="Следующий день"
+          >
+            ›
+          </button>
+          @if (!isToday()) {
+            <app-button variant="ghost" (click)="goToday()">Сегодня</app-button>
+            <span class="hb__daynav-readonly">только просмотр</span>
+          }
+        </div>
+
         @if (syncNotice(); as notice) {
           <div class="hb__flash" data-event="sync" role="status">
             <span>{{ notice }}</span>
@@ -482,6 +510,40 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         justify-content: center;
         margin-top: var(--space-4);
       }
+      .hb__daynav {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+
+      .hb__daynav-arrow {
+        min-width: 36px;
+        min-height: 36px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: none;
+        color: var(--color-text);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .hb__daynav-arrow:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .hb__daynav-label {
+        min-width: 140px;
+        font-weight: var(--fw-medium);
+      }
+
+      .hb__daynav-readonly {
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
+      }
+
       .hb__flash {
         display: flex;
         align-items: center;
@@ -657,6 +719,12 @@ export class HabitsComponent {
   }
   /** Задачи дня (вкладка «Сегодня»). */
   protected readonly tasks = signal<TaskView[]>([]);
+  /** Сегодняшний день в поясе аккаунта — считает бэк, но для подписей нужен и здесь. */
+  protected readonly today = signal(new Date().toISOString().slice(0, 10));
+  /** Выбранный день (по умолчанию сегодня). */
+  protected readonly selectedDay = signal(new Date().toISOString().slice(0, 10));
+  /** Дни, в которые что-то было — из карты дней. */
+  protected readonly daysWithContent = signal<string[]>([]);
   /** Идёт загрузка задач дня. */
   protected readonly tasksLoading = signal(false);
   /** Ошибка загрузки задач (или null). */
@@ -1025,9 +1093,90 @@ export class HabitsComponent {
     this.tasks.update((list) => list.map((t) => (t.id === updated.id ? updated : t)));
   }
 
+  /**
+   * Переключает день на предыдущий/следующий **с записями**.
+   *
+   * Шагаем по карте дней, а не по календарю подряд: между отметками бывают недели пустоты, и
+   * пролистывать их по одному дню — работа, которую человек не просил.
+   * @param direction −1 назад, +1 вперёд.
+   * @returns Ничего.
+   */
+  protected stepDay(direction: number): void {
+    const days = this.daysWithContent();
+    const current = this.selectedDay();
+    if (direction < 0) {
+      const prev = [...days].reverse().find((day) => day < current);
+      if (prev !== undefined) {
+        this.selectedDay.set(prev);
+        this._loadTasks();
+      }
+      return;
+    }
+    const next = days.find((day) => day > current);
+    this.selectedDay.set(next ?? this.today());
+    this._loadTasks();
+  }
+
+  /**
+   * Возвращает к сегодняшнему дню.
+   * @returns Ничего.
+   */
+  protected goToday(): void {
+    this.selectedDay.set(this.today());
+    this._loadTasks();
+  }
+
+  /**
+   * Выбран ли сегодняшний день.
+   * @returns `true`, если сегодня.
+   */
+  protected isToday(): boolean {
+    return this.selectedDay() === this.today();
+  }
+
+  /**
+   * Есть ли куда шагнуть назад.
+   * @returns `true`, если в карте есть более ранний день с записями.
+   */
+  protected hasPrevDay(): boolean {
+    return this.daysWithContent().some((day) => day < this.selectedDay());
+  }
+
+  /**
+   * Подпись выбранного дня: «сегодня» словом, остальные — датой.
+   * @returns Текст подписи.
+   */
+  protected dayLabel(): string {
+    if (this.isToday()) {
+      return 'Сегодня';
+    }
+    const [year, month, day] = this.selectedDay().split('-').map(Number);
+    if (year === undefined || month === undefined || day === undefined) {
+      return this.selectedDay();
+    }
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      weekday: 'short',
+    }).format(new Date(year, month - 1, day));
+  }
+
+  /**
+   * Подтягивает карту дней за последние полгода — по ней работают стрелки.
+   * @returns Ничего.
+   */
+  private _loadDayMap(): void {
+    const to = this.today();
+    const from = new Date(Date.parse(to) - 183 * 86_400_000).toISOString().slice(0, 10);
+    this._api.listDayMap(from, to).subscribe({
+      next: (rows) => this.daysWithContent.set(rows.map((row) => row.date)),
+      error: () => this.daysWithContent.set([]),
+    });
+  }
+
   private _loadTasks(): void {
     this.tasksLoading.set(true);
-    this._api.listTasks().subscribe({
+    this._api.listTasks(this.isToday() ? undefined : this.selectedDay()).subscribe({
       next: (items) => {
         this.tasks.set(items);
         this.tasksError.set(null);

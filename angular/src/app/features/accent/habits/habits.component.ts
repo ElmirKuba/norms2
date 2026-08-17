@@ -24,6 +24,8 @@ import { HscrollHintDirective } from '../../../shared/ui/hscroll-hint.directive'
 import { ModalService } from '../../../shared/modals/modal.service';
 import { DataFreshnessService } from '../../../core/freshness/data-freshness.service';
 import { MODAL_MEDIUM_WIDTH, MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
+import { DayPickerModalComponent } from './day-picker-modal.component';
+import type { DayPickerData } from './day-picker-modal.component';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { AccentApiService } from '../services/accent-api.service';
 import { HABIT_KIND_LABELS } from '../accent.types';
@@ -98,22 +100,12 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         <div class="hb__daynav">
           <button
             type="button"
-            class="hb__daynav-arrow"
-            (click)="stepDay(-1)"
-            [disabled]="!hasPrevDay()"
-            aria-label="Предыдущий день с записями"
+            class="hb__daynav-day"
+            (click)="openDayPicker()"
+            aria-label="Выбрать день в календаре"
           >
-            ‹
-          </button>
-          <span class="hb__daynav-label">{{ dayLabel() }}</span>
-          <button
-            type="button"
-            class="hb__daynav-arrow"
-            (click)="stepDay(1)"
-            [disabled]="isToday()"
-            aria-label="Следующий день"
-          >
-            ›
+            <span class="hb__daynav-icon" aria-hidden="true">🗓</span>
+            <span class="hb__daynav-label">{{ dayLabel() }}</span>
           </button>
           @if (!isToday()) {
             <app-button variant="ghost" (click)="goToday()">Сегодня</app-button>
@@ -173,6 +165,10 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                     </div>
                     <div class="hb__actions">
                       <span class="hb__badge" [attr.data-status]="t.status">{{ statusLabel(t) }}</span>
+                      <!-- Прошлое только для чтения (2.10·B1): в прошедшем дне живой остаётся
+                           одна информация — что тогда вышло. Кнопки там не просто бесполезны, они
+                           врут: «→ Завтра» из 7 августа означал бы перенос на 8-е, тоже в прошлое. -->
+                      @if (isToday()) {
                       @if (t.status === 'pending' || t.status === 'partial') {
                         @if (t.kind === 'binary') {
                           <app-button [loading]="busyTaskId() === t.id" (click)="completeTask(t)">Сделал</app-button>
@@ -206,14 +202,15 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
                           (click)="unpostpone(t)"
                         >↩ Вернуть на сегодня</app-button>
                       }
+                      }
                     </div>
                   </div>
-                  @if (t.status === 'pending' && !t.minAction && minText(t); as text) {
+                  @if (isToday() && t.status === 'pending' && !t.minAction && minText(t); as text) {
                     <div class="hb__min-row">
                       <span class="hb__min-text">🌙 На плохой день: {{ text }}</span>
                     </div>
                   }
-                  @if (t.status === 'pending' && t.minAction; as min) {
+                  @if (isToday() && t.status === 'pending' && t.minAction; as min) {
                     <div class="hb__min-row">
                       <app-button
                         variant="ghost"
@@ -532,6 +529,23 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
       .hb__daynav-arrow:disabled {
         opacity: 0.4;
         cursor: default;
+      }
+
+      .hb__daynav-day {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: transparent;
+        color: var(--color-text);
+        font-size: var(--fs-md);
+        cursor: pointer;
+      }
+
+      .hb__daynav-day:hover {
+        border-color: var(--color-accent);
       }
 
       .hb__daynav-label {
@@ -1097,27 +1111,31 @@ export class HabitsComponent {
   }
 
   /**
-   * Переключает день на предыдущий/следующий **с записями**.
+   * Открывает календарь выбора дня.
    *
-   * Шагаем по карте дней, а не по календарю подряд: между отметками бывают недели пустоты, и
-   * пролистывать их по одному дню — работа, которую человек не просил.
-   * @param direction −1 назад, +1 вперёд.
+   * Пришёл на смену стрелкам «шаг к следующему дню с записями» (замечание Elmir 17.08.2026):
+   * стрелка не показывает, что впереди, и человек листает историю вслепую — он не видит ни
+   * сколько дней позади, ни где в них дыры. Календарь отвечает на это одним взглядом.
    * @returns Ничего.
    */
-  protected stepDay(direction: number): void {
-    const days = this.daysWithContent();
-    const current = this.selectedDay();
-    if (direction < 0) {
-      const prev = [...days].reverse().find((day) => day < current);
-      if (prev !== undefined) {
-        this.selectedDay.set(prev);
-        this._loadTasks();
-      }
-      return;
-    }
-    const next = days.find((day) => day > current);
-    this.selectedDay.set(next ?? this.today());
-    this._loadTasks();
+  protected openDayPicker(): void {
+    void this._dialog
+      .open<DayPickerModalComponent, DayPickerData, string>(DayPickerModalComponent, {
+        width: MODAL_SMALL_WIDTH,
+        autoFocus: false,
+        data: {
+          selected: this.selectedDay(),
+          today: this.today(),
+          daysWithContent: this.daysWithContent(),
+        },
+      })
+      .afterClosed()
+      .subscribe((day) => {
+        if (typeof day === 'string' && day !== this.selectedDay()) {
+          this.selectedDay.set(day);
+          this._loadTasks();
+        }
+      });
   }
 
   /**
@@ -1135,14 +1153,6 @@ export class HabitsComponent {
    */
   protected isToday(): boolean {
     return this.selectedDay() === this.today();
-  }
-
-  /**
-   * Есть ли куда шагнуть назад.
-   * @returns `true`, если в карте есть более ранний день с записями.
-   */
-  protected hasPrevDay(): boolean {
-    return this.daysWithContent().some((day) => day < this.selectedDay());
   }
 
   /**

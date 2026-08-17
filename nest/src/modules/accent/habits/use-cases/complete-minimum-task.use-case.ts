@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { todayInTimezone } from '../../../../shared/utility-level/today-in-timezone.util';
+import { ValidationError } from '../../../../shared/errors/validation.error';
 import { AccentTaskDomainService } from '../domain-services/accent-task.domain-service';
 import { toTaskView } from '../interfaces/task-view.interface';
 import type { TaskView } from '../interfaces/task-view.interface';
@@ -35,10 +36,17 @@ export class CompleteMinimumTaskUseCase {
     accountId: string,
     timezone: string,
   ): Promise<CompleteMinimumResult> {
+    // Прошлое — только для чтения (2.10·B1): иначе «минимум» задним числом записал бы микро-победу
+    // сегодняшним днём и подтянул серию за день, которого не было.
+    const today = todayInTimezone(timezone);
+    const existing = await this._tasks.getOwned(id, accountId);
+    if (existing.occurredOn !== today) {
+      throw new ValidationError('Отмечать можно только сегодняшний день.');
+    }
     const { task, microWinNewlyCompleted } = await this._tasks.completeMinimum(
       id,
       accountId,
-      todayInTimezone(timezone),
+      today,
     );
     return { task: toTaskView(task), microWinNewlyCompleted };
   }

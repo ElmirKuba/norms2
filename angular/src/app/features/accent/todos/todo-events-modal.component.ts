@@ -91,7 +91,7 @@ import type { TodoEventView } from '../accent.types';
         }
       </div>
 
-      <div class="dlg__actions">
+      <div class="dlg__foot">
         <app-button variant="ghost" (click)="close()">Закрыть</app-button>
       </div>
     </div>

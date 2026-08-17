@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
 import type { Observable } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { AccentApiService } from '../services/accent-api.service';
+import { TodoEventsModalComponent } from './todo-events-modal.component';
+import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { formatDay } from './format-day.util';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { TODO_KIND_LABELS } from '../accent.types';
@@ -80,21 +82,30 @@ export interface TodoFormData {
             />
           </label>
 
-          <label class="tf__field">
+          <div class="tf__field">
             <span class="tf__label">Чего ждёт</span>
-            <select class="tf__input" formControlName="waitsForEventId">
-              <option value="">Ничего не ждёт</option>
-              @for (event of events(); track event.id) {
-                <option [value]="event.id">
-                  {{ event.title }}@if (event.expectedOn) { — {{ formatDay(event.expectedOn) }} }
-                </option>
-              }
-            </select>
+            <div class="tf__row">
+              <select class="tf__input" formControlName="waitsForEventId" aria-label="Чего ждёт">
+                <option value="">Ничего не ждёт</option>
+                @for (event of events(); track event.id) {
+                  <option [value]="event.id">
+                    {{ event.title }}@if (event.expectedOn) { — {{ formatDay(event.expectedOn) }} }
+                  </option>
+                }
+              </select>
+              <!-- Событие заводится прямо отсюда (замечание Elmir 17.08.2026: «как с этим
+                   работать?»). Пока справочник пуст, единственный пункт списка — «Ничего не
+                   ждёт», и человек упирается в выбор без выбора: чтобы появился вариант, надо
+                   было закрыть форму, найти справочник и вернуться. -->
+              <app-button variant="ghost" type="button" (click)="createEvent()">
+                + Событие
+              </app-button>
+            </div>
             <span class="tf__hint">
               Дело, которое ждёт мастера или звонка, — не невыполненное: раньше срока его и нельзя
               сделать.
             </span>
-          </label>
+          </div>
 
           <label class="tf__field">
             <span class="tf__label">Не раньше даты</span>
@@ -112,7 +123,7 @@ export interface TodoFormData {
           }
         </div>
 
-        <div class="dlg__actions">
+        <div class="dlg__foot">
           <app-button variant="ghost" type="button" (click)="close()">Отмена</app-button>
           <app-button type="submit" [loading]="saving()" [disabled]="form.invalid">
             Сохранить
@@ -156,6 +167,17 @@ export interface TodoFormData {
         resize: vertical;
       }
 
+      .tf__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .tf__row .tf__input {
+        flex: 1;
+        min-width: 0;
+      }
+
       .tf__hint {
         color: var(--color-text-muted);
         font-size: var(--fs-xs);
@@ -172,6 +194,7 @@ export class TodoFormModalComponent {
   private readonly _data = inject<TodoFormData>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef<TodoFormModalComponent>);
   private readonly _api = inject(AccentApiService);
+  private readonly _dialog = inject(MatDialog);
 
   /** Идёт сохранение. */
   protected readonly saving = signal(false);
@@ -215,6 +238,33 @@ export class TodoFormModalComponent {
    * строка», иначе в базе копились бы пустышки, неотличимые от заполненного.
    * @returns Ничего.
    */
+  /**
+   * Заводит событие справочника, не покидая форму, и сразу подставляет его в поле.
+   *
+   * Открывать полноценный справочник поверх формы — правильно: название и ожидаемая дата
+   * проверяются там же, где и всегда, а дубля правил не заводим.
+   * @returns Ничего.
+   */
+  protected createEvent(): void {
+    const before = new Set(this.events().map((event) => event.id));
+    void this._dialog
+      .open(TodoEventsModalComponent, { width: MODAL_SMALL_WIDTH, autoFocus: false })
+      .afterClosed()
+      .subscribe(() => {
+        this._api.listTodoEvents(false).subscribe({
+          next: (rows) => {
+            this.events.set(rows);
+            // Если событие только что создано — выбираем его: человек шёл сюда именно за этим.
+            const created = rows.find((event) => !before.has(event.id));
+            if (created !== undefined) {
+              this.form.controls.waitsForEventId.setValue(created.id);
+            }
+          },
+          error: () => undefined,
+        });
+      });
+  }
+
   protected save(): void {
     if (this.form.invalid || this.saving()) {
       return;

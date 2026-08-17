@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   CdkDrag,
   CdkDragHandle,
@@ -16,12 +17,12 @@ import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { TodoFormModalComponent } from './todo-form-modal.component';
 import { TodoEventsModalComponent } from './todo-events-modal.component';
 import { formatDay } from './format-day.util';
+import { TodoNodeContextDirective } from './todo-node-context.directive';
 import type { TodoFormData } from './todo-form-modal.component';
 import { AccentApiService } from '../services/accent-api.service';
 import { TODO_KIND_LABELS } from '../accent.types';
 import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
 
-/** Виды в порядке вкладок: дела первыми — это основной сценарий. */
 /**
  * Экран списков дел (`/accent/todos`, подфаза 2.10 блок C).
  *
@@ -37,7 +38,7 @@ import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
  */
 @Component({
   selector: 'app-todos',
-  imports: [CardComponent, EmptyStateComponent, ButtonComponent, CdkDropList, CdkDrag, CdkDragHandle],
+  imports: [NgTemplateOutlet, TodoNodeContextDirective, CardComponent, EmptyStateComponent, ButtonComponent, CdkDropList, CdkDrag, CdkDragHandle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="todos">
@@ -100,60 +101,76 @@ import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
       } @else {
         <ul class="todos__list" cdkDropList (cdkDropListDropped)="drop($event)">
           @for (item of items(); track item.id) {
-            <li class="todos__item" [class.todos__item--done]="item.status === 'done'" cdkDrag>
-              <button type="button" class="todos__grip" cdkDragHandle aria-label="Перетащить">
-                ⠿
-              </button>
-              <input
-                class="todos__check"
-                type="checkbox"
-                [checked]="item.status === 'done'"
-                (change)="toggleDone(item)"
-                [attr.aria-label]="'Отметить: ' + item.title"
-              />
-              <span class="todos__title">{{ item.title }}</span>
-              <!-- Вид показываем только когда он не «дело»: список общий (вкладки убраны
-                   17.08.2026), и подписывать каждую строку «Дело» — шум, а вот «Покупка» среди
-                   дел различается с одного взгляда. -->
-              @if (item.kind !== 'deed') {
-                <span class="todos__kind" [attr.data-kind]="item.kind">{{ labels[item.kind] }}</span>
-              }
-              @if (item.badge) {
-                <span class="todos__badge">{{ item.badge }}</span>
-              }
-              @if (item.waitsForEventId || item.waitsUntil) {
-                <span class="todos__wait" [title]="waitTitle(item)">
-                  ⏳ {{ waitLabel(item) }}
-                </span>
-              }
-              @if (item.note || item.plannedOn) {
-                <span class="todos__mark" [title]="item.note ?? ''">
-                  @if (item.plannedOn) {
-                    <span class="todos__date">{{ formatDay(item.plannedOn) }}</span>
-                  }
-                  @if (item.note) {
-                    <span aria-label="Есть заметка">✎</span>
-                  }
-                </span>
-              }
-              <button
-                type="button"
-                class="todos__edit"
-                (click)="toggleArchived(item)"
-                [attr.aria-label]="(item.archived ? 'Вернуть из архива: ' : 'В архив: ') + item.title"
-                [title]="item.archived ? 'Вернуть из архива' : 'В архив'"
-              >
-                {{ item.archived ? '↩' : '⇥' }}
-              </button>
-              <button
-                type="button"
-                class="todos__edit"
-                (click)="openDetails(item)"
-                [attr.aria-label]="'Детали: ' + item.title"
-                title="Детали"
-              >
-                ⋯
-              </button>
+            <ng-container
+              *ngTemplateOutlet="node; context: { $implicit: item, depth: 1 }"
+            ></ng-container>
+          }
+        </ul>
+
+        <!-- Узел рисуется ОДНИМ шаблоном на все три уровня (предел вложенности = 3 на бэке): копия
+             разметки на каждый уровень разъехалась бы с первой же правкой, а подзадача — такое же
+             дело, как корневое, и должна уметь то же самое (замечание Elmir 17.08.2026). -->
+        <ng-template #node todoNode let-item let-depth="depth">
+          <li
+            class="todos__item"
+            [class.todos__item--child]="depth > 1"
+            [class.todos__item--done]="item.status === 'done'"
+            cdkDrag
+          >
+            <button type="button" class="todos__grip" cdkDragHandle aria-label="Перетащить">
+              ⠿
+            </button>
+            <input
+              class="todos__check"
+              type="checkbox"
+              [checked]="item.status === 'done'"
+              (change)="toggleDone(item)"
+              [attr.aria-label]="'Отметить: ' + item.title"
+            />
+            <span class="todos__title">{{ item.title }}</span>
+            <!-- Вид показываем только когда он не «дело»: список общий (вкладки убраны
+                 17.08.2026), и подписывать каждую строку «Дело» — шум, а вот «Покупка» среди
+                 дел различается с одного взгляда. -->
+            @if (item.kind !== 'deed') {
+              <span class="todos__kind" [attr.data-kind]="item.kind">{{ labels[item.kind] }}</span>
+            }
+            @if (item.badge) {
+              <span class="todos__badge">{{ item.badge }}</span>
+            }
+            @if (item.waitsForEventId || item.waitsUntil) {
+              <span class="todos__wait" [title]="waitTitle(item)">⏳ {{ waitLabel(item) }}</span>
+            }
+            @if (item.note || item.plannedOn) {
+              <span class="todos__mark" [title]="item.note ?? ''">
+                @if (item.plannedOn) {
+                  <span class="todos__date">{{ formatDay(item.plannedOn) }}</span>
+                }
+                @if (item.note) {
+                  <span aria-label="Есть заметка">✎</span>
+                }
+              </span>
+            }
+            <button
+              type="button"
+              class="todos__edit"
+              (click)="toggleArchived(item)"
+              [attr.aria-label]="(item.archived ? 'Вернуть из архива: ' : 'В архив: ') + item.title"
+              [title]="item.archived ? 'Вернуть из архива' : 'В архив'"
+            >
+              {{ item.archived ? '↩' : '⇥' }}
+            </button>
+            <button
+              type="button"
+              class="todos__edit"
+              (click)="openDetails(item)"
+              [attr.aria-label]="'Детали: ' + item.title"
+              title="Детали"
+            >
+              ⋯
+            </button>
+            <!-- Глубже трёх уровней вкладывать нельзя (бэк откажет), поэтому на последнем уровне
+                 кнопки нет: предлагать действие, которое кончится ошибкой, — обман. -->
+            @if (depth < maxDepth) {
               <button
                 type="button"
                 class="todos__sub"
@@ -163,71 +180,48 @@ import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
               >
                 +
               </button>
-              <button
-                type="button"
-                class="todos__remove"
-                (click)="remove(item)"
-                [attr.aria-label]="'Удалить: ' + item.title"
+            }
+            <button
+              type="button"
+              class="todos__remove"
+              (click)="remove(item)"
+              [attr.aria-label]="'Удалить: ' + item.title"
+            >
+              ×
+            </button>
+
+            @if (item.children.length > 0) {
+              <ul
+                class="todos__children"
+                cdkDropList
+                (cdkDropListDropped)="dropChild($event, item)"
               >
-                ×
-              </button>
+                @for (child of item.children; track child.id) {
+                  <ng-container
+                    *ngTemplateOutlet="node; context: { $implicit: child, depth: depth + 1 }"
+                  ></ng-container>
+                }
+              </ul>
+            }
 
-              @if (item.children.length > 0) {
-                <ul class="todos__children" cdkDropList (cdkDropListDropped)="dropChild($event, item)">
-                  @for (child of item.children; track child.id) {
-                    <li
-                      class="todos__item todos__item--child"
-                      [class.todos__item--done]="child.status === 'done'"
-                      cdkDrag
-                    >
-                      <button
-                        type="button"
-                        class="todos__grip"
-                        cdkDragHandle
-                        aria-label="Перетащить подзадачу"
-                      >
-                        ⠿
-                      </button>
-                      <input
-                        class="todos__check"
-                        type="checkbox"
-                        [checked]="child.status === 'done'"
-                        (change)="toggleDone(child, item.id)"
-                        [attr.aria-label]="'Отметить: ' + child.title"
-                      />
-                      <span class="todos__title">{{ child.title }}</span>
-                      <button
-                        type="button"
-                        class="todos__remove"
-                        (click)="remove(child, item.id)"
-                        [attr.aria-label]="'Удалить: ' + child.title"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-
-              @if (subParentId() === item.id) {
-                <form class="todos__subform" (submit)="addSub($event, item.id)">
-                  <input
-                    #subInput
-                    class="todos__input"
-                    type="text"
-                    [value]="subDraft()"
-                    (input)="subDraft($any($event.target).value)"
-                    placeholder="Подзадача…"
-                    aria-label="Название подзадачи"
-                    maxlength="200"
-                  />
-                  <app-button type="submit" [disabled]="subDraft().trim() === ''">Добавить</app-button>
-                  <app-button variant="ghost" type="button" (click)="cancelSub()">Отмена</app-button>
-                </form>
-              }
-            </li>
-          }
-        </ul>
+            @if (subParentId() === item.id) {
+              <form class="todos__subform" (submit)="addSub($event, item.id)">
+                <input
+                  #subInput
+                  class="todos__input"
+                  type="text"
+                  [value]="subDraft()"
+                  (input)="subDraft($any($event.target).value)"
+                  placeholder="Подзадача…"
+                  aria-label="Название подзадачи"
+                  maxlength="200"
+                />
+                <app-button type="submit" [disabled]="subDraft().trim() === ''">Добавить</app-button>
+                <app-button variant="ghost" type="button" (click)="cancelSub()">Отмена</app-button>
+              </form>
+            }
+          </li>
+        </ng-template>
       }
     </section>
   `,
@@ -522,6 +516,8 @@ export class TodosComponent {
 
   /** Человеческий формат дня — общий с справочником событий. */
   protected readonly formatDay = formatDay;
+  /** Предел вложенности — тот же, что на бэке (`MAX_DEPTH`): глубже кнопки «+» не показываем. */
+  protected readonly maxDepth = 3;
   /** Подписи видов — для пометки на карточке. */
   protected readonly labels = TODO_KIND_LABELS;
   /** Записи списка. */
@@ -729,13 +725,7 @@ export class TodosComponent {
     }
     this._api.createTodo({ kind: 'deed', title, parentId }).subscribe({
       next: (row) => {
-        this.items.update((rows) =>
-          rows.map((current) =>
-            current.id === parentId
-              ? { ...current, children: [...current.children, row] }
-              : current,
-          ),
-        );
+        this.items.update((rows) => this._appendChild(rows, parentId, row));
         this.subDraftValue.set('');
       },
       error: (err: unknown) => {
@@ -752,29 +742,66 @@ export class TodosComponent {
    * @param item Запись.
    * @returns Ничего.
    */
-  protected toggleDone(item: TodoView, parentId?: string): void {
+  protected toggleDone(item: TodoView): void {
     const done = item.status !== 'done';
     this._api.setTodoDone(item.id, done).subscribe({
       next: (row) => {
-        this.items.update((rows) =>
-          parentId === undefined
-            ? this._sorted(rows.map((current) => (current.id === row.id ? row : current)))
-            : rows.map((current) =>
-                current.id === parentId
-                  ? {
-                      ...current,
-                      children: this._sorted(
-                        current.children.map((child) => (child.id === row.id ? row : child)),
-                      ),
-                    }
-                  : current,
-              ),
-        );
+        this.items.update((rows) => this._replaceInTree(rows, row));
       },
       error: (err: unknown) => {
         this._modal.error('Не удалось отметить', errorMessage(err));
       },
     });
+  }
+
+  /**
+   * Заменяет запись в дереве, где бы она ни лежала, и пересортировывает её уровень.
+   *
+   * **Обход, а не «корень или прямой ребёнок»** (17.08.2026): уровней три, и прежняя пара случаев
+   * молча не находила бы запись на третьем — галочка ставилась бы на сервере и не отражалась на
+   * экране.
+   * @param rows Текущий уровень дерева.
+   * @param updated Обновлённая запись.
+   * @returns Новый уровень с заменой.
+   */
+  private _replaceInTree(rows: TodoView[], updated: TodoView): TodoView[] {
+    let hit = false;
+    const next = rows.map((row) => {
+      if (row.id === updated.id) {
+        hit = true;
+        // Дети приходят с сервера пустыми у точечных ручек — сохраняем те, что уже показаны.
+        return { ...updated, children: row.children };
+      }
+      return { ...row, children: this._replaceInTree(row.children, updated) };
+    });
+    return hit ? this._sorted(next) : next;
+  }
+
+  /**
+   * Убирает запись из дерева, где бы она ни лежала.
+   * @param rows Текущий уровень дерева.
+   * @param id Идентификатор удаляемой.
+   * @returns Новый уровень без неё.
+   */
+  private _removeFromTree(rows: TodoView[], id: string): TodoView[] {
+    return rows
+      .filter((row) => row.id !== id)
+      .map((row) => ({ ...row, children: this._removeFromTree(row.children, id) }));
+  }
+
+  /**
+   * Добавляет ребёнка нужному родителю на любом уровне.
+   * @param rows Текущий уровень дерева.
+   * @param parentId Идентификатор родителя.
+   * @param child Новая запись.
+   * @returns Новый уровень с добавленной подзадачей.
+   */
+  private _appendChild(rows: TodoView[], parentId: string, child: TodoView): TodoView[] {
+    return rows.map((row) =>
+      row.id === parentId
+        ? { ...row, children: [...row.children, child] }
+        : { ...row, children: this._appendChild(row.children, parentId, child) },
+    );
   }
 
   /**
@@ -850,7 +877,7 @@ export class TodosComponent {
    * @param item Запись.
    * @returns Ничего.
    */
-  protected remove(item: TodoView, parentId?: string): void {
+  protected remove(item: TodoView): void {
     const hasChildren = item.children.length > 0;
     void this._modal
       .confirm({
@@ -867,18 +894,7 @@ export class TodosComponent {
         }
         this._api.deleteTodo(item.id).subscribe({
           next: () => {
-            this.items.update((rows) =>
-              parentId === undefined
-                ? rows.filter((current) => current.id !== item.id)
-                : rows.map((current) =>
-                    current.id === parentId
-                      ? {
-                          ...current,
-                          children: current.children.filter((child) => child.id !== item.id),
-                        }
-                      : current,
-                  ),
-            );
+            this.items.update((rows) => this._removeFromTree(rows, item.id));
           },
           error: (err: unknown) => {
             this._modal.error('Не удалось удалить', errorMessage(err));

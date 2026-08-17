@@ -104,8 +104,8 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
             (click)="openDayPicker()"
             aria-label="Выбрать день в календаре"
           >
-            <span class="hb__daynav-icon" aria-hidden="true">🗓</span>
             <span class="hb__daynav-label">{{ dayLabel() }}</span>
+            <span class="hb__daynav-caret" aria-hidden="true">▾</span>
           </button>
           @if (!isToday()) {
             <app-button variant="ghost" (click)="goToday()">Сегодня</app-button>
@@ -544,6 +544,11 @@ import type { AccentTimerData, AccentTimerResult } from '../shared/accent-timer-
         cursor: pointer;
       }
 
+      .hb__daynav-caret {
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+      }
+
       .hb__daynav-day:hover {
         border-color: var(--color-accent);
       }
@@ -865,7 +870,10 @@ export class HabitsComponent {
       case 'skipped':
         return task.skipReason === 'postponed' ? 'Перенесено' : 'Пропущено';
       case 'pending':
-        return 'Ожидает';
+        // В прошедшем дне «Ожидает» обещает действие, которого там уже не будет: отметить нельзя
+        // (2.10·B1), и слово читается как вечный долг. Факт вместо ожидания (замечание Elmir
+        // 17.08.2026).
+        return this.isToday() ? 'Ожидает' : 'Не отмечено';
     }
   }
 

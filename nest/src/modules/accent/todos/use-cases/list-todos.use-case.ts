@@ -37,6 +37,13 @@ export class ListTodosUseCase {
       bucket.push(child);
       byParent.set(child.parentId, bucket);
     }
-    return roots.map((root) => toTodoView(root, byParent.get(root.id) ?? []));
+    // Дерево строим рекурсивно: `toTodoView(row, children)` раскрывает только один уровень, и
+    // подзадача подзадачи иначе теряется по дороге к экрану.
+    const build = (row: TodoFull): TodoView => {
+      const view = toTodoView(row);
+      view.children = (byParent.get(row.id) ?? []).map(build);
+      return view;
+    };
+    return roots.map(build);
   }
 }

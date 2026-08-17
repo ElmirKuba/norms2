@@ -53,10 +53,16 @@ export class AccentTodoDomainService {
     archived: boolean,
   ): Promise<{ roots: TodoFull[]; children: TodoFull[] }> {
     const roots = await this._repository.listByKind(accountId, kind, archived);
-    const children = await this._repository.listChildren(
-      accountId,
-      roots.map((row) => row.id),
-    );
+    // Спускаемся по уровням, пока они есть, но не глубже предела: раньше брали только прямых
+    // детей корней, и третий уровень — разрешённый доменом — не показывался нигде (замечание
+    // Elmir 17.08.2026). Запросов ровно столько, сколько уровней, а не сколько записей.
+    const children: TodoFull[] = [];
+    let frontier = roots.map((row) => row.id);
+    for (let level = 1; level < MAX_DEPTH && frontier.length > 0; level += 1) {
+      const next = await this._repository.listChildren(accountId, frontier);
+      children.push(...next);
+      frontier = next.map((row) => row.id);
+    }
     return { roots, children };
   }
 

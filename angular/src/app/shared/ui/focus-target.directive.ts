@@ -47,11 +47,16 @@ export class FocusTargetDirective implements AfterViewInit, OnDestroy {
       typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const element = this._host.nativeElement;
 
-    // Скроллим в следующем кадре: на момент ngAfterViewInit соседние блоки экрана могут ещё
-    // достраиваться, и позиция элемента успеет уехать.
+    // Класс вешаем сразу, а прокрутку откладываем на следующий кадр: на момент ngAfterViewInit
+    // соседние блоки экрана могут ещё достраиваться, и позиция элемента успеет уехать.
+    //
+    // Раньше в кадр был убран и класс — и подсветка целиком зависела от того, рисует ли браузер
+    // кадры вообще. В фоновой или невидимой вкладке `requestAnimationFrame` не вызывается: URL
+    // при этом чистился (он вне кадра), и переход молча оставался без метки. Метка — не анимация,
+    // ей кадры ни к чему.
+    element.classList.add(reduced ? 'is-focus-target-static' : 'is-focus-target');
     requestAnimationFrame(() => {
       element.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
-      element.classList.add(reduced ? 'is-focus-target-static' : 'is-focus-target');
     });
 
     this._timer = window.setTimeout(() => {

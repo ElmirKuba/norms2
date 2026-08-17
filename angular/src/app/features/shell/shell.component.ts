@@ -3,7 +3,6 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { AuthApiService } from '../auth/services/auth-api.service';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
-import { TimezoneHintComponent } from './timezone-hint.component';
 import { NotificationBellComponent } from '../notifications/notification-bell/notification-bell.component';
 import { NotificationsStore } from '../notifications/services/notifications-store.service';
 import { VersionService } from '../../core/version/version.service';
@@ -27,7 +26,7 @@ interface NavItem {
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent, NotificationBellComponent, TimezoneHintComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent, NotificationBellComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',

@@ -30,6 +30,18 @@
   line-height: 1;
 }
 
+// Точка вместо числа: подсказка про пояс — не уведомление из ленты, считать её нечего,
+// но и молчать нельзя, иначе она спрячется за закрытой панелью.
+.bell__dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
 .bell__badge {
   position: absolute;
   top: 2px;

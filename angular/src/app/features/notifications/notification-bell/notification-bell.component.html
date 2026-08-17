@@ -9,6 +9,9 @@
     <span class="bell__icon" aria-hidden="true">🔔</span>
     @if (store.unread() > 0) {
       <span class="bell__badge">{{ store.unread() > 99 ? '99+' : store.unread() }}</span>
+    } @else if (hint.visible()) {
+      <!-- Подсказка лежит внутри панели, и без метки на самом колоколе её не видно вовсе. -->
+      <span class="bell__dot" aria-label="Есть подсказка"></span>
     }
   </button>
 
@@ -21,6 +24,11 @@
           <button type="button" class="panel__action" (click)="markAll()">Прочитать все</button>
         }
       </div>
+
+      <!-- Подсказка про часовой пояс (2.10·A3) живёт здесь, а не полосой над экраном
+           (реш. Elmir 17.08.2026): в колокол человек и так заглядывает, а полоса отодвигала
+           весь экран вниз при каждом входе из чужого пояса. -->
+      <app-timezone-hint />
 
       <div class="panel__list">
         @if (store.loading()) {

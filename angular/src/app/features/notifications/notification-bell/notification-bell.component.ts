@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationsStore } from '../services/notifications-store.service';
 import { NotificationModalService } from '../services/notification-modal.service';
+import { TimezoneHintComponent } from '../../shell/timezone-hint.component';
+import { TimezoneHintService } from '../../shell/timezone-hint.service';
 import type { NotificationView } from '../notifications.types';
 
 /**
@@ -11,7 +13,7 @@ import type { NotificationView } from '../notifications.types';
  */
 @Component({
   selector: 'app-notification-bell',
-  imports: [],
+  imports: [TimezoneHintComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notification-bell.component.html',
   styleUrl: './notification-bell.component.scss',
@@ -19,6 +21,8 @@ import type { NotificationView } from '../notifications.types';
 export class NotificationBellComponent {
   /** Стор уведомлений (счётчик/список/загрузка). */
   protected readonly store = inject(NotificationsStore);
+  /** Подсказка про часовой пояс: колокол рисует по ней точку, сама строка — внутри панели. */
+  protected readonly hint = inject(TimezoneHintService);
   private readonly _modal = inject(NotificationModalService);
   private readonly _destroyRef = inject(DestroyRef);
 

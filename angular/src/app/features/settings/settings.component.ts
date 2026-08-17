@@ -5,6 +5,7 @@ import { AuthStore } from '../../core/auth/auth-store.service';
 import { ModalService } from '../../shared/modals/modal.service';
 import { errorMessage } from '../../core/http/error-message.util';
 import { deviceTimezone } from '../../core/config/device-timezone.util';
+import { FocusTargetDirective } from '../../shared/ui/focus-target.directive';
 import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
@@ -24,7 +25,7 @@ type SettingsTab = 'security' | 'telegram' | 'account' | 'theme';
  */
 @Component({
   selector: 'app-settings',
-  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent, RecoverySettingsComponent, TelegramLinkComponent],
+  imports: [ThemeToggleComponent, ButtonComponent, CardComponent, SessionsComponent, RecoverySettingsComponent, TelegramLinkComponent, FocusTargetDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',

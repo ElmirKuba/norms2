@@ -62,7 +62,7 @@ export interface TodoFormData {
               type="text"
               formControlName="badge"
               maxlength="64"
-              placeholder="Например: у Румии, в аптеке"
+              placeholder="Например: в аптеке, по пути домой"
             />
           </label>
 

@@ -18,11 +18,15 @@ export class ListTodosUseCase {
 
   /**
    * @param accountId Идентификатор аккаунта (из Guard).
-   * @param kind Вид записи.
+   * @param kind Вид записи; `null` — все виды одной кучей.
    * @param archived `true` — архив вместо живых.
    * @returns Корневые записи с вложенными подзадачами.
    */
-  public async execute(accountId: string, kind: TodoKind, archived: boolean): Promise<TodoView[]> {
+  public async execute(
+    accountId: string,
+    kind: TodoKind | null,
+    archived: boolean,
+  ): Promise<TodoView[]> {
     const { roots, children } = await this._todos.list(accountId, kind, archived);
     const byParent = new Map<string, TodoFull[]>();
     for (const child of children) {

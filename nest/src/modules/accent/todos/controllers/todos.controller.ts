@@ -57,10 +57,13 @@ export class TodosController {
   ) {}
 
   /**
-   * Записи одного вида с подзадачами.
+   * Записи с подзадачами.
+   *
+   * **Без `kind` — всё одной кучей** (реш. Elmir 17.08.2026): разделение на вкладки заставляло
+   * решать, чем является запись, ещё до того, как она записана, — а смысл списка ровно обратный:
+   * сгрузить из головы, не раскладывая. Вид остался у записи как пометка, но не как перегородка.
    * @param request Запрос с аккаунтом из Guard.
-   * @param kind Вид записи; неизвестный трактуется как `deed` — список не место для ошибок
-   *   валидации, человек просто хотел посмотреть дела.
+   * @param kind Вид записи; не передан или неизвестен — отдаём все виды.
    * @param archived `'1'` — показать архив.
    * @returns Корневые записи с вложенными подзадачами.
    */
@@ -70,9 +73,9 @@ export class TodosController {
     @Query('kind') kind?: string,
     @Query('archived') archived?: string,
   ): Promise<TodoView[]> {
-    const safeKind: TodoKind = (TODO_KINDS as readonly string[]).includes(kind ?? '')
+    const safeKind: TodoKind | null = (TODO_KINDS as readonly string[]).includes(kind ?? '')
       ? (kind as TodoKind)
-      : 'deed';
+      : null;
     return this._list.execute(request.account.id, safeKind, archived === '1');
   }
 

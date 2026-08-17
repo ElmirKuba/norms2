@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AccountApiService } from '../profile/services/account-api.service';
 import { AuthStore } from '../../core/auth/auth-store.service';
 import { ModalService } from '../../shared/modals/modal.service';
@@ -35,8 +35,17 @@ export class SettingsComponent {
   private readonly _modal = inject(ModalService);
   private readonly _router = inject(Router);
 
-  /** Активная вкладка. */
-  protected readonly tab = signal<SettingsTab>('security');
+  /**
+   * Активная вкладка.
+   *
+   * Читается из адреса (`?tab=account`), чтобы ссылка могла привести человека **сразу туда, где
+   * лежит нужная настройка**: плашка часового пояса ведёт в настройки, и высаживать его на
+   * «Безопасность» с предложением «ищи сам» — значит терять то внимание, которое он уже направил
+   * (замечание Elmir 16.08.2026).
+   */
+  protected readonly tab = signal<SettingsTab>(
+    (inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as SettingsTab | null) ?? 'security',
+  );
   /** Идёт деактивация/удаление. */
   protected readonly busy = signal(false);
   /** Текущий часовой пояс аккаунта. */

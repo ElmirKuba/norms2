@@ -22,8 +22,6 @@ import { TODO_KIND_LABELS } from '../accent.types';
 import type { TodoEventView, TodoKind, TodoView } from '../accent.types';
 
 /** Виды в порядке вкладок: дела первыми — это основной сценарий. */
-const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
-
 /**
  * Экран списков дел (`/accent/todos`, подфаза 2.10 блок C).
  *
@@ -55,7 +53,7 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
           type="text"
           [value]="draft()"
           (input)="draft($any($event.target).value)"
-          [placeholder]="inputPlaceholder()"
+          placeholder="Что нужно сделать, купить или просто не забыть…"
           aria-label="Что записать"
           maxlength="200"
         />
@@ -86,21 +84,6 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         </button>
       </div>
 
-      <nav class="todos__tabs" role="tablist" aria-label="Виды записей">
-        @for (kind of kinds; track kind) {
-          <button
-            type="button"
-            role="tab"
-            class="todos__tab"
-            [class.todos__tab--active]="kind === activeKind()"
-            [attr.aria-selected]="kind === activeKind()"
-            (click)="switchKind(kind)"
-          >
-            {{ labels[kind] }}
-          </button>
-        }
-      </nav>
-
       @if (loading()) {
         <div class="todos__skeleton" aria-hidden="true">
           @for (row of [1, 2, 3]; track row) {
@@ -129,6 +112,12 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
                 [attr.aria-label]="'Отметить: ' + item.title"
               />
               <span class="todos__title">{{ item.title }}</span>
+              <!-- Вид показываем только когда он не «дело»: список общий (вкладки убраны
+                   17.08.2026), и подписывать каждую строку «Дело» — шум, а вот «Покупка» среди
+                   дел различается с одного взгляда. -->
+              @if (item.kind !== 'deed') {
+                <span class="todos__kind" [attr.data-kind]="item.kind">{{ labels[item.kind] }}</span>
+              }
               @if (item.badge) {
                 <span class="todos__badge">{{ item.badge }}</span>
               }
@@ -184,12 +173,21 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
               </button>
 
               @if (item.children.length > 0) {
-                <ul class="todos__children">
+                <ul class="todos__children" cdkDropList (cdkDropListDropped)="dropChild($event, item)">
                   @for (child of item.children; track child.id) {
                     <li
                       class="todos__item todos__item--child"
                       [class.todos__item--done]="child.status === 'done'"
+                      cdkDrag
                     >
+                      <button
+                        type="button"
+                        class="todos__grip"
+                        cdkDragHandle
+                        aria-label="Перетащить подзадачу"
+                      >
+                        ⠿
+                      </button>
                       <input
                         class="todos__check"
                         type="checkbox"
@@ -239,6 +237,8 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
+        /* Тот же отступ, что у остальных экранов раздела: без него список прилипает к краю. */
+        padding: var(--space-4) 0;
       }
 
       .todos__head {
@@ -376,15 +376,22 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
       .todos__item--child {
         border: none;
         background: none;
-        padding: var(--space-2) 0 var(--space-2) var(--space-5);
+        padding: var(--space-1) 0;
         min-height: 36px;
       }
 
+      /* Вложенность отмечается ОДНИМ отступом слева и линией, а не лесенкой из паддингов:
+         подзадача выравнивается под заголовком родителя, и колонка чекбоксов остаётся ровной. */
       .todos__children {
         flex-basis: 100%;
-        margin: 0;
-        padding: 0;
+        margin: var(--space-2) 0 0;
+        padding: 0 0 0 var(--space-4);
+        border-left: 1px solid var(--color-border);
         list-style: none;
+      }
+
+      .todos__subform {
+        padding-left: var(--space-4);
       }
 
       .todos__subform {
@@ -392,7 +399,6 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         flex-basis: 100%;
         gap: var(--space-2);
         margin-top: var(--space-2);
-        padding-left: var(--space-5);
       }
 
       .todos__item {
@@ -473,6 +479,15 @@ const KIND_ORDER: TodoKind[] = ['deed', 'idea', 'purchase'];
         color: var(--color-danger);
       }
 
+      .todos__kind {
+        padding: 2px var(--space-2);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-text-muted);
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+      }
+
       .todos__badge {
         padding: 2px var(--space-2);
         border-radius: var(--radius-sm);
@@ -505,15 +520,11 @@ export class TodosComponent {
   private readonly _modal = inject(ModalService);
   private readonly _dialog = inject(MatDialog);
 
-  /** Виды в порядке вкладок. */
-  protected readonly kinds = KIND_ORDER;
   /** Человеческий формат дня — общий с справочником событий. */
   protected readonly formatDay = formatDay;
-  /** Подписи видов. */
+  /** Подписи видов — для пометки на карточке. */
   protected readonly labels = TODO_KIND_LABELS;
-  /** Текущий вид. */
-  protected readonly activeKind = signal<TodoKind>('deed');
-  /** Записи текущего вида. */
+  /** Записи списка. */
   protected readonly items = signal<TodoView[]>([]);
   /** События справочника — чтобы подписать ожидание на карточке названием, а не идентификатором. */
   protected readonly events = signal<TodoEventView[]>([]);
@@ -579,7 +590,7 @@ export class TodosComponent {
     }
     this.adding.set(true);
     this.addError.set('');
-    this._api.createTodo({ kind: this.activeKind(), title }).subscribe({
+    this._api.createTodo({ kind: 'deed', title }).subscribe({
       next: (row) => {
         // Дописываем в конец: порядок ввода = порядок в списке, ничего не «прыгает».
         this.items.update((rows) => [...rows, row]);
@@ -716,7 +727,7 @@ export class TodosComponent {
     if (title === '') {
       return;
     }
-    this._api.createTodo({ kind: this.activeKind(), title, parentId }).subscribe({
+    this._api.createTodo({ kind: 'deed', title, parentId }).subscribe({
       next: (row) => {
         this.items.update((rows) =>
           rows.map((current) =>
@@ -790,6 +801,29 @@ export class TodosComponent {
   }
 
   /**
+   * Сохраняет порядок подзадач внутри одной записи.
+   * @param event Событие перетаскивания.
+   * @param parent Родительская запись.
+   * @returns Ничего.
+   */
+  protected dropChild(event: CdkDragDrop<unknown>, parent: TodoView): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...parent.children];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.update((rows) =>
+      rows.map((row) => (row.id === parent.id ? { ...row, children: next } : row)),
+    );
+    this._api.reorderTodos(next.map((row) => row.id)).subscribe({
+      error: (err: unknown) => {
+        this.load();
+        this._modal.error('Не удалось сохранить порядок', errorMessage(err));
+      },
+    });
+  }
+
+  /**
    * Раскладывает записи так же, как сервер: открытые сверху, выполненные снизу, внутри — по
    * позиции.
    *
@@ -854,28 +888,13 @@ export class TodosComponent {
   }
 
   /**
-   * Подсказка в поле ввода — своя для каждого вида.
-   * @returns Текст подсказки.
-   */
-  protected inputPlaceholder(): string {
-    switch (this.activeKind()) {
-      case 'idea':
-        return 'Записать идею…';
-      case 'purchase':
-        return 'Что купить…';
-      default:
-        return 'Что нужно сделать…';
-    }
-  }
-
-  /**
    * Загружает записи текущего вида.
    * @returns Ничего; результат складывается в сигналы.
    */
   protected load(): void {
     this.loading.set(true);
     this.error.set('');
-    this._api.listTodos(this.activeKind(), this.archived()).subscribe({
+    this._api.listTodos(this.archived()).subscribe({
       next: (rows) => {
         this.items.set(rows);
         this.loading.set(false);
@@ -924,36 +943,12 @@ export class TodosComponent {
   }
 
   /**
-   * Переключает вид.
-   * @param kind Вид записи.
-   * @returns Ничего.
-   */
-  protected switchKind(kind: TodoKind): void {
-    if (kind === this.activeKind()) {
-      return;
-    }
-    this.activeKind.set(kind);
-    this.items.set([]);
-    this.load();
-  }
-
-  /**
-   * Заголовок пустого состояния — свой для каждого вида: пустота должна звучать приглашением,
-   * а не отчётом об отсутствии данных.
+   * Заголовок пустого состояния: пустота должна звучать приглашением, а не отчётом об отсутствии
+   * данных.
    * @returns Текст заголовка.
    */
   protected emptyTitle(): string {
-    if (this.archived()) {
-      return 'В архиве пусто';
-    }
-    switch (this.activeKind()) {
-      case 'idea':
-        return 'Идей пока нет';
-      case 'purchase':
-        return 'Список покупок пуст';
-      default:
-        return 'Дел пока нет';
-    }
+    return this.archived() ? 'В архиве пусто' : 'Пока пусто';
   }
 
   /**
@@ -964,13 +959,9 @@ export class TodosComponent {
     if (this.archived()) {
       return 'Сюда попадает то, что убрано с глаз, но не удалено. Вернуть можно тем же значком.';
     }
-    switch (this.activeKind()) {
-      case 'idea':
-        return 'Сюда можно записать мысль, про которую ещё не решено, делать её или нет.';
-      case 'purchase':
-        return 'Сюда — то, что нужно купить. Без даты и без лишних полей.';
-      default:
-        return 'Запиши дело одной строкой — решать, когда и как, можно потом.';
-    }
+    return (
+      'Запиши одной строкой — дело, мысль или покупку. Решать, чем это является и когда делать, ' +
+      'можно потом.'
+    );
   }
 }

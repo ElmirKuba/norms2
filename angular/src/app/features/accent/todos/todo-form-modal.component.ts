@@ -7,7 +7,8 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { AccentApiService } from '../services/accent-api.service';
 import { formatDay } from './format-day.util';
 import { errorMessage } from '../../../core/http/error-message.util';
-import type { TodoEventView, TodoPayload, TodoView } from '../accent.types';
+import { TODO_KIND_LABELS } from '../accent.types';
+import type { TodoEventView, TodoKind, TodoPayload, TodoView } from '../accent.types';
 
 /** Данные в модалку. */
 export interface TodoFormData {
@@ -42,6 +43,19 @@ export interface TodoFormData {
           <label class="tf__field">
             <span class="tf__label">Название</span>
             <input class="tf__input" type="text" formControlName="title" maxlength="200" />
+          </label>
+
+          <label class="tf__field">
+            <span class="tf__label">Что это</span>
+            <select class="tf__input" formControlName="kind">
+              @for (kind of kinds; track kind) {
+                <option [value]="kind">{{ labels[kind] }}</option>
+              }
+            </select>
+            <span class="tf__hint">
+              Пометка, а не перегородка: список общий, вид нужен, чтобы отличить «надо купить» от
+              «надо сделать», когда до записи дойдут руки.
+            </span>
           </label>
 
           <label class="tf__field">
@@ -165,7 +179,13 @@ export class TodoFormModalComponent {
   protected readonly error = signal('');
 
   /** Форма деталей. */
+  /** Виды записи для выпадающего списка. */
+  protected readonly kinds: TodoKind[] = ['deed', 'idea', 'purchase'];
+  /** Подписи видов. */
+  protected readonly labels = TODO_KIND_LABELS;
+
   protected readonly form = new FormGroup({
+    kind: new FormControl<TodoKind>(this._data.todo.kind, { nonNullable: true }),
     title: new FormControl(this._data.todo.title, {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(200)],
@@ -204,6 +224,7 @@ export class TodoFormModalComponent {
     this.error.set('');
     this._data
       .submit({
+        kind: raw.kind,
         title: raw.title.trim(),
         note: raw.note.trim() === '' ? null : raw.note.trim(),
         badge: raw.badge.trim() === '' ? null : raw.badge.trim(),

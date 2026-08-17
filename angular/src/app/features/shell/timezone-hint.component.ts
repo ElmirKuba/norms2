@@ -117,6 +117,6 @@ export class TimezoneHintComponent {
    * @returns Ничего.
    */
   protected goToSettings(): void {
-    void this._router.navigate(['/app/settings']);
+    void this._router.navigate(['/app/settings'], { queryParams: { tab: 'account' } });
   }
 }

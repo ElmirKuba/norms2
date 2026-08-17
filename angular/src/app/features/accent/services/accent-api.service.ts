@@ -91,9 +91,9 @@ export class AccentApiService {
   }
 
   /** Записи списка дел одного вида с подзадачами (2.10). */
-  public listTodos(kind: TodoKind, archived = false): Observable<TodoView[]> {
+  public listTodos(archived = false): Observable<TodoView[]> {
     return this._http.get<TodoView[]>(`${API_PREFIX}/accent/todos`, {
-      params: archived ? { kind, archived: '1' } : { kind },
+      params: archived ? { archived: '1' } : {},
     });
   }
 

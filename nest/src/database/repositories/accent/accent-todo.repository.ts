@@ -36,7 +36,11 @@ export class AccentTodoRepository implements AccentTodoRepositoryPort {
    * @param archived `true` — архив вместо живых.
    * @returns Записи в порядке отображения.
    */
-  public async listByKind(accountId: string, kind: TodoKind, archived: boolean): Promise<TodoFull[]> {
+  public async listByKind(
+    accountId: string,
+    kind: TodoKind | null,
+    archived: boolean,
+  ): Promise<TodoFull[]> {
     return this._db
       .select()
       .from(todos)
@@ -44,7 +48,7 @@ export class AccentTodoRepository implements AccentTodoRepositoryPort {
         and(
           alive(todos),
           eq(todos.accountId, accountId),
-          eq(todos.kind, kind),
+          kind === null ? undefined : eq(todos.kind, kind),
           isNull(todos.parentId),
           archived ? sql`${todos.archivedAt} is not null` : isNull(todos.archivedAt),
         ),

@@ -67,11 +67,11 @@ export interface AccentTodoRepositoryPort {
   /**
    * Записи владельца одного вида.
    * @param accountId Идентификатор аккаунта.
-   * @param kind Вид записи.
+   * @param kind Вид записи; `null` — все виды одним списком.
    * @param archived `true` — показать архив вместо живых.
    * @returns Записи в порядке отображения.
    */
-  listByKind(accountId: string, kind: TodoKind, archived: boolean): Promise<TodoFull[]>;
+  listByKind(accountId: string, kind: TodoKind | null, archived: boolean): Promise<TodoFull[]>;
 
   /**
    * Подзадачи нескольких записей разом — чтобы экран не делал запрос на каждую строку.

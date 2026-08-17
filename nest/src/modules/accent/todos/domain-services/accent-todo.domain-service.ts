@@ -49,7 +49,7 @@ export class AccentTodoDomainService {
    */
   public async list(
     accountId: string,
-    kind: TodoKind,
+    kind: TodoKind | null,
     archived: boolean,
   ): Promise<{ roots: TodoFull[]; children: TodoFull[] }> {
     const roots = await this._repository.listByKind(accountId, kind, archived);

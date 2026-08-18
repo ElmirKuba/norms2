@@ -185,12 +185,16 @@ docker run -d --name norms2_xray_prod --restart unless-stopped --user 0:0 \
 **Что добавлено в `/home/norms2/.env`:**
 
 ```
-HTTPS_PROXY=http://norms2_xray_prod:1080
-HTTP_PROXY=http://norms2_xray_prod:1080
+TELEGRAM_PROXY_URL=http://norms2_xray_prod:1080
 NODE_USE_ENV_PROXY=1
-NO_PROXY=localhost,127.0.0.1,norms2_postgres_prod,norms2_angular_prod
 TELEGRAM_UPDATES_MODE=polling
 ```
+
+⚠️ **Переменная называется `TELEGRAM_PROXY_URL`, а не `HTTPS_PROXY`, — и это важно.** Makefile
+делает `include .env` + `export`, поэтому строка `HTTPS_PROXY=` утекает в окружение самого
+`docker build`, и сборка падает с `lookup norms2_xray_prod: no such host` (имя из docker-сети с
+хоста не резолвится — поймано при выкатке 15.08.2026). Контейнеру бэкенда её раздаёт compose через
+`environment:`, уже внутри сети.
 
 Правки кода под прокси **не потребовалось**: Node 24 уводит `fetch` в прокси сам при
 `NODE_USE_ENV_PROXY=1`. Это безопасно потому, что исходящих `fetch` вне модуля бота в бэкенде нет.

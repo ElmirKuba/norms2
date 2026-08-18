@@ -56,6 +56,12 @@ export class NotificationSeedService implements OnApplicationBootstrap {
           this._logger.error(`Сид релиз-ноты пропущен — файла '${note.contentFile}' нет нигде.`);
           continue;
         }
+        // Текст анонса (18.08.2026) — отдельный файл у нот-страниц. Его отсутствие ноту не
+        // отменяет: в колокольчике она нужна, просто пост в канал уйдёт без тезисов.
+        const postFile =
+          note.postFile !== undefined && this._content.ensureAvailable(note.postFile)
+            ? note.postFile
+            : null;
         // Сначала ПУБЛИКАЦИЯ (ADR-0065): она первична и существует независимо от того, кому и
         // когда её доставили. Идентификатор нужен дальше, чтобы связать с ней доставку.
         const release = await this._releaseRepository.createIfAbsentByKey(generateId(), {
@@ -83,7 +89,7 @@ export class NotificationSeedService implements OnApplicationBootstrap {
         // команды владельца: иначе первый же запуск с подключённым ботом высыпал бы в канал
         // все релизы разом (2.9.1·3).
         if (release.created) {
-          await this._announce(release.id, note.title, note.key, note.contentFile);
+          await this._announce(release.id, note.title, note.key, postFile ?? note.contentFile);
         } else {
           // Публикация уже была: вставка её не тронула, а дату выпуска проставить надо — иначе
           // на всех существующих базах поле осталось бы пустым (2.9.1·15).
@@ -101,7 +107,8 @@ export class NotificationSeedService implements OnApplicationBootstrap {
    * @param id Идентификатор публикации.
    * @param title Заголовок.
    * @param key Ключ ноты.
-   * @param contentFile Путь к `.md` или null у ноты-страницы.
+   * @param contentFile Путь к `.md`, из которого собирается пост: тело ноты либо отдельный
+   *   текст анонса у ноты-страницы; `null` — тогда в посте останутся заголовок и ссылка.
    * @returns Промис завершения.
    */
   private async _announce(

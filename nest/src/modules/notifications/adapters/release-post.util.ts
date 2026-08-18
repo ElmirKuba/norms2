@@ -12,8 +12,24 @@ export interface ReleasePostInput {
   markdown: string;
   /** Публичная ссылка на ноту (`https://нормисы.рф/releases/release-2.9.1`). */
   url: string;
-  /** Юзернейм бота для строки с заявкой (`@norms2_bot`) или null — тогда строки не будет. */
+  /**
+   * Юзернейм бота для строки с заявкой или null — тогда строки не будет.
+   *
+   * Принимается **как с `@`, так и без**: в `.env` он живёт голым (`norms2_bot`), потому что
+   * Telegram API ждёт его без собачки, а в тексте поста ссылка без `@` не кликается — Elmir
+   * дописывал её руками после первого же анонса (18.08.2026). Нормализуем здесь, а не в конфиге:
+   * конфиг обслуживает вызовы API, пост — людей.
+   */
   botUsername: string | null;
+}
+
+/**
+ * Приводит юзернейм к виду `@name`: без собачки Telegram не делает из него ссылку.
+ * @param username Юзернейм с `@` или без.
+ * @returns Юзернейм с ровно одной `@` в начале.
+ */
+function withAt(username: string): string {
+  return username.startsWith('@') ? username : `@${username}`;
 }
 
 /**
@@ -110,7 +126,7 @@ export function buildReleaseCaption(input: ReleasePostInput): string {
   const bot =
     input.botUsername === null
       ? null
-      : `Нет приглашения? Заявка боту: ${escapeTelegramHtml(input.botUsername)}`;
+      : `Нет приглашения? Заявка боту: ${escapeTelegramHtml(withAt(input.botUsername))}`;
   const theses = extractTheses(input.markdown).map(
     (thesis) => `• ${escapeTelegramHtml(thesis)}`,
   );

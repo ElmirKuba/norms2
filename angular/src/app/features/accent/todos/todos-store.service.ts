@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import type { OnDestroy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { moveItemInArray } from '@angular/cdk/drag-drop';
 import type { CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -20,6 +21,14 @@ import type { TodoEventView, TodoView } from '../accent.types';
 export const TODO_MAX_DEPTH = 3;
 
 /**
+ * Сколько живёт предложение отменить, мс.
+ *
+ * Семь секунд — компромисс: меньше не успеть заметить и дотянуться мышью, больше — полоса
+ * начинает висеть над списком как мусор и мешать следующему действию.
+ */
+const UNDO_MS = 7000;
+
+/**
  * Состояние и операции экрана «Дела».
  *
  * **Почему сервис, а не поля компонента.** Узел списка стал отдельным компонентом (иначе
@@ -32,7 +41,7 @@ export const TODO_MAX_DEPTH = 3;
  * столько, сколько открыт список.
  */
 @Injectable()
-export class TodosStore {
+export class TodosStore implements OnDestroy {
   private readonly _api = inject(AccentApiService);
   private readonly _modal = inject(ModalService);
   private readonly _dialog = inject(MatDialog);
@@ -54,6 +63,14 @@ export class TodosStore {
    * при каждой правке списка и молча зависело бы от того, трогал ли человек записи после полуночи.
    */
   public readonly today = signal(todayYmd());
+
+  /**
+   * Текст полосы отмены или пустая строка (·E3).
+   *
+   * Смысл механики: обратимое действие происходит **сразу**, а цена ошибки — один клик после,
+   * и только если ошибка случилась. Диалог остаётся там, где отменить нельзя (уходит поддерево).
+   */
+  public readonly undoText = signal('');
 
   /** Строка поиска (·E2); пустая — фильтр выключен. */
   public readonly query = signal('');
@@ -138,8 +155,28 @@ export class TodosStore {
    * @returns Ничего.
    */
   public toggleDone(item: TodoView): void {
-    this._api.setTodoDone(item.id, item.status !== 'done').subscribe({
-      next: (row) => this.items.update((rows) => this._replaceInTree(rows, row)),
+    const next = item.status !== 'done';
+    this._setDone(item.id, next, () => {
+      this._offerUndo(next ? 'Отмечено' : 'Отметка снята', () => {
+        this._setDone(item.id, !next);
+      });
+    });
+  }
+
+  /**
+   * Отправляет отметку и обновляет строку на месте.
+   * @param id Идентификатор записи.
+   * @param done Ставим или снимаем отметку.
+   * @param onDone Что сделать после успеха (предложить отмену — только у первого вызова, не у
+   * отката: иначе полоса отмены отменяла бы саму отмену и человек ходил бы по кругу).
+   * @returns Ничего.
+   */
+  private _setDone(id: string, done: boolean, onDone?: () => void): void {
+    this._api.setTodoDone(id, done).subscribe({
+      next: (row) => {
+        this.items.update((rows) => this._replaceInTree(rows, row));
+        onDone?.();
+      },
       error: (err: unknown) => this._modal.error('Не удалось отметить', errorMessage(err)),
     });
   }
@@ -153,25 +190,53 @@ export class TodosStore {
    * @returns Ничего.
    */
   public remove(item: TodoView): void {
-    const hasChildren = item.children.length > 0;
-    void this._modal
-      .confirm({
-        title: 'Удалить запись?',
-        text: hasChildren
-          ? `«${item.title}» и её подзадачи (${String(item.children.length)}) будут удалены.`
-          : `«${item.title}» будет удалена.`,
-        confirmText: 'Удалить',
-        danger: true,
-      })
-      .then((ok) => {
-        if (!ok) {
-          return;
-        }
-        this._api.deleteTodo(item.id).subscribe({
-          next: () => this.items.update((rows) => this._removeFromTree(rows, item.id)),
-          error: (err: unknown) => this._modal.error('Не удалось удалить', errorMessage(err)),
+    // Уходит поддерево — спрашиваем. Это ровно тот случай, где отмена не спасает: подзадачи
+    // уходят каскадом по карте владения (ADR-0068), и человек должен узнать об этом ДО, а не
+    // после — «Отменить» вернуло бы ему список, а не уверенность, что вернулось всё.
+    if (item.children.length > 0) {
+      void this._modal
+        .confirm({
+          title: 'Удалить запись?',
+          text: `«${item.title}» и её подзадачи (${String(item.children.length)}) будут удалены.`,
+          confirmText: 'Удалить',
+          danger: true,
+        })
+        .then((ok) => {
+          if (ok) {
+            this._deleteNow(item.id);
+          }
         });
-      });
+      return;
+    }
+    // Одиночная запись — сразу с глаз, а запрос ждёт семь секунд. Ждём потому, что ручки
+    // «восстановить удалённое» у нас нет: отправь мы DELETE сразу, «Отменить» пришлось бы делать
+    // созданием новой записи — с другим идентификатором и потерянным местом в списке.
+    this.items.update((rows) => this._removeFromTree(rows, item.id));
+    this._offerUndo(
+      'Удалено',
+      () => {
+        this.load();
+      },
+      () => {
+        this._deleteNow(item.id);
+      },
+    );
+  }
+
+  /**
+   * Физически удаляет запись.
+   * @param id Идентификатор записи.
+   * @returns Ничего.
+   */
+  private _deleteNow(id: string): void {
+    this._api.deleteTodo(id).subscribe({
+      next: () => this.items.update((rows) => this._removeFromTree(rows, id)),
+      error: (err: unknown) => {
+        // Запись уже убрана с экрана — возвращаем её, иначе список врёт про содержимое базы.
+        this.load();
+        this._modal.error('Не удалось удалить', errorMessage(err));
+      },
+    });
   }
 
   /**
@@ -183,10 +248,33 @@ export class TodosStore {
    * @returns Ничего.
    */
   public toggleArchived(item: TodoView): void {
-    const request = item.archived ? this._api.restoreTodo(item.id) : this._api.archiveTodo(item.id);
+    const toArchive = !item.archived;
+    this._setArchived(item.id, toArchive, () => {
+      this._offerUndo(toArchive ? 'В архиве' : 'Возвращено из архива', () => {
+        this._setArchived(item.id, !toArchive, () => {
+          // Запись возвращается в текущий режим показа — перечитываем список, чтобы она встала
+          // на своё место в группе, а не в конец.
+          this.load();
+        });
+      });
+    });
+  }
+
+  /**
+   * Прячет запись в архив или возвращает её.
+   * @param id Идентификатор записи.
+   * @param archived Прячем или возвращаем.
+   * @param onDone Что сделать после успеха.
+   * @returns Ничего.
+   */
+  private _setArchived(id: string, archived: boolean, onDone?: () => void): void {
+    const request = archived ? this._api.archiveTodo(id) : this._api.restoreTodo(id);
     request.subscribe({
       // Запись уходит из текущего списка: она переехала в другой режим показа.
-      next: () => this.items.update((rows) => this._removeFromTree(rows, item.id)),
+      next: () => {
+        this.items.update((rows) => this._removeFromTree(rows, id));
+        onDone?.();
+      },
       error: (err: unknown) => this._modal.error('Не удалось перенести', errorMessage(err)),
     });
   }
@@ -400,6 +488,90 @@ export class TodosStore {
       parts.push(`не раньше ${formatDay(item.waitsUntil)}`);
     }
     return `Ждёт: ${parts.join(' · ')}`;
+  }
+
+  /**
+   * Что сделать, если человек нажал «Отменить».
+   *
+   * Хранится полем, а не сигналом: это колбэк, от него ничего не перерисовывается, а лишний
+   * сигнал заставил бы шаблон реагировать на смену функции.
+   */
+  private _undoRevert: (() => void) | null = null;
+
+  /**
+   * Что сделать, когда время вышло, — отложенный запрос.
+   *
+   * Есть только у удаления: отметку и архив можно выполнить сразу и откатить обратным вызовом,
+   * а удалённую запись вернуть **нечем на уровне продукта** — ручки восстановления нет. Строка,
+   * правда, не стирается: хранилище проставляет ей `deleted_at` и убирает из всех выборок
+   * (ADR-0068), но домен искренне считает, что удалил, и обратного пути не предлагает. Поэтому
+   * DELETE **не уходит** семь секунд, и всё это время запись просто спрятана с экрана.
+   */
+  private _undoCommit: (() => void) | null = null;
+
+  /** Таймер полосы отмены. */
+  private _undoTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Экран закрывают — отложенное нельзя оставлять висеть: выполняем немедленно.
+   *
+   * Иначе человек удалил запись, ушёл с экрана в ту же секунду — и запрос не ушёл бы никогда,
+   * а запись «воскресла» бы при следующем открытии списка.
+   * @returns Ничего.
+   */
+  public ngOnDestroy(): void {
+    this._commitUndo();
+  }
+
+  /**
+   * Отменяет последнее действие.
+   * @returns Ничего.
+   */
+  public undo(): void {
+    const revert = this._undoRevert;
+    this._clearUndo();
+    revert?.();
+  }
+
+  /**
+   * Предлагает отмену и заводит таймер.
+   * @param text Что произошло — короткой фразой в прошедшем времени.
+   * @param revert Как вернуть как было.
+   * @param commit Что доделать по истечении времени (только у отложенного удаления).
+   * @returns Ничего.
+   */
+  private _offerUndo(text: string, revert: () => void, commit: (() => void) | null = null): void {
+    // Предыдущее отложенное доводим до конца немедленно: двух ожидающих удалений быть не должно,
+    // иначе «Отменить» стало бы неоднозначным — какое из них оно отменяет.
+    this._commitUndo();
+    this._undoRevert = revert;
+    this._undoCommit = commit;
+    this.undoText.set(text);
+    this._undoTimer = setTimeout(() => this._commitUndo(), UNDO_MS);
+  }
+
+  /**
+   * Время вышло (или пришло новое действие): доводим отложенное до конца.
+   * @returns Ничего.
+   */
+  private _commitUndo(): void {
+    const commit = this._undoCommit;
+    this._clearUndo();
+    commit?.();
+  }
+
+  /**
+   * Гасит полосу и забывает колбэки.
+   * @returns Ничего.
+   */
+  private _clearUndo(): void {
+    if (this._undoTimer !== null) {
+      clearTimeout(this._undoTimer);
+      this._undoTimer = null;
+    }
+    this._undoRevert = null;
+    this._undoCommit = null;
+    this.undoText.set('');
   }
 
   /**

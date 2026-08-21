@@ -6,6 +6,7 @@ import type { TodoGroupKey } from './todo-groups.util';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { UndoBarComponent } from '../../../shared/ui/undo-bar/undo-bar.component';
 
 /**
  * Экран списков дел (`/accent/todos`, подфаза 2.10 блок C).
@@ -22,7 +23,15 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
  */
 @Component({
   selector: 'app-todos',
-  imports: [TodoNodeComponent, CardComponent, EmptyStateComponent, ButtonComponent, CdkDropList, CdkDrag],
+  imports: [
+    TodoNodeComponent,
+    CardComponent,
+    EmptyStateComponent,
+    ButtonComponent,
+    UndoBarComponent,
+    CdkDropList,
+    CdkDrag,
+  ],
   providers: [TodosStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -144,6 +153,10 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
             </ul>
           </section>
         }
+      }
+
+      @if (store.undoText()) {
+        <app-undo-bar [text]="store.undoText()" (undo)="store.undo()"></app-undo-bar>
       }
     </section>
   `,

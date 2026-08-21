@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { CdkDrag, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import type { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -68,45 +68,78 @@ import type { TodoView } from '../accent.types';
          слева от заметки он читался как часть текста, а справа выстраивается в ровную колонку и
          отвечает на вопрос «что это» одним взглядом вниз по списку. -->
     <span class="todos__kind" [attr.data-kind]="item().kind">{{ labels[item().kind] }}</span>
-    <button
-      type="button"
-      class="todos__edit"
-      (click)="store.toggleArchived(item())"
-      [attr.aria-label]="(item().archived ? 'Вернуть из архива: ' : 'В архив: ') + item().title"
-      [title]="item().archived ? 'Вернуть из архива' : 'В архив'"
-    >
-      {{ item().archived ? '↩' : '⇥' }}
-    </button>
-    <button
-      type="button"
-      class="todos__edit"
-      (click)="store.openDetails(item())"
-      [attr.aria-label]="'Детали: ' + item().title"
-      title="Детали"
-    >
-      ⋯
-    </button>
-    <!-- Глубже предела вкладывать нельзя (бэк откажет), поэтому на последнем уровне кнопки нет:
-         предлагать действие, которое кончится ошибкой, — обман. -->
-    @if (depth() < maxDepth) {
+    <!-- Узкий экран: пять кнопок подряд не помещаются на 375 px, поэтому всё, кроме чекбокса и
+         ручки перетаскивания, уезжает в меню «⋯» (·E6). Ручка остаётся: перетаскивание — это
+         жест, а не пункт списка, из меню его не выполнить. -->
+    @if (store.narrow()) {
       <button
         type="button"
-        class="todos__sub"
-        (click)="store.startSub(item().id)"
-        [attr.aria-label]="'Добавить подзадачу к: ' + item().title"
-        title="Добавить подзадачу"
+        class="todos__edit"
+        (click)="menuOpen.set(!menuOpen())"
+        [attr.aria-label]="'Действия: ' + item().title"
+        [attr.aria-expanded]="menuOpen()"
+        title="Действия"
       >
-        +
+        ⋯
+      </button>
+      @if (menuOpen()) {
+        <!-- Подложка ловит клик мимо меню: без неё меню закрывалось бы только повторным
+             попаданием в ту же кнопку — на телефоне это промах за промахом. -->
+        <div class="todos__menu-backdrop" (click)="menuOpen.set(false)"></div>
+        <div class="todos__menu" role="menu">
+          <button type="button" role="menuitem" (click)="run(details)">Детали</button>
+          <button type="button" role="menuitem" (click)="run(archive)">
+            {{ item().archived ? 'Вернуть из архива' : 'В архив' }}
+          </button>
+          @if (depth() < maxDepth) {
+            <button type="button" role="menuitem" (click)="run(addSub)">Добавить подзадачу</button>
+          }
+          <button type="button" role="menuitem" class="todos__menu-danger" (click)="run(remove)">
+            Удалить
+          </button>
+        </div>
+      }
+    } @else {
+      <button
+        type="button"
+        class="todos__edit"
+        (click)="store.toggleArchived(item())"
+        [attr.aria-label]="(item().archived ? 'Вернуть из архива: ' : 'В архив: ') + item().title"
+        [title]="item().archived ? 'Вернуть из архива' : 'В архив'"
+      >
+        {{ item().archived ? '↩' : '⇥' }}
+      </button>
+      <button
+        type="button"
+        class="todos__edit"
+        (click)="store.openDetails(item())"
+        [attr.aria-label]="'Детали: ' + item().title"
+        title="Детали"
+      >
+        ⋯
+      </button>
+      <!-- Глубже предела вкладывать нельзя (бэк откажет), поэтому на последнем уровне кнопки нет:
+           предлагать действие, которое кончится ошибкой, — обман. -->
+      @if (depth() < maxDepth) {
+        <button
+          type="button"
+          class="todos__sub"
+          (click)="store.startSub(item().id)"
+          [attr.aria-label]="'Добавить подзадачу к: ' + item().title"
+          title="Добавить подзадачу"
+        >
+          +
+        </button>
+      }
+      <button
+        type="button"
+        class="todos__remove"
+        (click)="store.remove(item())"
+        [attr.aria-label]="'Удалить: ' + item().title"
+      >
+        ×
       </button>
     }
-    <button
-      type="button"
-      class="todos__remove"
-      (click)="store.remove(item())"
-      [attr.aria-label]="'Удалить: ' + item().title"
-    >
-      ×
-    </button>
 
     @if (item().children.length > 0) {
       <ul class="todos__children" cdkDropList (cdkDropListDropped)="dropChild($event)">
@@ -153,6 +186,7 @@ import type { TodoView } from '../accent.types';
       }
 
       :host {
+        position: relative;
         display: flex;
         align-items: center;
         gap: var(--space-3);
@@ -329,6 +363,58 @@ import type { TodoView } from '../accent.types';
         white-space: nowrap;
       }
 
+      /* На узком экране единственная кнопка действий прижата вправо: она всё равно переносится
+         на вторую строку (метаданные съедают первую), и без этого висела бы слева под чекбоксом,
+         читаясь как случайность вёрстки, а не как «меню этой записи». */
+      @media (max-width: 640px) {
+        :host > .todos__edit {
+          margin-left: auto;
+        }
+      }
+
+      /* Меню лежит НАД строкой (position: absolute у :host relative), а подложка — фиксированно
+         на весь экран: так клик мимо закрывает меню в любой точке, включая соседние строки. */
+      .todos__menu {
+        position: absolute;
+        top: calc(100% - var(--space-2));
+        right: var(--space-2);
+        z-index: 12;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+        padding: var(--space-1);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-2);
+        box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+      }
+
+      .todos__menu button {
+        min-height: var(--touch-min);
+        padding: 0 var(--space-3);
+        border: none;
+        border-radius: var(--radius-sm);
+        background: none;
+        color: var(--color-text);
+        font-size: var(--fs-sm);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .todos__menu button:hover {
+        background: var(--color-surface);
+      }
+
+      .todos__menu-danger {
+        color: var(--color-danger);
+      }
+
+      .todos__menu-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 11;
+      }
+
       .todos__badge {
         padding: 2px var(--space-2);
         border-radius: var(--radius-sm);
@@ -353,6 +439,31 @@ export class TodoNodeComponent {
   protected readonly labels = TODO_KIND_LABELS;
   /** Предел вложенности. */
   protected readonly maxDepth = TODO_MAX_DEPTH;
+
+  /** Открыто ли меню действий этой строки (только на узком экране). */
+  protected readonly menuOpen = signal(false);
+
+  /** Пункты меню — ссылками на методы, чтобы шаблон не повторял `store.…(item())` четыре раза. */
+  protected readonly details = (): void => this.store.openDetails(this.item());
+  /** Убрать в архив или вернуть. */
+  protected readonly archive = (): void => this.store.toggleArchived(this.item());
+  /** Открыть форму подзадачи. */
+  protected readonly addSub = (): void => this.store.startSub(this.item().id);
+  /** Удалить запись. */
+  protected readonly remove = (): void => this.store.remove(this.item());
+
+  /**
+   * Выполняет пункт меню и закрывает меню.
+   *
+   * Закрывать обязательно: оставшееся открытым меню перекрывает строку, к которой относилось, —
+   * и следующий клик человека уходит в него, а не в список.
+   * @param action Что сделать.
+   * @returns Ничего.
+   */
+  protected run(action: () => void): void {
+    this.menuOpen.set(false);
+    action();
+  }
 
   /**
    * Сохраняет порядок подзадач этой записи.

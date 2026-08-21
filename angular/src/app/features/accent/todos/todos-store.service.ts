@@ -82,6 +82,15 @@ export class TodosStore implements OnDestroy {
   /** Развернул ли человек группу «Сделано» вручную (·E5). */
   private readonly _doneExpanded = signal(false);
 
+  /**
+   * Узкий ли экран (·E6): на нём действия строки уезжают в меню «⋯».
+   *
+   * Сигналом от `matchMedia`, а не только через CSS: спрятать кнопки стилями мало — нужно ещё
+   * **нарисовать меню**, а держать в разметке оба набора и гасить один из них значило бы
+   * дублировать все действия и чинить их потом в двух местах.
+   */
+  public readonly narrow = signal(false);
+
   /** Ищем ли прямо сейчас — при активном поиске часть действий ведёт себя иначе. */
   public readonly searching = computed(() => this.query().trim() !== '');
 
@@ -126,6 +135,23 @@ export class TodosStore implements OnDestroy {
   public readonly subParentId = signal<string | null>(null);
   /** Черновик подзадачи. */
   public readonly subDraftValue = signal('');
+
+  /** Слушатель ширины окна — снимается в `ngOnDestroy`. */
+  private readonly _narrowQuery = window.matchMedia('(max-width: 640px)');
+
+  public constructor() {
+    this.narrow.set(this._narrowQuery.matches);
+    this._narrowQuery.addEventListener('change', this._onNarrowChange);
+  }
+
+  /**
+   * Реакция на смену ширины окна.
+   * @param event Событие медиа-запроса.
+   * @returns Ничего.
+   */
+  private readonly _onNarrowChange = (event: MediaQueryListEvent): void => {
+    this.narrow.set(event.matches);
+  };
 
   /**
    * Загружает записи.
@@ -591,6 +617,7 @@ export class TodosStore implements OnDestroy {
    */
   public ngOnDestroy(): void {
     this._commitUndo();
+    this._narrowQuery.removeEventListener('change', this._onNarrowChange);
   }
 
   /**

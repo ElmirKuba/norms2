@@ -17,7 +17,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   template: `
     <div class="undo" role="status">
       <span class="undo__text">{{ text() }}</span>
-      <button type="button" class="undo__btn" (click)="undo.emit()">Отменить</button>
+      <button type="button" class="undo__btn" (click)="undo.emit()">{{ actionText() }}</button>
     </div>
   `,
   styles: [
@@ -84,6 +84,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 export class UndoBarComponent {
   /** Что произошло — короткой фразой в прошедшем времени («Удалено», «В архиве»). */
   public readonly text = input.required<string>();
-  /** Нажали «Отменить». */
+  /**
+   * Подпись кнопки. По умолчанию «Отменить», но у подсказки разбора даты честнее «Убрать»:
+   * там отменяют не своё действие, а догадку продукта.
+   */
+  public readonly actionText = input('Отменить');
+  /** Нажали кнопку действия. */
   public readonly undo = output<void>();
 }

@@ -11,6 +11,7 @@ import { errorMessage } from '../../../core/http/error-message.util';
 import { formatDay } from './format-day.util';
 import { groupTodos, todayYmd } from './todo-groups.util';
 import { filterTodos } from './todo-filter.util';
+import { parseDateFromTitle } from './todo-date-parse.util';
 import { TodoFormModalComponent } from './todo-form-modal.component';
 import { TodoEventsModalComponent } from './todo-events-modal.component';
 import type { TodoFormData } from './todo-form-modal.component';
@@ -71,6 +72,9 @@ export class TodosStore implements OnDestroy {
    * и только если ошибка случилась. Диалог остаётся там, где отменить нельзя (уходит поддерево).
    */
   public readonly undoText = signal('');
+
+  /** Подпись кнопки в полосе: «Отменить» для действий, «Убрать» для догадки о дате. */
+  public readonly undoAction = signal('Отменить');
 
   /** Строка поиска (·E2); пустая — фильтр выключен. */
   public readonly query = signal('');
@@ -139,14 +143,49 @@ export class TodosStore implements OnDestroy {
    * @returns Ничего.
    */
   public add(title: string, onDone: () => void, onError: (message: string) => void): void {
-    this._api.createTodo({ kind: 'deed', title }).subscribe({
+    // Дата вынимается из текста (·E4): «Купить корм завтра» → запись «Купить корм» на завтра.
+    // Разбор ошибается по устройству, поэтому сразу после создания человеку показывается, что
+    // именно поняли, и предлагается снять это одним кликом.
+    const parsed = parseDateFromTitle(title, this.today());
+    const payload =
+      parsed === null
+        ? { kind: 'deed' as const, title }
+        : { kind: 'deed' as const, title: parsed.title, plannedOn: parsed.plannedOn };
+    this._api.createTodo(payload).subscribe({
       // Дописываем в конец: порядок ввода = порядок в списке, ничего не «прыгает».
       next: (row) => {
         this.items.update((rows) => [...rows, row]);
         onDone();
+        if (parsed !== null) {
+          this._offerDateHint(row, parsed.plannedOn, parsed.matched);
+        }
       },
       error: (err: unknown) => onError(errorMessage(err, 'Не удалось добавить запись.')),
     });
+  }
+
+  /**
+   * Показывает, какую дату вынули из текста, и даёт от неё отказаться.
+   *
+   * Формулировка «Дата: 22 авг — из «завтра»» отвечает сразу на два вопроса: что поняли и откуда.
+   * Без второй половины человек видит дату, которую не ставил, и не понимает, откуда она.
+   * @param row Созданная запись.
+   * @param plannedOn Проставленный день.
+   * @param matched Кусок текста, из которого он получен.
+   * @returns Ничего.
+   */
+  private _offerDateHint(row: TodoView, plannedOn: string, matched: string): void {
+    this._offerUndo(
+      `Дата: ${formatDay(plannedOn)} — из «${matched}»`,
+      () => {
+        this._api.updateTodo(row.id, { plannedOn: null }).subscribe({
+          next: (updated) => this.items.update((rows) => this._replaceInTree(rows, updated)),
+          error: (err: unknown) => this._modal.error('Не удалось убрать дату', errorMessage(err)),
+        });
+      },
+      null,
+      'Убрать',
+    );
   }
 
   /**
@@ -364,10 +403,18 @@ export class TodosStore implements OnDestroy {
     if (title === '') {
       return;
     }
-    this._api.createTodo({ kind: 'deed', title, parentId }).subscribe({
+    const parsed = parseDateFromTitle(title, this.today());
+    const payload =
+      parsed === null
+        ? { kind: 'deed' as const, title, parentId }
+        : { kind: 'deed' as const, title: parsed.title, parentId, plannedOn: parsed.plannedOn };
+    this._api.createTodo(payload).subscribe({
       next: (row) => {
         this.items.update((rows) => this._appendChild(rows, parentId, row));
         this.subDraftValue.set('');
+        if (parsed !== null) {
+          this._offerDateHint(row, parsed.plannedOn, parsed.matched);
+        }
       },
       error: (err: unknown) =>
         this._modal.error('Не удалось добавить подзадачу', errorMessage(err)),
@@ -540,13 +587,19 @@ export class TodosStore implements OnDestroy {
    * @param commit Что доделать по истечении времени (только у отложенного удаления).
    * @returns Ничего.
    */
-  private _offerUndo(text: string, revert: () => void, commit: (() => void) | null = null): void {
+  private _offerUndo(
+    text: string,
+    revert: () => void,
+    commit: (() => void) | null = null,
+    actionText = 'Отменить',
+  ): void {
     // Предыдущее отложенное доводим до конца немедленно: двух ожидающих удалений быть не должно,
     // иначе «Отменить» стало бы неоднозначным — какое из них оно отменяет.
     this._commitUndo();
     this._undoRevert = revert;
     this._undoCommit = commit;
     this.undoText.set(text);
+    this.undoAction.set(actionText);
     this._undoTimer = setTimeout(() => this._commitUndo(), UNDO_MS);
   }
 
@@ -572,6 +625,7 @@ export class TodosStore implements OnDestroy {
     this._undoRevert = null;
     this._undoCommit = null;
     this.undoText.set('');
+    this.undoAction.set('Отменить');
   }
 
   /**

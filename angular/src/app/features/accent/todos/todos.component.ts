@@ -156,7 +156,11 @@ import { UndoBarComponent } from '../../../shared/ui/undo-bar/undo-bar.component
       }
 
       @if (store.undoText()) {
-        <app-undo-bar [text]="store.undoText()" (undo)="store.undo()"></app-undo-bar>
+        <app-undo-bar
+          [text]="store.undoText()"
+          [actionText]="store.undoAction()"
+          (undo)="store.undo()"
+        ></app-undo-bar>
       }
     </section>
   `,

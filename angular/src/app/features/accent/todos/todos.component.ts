@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChi
 import { CdkDrag, CdkDropList, type CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TodoNodeComponent } from './todo-node.component';
 import { TodosStore } from './todos-store.service';
+import type { TodoGroupKey } from './todo-groups.util';
 import { CardComponent } from '../../../shared/ui/card/card.component';
 import { EmptyStateComponent } from '../../../shared/ui/empty-state/empty-state.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -82,12 +83,28 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
         </app-card>
       } @else if (store.items().length === 0) {
         <app-empty-state [title]="emptyTitle()" [text]="emptyDescription()"></app-empty-state>
-      } @else {
-        <ul class="todos__list" cdkDropList (cdkDropListDropped)="drop($event)">
+      } @else if (store.archived()) {
+        <!-- Архив плоским списком: там лежит убранное с глаз, и раскладка по срокам ему не нужна. -->
+        <ul class="todos__list" cdkDropList (cdkDropListDropped)="dropArchived($event)">
           @for (item of store.items(); track item.id) {
             <li app-todo-node [item]="item" [depth]="1" cdkDrag></li>
           }
         </ul>
+      } @else {
+        @for (group of store.groups(); track group.key) {
+          <section class="todos__group">
+            <h3 class="todos__group-title">{{ group.title }}</h3>
+            <ul
+              class="todos__list"
+              cdkDropList
+              (cdkDropListDropped)="dropInGroup($event, group.key)"
+            >
+              @for (item of group.items; track item.id) {
+                <li app-todo-node [item]="item" [depth]="1" cdkDrag></li>
+              }
+            </ul>
+          </section>
+        }
       }
     </section>
   `,
@@ -146,6 +163,24 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
         margin: 0;
         padding: 0;
         list-style: none;
+      }
+
+      .todos__group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      /* Заголовок группы — тихая метка, а не заголовок раздела: он отвечает на вопрос «когда»,
+         и «Просрочено» не должно выглядеть строже, чем «Сегодня» (ADR-0049 — продукт напоминает,
+         а не выставляет счёт). Поэтому один и тот же приглушённый стиль на все группы. */
+      .todos__group-title {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: var(--fs-sm);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
       }
 
       .todos__skeleton {
@@ -246,12 +281,22 @@ export class TodosComponent {
   }
 
   /**
-   * Сохраняет новый порядок корневых записей.
+   * Сохраняет новый порядок внутри группы.
+   * @param event Событие перетаскивания.
+   * @param key Ключ группы, внутри которой тащили.
+   * @returns Ничего.
+   */
+  protected dropInGroup(event: CdkDragDrop<unknown>, key: TodoGroupKey): void {
+    this.store.reorderInGroup(event, key);
+  }
+
+  /**
+   * Сохраняет новый порядок в архиве — там список плоский и группы не рисуются.
    * @param event Событие перетаскивания.
    * @returns Ничего.
    */
-  protected drop(event: CdkDragDrop<unknown>): void {
-    this.store.reorder(event, null);
+  protected dropArchived(event: CdkDragDrop<unknown>): void {
+    this.store.reorderArchived(event);
   }
 
   /**

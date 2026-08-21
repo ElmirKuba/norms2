@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { moveItemInArray } from '@angular/cdk/drag-drop';
 import type { CdkDragDrop } from '@angular/cdk/drag-drop';
@@ -8,9 +8,11 @@ import { ModalHeaderClassIcon } from '../../../shared/modals/dialog-modal/dialog
 import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { formatDay } from './format-day.util';
+import { groupTodos, todayYmd } from './todo-groups.util';
 import { TodoFormModalComponent } from './todo-form-modal.component';
 import { TodoEventsModalComponent } from './todo-events-modal.component';
 import type { TodoFormData } from './todo-form-modal.component';
+import type { TodoGroup, TodoGroupKey } from './todo-groups.util';
 import type { TodoEventView, TodoView } from '../accent.types';
 
 /** Предел вложенности — тот же, что в домене (`MAX_DEPTH`): глубже кнопки «+» не показываем. */
@@ -44,6 +46,25 @@ export class TodosStore {
   public readonly error = signal('');
   /** Показывать архив вместо живых записей. */
   public readonly archived = signal(false);
+  /**
+   * Сегодняшний день `YYYY-MM-DD` — снимок на момент открытия экрана.
+   *
+   * Сигналом, а не вызовом `todayYmd()` прямо в `computed`: иначе «сегодня» пересчитывалось бы
+   * при каждой правке списка и молча зависело бы от того, трогал ли человек записи после полуночи.
+   */
+  public readonly today = signal(todayYmd());
+
+  /**
+   * Записи, разложенные по группам «Просрочено · Сегодня · Скоро · Позже · Ждут · Без даты ·
+   * Сделано» (·E1). Пустые группы не приходят.
+   *
+   * В архиве группировка не применяется: там лежит убранное с глаз, и раскладывать его по срокам
+   * незачем — тот экран отвечает на вопрос «что я спрятал», а не «что делать».
+   */
+  public readonly groups = computed<TodoGroup[]>(() =>
+    groupTodos(this.items(), this.events(), this.today()),
+  );
+
   /** Идентификатор записи, под которой открыта форма подзадачи, или null. */
   public readonly subParentId = signal<string | null>(null);
   /** Черновик подзадачи. */
@@ -253,26 +274,76 @@ export class TodosStore {
   }
 
   /**
-   * Сохраняет новый порядок на любом уровне.
+   * Сохраняет новый порядок подзадач.
    *
-   * Оптимистично: список переставляется сразу, запрос уходит следом. Ошибка — перезагружаем с
-   * сервера и говорим об этом: молча оставить порядок, которого нет в базе, хуже, чем откатить.
+   * Корневой уровень переставляется через {@link reorderInGroup}: там записи разложены по
+   * группам, и общий порядок собирается из них.
    * @param event Событие перетаскивания.
-   * @param parent Родитель уровня или `null` для корня.
+   * @param parent Родитель уровня.
    * @returns Ничего.
    */
-  public reorder(event: CdkDragDrop<unknown>, parent: TodoView | null): void {
+  public reorder(event: CdkDragDrop<unknown>, parent: TodoView): void {
     if (event.previousIndex === event.currentIndex) {
       return;
     }
-    const next = [...(parent === null ? this.items() : parent.children)];
+    const next = [...parent.children];
     moveItemInArray(next, event.previousIndex, event.currentIndex);
-    if (parent === null) {
-      this.items.set(next);
-    } else {
-      this.items.update((rows) => this._replaceChildren(rows, parent.id, next));
+    this.items.update((rows) => this._replaceChildren(rows, parent.id, next));
+    this._save(next);
+  }
+
+  /**
+   * Сохраняет новый порядок внутри группы корневого уровня.
+   *
+   * **На сервер уходит весь корневой порядок, а не одна группа.** Позиция сквозная по уровню, и
+   * отправь мы только переставленную группу — её записи получили бы `0..n`, пересекающиеся с
+   * позициями соседних групп. Пока группы нарисованы отдельно, этого не видно, но стоит делу
+   * сменить группу (наступил срок, состоялось событие) — и оно встанет в произвольное место.
+   * @param event Событие перетаскивания.
+   * @param key Ключ группы, внутри которой тащили.
+   * @returns Ничего.
+   */
+  public reorderInGroup(event: CdkDragDrop<unknown>, key: TodoGroupKey): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
     }
-    this._api.reorderTodos(next.map((row) => row.id)).subscribe({
+    const next = this.groups().flatMap((group) => {
+      if (group.key !== key) {
+        return group.items;
+      }
+      const moved = [...group.items];
+      moveItemInArray(moved, event.previousIndex, event.currentIndex);
+      return moved;
+    });
+    this.items.set(next);
+    this._save(next);
+  }
+
+  /**
+   * Сохраняет новый порядок в архиве: там список плоский, группы не рисуются.
+   * @param event Событие перетаскивания.
+   * @returns Ничего.
+   */
+  public reorderArchived(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const next = [...this.items()];
+    moveItemInArray(next, event.previousIndex, event.currentIndex);
+    this.items.set(next);
+    this._save(next);
+  }
+
+  /**
+   * Отправляет порядок уровня на сервер.
+   *
+   * Оптимистично: список уже переставлен, запрос уходит следом. Ошибка — перезагружаем с сервера
+   * и говорим об этом: молча оставить порядок, которого нет в базе, хуже, чем откатить.
+   * @param rows Записи уровня в новом порядке.
+   * @returns Ничего.
+   */
+  private _save(rows: TodoView[]): void {
+    this._api.reorderTodos(rows.map((row) => row.id)).subscribe({
       error: (err: unknown) => {
         this.load();
         this._modal.error('Не удалось сохранить порядок', errorMessage(err));

@@ -70,8 +70,10 @@ export class AccentTodoDomainService {
    * Создаёт запись.
    * @param data Данные создания (заголовок обязателен, остальное — по желанию).
    * @returns Созданная запись.
-   * @throws {ValidationError} Пустой заголовок, слишком глубокая вложенность, чужое событие.
-   * @throws {TodoNotFoundError} Родитель не найден.
+   * @throws {ValidationError} Пустой заголовок.
+   * @throws {TodoMaxDepthReachedError} Глубже предела вложенности.
+   * @throws {TodoNotFoundError} Родитель не найден или чужой.
+   * @throws {TodoEventNotFoundError} Событие ожидания не найдено или чужое.
    */
   public async create(data: TodoCreateData): Promise<TodoFull> {
     const title = data.title.trim();
@@ -92,7 +94,8 @@ export class AccentTodoDomainService {
    * @param patch Изменяемые поля.
    * @returns Обновлённая запись.
    * @throws {TodoNotFoundError} Записи нет или она чужая.
-   * @throws {ValidationError} Пустой заголовок или чужое событие.
+   * @throws {ValidationError} Пустой заголовок.
+   * @throws {TodoEventNotFoundError} Событие ожидания не найдено или чужое.
    */
   public async update(id: string, accountId: string, patch: TodoUpdateData): Promise<TodoFull> {
     if (patch.title !== undefined && patch.title.trim() === '') {
@@ -295,7 +298,8 @@ export class AccentTodoDomainService {
    * @param eventId Идентификатор события или null.
    * @param accountId Идентификатор аккаунта-владельца.
    * @returns Промис завершения.
-   * @throws {ValidationError} Событие чужое или не существует.
+   * @throws {TodoEventNotFoundError} Событие чужое или не существует — чужое и несуществующее
+   * отвечают одинаково, иначе ответ сам сообщал бы, что такое событие у кого-то есть.
    */
   private async _assertEventOwned(eventId: string | null, accountId: string): Promise<void> {
     if (eventId == null) {

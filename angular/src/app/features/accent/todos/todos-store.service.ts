@@ -9,6 +9,7 @@ import { MODAL_SMALL_WIDTH } from '../../../shared/modals/modals.constants';
 import { errorMessage } from '../../../core/http/error-message.util';
 import { formatDay } from './format-day.util';
 import { groupTodos, todayYmd } from './todo-groups.util';
+import { filterTodos } from './todo-filter.util';
 import { TodoFormModalComponent } from './todo-form-modal.component';
 import { TodoEventsModalComponent } from './todo-events-modal.component';
 import type { TodoFormData } from './todo-form-modal.component';
@@ -54,6 +55,18 @@ export class TodosStore {
    */
   public readonly today = signal(todayYmd());
 
+  /** Строка поиска (·E2); пустая — фильтр выключен. */
+  public readonly query = signal('');
+
+  /** Ищем ли прямо сейчас — при активном поиске часть действий ведёт себя иначе. */
+  public readonly searching = computed(() => this.query().trim() !== '');
+
+  /**
+   * Записи, прошедшие фильтр поиска. Всё, что видит экран, идёт отсюда, а не из `items`:
+   * иначе поиск сузил бы один список и не тронул другой.
+   */
+  public readonly visible = computed<TodoView[]>(() => filterTodos(this.items(), this.query()));
+
   /**
    * Записи, разложенные по группам «Просрочено · Сегодня · Скоро · Позже · Ждут · Без даты ·
    * Сделано» (·E1). Пустые группы не приходят.
@@ -62,7 +75,7 @@ export class TodosStore {
    * незачем — тот экран отвечает на вопрос «что я спрятал», а не «что делать».
    */
   public readonly groups = computed<TodoGroup[]>(() =>
-    groupTodos(this.items(), this.events(), this.today()),
+    groupTodos(this.visible(), this.events(), this.today()),
   );
 
   /** Идентификатор записи, под которой открыта форма подзадачи, или null. */
@@ -304,7 +317,10 @@ export class TodosStore {
    * @returns Ничего.
    */
   public reorderInGroup(event: CdkDragDrop<unknown>, key: TodoGroupKey): void {
-    if (event.previousIndex === event.currentIndex) {
+    // Под фильтром порядок не сохраняем: на сервер ушёл бы порядок ВИДИМЫХ записей, а
+    // невидимые сохранили бы старые позиции — список перемешался бы после сброса поиска.
+    // Перетаскивание в это время и отключено в шаблоне; проверка здесь — вторая застёжка.
+    if (event.previousIndex === event.currentIndex || this.searching()) {
       return;
     }
     const next = this.groups().flatMap((group) => {
@@ -325,7 +341,7 @@ export class TodosStore {
    * @returns Ничего.
    */
   public reorderArchived(event: CdkDragDrop<unknown>): void {
-    if (event.previousIndex === event.currentIndex) {
+    if (event.previousIndex === event.currentIndex || this.searching()) {
       return;
     }
     const next = [...this.items()];

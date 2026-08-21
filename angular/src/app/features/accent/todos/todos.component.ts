@@ -70,6 +70,33 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
         </button>
       </div>
 
+      <!-- Поиск появляется, только когда есть что искать: на пустом экране строка фильтра —
+           лишний элемент управления, который нечего фильтровать (·E2). -->
+      @if (store.items().length > 0) {
+        <div class="todos__search">
+          <input
+            class="todos__input"
+            type="search"
+            [value]="store.query()"
+            (input)="store.query.set($any($event.target).value)"
+            placeholder="Найти среди записей…"
+            aria-label="Найти среди записей"
+            maxlength="200"
+          />
+          @if (store.searching()) {
+            <button
+              type="button"
+              class="todos__search-clear"
+              (click)="store.query.set('')"
+              aria-label="Сбросить поиск"
+              title="Сбросить поиск"
+            >
+              ×
+            </button>
+          }
+        </div>
+      }
+
       @if (store.loading()) {
         <div class="todos__skeleton" aria-hidden="true">
           @for (row of [1, 2, 3]; track row) {
@@ -83,11 +110,21 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
         </app-card>
       } @else if (store.items().length === 0) {
         <app-empty-state [title]="emptyTitle()" [text]="emptyDescription()"></app-empty-state>
+      } @else if (store.visible().length === 0) {
+        <!-- Пустой результат поиска — СВОЁ состояние, а не «пока пусто»: список не пуст, просто
+             под запрос ничего не подошло, и человеку нужен выход обратно, а не приглашение
+             записать первое дело (·E2). -->
+        <app-empty-state
+          title="Ничего не нашлось"
+          [text]="'По запросу «' + store.query().trim() + '» нет ни записей, ни подзадач. Попробуй короче или сбрось поиск.'"
+        >
+          <app-button variant="ghost" (click)="store.query.set('')">Сбросить поиск</app-button>
+        </app-empty-state>
       } @else if (store.archived()) {
         <!-- Архив плоским списком: там лежит убранное с глаз, и раскладка по срокам ему не нужна. -->
         <ul class="todos__list" cdkDropList (cdkDropListDropped)="dropArchived($event)">
-          @for (item of store.items(); track item.id) {
-            <li app-todo-node [item]="item" [depth]="1" cdkDrag></li>
+          @for (item of store.visible(); track item.id) {
+            <li app-todo-node [item]="item" [depth]="1" cdkDrag [cdkDragDisabled]="store.searching()"></li>
           }
         </ul>
       } @else {
@@ -100,7 +137,9 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
               (cdkDropListDropped)="dropInGroup($event, group.key)"
             >
               @for (item of group.items; track item.id) {
-                <li app-todo-node [item]="item" [depth]="1" cdkDrag></li>
+                <!-- Под фильтром перетаскивание выключено: видимый порядок — не весь порядок,
+                     и сохранять его значило бы перемешать список после сброса поиска. -->
+                <li app-todo-node [item]="item" [depth]="1" cdkDrag [cdkDragDisabled]="store.searching()"></li>
               }
             </ul>
           </section>
@@ -169,6 +208,31 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+      }
+
+      .todos__search {
+        position: relative;
+        display: flex;
+      }
+
+      /* Крестик лежит ПОВЕРХ поля справа, а не рядом: своя кнопка в строке увела бы поле
+         влево и сломала бы выравнивание с формой добавления сверху. */
+      .todos__search-clear {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        font-size: var(--fs-lg);
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .todos__search-clear:hover {
+        color: var(--color-accent);
       }
 
       /* Заголовок группы — тихая метка, а не заголовок раздела: он отвечает на вопрос «когда»,

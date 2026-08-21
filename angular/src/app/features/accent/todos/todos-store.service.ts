@@ -79,6 +79,9 @@ export class TodosStore implements OnDestroy {
   /** Строка поиска (·E2); пустая — фильтр выключен. */
   public readonly query = signal('');
 
+  /** Развернул ли человек группу «Сделано» вручную (·E5). */
+  private readonly _doneExpanded = signal(false);
+
   /** Ищем ли прямо сейчас — при активном поиске часть действий ведёт себя иначе. */
   public readonly searching = computed(() => this.query().trim() !== '');
 
@@ -87,6 +90,26 @@ export class TodosStore implements OnDestroy {
    * иначе поиск сузил бы один список и не тронул другой.
    */
   public readonly visible = computed<TodoView[]>(() => filterTodos(this.items(), this.query()));
+
+  /**
+   * Показывать ли содержимое группы «Сделано» (·E5).
+   *
+   * Свёрнута по умолчанию: обещание «выполненное не исчезает» остаётся в силе — запись на месте,
+   * счётчик её видит, — но на сотне закрытых дел список должен оставаться списком.
+   *
+   * **Во время поиска разворачивается сама.** Иначе человек ищет запись, она находится в
+   * «Сделано» — и он видит свёрнутый заголовок вместо результата, то есть поиск как будто
+   * соврал.
+   */
+  public readonly doneOpen = computed(() => this._doneExpanded() || this.searching());
+
+  /**
+   * Разворачивает или сворачивает «Сделано».
+   * @returns Ничего.
+   */
+  public toggleDoneGroup(): void {
+    this._doneExpanded.update((open) => !open);
+  }
 
   /**
    * Записи, разложенные по группам «Просрочено · Сегодня · Скоро · Позже · Ждут · Без даты ·

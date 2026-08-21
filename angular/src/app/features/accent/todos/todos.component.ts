@@ -139,18 +139,34 @@ import { UndoBarComponent } from '../../../shared/ui/undo-bar/undo-bar.component
       } @else {
         @for (group of store.groups(); track group.key) {
           <section class="todos__group">
-            <h3 class="todos__group-title">{{ group.title }}</h3>
-            <ul
-              class="todos__list"
-              cdkDropList
-              (cdkDropListDropped)="dropInGroup($event, group.key)"
-            >
-              @for (item of group.items; track item.id) {
-                <!-- Под фильтром перетаскивание выключено: видимый порядок — не весь порядок,
-                     и сохранять его значило бы перемешать список после сброса поиска. -->
-                <li app-todo-node [item]="item" [depth]="1" cdkDrag [cdkDragDisabled]="store.searching()"></li>
-              }
-            </ul>
+            <!-- «Сделано» — единственная сворачиваемая группа (·E5): она растёт бесконечно,
+                 остальные ограничены календарём и сами себя не раздувают. -->
+            @if (group.key === 'done') {
+              <button
+                type="button"
+                class="todos__group-title todos__group-toggle"
+                (click)="store.toggleDoneGroup()"
+                [attr.aria-expanded]="store.doneOpen()"
+              >
+                <span class="todos__chevron" [class.todos__chevron--open]="store.doneOpen()">›</span>
+                {{ group.title }} ({{ group.items.length }})
+              </button>
+            } @else {
+              <h3 class="todos__group-title">{{ group.title }}</h3>
+            }
+            @if (group.key !== 'done' || store.doneOpen()) {
+              <ul
+                class="todos__list"
+                cdkDropList
+                (cdkDropListDropped)="dropInGroup($event, group.key)"
+              >
+                @for (item of group.items; track item.id) {
+                  <!-- Под фильтром перетаскивание выключено: видимый порядок — не весь порядок,
+                       и сохранять его значило бы перемешать список после сброса поиска. -->
+                  <li app-todo-node [item]="item" [depth]="1" cdkDrag [cdkDragDisabled]="store.searching()"></li>
+                }
+              </ul>
+            }
           </section>
         }
       }
@@ -262,6 +278,31 @@ import { UndoBarComponent } from '../../../shared/ui/undo-bar/undo-bar.component
         font-weight: 600;
         letter-spacing: 0.02em;
         text-transform: uppercase;
+      }
+
+      .todos__group-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        align-self: flex-start;
+        padding: var(--space-1) 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .todos__group-toggle:hover {
+        color: var(--color-text);
+      }
+
+      .todos__chevron {
+        display: inline-block;
+        transition: transform var(--transition);
+      }
+
+      .todos__chevron--open {
+        transform: rotate(90deg);
       }
 
       .todos__skeleton {
